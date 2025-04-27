@@ -1,0 +1,77 @@
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: #f5f7fa;
+}
+.register-container .register-content {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  background-color: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+@media (max-width: 768px) {
+  .register-container .register-content {
+    flex-direction: column;
+  }
+}
+.register-container .register-content .register-illustration {
+  flex: 1;
+  background-color: #e6f0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.register-container .register-content .register-illustration .illustration-image {
+  width: 90%;
+  opacity: 0.5;
+  max-height: 300px;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+.register-container .register-content .register-form-container {
+  flex: 1;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.register-container .register-content .register-form-container .welcome-text {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1890ff;
+  margin-bottom: 0.5rem;
+}
+.register-container .register-content .register-form-container .register-description {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+.register-container .register-content .register-form-container .register-form .ant-form-item {
+  margin-bottom: 1.5rem;
+}
+.register-container .register-content .register-form-container .register-form .sign-up-button {
+  background-color: #1890ff;
+  border: none;
+  font-weight: 600;
+}
+.register-container .register-content .register-form-container .register-form .sign-up-button:hover {
+  background-color: #40a9ff;
+}
+.register-container .register-content .register-form-container .account-options {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+.register-container .register-content .register-form-container .account-options a {
+  color: #1890ff;
+}
+.register-container .register-content .register-form-container .account-options a:hover {
+  text-decoration: underline;
+}/*# sourceMappingURL=register.css.map */

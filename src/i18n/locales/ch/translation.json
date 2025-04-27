@@ -1,0 +1,20 @@
+{
+    "welcome": "Welcome to our website chhh",
+    "hello": "Hello ch",
+    "description": "This is a sample application with i18n support ch",
+    "changeLanguage": "Change language ch",
+    "vietnamese": "Vietnamese ch",
+    "english": "English ch",
+    "buttons": {
+      "submit": "Submit ch",
+      "cancel": "Cancel ch"
+    },
+    "navbar": {
+      "home": "Home ch",
+      "about": "About ch",
+      "contact": "Contact ch"
+    },
+    "errors": {
+      "header": "Page not found ch"
+    }
+  }

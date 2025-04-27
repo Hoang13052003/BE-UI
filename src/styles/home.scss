@@ -1,0 +1,19 @@
+@use "sass:color";
+
+.home {
+    max-width: 600px;
+    width: 100%;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    padding: 40px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+
+    .welcome-text {
+      font-size: 26px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text-color);
+    }
+  }

@@ -1,0 +1,24 @@
+:root {
+    // Light theme (mặc định)
+    --primary-color: #7367f0;
+    --light-purple: #a491f2;
+    --text-color: #000;
+    --text-secondary: #6c757d;
+    --border-color: #eaeaea;
+    --sidebar-bg: #fff;
+    --sidebar-active: #7367f0;
+    --background-color: #ffffff;
+    --background-inline: #edeff3
+  }
+  
+  [data-theme="dark"] {
+    --primary-color: #ff7640;
+    --light-purple: #a491f2;
+    --text-color: #ffffff;
+    --text-secondary: #6c757d;
+    --border-color: #eaeaea;
+    --sidebar-bg: #1f1e26;
+    --sidebar-active: #ff7640;
+    --background-color: #1f1e26;
+    --background-inline: #16151b;
+  }

@@ -1,0 +1,259 @@
+// ErrorPage.scss
+// @use '~antd/dist/antd.css';
+
+// Color variables
+
+
+.app-layout {
+  min-height: 100vh;
+  background: var(--background-color);
+
+  .ant-menu {
+    background-color: var(--sidebar-bg);
+    color: var(--text-color);
+  }
+  
+  .app-header {
+    background: var(--background-color) !important;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    height: 64px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 300px;
+      
+      .logo {
+        display: flex;
+        align-items: center;
+        margin-right: 40px;
+        
+        .logo-icon {
+          color: var(--primary-color);
+          font-weight: bold;
+          font-size: 40px;
+        }
+        
+        .logo-text {
+          color: var(--primary-color) !important;
+          font-weight: 500;
+          margin-left: 2px;
+          font-size: 20px;
+        }
+      }
+      
+      .search-bar {
+        color: var(--text-secondary);
+        cursor: pointer;
+      }
+    }
+    
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      
+      .theme-toggle, .notification-btn, .settings-btn, .login-btn {
+        color: var(--primary-color);
+        font-size: 20px;
+      }
+
+      .user-profile {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        width: 200px;
+        
+        &:hover {
+          background-color: var(--border-color);
+        }
+        
+        .user-avatar {
+          background-color: var(--primary-color);
+          color: #fff;
+        }
+        
+        .user-info {
+          margin-left: 8px;
+          line-height: 1.2;
+          
+          .user-name {
+            font-size: 14px;
+            color: var(--text-color);
+          }
+          
+          .user-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+          }
+        }
+      }
+    }
+  }
+
+  .app-main-content{
+    margin-top: 64px;
+    background-color: var(--background-inline);
+    min-height: calc(100vh - 64px);
+  }
+  
+  .app-sidebar {
+    background-color: var(--sidebar-bg);
+    box-shadow: 8px 8px 8px rgba(0, 0, 0, 0.05);
+    
+    .sidebar-section {
+      padding: 8px 0;
+      padding-right: 5px;
+      
+      .sidebar-section-title {
+        padding: 8px 16px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 500;
+      }
+      
+      .ant-menu {
+        border-right: none;
+        
+        .ant-menu-item {
+          margin: 4px 8px;
+          padding-left: 16px !important;
+          border-radius: 10px;
+          color: var(--text-color);
+          font-weight: 500;
+
+
+          &.ant-menu-item-selected,
+          &.selected {
+            background-color: var(--sidebar-active) !important;
+            color: #fff !important;
+            font-weight: 500;
+            border-radius: 10px;
+            &:hover {
+              color: #fff !important;
+            }
+          }
+          
+          &:hover {
+            color: var(--primary-color);
+            border-radius: 10px;
+          }
+          
+          .anticon {
+            font-size: 16px;
+          }
+        }
+      }
+    }
+    
+    .sidebar-footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      padding: 16px;
+      border-top: 1px solid var(--border-color);
+      
+      button {
+        width: 100%;
+        text-align: left;
+      }
+    }
+  }
+  
+  .app-content {
+    padding: 10px;
+    background-color: var(--background-inline);
+    
+    .page-header {
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--text-color);
+      margin-bottom: 24px;
+    }
+    
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 48px 0;
+      background-color: var(--background-color);
+
+      
+      .error-title {
+        font-size: 120px;
+        font-weight: bold;
+        color: var(--text-color);
+        margin-bottom: 24px;
+      }
+      
+      .error-message {
+        font-size: 24px;
+        font-weight: 500;
+        color: var(--text-color);
+        margin-bottom: 16px;
+      }
+      
+      .error-help {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+      }
+      
+      .back-home-btn {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        padding: 8px 24px;
+        height: auto;
+        font-weight: 500;
+        
+        // &:hover {
+        //   // background-color: darken(var(--primary-color, 10%));
+        //   // border-color: darken(var(--primary-color, 10%));
+        // }
+      }
+    }
+  }
+}
+.ant-dropdown-menu-item {
+  height: 30px;
+  &-active {
+    background-color: var(--primary-color) !important;
+    color: #fff !important;
+  }
+}
+
+
+.ant-dropdown-menu, .user-dropdown {
+  border-radius: 5px;
+  border: 1px solid #7367f03d;
+}
+
+.ant-menu-submenu {
+  .ant-menu-title-content {
+    margin-left: 35px;
+    color: var(--text-color);
+  }
+
+  .ant-menu-item-icon {
+    margin-left: 0;
+    color: var(--text-color) !important;
+  }
+  .ant-menu-submenu-arrow {
+    color: var(--text-color);
+  }
+}
