@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Layout, Dropdown, Avatar, Tooltip, Select } from "antd";
+import { Button, Layout, Dropdown, Avatar, Tooltip, Select, Menu } from "antd";
 import {
   CloseCircleOutlined,
   QuestionCircleOutlined,
@@ -10,6 +10,7 @@ import {
   LoginOutlined,
   BellFilled,
   GlobalOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
 import ukicon from "../../assets/uk-icon.svg";
@@ -83,20 +84,12 @@ const LayoutShare: React.FC = () => {
   
   }, [language]);
 
-
-
-  return (
-    <Layout className="app-layout">
-      <Header className="app-header">
-        <div className="header-left">
-          <div className="logo">
-            <span className="logo-icon">Progress</span>
-            <span className="logo-text">Hub</span>
-          </div>
-        </div>
-        <div className="header-right">
+  const MobileMenu: React.FC = () => {
+    return (
+      <Menu>
+        <Menu.Item key="1">
           <Select
-            style={{ width: 150 }}
+            style={{ width: '100%' }}
             value={currentLang}
             onChange={handleLanguageChange}
             dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
@@ -117,57 +110,134 @@ const LayoutShare: React.FC = () => {
               </Select.Option>
             ))}
           </Select>
-          <Tooltip title="Toggle theme">
+        </Menu.Item>
+  
+        <Menu.Item key="2">
+          <Button
+            type="text"
+            icon={theme === 'light' ? <SunOutlined /> : <MoonOutlined />}
+            onClick={toggleTheme}
+          />
+        </Menu.Item>
+  
+        {isAuthenticated ? (
+          <>
+            <Menu.Item key="3">
+              <Button
+                type="text"
+                icon={<BellFilled />}
+              />
+            </Menu.Item>
+  
+            <Menu.Item key="4">
+              <Avatar className="user-avatar">JT</Avatar>
+              <div className="user-info">
+                <div className="user-name">{userDetails?.fullName}</div>
+              </div>
+            </Menu.Item>
+          </>
+        ) : (
+          <Menu.Item key="5">
+            <Tooltip title="Login">
+              <Button
+                type="text"
+                icon={<LoginOutlined />}
+                onClick={() => { navigate('/login') }}
+              >
+                Login now
+              </Button>
+            </Tooltip>
+          </Menu.Item>
+        )}
+      </Menu>
+    );
+  };
+
+  return (
+    <Layout className="app-layout">
+      <Header className="app-header">
+        <div className="header-left">
+          <div className="logo">
+            <span className="logo-icon">Progress</span>
+            <span className="logo-text">Hub</span>
+          </div>
+        </div>
+        <div className="header-right">
+          <div className="header-content">
+            <Select
+              style={{ width: 150 }}
+              value={currentLang}
+              onChange={handleLanguageChange}
+              dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
+              suffixIcon={<GlobalOutlined />}
+            >
+              {languages.map((lang) => (
+                <Select.Option key={lang.code} value={lang.code}>
+                  <img
+                    src={lang.flagUrl}
+                    alt={`${lang.name} flag`}
+                    style={{
+                      width: "20px",
+                      marginRight: "10px",
+                      verticalAlign: "middle",
+                    }}
+                  />
+                  {lang.name}
+                </Select.Option>
+              ))}
+            </Select>
             <Button
               type="text"
               icon={theme === 'light' ? <SunOutlined /> : <MoonOutlined />}
               className="theme-toggle"
               onClick={toggleTheme}
             />
-          </Tooltip>
-          
-          {isAuthenticated?(
-            <React.Fragment>
-              <Tooltip title="Notifications">
+            {isAuthenticated ? (
+              <React.Fragment>
                 <Button
                   type="text"
                   icon={<BellFilled />}
                   className="notification-btn"
                 />
-              </Tooltip>
-              <Dropdown
-                menu={{ items: userMenuItems }}
-                placement="bottomRight"
-                trigger={["click"]}
-                className="user-dropdown"
-              >
-                <div className="user-profile">
-                  <Avatar className="user-avatar">JT</Avatar>
-                  <div className="user-info">
-                    <div className="user-name">{userDetails?.fullName}</div>
-                    {/* <div className="user-role">Web Designer</div> */}
-                  </div>
-                </div>
-              </Dropdown>
-            </React.Fragment>
-          ): (
-            <React.Fragment>
-              <Tooltip title="Login">
-                <Button 
-                  type="text" 
-                  icon={<LoginOutlined />} 
-                  onClick={() => {navigate('/login')}}
-                  className="login-btn" 
-                >Login now</Button>
-              </Tooltip>
-              <Button
-                type="text"
-                icon={<SettingOutlined />}
-                className="settings-btn"
-              />
-            </React.Fragment>
-          )}
-          
+                <Dropdown
+                  menu={{ items: userMenuItems }}
+                  placement="bottomRight"
+                  trigger={["click"]}
+                  className="user-dropdown"
+                >
+                <Avatar className="user-avatar">JT</Avatar>
+                  {/* <div className="user-profile">
+                    <Avatar className="user-avatar">JT</Avatar>
+                    <div className="user-info">
+                      <div className="user-name">{userDetails?.fullName}</div>
+                    </div>
+                  </div> */}
+                </Dropdown>
+              </React.Fragment>
+            ) : (
+              <React.Fragment>
+                <Tooltip title="Login">
+                  <Button
+                    type="text"
+                    icon={<LoginOutlined />}
+                    onClick={() => { navigate('/login') }}
+                    className="login-btn"
+                  >
+                    Login now
+                  </Button>
+                </Tooltip>
+              </React.Fragment>
+            )}
+          </div>
+
+          {/* Dropdown for mobile view */}
+          <Dropdown
+            overlay={<MobileMenu />}
+            trigger={['click']}
+            className="mobile-dropdown"
+          >
+            <Button type="text" icon={<MenuOutlined />} />
+          </Dropdown>
         </div>
       </Header>
       <Outlet />

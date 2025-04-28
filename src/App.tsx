@@ -7,7 +7,7 @@ import PublicRoute from './routes/PublicRouter';
 import LayoutShare from './pages/Share/_layout';
 import DashboardClient from './pages/Client/DashboardClient';
 import DashboardAdmin from './pages/Admin/DashboardAdmin';
-import HeroSection from './components/home/HeroSection';
+// import HeroSection from './components/home/HeroSection';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import Dashboard from './pages/Admin/Dashboard';
 import UserManagement from './pages/Admin/UserManagement';
@@ -19,6 +19,7 @@ import ProjectDetails from './pages/Client/ProjectDetails';
 import DocumentsPage from './pages/Client/DocumentsPage';
 import MessagesAndNotes from './pages/Client/MessagesAndNotes';
 import ProfileSettings from './pages/Client/ProfileSettings';
+import HomeIntroSection from './pages/HomeIntroSection';
 
 function App() {
   return (
@@ -27,7 +28,7 @@ function App() {
         <Routes>
           <Route element={<PublicRoute />}>
             <Route path="/" element={<LayoutShare />} >
-              <Route index element={<HeroSection />} />
+              <Route index element={<HomeIntroSection />} />
             </Route>
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/register" element={<RegisterComponent />} />
