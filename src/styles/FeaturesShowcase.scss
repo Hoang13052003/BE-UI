@@ -1,0 +1,270 @@
+// FeaturesShowcase.scss
+.intro-container {
+    animation: fadeInUp 0.8s ease-out;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    padding: 2rem;
+    
+    .intro-header {
+        text-align: center;
+        margin: 4rem auto;
+      opacity: 0;
+      animation: fadeIn 1s ease-out 0.3s forwards;
+    
+      .intro-title {
+        color: var(--primary-color);
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        transform: translateY(-20px);
+        opacity: 0;
+        animation: slideInDown 0.8s ease-out 0.5s forwards;
+      }
+  
+      .intro-subtitle {
+        color: var(--text-secondary);
+        font-size: 1.125rem;
+        opacity: 0;
+        animation: fadeIn 1s ease-out 0.8s forwards;
+      }
+    }
+  }
+  
+  .intro-feature-card {
+    background: var(--background-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+  
+    .intro-feature-content {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+  
+      .intro-feature-icon {
+        // cho nó hiển thị đúng kích thước & canh giữa icon
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;       // 48px
+        height: 3rem;      // 48px
+        background-color: var(--background-inline);
+        border-radius: 0.75rem;
+        color: var(--primary-color); // sẽ ảnh hưởng tới svg via currentColor
+      }
+      
+      .intro-feature-icon svg {
+        // đảm bảo svg có kích thước bạn muốn
+        width: 1.5rem;     // 24px
+        height: 1.5rem;    // 24px
+      }
+  
+      .intro-feature-text {
+        flex: 1;
+  
+        .intro-feature-title {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          color: var(--text-color);
+        }
+  
+        .intro-feature-description {
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+      }
+    }
+  }
+  
+  .intro-project-card {
+    background: var(--background-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+    transition: all 0.3s ease;
+  
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+  
+    .intro-project-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+  
+      .intro-project-icon {
+        width: 2rem;
+        height: 2rem;
+        color: var(--primary-color);
+      }
+  
+      .intro-project-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-color);
+      }
+    }
+  
+    .intro-project-features {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+  
+      .intro-project-feature {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+  
+        .intro-feature-check {
+          color: var(--primary-color);
+        }
+  
+        .intro-feature-text {
+          color: var(--text-secondary);
+        }
+      }
+    }
+  }
+  
+  .intro-chart-container {
+    background: var(--background-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    animation: fadeInUp 0.8s ease-out forwards;
+  
+    .intro-chart-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text-color);
+    }
+  
+    .intro-chart-wrapper {
+      height: 300px;
+    }
+  }
+  
+  .intro-tabs {
+    .ant-tabs-nav {
+      margin-bottom: 2rem;
+  
+      .intro-tab-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+  
+        .intro-tab-icon {
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+      }
+  
+      .ant-tabs-tab {
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+  
+        &:hover {
+          color: var(--primary-color);
+        }
+  
+        &-active {
+          .intro-tab-label {
+            color: var(--primary-color);
+            font-weight: 600;
+          }
+        }
+      }
+    }
+  }
+  
+  .intro-overview-grid,
+  .intro-features-grid,
+  .intro-admin-grid {
+    display: grid;
+    gap: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out forwards;
+  
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  // Animations
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  // Stagger animations for grid items
+  .intro-feature-card,
+  .intro-project-card {
+    @for $i from 1 through 9 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{$i * 0.1}s;
+      }
+    }
+  }
+  
+  // Dark mode adjustments
+  [data-theme="dark"] {
+    .intro-feature-card,
+    .intro-project-card,
+    .intro-chart-container {
+      background: var(--background-inline);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  
+      &:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      }
+    }
+  }

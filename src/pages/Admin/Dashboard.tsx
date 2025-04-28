@@ -172,7 +172,7 @@
         </Row>
   
         {/* Stats Cards */}
-        <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Row gutter={16} style={{ marginBottom: 10 }}>
           <Col span={6}>
             <Card>
               <Statistic
@@ -216,7 +216,7 @@
         </Row>
   
         {/* Project Progress & Recent Feedback */}
-        <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Row gutter={16} style={{ marginBottom: 10 }}>
           <Col span={16}>
             <Card
               title="Project Progress"
