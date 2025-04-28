@@ -13,6 +13,29 @@
     color: var(--text-color);
   }
   
+  .item-header{
+    background: var(--background-color) !important;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    height: 64px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+
+    .item-left{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .item-right{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  }
+
   .app-header {
     background: var(--background-color) !important;
     padding: 0 16px;

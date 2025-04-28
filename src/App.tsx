@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginComponent from './components/LoginComponent';
-import Home from './pages/welcome';
 import ProtectedRoute from './routes/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import RegisterComponent from './components/RegisterComponent';
@@ -10,6 +9,16 @@ import DashboardClient from './pages/Client/DashboardClient';
 import DashboardAdmin from './pages/Admin/DashboardAdmin';
 import HeroSection from './components/home/HeroSection';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import Dashboard from './pages/Admin/Dashboard';
+import UserManagement from './pages/Admin/UserManagement';
+import ProjectUpdates from './pages/Admin/ProjectUpdates';
+import Notifications from './pages/Admin/Notifications';
+import SystemSettings from './pages/Admin/SystemSettings';
+import Overview from './pages/Client/overview';
+import ProjectDetails from './pages/Client/ProjectDetails';
+import DocumentsPage from './pages/Client/DocumentsPage';
+import MessagesAndNotes from './pages/Client/MessagesAndNotes';
+import ProfileSettings from './pages/Client/ProfileSettings';
 
 function App() {
   return (
@@ -29,7 +38,11 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/" element={<LayoutShare />} >
               <Route path="admin/" element={<DashboardAdmin />} >
-                <Route path="home" element={<Home />} />
+                <Route path="overview" element={<Dashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="updates" element={<ProjectUpdates />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="settings" element={<SystemSettings />} />
               </Route>
             </Route>
           </Route>
@@ -38,7 +51,11 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
             <Route path="/" element={<LayoutShare />} >
               <Route path="client/" element={<DashboardClient />} >
-                <Route path="home" element={<Home />} />
+                <Route path="overview" element={<Overview />} />
+                <Route path="profiles" element={<ProfileSettings />} />
+                <Route path="projects/documents" element={<DocumentsPage />} />
+                <Route path="projects/messages" element={<MessagesAndNotes />} />
+                <Route path="projects/details/:id" element={<ProjectDetails />} />
               </Route>
             </Route>
           </Route>

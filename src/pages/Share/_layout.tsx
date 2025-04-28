@@ -5,8 +5,6 @@ import {
   QuestionCircleOutlined,
   SettingOutlined,
   ProfileOutlined,
-  InboxOutlined,
-  ScheduleOutlined,
   SunOutlined,
   MoonOutlined,
   LoginOutlined,
@@ -53,16 +51,6 @@ const LayoutShare: React.FC = () => {
       label: "Profile",
     },
     {
-      key: "inbox",
-      icon: <InboxOutlined />,
-      label: "Inbox",
-    },
-    {
-      key: "taskManager",
-      icon: <ScheduleOutlined />,
-      label: "Task Manager",
-    },
-    {
       key: "settings",
       icon: <SettingOutlined />,
       label: "Settings",
@@ -102,8 +90,8 @@ const LayoutShare: React.FC = () => {
       <Header className="app-header">
         <div className="header-left">
           <div className="logo">
-            <span className="logo-icon">Spark</span>
-            <span className="logo-text">Minds</span>
+            <span className="logo-icon">Progress</span>
+            <span className="logo-text">Hub</span>
           </div>
         </div>
         <div className="header-right">
@@ -163,20 +151,23 @@ const LayoutShare: React.FC = () => {
               </Dropdown>
             </React.Fragment>
           ): (
-            <Tooltip title="Login">
-            <Button 
-            type="text" 
-            icon={<LoginOutlined />} 
-            onClick={() => {navigate('/login')}}
-            className="login-btn" 
-            >Login now</Button>
-            </Tooltip>
+            <React.Fragment>
+              <Tooltip title="Login">
+                <Button 
+                  type="text" 
+                  icon={<LoginOutlined />} 
+                  onClick={() => {navigate('/login')}}
+                  className="login-btn" 
+                >Login now</Button>
+              </Tooltip>
+              <Button
+                type="text"
+                icon={<SettingOutlined />}
+                className="settings-btn"
+              />
+            </React.Fragment>
           )}
-          <Button
-            type="text"
-            icon={<SettingOutlined />}
-            className="settings-btn"
-          />
+          
         </div>
       </Header>
       <Outlet />

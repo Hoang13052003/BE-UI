@@ -17,7 +17,7 @@ const LoginComponent: React.FC = () => {
     if (isAuthenticated && userDetailsLoaded) { // Kiểm tra khi nào thông tin người dùng đã được tải
       switch (userRole) {
         case 'ADMIN':
-          navigate('/admin/home', { replace: true });
+          navigate('/admin/overview', { replace: true });
           break;
         case 'USER':
           navigate('/client/home', { replace: true });
