@@ -17,14 +17,13 @@ import {
   UserOutlined,
   PlusOutlined,
   ClockCircleOutlined,
-  FlagOutlined,
   DownOutlined,
   UpOutlined
 } from '@ant-design/icons';
 import { getProjectsApi, deleteProjectApi } from '../../api/projectApi';
 import { Project } from '../../types/project';
 import AddProjectModal from '../../components/Admin/AddProjectModal';
-import EditMilestoneModal from '../../components/Admin/EditMilestoneModal';
+import AddMilestoneModal from '../../components/Admin/AddMilestoneModal';
 import MilestoneDetailsDisplay from '../../components/Admin/MilestoneDetailsDisplay';
 
 const { Text, Title } = Typography;
@@ -34,10 +33,11 @@ const ProjectUpdates: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [isMilestoneModalVisible, setIsMilestoneModalVisible] = useState<boolean>(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [isAddProjectModalVisible, setIsAddProjectModalVisible] = useState<boolean>(false);
+  const [isAddMilestoneModalVisible, setIsAddMilestoneModalVisible] = useState<boolean>(false);
+  const [selectedProjectIdForMilestone, setSelectedProjectIdForMilestone] = useState<number | null>(null);
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
+
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -82,41 +82,46 @@ const ProjectUpdates: React.FC = () => {
       await deleteProjectApi(id);
       setProjects(prev => prev.filter(project => project.id !== id));
       message.success('Project deleted successfully!');
+      if (expandedProjectId === id) {
+        setExpandedProjectId(null);
+      }
     } catch (err) {
       setError("Failed to delete project. Please try again later.");
+      message.error("Failed to delete project.");
     } finally {
       setDeletingId(null);
     }
   };
 
-  const handleAddModal = () => {
-    setIsModalVisible(true);
+  const handleAddProjectModalOpen = () => {
+    setIsAddProjectModalVisible(true);
   };
 
-  const handleAddCancel = () => {
-    setIsModalVisible(false);
+  const handleAddProjectModalClose = () => {
+    setIsAddProjectModalVisible(false);
   };
 
-  const handleAddSuccess = () => {
-    setIsModalVisible(false);
+  const handleAddProjectSuccess = () => {
+    setIsAddProjectModalVisible(false);
     message.success('Project added successfully!');
     fetchProjects();
   };
 
-  const handleEditMilestone = (projectId: number) => {
-    setSelectedProjectId(projectId);
-    setIsMilestoneModalVisible(true);
+  const handleAddMilestoneClick = (projectId: number) => {
+    setSelectedProjectIdForMilestone(projectId);
+    setIsAddMilestoneModalVisible(true);
   };
 
   const handleMilestoneModalClose = () => {
-    setIsMilestoneModalVisible(false);
-    setSelectedProjectId(null);
+    setIsAddMilestoneModalVisible(false);
+    setSelectedProjectIdForMilestone(null);
   };
 
   const handleMilestoneSuccess = () => {
-    setIsMilestoneModalVisible(false);
-    setSelectedProjectId(null);
-    fetchProjects(); // Refresh project data
+    setIsAddMilestoneModalVisible(false);
+    setSelectedProjectIdForMilestone(null);
+    fetchProjects();
+    message.success('Milestone added successfully!');
   };
 
   const toggleMilestoneDetail = (projectId: number) => {
@@ -137,10 +142,11 @@ const ProjectUpdates: React.FC = () => {
     return (
       <Card>
         <Title level={5}>Project Updates</Title>
-        <Alert message="error" description={error} type="error" showIcon />
+        <Alert message="Error" description={error} type="error" showIcon />
       </Card>
     );
   }
+
   return (
     <>
     <Card
@@ -149,7 +155,7 @@ const ProjectUpdates: React.FC = () => {
         <Button
           type="primary"
           icon={<PlusOutlined/>}
-          onClick={handleAddModal}
+          onClick={handleAddProjectModalOpen}
         >
             Add Project
         </Button>
@@ -171,41 +177,30 @@ const ProjectUpdates: React.FC = () => {
                 marginBottom: '16px',
                 padding: '16px',
                 transition: 'all 0.3s ease',
+                border: '1px solid #e8e8e8',
               }}
               actions={[
                 <Button
-                  key="edit"
+                  key="edit-project"
                   type="text"
                   icon={<EditOutlined />}
-                />,
+                > Edit Project </Button>,
                 item.type === 'FIXED_PRICE' && (
-                  <React.Fragment key={`fixed-price-actions-${item.id}`}>
-                    <Button
-                      key="edit-milestone"
-                      type="text"
-                      icon={<FlagOutlined />}
-                      onClick={() => handleEditMilestone(item.id)}
-                    >
-                      Edit Milestone
-                    </Button>
-                    <Button
-                      key="milestone-details"
-                      type="text"
-                      icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
-                      onClick={() => toggleMilestoneDetail(item.id)}
-                    >
-                      {isExpanded ? 'Hide Details' : 'Milestone Details'}
-                    </Button>
-                  </React.Fragment>
+                  <Button
+                    key="milestone-details"
+                    type="text"
+                    icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
+                    onClick={() => toggleMilestoneDetail(item.id)}
+                  >
+                    {isExpanded ? 'Hide Milestones' : 'Show Milestones'}
+                  </Button>
                 ),
                 item.type === 'LABOR' && (
                   <Button
                     key="edit-timelog"
                     type="text"
                     icon={<ClockCircleOutlined />}
-                  >
-                    Edit Timelog
-                  </Button>
+                  > Edit Timelog </Button>
                 ),
                 <Button
                   key="delete"
@@ -215,7 +210,7 @@ const ProjectUpdates: React.FC = () => {
                   loading={deletingId === item.id}
                   onClick={() => handleDelete(item.id)}
                 />
-              ].filter(Boolean)} // Filter out null/false values from conditional rendering
+              ].filter(Boolean)}
             >
               <Row justify="space-between" align="top">
                 <Space direction="vertical" size={2} style={{ flex: 1 }}>
@@ -224,21 +219,21 @@ const ProjectUpdates: React.FC = () => {
                     <Tag>{item.type}</Tag>
                   </Space>
 
-                  <Text strong>{item.name}</Text>
+                  <Text strong style={{ fontSize: '16px' }}>{item.name}</Text>
                   <Text type="secondary">{item.description}</Text>
 
                   <Space size={16} style={{ marginTop: 8, flexWrap: 'wrap' }}>
                     <Space>
                       <UserOutlined />
-                      <Text type="secondary">{item.clientName}</Text>
+                      <Text type="secondary">{item.clientName || 'N/A'}</Text>
                     </Space>
                     <Space>
                       <CalendarOutlined />
-                      <Text type="secondary">{item.startDate}</Text>
+                      <Text type="secondary">Start: {item.startDate ? new Date(item.startDate).toLocaleDateString() : 'N/A'}</Text>
                     </Space>
                     <Space>
                       <CalendarOutlined />
-                      <Text type="secondary">{item.plannedEndDate}</Text>
+                      <Text type="secondary">Planned End: {item.plannedEndDate ? new Date(item.plannedEndDate).toLocaleDateString() : 'N/A'}</Text>
                     </Space>
                   </Space>
                 </Space>
@@ -247,7 +242,10 @@ const ProjectUpdates: React.FC = () => {
               {isExpanded && item.type === 'FIXED_PRICE' && (
                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
                   <Title level={5} style={{ marginBottom: '12px' }}>Milestones</Title>
-                  <MilestoneDetailsDisplay projectId={item.id} />
+                  <MilestoneDetailsDisplay
+                    projectId={item.id}
+                    onAddMilestone={() => handleAddMilestoneClick(item.id)}
+                  />
                 </div>
               )}
             </List.Item>
@@ -255,15 +253,17 @@ const ProjectUpdates: React.FC = () => {
         }}
       />
     </Card>
+
     <AddProjectModal
-        visible={isModalVisible}
-        onClose={handleAddCancel}
-        onSuccess={handleAddSuccess}
+        visible={isAddProjectModalVisible}
+        onClose={handleAddProjectModalClose}
+        onSuccess={handleAddProjectSuccess}
       />
-    {selectedProjectId && (
-      <EditMilestoneModal
-        visible={isMilestoneModalVisible}
-        projectId={selectedProjectId}
+
+    {selectedProjectIdForMilestone && (
+      <AddMilestoneModal
+        visible={isAddMilestoneModalVisible}
+        projectId={selectedProjectIdForMilestone}
         onClose={handleMilestoneModalClose}
         onSuccess={handleMilestoneSuccess}
       />

@@ -11,6 +11,8 @@ export interface Milestone {
   description: string | null;
   startDate: string | null;
   endDate: string | null; 
-  status: MilestoneStatus | null; 
+  status: MilestoneStatus | null;
+  completionDate: string | null; 
+  notes: string | null;
 }
 
