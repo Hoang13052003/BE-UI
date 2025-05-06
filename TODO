@@ -1,0 +1,86 @@
+Cách thêm nút Edit Milestone với ID
+Tôi sẽ giải thích đơn giản cách thêm nút Edit cho từng milestone và truy xuất ID milestone:
+
+Vấn đề cần giải quyết
+Bạn muốn thêm nút Edit cho mỗi milestone để người dùng có thể chỉnh sửa. Khi người dùng nhấn nút Edit, bạn cần biết đang sửa milestone nào bằng cách lấy ID của milestone đó.
+
+Giải pháp đơn giản gồm 3 bước:
+Bước 1: Thêm prop mới trong MilestoneDetailsDisplay
+
+// Thêm prop mới trong interface
+interface MilestoneDetailsDisplayProps {
+  projectId: number;
+  onAddMilestone: () => void;
+  onEditMilestone: (milestoneId: number) => void; // Thêm dòng này
+}
+
+
+Bước 2: Thêm nút Edit vào mỗi milestone
+
+// Trong phần render của milestone (có thể đặt nút ở bất kỳ vị trí nào)
+<Row gutter={[16, 16]} style={{ width: '100%' }}>
+  {/* Left Column giữ nguyên... */}
+  
+  {/* Right Column: thêm nút Edit ở đầu */}
+  <Col xs={24} sm={8} md={6} style={{ textAlign: 'right' }}>
+    <Space direction="vertical" size={8} align="end">
+      {/* Thêm nút Edit Milestone */}
+      <Button
+        type="text"
+        icon={<EditOutlined />} // Nhớ import EditOutlined từ '@ant-design/icons'
+        onClick={() => onEditMilestone(item.id)}
+        size="small"
+      >
+        Edit
+      </Button>
+      
+      {/* Phần còn lại giữ nguyên */}
+      <Tag color={getMilestoneStatusColor(item.status)}>
+        {item.status ? String(item.status).replace('_', ' ') : 'emty'}
+      </Tag>
+      {...}
+    </Space>
+  </Col>
+</Row>
+
+
+Bước 3: Trong component cha (ProjectUpdates.tsx), xử lý sự kiện Edit
+
+// Thêm state mới
+const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
+const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+
+// Hàm xử lý khi click nút Edit
+const handleEditMilestone = (milestoneId: number) => {
+  setSelectedMilestoneId(milestoneId); // Lưu lại ID milestone được chọn
+  setIsEditModalVisible(true); // Mở modal chỉnh sửa
+};
+
+// Khi sử dụng MilestoneDetailsDisplay, truyền hàm xử lý vào
+<MilestoneDetailsDisplay
+  projectId={item.id}
+  onAddMilestone={() => handleAddMilestoneClick(item.id)}
+  onEditMilestone={handleEditMilestone} // Truyền hàm này vào
+/>
+
+// Ở dưới cùng, thêm modal chỉnh sửa (chạy khi nút Edit được click)
+{selectedMilestoneId && (
+  <EditMilestoneModal
+    visible={isEditModalVisible}
+    milestoneId={selectedMilestoneId} // Truyền ID milestone vào modal
+    onClose={() => setIsEditModalVisible(false)}
+    onSuccess={() => {
+      setIsEditModalVisible(false);
+      fetchProjects(); // Tải lại dữ liệu
+    }}
+  />
+)}
+
+
+Cách thức hoạt động đơn giản:
+Khi người dùng nhấn nút "Edit" trên một milestone
+Hàm onEditMilestone(item.id) được gọi với ID của milestone đó
+Component cha lưu lại ID và hiển thị modal chỉnh sửa
+Modal nhận ID milestone và dùng nó để tải dữ liệu milestone từ API
+Sau khi chỉnh sửa xong, dữ liệu được cập nhật và giao diện được làm mới
+Có thể coi ID như "địa chỉ nhà" của mỗi milestone - đó là cách duy nhất để BE biết bạn đang muốn chỉnh sửa milestone nào.

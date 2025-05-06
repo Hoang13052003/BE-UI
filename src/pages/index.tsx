@@ -13,8 +13,6 @@ import chinaicon from "../assets/china-flag-icon.svg";
 import useLanguage, { Language } from "../hooks/useLanguage";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
-import HeroSection from "../components/home/HeroSection";
-import AnotherSection from "../components/home/AnotherSection";
 
 const { Header } = Layout;
 
@@ -132,8 +130,6 @@ const LayoutPage: React.FC = () => {
           </Dropdown>
         </div>
       </Header>
-      <HeroSection/>
-      <AnotherSection/>
       {/* <Layout>
        
       </Layout> */}

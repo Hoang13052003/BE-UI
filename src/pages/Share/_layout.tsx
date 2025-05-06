@@ -205,7 +205,13 @@ const LayoutShare: React.FC = () => {
                   trigger={["click"]}
                   className="user-dropdown"
                 >
-                <Avatar className="user-avatar">JT</Avatar>
+                  {/* Wrap Avatar and Name in a div for layout */}
+                  <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <Avatar className="user-avatar" style={{ marginRight: 8 }}>
+                      {userDetails?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                    </Avatar>
+                    <span className="user-name">{userDetails?.fullName}</span> {/* Display full name */}
+                  </div>
                   {/* <div className="user-profile">
                     <Avatar className="user-avatar">JT</Avatar>
                     <div className="user-info">
