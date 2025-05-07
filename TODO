@@ -1,8 +1,7 @@
 Cách thêm nút Edit Milestone với ID
-Tôi sẽ giải thích đơn giản cách thêm nút Edit cho từng milestone và truy xuất ID milestone:
 
 Vấn đề cần giải quyết
-Bạn muốn thêm nút Edit cho mỗi milestone để người dùng có thể chỉnh sửa. Khi người dùng nhấn nút Edit, bạn cần biết đang sửa milestone nào bằng cách lấy ID của milestone đó.
+thêm nút Edit cho mỗi milestone để người dùng có thể chỉnh sửa. Khi người dùng nhấn nút Edit, bạn cần biết đang sửa milestone nào bằng cách lấy ID của milestone đó.
 
 Giải pháp đơn giản gồm 3 bước:
 Bước 1: Thêm prop mới trong MilestoneDetailsDisplay

@@ -9,7 +9,9 @@ import {
   Row,
   Spin,
   Alert,
-  message} from 'antd';
+  message,
+  Tooltip
+} from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -25,6 +27,7 @@ import { Project } from '../../types/project';
 import AddProjectModal from '../../components/Admin/AddProjectModal';
 import AddMilestoneModal from '../../components/Admin/AddMilestoneModal';
 import MilestoneDetailsDisplay from '../../components/Admin/MilestoneDetailsDisplay';
+//import EditMilestoneModal from '../../components/Admin/EditMilestoneModal';
 
 const { Text, Title } = Typography;
 
@@ -37,7 +40,8 @@ const ProjectUpdates: React.FC = () => {
   const [isAddMilestoneModalVisible, setIsAddMilestoneModalVisible] = useState<boolean>(false);
   const [selectedProjectIdForMilestone, setSelectedProjectIdForMilestone] = useState<number | null>(null);
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
-
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
+  const [isEditMilestoneModalVisible, setIsEditMilestoneModalVisible] = useState(false);
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -120,8 +124,27 @@ const ProjectUpdates: React.FC = () => {
   const handleMilestoneSuccess = () => {
     setIsAddMilestoneModalVisible(false);
     setSelectedProjectIdForMilestone(null);
-    fetchProjects();
     message.success('Milestone added successfully!');
+    if (expandedProjectId) {
+      // Logic để refresh MilestoneDetailsDisplay nếu cần
+    }
+  };
+
+  const handleEditMilestone = (milestoneId: number) => {
+    setSelectedMilestoneId(milestoneId);
+    setIsEditMilestoneModalVisible(true);
+  };
+
+  const handleEditMilestoneModalClose = () => {
+    setIsEditMilestoneModalVisible(false);
+    setSelectedMilestoneId(null);
+  };
+
+  const handleEditMilestoneSuccess = () => {
+    setIsEditMilestoneModalVisible(false);
+    setSelectedMilestoneId(null);
+    message.success('Milestone updated successfully!');
+    fetchProjects();
   };
 
   const toggleMilestoneDetail = (projectId: number) => {
@@ -224,8 +247,21 @@ const ProjectUpdates: React.FC = () => {
 
                   <Space size={16} style={{ marginTop: 8, flexWrap: 'wrap' }}>
                     <Space>
-                      <UserOutlined />
-                      <Text type="secondary">{item.clientName || 'N/A'}</Text>
+                    <UserOutlined />
+                  <Text type="secondary">
+                    {item.users && item.users.length > 0 ? (
+                      item.users.length > 2 ? (
+                        <Tooltip title={item.users.map(user => user.email).join(', ')}>
+                          {item.users.slice(0, 2).map(user => user.email).join(', ')}
+                          {`, and ${item.users.length - 2} more`}
+                        </Tooltip>
+                      ) : (
+                        item.users.map(user => user.email).join(', ')
+                      )
+                    ) : (
+                      'N/A'
+                    )}
+                  </Text>
                     </Space>
                     <Space>
                       <CalendarOutlined />
@@ -241,10 +277,10 @@ const ProjectUpdates: React.FC = () => {
 
               {isExpanded && item.type === 'FIXED_PRICE' && (
                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
-                  <Title level={5} style={{ marginBottom: '12px' }}>Milestones</Title>
                   <MilestoneDetailsDisplay
                     projectId={item.id}
                     onAddMilestone={() => handleAddMilestoneClick(item.id)}
+                    onEditMilestone={handleEditMilestone}
                   />
                 </div>
               )}
@@ -268,6 +304,16 @@ const ProjectUpdates: React.FC = () => {
         onSuccess={handleMilestoneSuccess}
       />
     )}
+
+    {/* {selectedMilestoneId && (
+      <EditMilestoneModal
+        visible={isEditMilestoneModalVisible}
+        milestoneId={selectedMilestoneId}
+        projectId={expandedProjectId}
+        onClose={handleEditMilestoneModalClose}
+        onSuccess={handleEditMilestoneSuccess}
+      />
+    )} */}
     </>
   );
 };

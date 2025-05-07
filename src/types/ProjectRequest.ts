@@ -8,6 +8,5 @@ export interface ProjectRequest {
   plannedEndDate: string; // Format: "YYYY-MM-DD"
   totalBudget: number;
   totalEstimatedHours: number | null; // Assuming this can also be null on creation/update
-  clientId: number; // Assuming you need the client ID to associate the project
-  // Add any other fields required by your ProjectRequestDto
+  userIds: number[]; // List of user IDs assigned to the project
 }

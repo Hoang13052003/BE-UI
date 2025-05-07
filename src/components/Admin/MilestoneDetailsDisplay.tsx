@@ -7,7 +7,8 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   FileTextOutlined,
-  PlusOutlined // Import PlusOutlined for the button icon
+  PlusOutlined, // Import PlusOutlined for the button icon
+  EditOutlined // Import EditOutlined
 } from '@ant-design/icons';
 import { getMilestonesByProjectIdApi } from '../../api/milestoneApi'; // Ensure this API path is correct
 import { Milestone, MilestoneStatus } from '../../types/milestone'; // Ensure types path is correct
@@ -16,10 +17,11 @@ const { Text, Title, Paragraph } = Typography;
 
 interface MilestoneDetailsDisplayProps {
   projectId: number;
-  onAddMilestone: () => void; // Add prop to handle Add Milestone click
+  onAddMilestone: () => void;
+  onEditMilestone: (milestoneId: number) => void; // Ensure prop is defined
 }
 
-const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ projectId, onAddMilestone }) => {
+const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ projectId, onAddMilestone, onEditMilestone }) => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +87,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
 
   // Function to get icon based on status
   const getStatusIcon = (status: MilestoneStatus | null | undefined) => {
-     if (!status) return null; // Handle null or undefined
+    if (!status) return null; // Handle null or undefined
 
     switch (String(status).toUpperCase()) { // Convert to string before uppercasing
       case 'COMPLETED': return <CheckCircleOutlined />;
@@ -98,7 +100,6 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
     }
   };
 
-
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>;
   }
@@ -110,24 +111,24 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
   return (
     <div> {/* Wrap content in a div */}
       <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
-         <Col>
-            <Title level={5} style={{ margin: 0 }}>Milestones</Title>
-         </Col>
-         <Col>
-            {/* Add Milestone Button */}
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={onAddMilestone} // Call the passed function
-            >
-              Add Milestone
-            </Button>
-         </Col>
+        <Col>
+          <Title level={5} style={{ margin: 0 }}>Milestones</Title>
+        </Col>
+        <Col>
+          {/* Add Milestone Button */}
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={onAddMilestone} // Call the passed function
+          >
+            Add Milestone
+          </Button>
+        </Col>
       </Row>
 
       {/* Display message if no milestones */}
       {(!Array.isArray(milestones) || milestones.length === 0) && !loading && !error && (
-         <Text type="secondary">No milestones found for this project. Click "Add Milestone" to create one.</Text>
+        <Text type="secondary">No milestones found for this project. Click "Add Milestone" to create one.</Text>
       )}
 
       {/* Render list only if milestones exist */}
@@ -169,9 +170,19 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
                   </Space>
                 </Col>
 
-                {/* Right Column: Status, Dates */}
+                {/* Right Column: Status, Dates, Edit Button */}
                 <Col xs={24} sm={8} md={6} style={{ textAlign: 'right' }}>
                   <Space direction="vertical" size={8} align="end">
+                    {/* Add Edit Milestone Button */}
+                    <Button
+                      type="text" // Or "link" for borderless style
+                      icon={<EditOutlined />}
+                      onClick={() => onEditMilestone(item.id)} // Call onEditMilestone with ID
+                      size="small"
+                      style={{ alignSelf: 'flex-end' }} // Align button to the right if needed
+                    >
+                      Edit
+                    </Button>
                     <Tag
                       color={getMilestoneStatusColor(item.status)}
                       icon={getStatusIcon(item.status)}
