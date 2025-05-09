@@ -1,4 +1,9 @@
 //get form api
+export interface ProjectUser {
+  id: number;
+  email: string;
+}
+
 export interface Project {
   id: number;
   name: string;
@@ -10,6 +15,5 @@ export interface Project {
   actualEndDate: string | null; // Format: "YYYY-MM-DD" (can be null)
   totalBudget: number;
   totalEstimatedHours: number | null; // Updated to allow null based on sample data
-  clientId: number;
-  clientName: string;
+  users: ProjectUser[]; // List of users assigned to the project
 }

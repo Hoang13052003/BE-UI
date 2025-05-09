@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Select, DatePicker, InputNumber, Button } from "antd";
+import { Modal, Form, Input, Select, DatePicker, InputNumber, Button, Spin, Tag, message as antdMessage } from "antd";
+import { PlusOutlined } from '@ant-design/icons';
 import { useAddProject } from "../../hooks/useAddProject";
-import { useProjectEnums } from "../../hooks/useProjectEnums"; // Import new hook
-import { useClientLookup } from "../../hooks/useClientLookup"; // Import new hook
+import { useProjectEnums } from "../../hooks/useProjectEnums";
+import { getClientIdByEmailApi } from "../../api/projectApi";
 
 const { Option } = Select;
 
@@ -12,24 +13,30 @@ interface AddProjectModalProps {
   onSuccess: () => void;
 }
 
+interface Participant {
+  email: string;
+  id: number | null;
+  status: 'idle' | 'loading' | 'found' | 'not_found' | 'error';
+}
+
 const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
   const [formInitialized, setFormInitialized] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [emailInput, setEmailInput] = useState<string>("");
+  const [isLookingUpEmail, setIsLookingUpEmail] = useState<boolean>(false);
 
-  // Use custom hooks
   const { typeOptions, statusOptions, loading: enumLoading, error: enumError } = useProjectEnums();
-  const { loading: clientLoading, foundClientId, handleEmailBlur, resetClientLookup } = useClientLookup(form);
   const { submitting, handleAddProject } = useAddProject(() => {
-    onSuccess(); // Call original onSuccess
-    // Reset state managed within this component after successful submission
+    onSuccess();
     form.resetFields();
-    resetClientLookup(); // Reset client lookup state
     setSelectedType(undefined);
-    setFormInitialized(false); // Allow re-initialization if modal reopens
+    setFormInitialized(false);
+    setParticipants([]);
+    setEmailInput("");
   });
 
-  // Effect to initialize form with default enum values
   useEffect(() => {
     if (visible && !enumLoading && !enumError && typeOptions.length > 0 && statusOptions.length > 0 && !formInitialized) {
       const defaultType = typeOptions[0];
@@ -40,76 +47,97 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onS
       setSelectedType(defaultType);
       setFormInitialized(true);
     }
-    // Reset initialization flag if modal becomes hidden or enums are loading/error
     if (!visible || enumLoading || enumError) {
-        setFormInitialized(false);
+      setFormInitialized(false);
     }
   }, [visible, enumLoading, enumError, typeOptions, statusOptions, form, formInitialized]);
 
-  // Effect to reset component state when modal closes (complementary to onSuccess reset)
   useEffect(() => {
     if (!visible) {
-      // Reset state that isn't reset by form.resetFields() or onSuccess callback
-      resetClientLookup();
       setSelectedType(undefined);
-      // formInitialized is reset in the effect above
+      setParticipants([]);
+      setEmailInput("");
     }
-  }, [visible, resetClientLookup]);
+  }, [visible]);
 
-  // Wrapper for onClose to ensure state reset
   const handleModalClose = () => {
-      form.resetFields(); // Ensure form is reset
-      resetClientLookup();
-      setSelectedType(undefined);
-      setFormInitialized(false);
-      onClose(); // Call the original onClose handler
+    form.resetFields();
+    setSelectedType(undefined);
+    setFormInitialized(false);
+    setParticipants([]);
+    setEmailInput("");
+    onClose();
   };
 
   const handleFinish = (values: any) => {
-    // Re-validate client ID before submitting
-    if (!foundClientId) {
-      // Check if email field itself is valid before setting specific error
-      form.validateFields(['clientEmail']).then(() => {
-          // Email is valid but no client found (e.g., user didn't blur, or lookup failed)
-          form.setFields([{ name: 'clientEmail', errors: ["Vui lòng xác nhận email client hợp lệ."] }]);
-      }).catch(() => {
-          // Email is invalid (e.g. format), error is already shown by Form.Item rule.
-      });
-      form.getFieldInstance('clientEmail')?.focus();
-      return;
-    }
+    const userIds = participants
+      .filter(p => p.status === 'found' && p.id !== null)
+      .map(p => p.id as number);
 
-    // Ensure the correct clientId is included from the state hook
-    const finalValues = { ...values, clientId: foundClientId };
-    handleAddProject(finalValues); // Reset logic is now in useAddProject's success callback
+    const finalValues = { ...values, userIds };
+    handleAddProject(finalValues);
   };
 
-  // Handle type change to update state and potentially clear related fields
   const handleTypeChange = (value: string) => {
     setSelectedType(value);
     if (value === "FIXED_PRICE") {
-        form.setFieldsValue({ totalEstimatedHours: null });
-        // Clear validation errors if the field is now hidden/optional
-        form.setFields([{ name: 'totalEstimatedHours', errors: [] }]);
+      form.setFieldsValue({ totalEstimatedHours: null });
+      form.setFields([{ name: 'totalEstimatedHours', errors: [] }]);
     }
+  };
+
+  const handleAddSingleParticipant = async () => {
+    if (!emailInput.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.trim())) {
+      antdMessage.error("Vui lòng nhập địa chỉ email hợp lệ.");
+      return;
+    }
+    const currentEmail = emailInput.trim().toLowerCase();
+    if (participants.some(p => p.email.toLowerCase() === currentEmail)) {
+      antdMessage.warning("Email này đã được thêm vào danh sách.");
+      setEmailInput("");
+      return;
+    }
+
+    setIsLookingUpEmail(true);
+    setParticipants(prev => [...prev, { email: currentEmail, id: null, status: 'loading' }]);
+    setEmailInput("");
+
+    try {
+      const userId = await getClientIdByEmailApi(currentEmail);
+      setParticipants(prev => prev.map(p => p.email === currentEmail ? { ...p, id: userId, status: 'found' } : p));
+      antdMessage.success(`Đã tìm thấy người dùng với email: ${currentEmail} (ID: ${userId})`);
+    } catch (error: any) {
+      console.error("Error looking up email:", error);
+      if (error.response && error.response.status === 404) {
+        setParticipants(prev => prev.map(p => p.email === currentEmail ? { ...p, status: 'not_found' } : p));
+        antdMessage.error(`Không tìm thấy người dùng với email: ${currentEmail}`);
+      } else {
+        setParticipants(prev => prev.map(p => p.email === currentEmail ? { ...p, status: 'error' } : p));
+        antdMessage.error(`Lỗi khi tìm email ${currentEmail}: ${error.message || 'Lỗi không xác định'}`);
+      }
+    } finally {
+      setIsLookingUpEmail(false);
+    }
+  };
+
+  const handleRemoveParticipant = (email: string) => {
+    setParticipants(prev => prev.filter(p => p.email !== email));
   };
 
   return (
     <Modal
       title="Thêm dự án mới"
       open={visible}
-      onCancel={handleModalClose} // Use wrapper for reset logic
+      onCancel={handleModalClose}
       footer={null}
-      destroyOnClose // Recommended to ensure clean state on reopen
-      forceRender // May help ensure form instance is ready, especially with conditional fields
+      destroyOnClose
+      forceRender
     >
       <Form
         form={form}
         layout="vertical"
         onFinish={handleFinish}
-        // Initial values are set via useEffect
       >
-        {/* --- Form Items --- */}
         <Form.Item name="name" label="Tên dự án" rules={[{ required: true, message: "Bắt buộc" }]}>
           <Input />
         </Form.Item>
@@ -147,7 +175,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onS
                 const startDate = getFieldValue('startDate');
                 if (!value || !startDate) return Promise.resolve();
                 if (!value.isValid || !startDate.isValid || !value.isValid() || !startDate.isValid()) {
-                    return Promise.reject(new Error('Ngày không hợp lệ'));
+                  return Promise.reject(new Error('Ngày không hợp lệ'));
                 }
                 if (value.isBefore(startDate)) {
                   return Promise.reject(new Error('Ngày kết thúc phải sau hoặc bằng ngày bắt đầu'));
@@ -178,7 +206,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onS
             label="Số giờ ước tính"
             rules={[
               {
-                required: selectedType !== "FIXED_PRICE", // Rule is active only when field is visible
+                required: selectedType !== "FIXED_PRICE",
                 message: 'Vui lòng nhập số giờ ước tính',
               },
               { type: 'number', min: 0, message: 'Số giờ phải là số không âm' },
@@ -187,38 +215,47 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onS
             <InputNumber style={{ width: "100%" }} min={0} />
           </Form.Item>
         )}
-        <Form.Item
-          label="Email client"
-          name="clientEmail"
-          rules={[
-            { required: true, message: "Vui lòng nhập email client" },
-            { type: 'email', message: 'Email không đúng định dạng' }
-            // Custom validation errors are set via form.setFields in useClientLookup
-          ]}
-          help={foundClientId && !form.getFieldError('clientEmail').length ? (
-            <span style={{ color: "green" }}>Đã tìm thấy client ID: {foundClientId}</span>
-          ) : null}
-          validateStatus={form.getFieldError('clientEmail').length ? 'error' : ''} // Reflect error status set by hook
-          hasFeedback={clientLoading} // Show loading indicator as feedback icon
-        >
-          <Input
-            placeholder="Nhập email client"
-            onBlur={handleEmailBlur}
-            disabled={clientLoading}
-            // Suffix is handled by hasFeedback + validateStatus now
-            // suffix={clientLoading ? <Spin size="small" /> : null}
-            onChange={() => {
-                // Reset client lookup state if user manually edits email after lookup
-                if (foundClientId) {
-                    resetClientLookup();
-                    form.setFieldsValue({ clientId: null });
+        <Form.Item label="Người tham gia dự án">
+          <div style={{ display: "flex", marginBottom: 8 }}>
+            <Input
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="Nhập email người tham gia"
+              style={{ flex: 1, marginRight: 8 }}
+            />
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleAddSingleParticipant}
+              loading={isLookingUpEmail}
+            >
+              Thêm
+            </Button>
+          </div>
+          <div>
+            {participants.map(p => (
+              <Tag
+                key={p.email}
+                closable
+                onClose={() => handleRemoveParticipant(p.email)}
+                color={
+                  p.status === 'found' ? 'success' :
+                  p.status === 'not_found' ? 'error' :
+                  p.status === 'loading' ? 'processing' :
+                  'default'
                 }
-            }}
-          />
-        </Form.Item>
-        {/* Hidden field to store clientId set by the hook */}
-        <Form.Item name="clientId" hidden>
-          <Input type="hidden" />
+                style={{ marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 8px', minWidth: '150px' }}
+              >
+                <span style={{ marginRight: 'auto' }}>
+                  {p.email}
+                  {p.status === 'found' && ` (ID: ${p.id})`}
+                </span>
+                {p.status === 'loading' && <Spin size="small" style={{ marginLeft: 8 }} />}
+                {p.status === 'not_found' && <span style={{ marginLeft: 8, color: '#ff4d4f' }}>(Không tìm thấy)</span>}
+                {p.status === 'error' && <span style={{ marginLeft: 8, color: '#ff4d4f' }}>(Lỗi)</span>}
+              </Tag>
+            ))}
+          </div>
         </Form.Item>
         <Form.Item style={{ marginTop: "20px" }}>
           <Button type="primary" htmlType="submit" loading={submitting} block>
