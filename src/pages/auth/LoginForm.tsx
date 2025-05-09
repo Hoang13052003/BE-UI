@@ -50,9 +50,11 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
       console.log("Login data:", data);
 
       const accessToken = data.jwt;
+      const tokenRefresh = data.jwtRefreshToken;
       // Gọi hàm xử lý login từ props
       if(accessToken) {
         localStorage.setItem('token', accessToken);
+        localStorage.setItem('tokenRefresh', tokenRefresh);
         await props.handleLogin();
       }
       else {
@@ -88,8 +90,8 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
 
   const formik = useFormik<LoginFormValues>({
     initialValues: {
-      email: "nguyenvana123@example.com",
-      password: "220203",
+      email: "koten686868@gmail.com",
+      password: "123456",
     },
     validationSchema,
     onSubmit: handleSubmit,

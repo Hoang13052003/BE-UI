@@ -89,7 +89,7 @@ const TodoList: React.FC = () => {
     },
   ];
 
-  const [todoItems, setTodoItems] = useState<TodoItem[]>(initialData);
+  const [todoItems] = useState<TodoItem[]>(initialData);
 
   const handleSearch = (value: string) => {
     setSearchText(value);

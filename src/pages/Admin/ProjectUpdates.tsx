@@ -91,7 +91,7 @@ const ProjectUpdates: React.FC = () => {
       }
     } catch (err) {
       setError("Failed to delete project. Please try again later.");
-      message.error("Failed to delete project.");
+      message.error("Failed to delete project: " + err);
     } finally {
       setDeletingId(null);
     }
