@@ -10,7 +10,8 @@ import {
   Spin,
   Alert,
   message,
-  Tooltip
+  Tooltip,
+  Col // Thêm Col nếu chưa có
 } from 'antd';
 import {
   EditOutlined,
@@ -27,7 +28,7 @@ import { Project } from '../../types/project';
 import AddProjectModal from '../../components/Admin/AddProjectModal';
 import AddMilestoneModal from '../../components/Admin/AddMilestoneModal';
 import MilestoneDetailsDisplay from '../../components/Admin/MilestoneDetailsDisplay';
-//import EditMilestoneModal from '../../components/Admin/EditMilestoneModal';
+import EditMilestoneModal from '../../components/Admin/EditMilestoneModal'; // Bỏ comment dòng này
 
 const { Text, Title } = Typography;
 
@@ -40,8 +41,13 @@ const ProjectUpdates: React.FC = () => {
   const [isAddMilestoneModalVisible, setIsAddMilestoneModalVisible] = useState<boolean>(false);
   const [selectedProjectIdForMilestone, setSelectedProjectIdForMilestone] = useState<number | null>(null);
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
+  
+  // States cho EditMilestoneModal
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
   const [isEditMilestoneModalVisible, setIsEditMilestoneModalVisible] = useState(false);
+  const [editingMilestoneProjectId, setEditingMilestoneProjectId] = useState<number | null>(null); // ProjectId của milestone đang edit
+
+  const [currentMilestoneRefreshCallback, setCurrentMilestoneRefreshCallback] = useState<(() => void) | null>(null);
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -63,18 +69,14 @@ const ProjectUpdates: React.FC = () => {
 
   const getStatusColor = (status: Project['status']) => {
     switch (status) {
-      case 'COMPLETED':
+      case 'NEW':
+        return 'cyan'; 
+      case 'PENDING':
+        return 'gold'; 
+      case 'PROGRESS':
+        return 'blue'; 
+      case 'CLOSED':
         return 'green';
-      case 'IN_PROGRESS':
-        return 'blue';
-      case 'PLANNING':
-        return 'processing';
-      case 'ON_HOLD':
-        return 'warning';
-      case 'DELAYED':
-        return 'orange';
-      case 'CANCELLED':
-        return 'red';
       default:
         return 'default';
     }
@@ -87,7 +89,7 @@ const ProjectUpdates: React.FC = () => {
       setProjects(prev => prev.filter(project => project.id !== id));
       message.success('Project deleted successfully!');
       if (expandedProjectId === id) {
-        setExpandedProjectId(null);
+        setExpandedProjectId(null); // Collapse if the deleted project was expanded
       }
     } catch (err) {
       setError("Failed to delete project. Please try again later.");
@@ -111,40 +113,58 @@ const ProjectUpdates: React.FC = () => {
     fetchProjects();
   };
 
-  const handleAddMilestoneClick = (projectId: number) => {
+  const handleAddMilestoneClick = (projectId: number, refreshCallback?: () => void) => {
     setSelectedProjectIdForMilestone(projectId);
+    if (refreshCallback) {
+      setCurrentMilestoneRefreshCallback(() => refreshCallback);
+    }
     setIsAddMilestoneModalVisible(true);
   };
 
   const handleMilestoneModalClose = () => {
     setIsAddMilestoneModalVisible(false);
     setSelectedProjectIdForMilestone(null);
+    setCurrentMilestoneRefreshCallback(null);
   };
 
   const handleMilestoneSuccess = () => {
     setIsAddMilestoneModalVisible(false);
     setSelectedProjectIdForMilestone(null);
     message.success('Milestone added successfully!');
-    if (expandedProjectId) {
-      // Logic để refresh MilestoneDetailsDisplay nếu cần
+    if (currentMilestoneRefreshCallback) {
+      currentMilestoneRefreshCallback();
+      setCurrentMilestoneRefreshCallback(null);
     }
   };
 
-  const handleEditMilestone = (milestoneId: number) => {
+  // Hàm được gọi khi nhấn nút Edit trong MilestoneDetailsDisplay
+  const handleEditMilestone = (milestoneId: number, projectId: number, refreshCallback?: () => void) => {
     setSelectedMilestoneId(milestoneId);
+    setEditingMilestoneProjectId(projectId); // Lưu projectId của milestone đang edit
+    if (refreshCallback) {
+        setCurrentMilestoneRefreshCallback(() => refreshCallback);
+    }
     setIsEditMilestoneModalVisible(true);
   };
 
+  // Hàm đóng EditMilestoneModal
   const handleEditMilestoneModalClose = () => {
     setIsEditMilestoneModalVisible(false);
     setSelectedMilestoneId(null);
+    setEditingMilestoneProjectId(null);
+    setCurrentMilestoneRefreshCallback(null);
   };
 
+  // Hàm xử lý khi EditMilestoneModal thành công
   const handleEditMilestoneSuccess = () => {
     setIsEditMilestoneModalVisible(false);
     setSelectedMilestoneId(null);
+    setEditingMilestoneProjectId(null);
     message.success('Milestone updated successfully!');
-    fetchProjects();
+    if (currentMilestoneRefreshCallback) {
+      currentMilestoneRefreshCallback(); // Gọi callback để refresh list milestone
+      setCurrentMilestoneRefreshCallback(null);
+    }
   };
 
   const toggleMilestoneDetail = (projectId: number) => {
@@ -154,7 +174,9 @@ const ProjectUpdates: React.FC = () => {
   if (loading && projects.length === 0) {
     return (
       <Card>
-        <Title level={5}>Project Updates</Title>
+        <Row justify="space-between" align="middle">
+          <Col><Title level={5} style={{ margin: 0 }}>Project Updates</Title></Col>
+        </Row>
         <div style={{ textAlign: 'center', padding: '50px' }}>
           <Spin size="large" />
         </div>
@@ -164,7 +186,9 @@ const ProjectUpdates: React.FC = () => {
   if (error && projects.length === 0) {
     return (
       <Card>
-        <Title level={5}>Project Updates</Title>
+         <Row justify="space-between" align="middle">
+          <Col><Title level={5} style={{ margin: 0 }}>Project Updates</Title></Col>
+        </Row>
         <Alert message="Error" description={error} type="error" showIcon />
       </Card>
     );
@@ -173,18 +197,22 @@ const ProjectUpdates: React.FC = () => {
   return (
     <>
     <Card
-      title={<Title level={5}>Project Updates</Title>}
-      extra={
-        <Button
-          type="primary"
-          icon={<PlusOutlined/>}
-          onClick={handleAddProjectModalOpen}
-        >
-            Add Project
-        </Button>
+      title={
+        <Row justify="space-between" align="middle" style={{ width: '100%' }}>
+          <Col><Title level={5} style={{ margin: 0 }}>Project Updates</Title></Col>
+          <Col>
+            <Button
+              type="primary"
+              icon={<PlusOutlined/>}
+              onClick={handleAddProjectModalOpen}
+            >
+                Add Project
+            </Button>
+          </Col>
+        </Row>
       }
     >
-    {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+    {error && !loading && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
       <List
         loading={loading}
         itemLayout="vertical"
@@ -207,6 +235,7 @@ const ProjectUpdates: React.FC = () => {
                   key="edit-project"
                   type="text"
                   icon={<EditOutlined />}
+                  // onClick={() => handleEditProject(item.id)} // Cần hàm handleEditProject nếu muốn edit project
                 > Edit Project </Button>,
                 item.type === 'FIXED_PRICE' && (
                   <Button
@@ -223,6 +252,7 @@ const ProjectUpdates: React.FC = () => {
                     key="edit-timelog"
                     type="text"
                     icon={<ClockCircleOutlined />}
+                    // onClick={() => handleEditTimelog(item.id)} // Cần hàm handleEditTimelog
                   > Edit Timelog </Button>
                 ),
                 <Button
@@ -279,8 +309,9 @@ const ProjectUpdates: React.FC = () => {
                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
                   <MilestoneDetailsDisplay
                     projectId={item.id}
-                    onAddMilestone={() => handleAddMilestoneClick(item.id)}
-                    onEditMilestone={handleEditMilestone}
+                    onAddMilestone={(refreshCallback) => handleAddMilestoneClick(item.id, refreshCallback)}
+                    // Truyền hàm handleEditMilestone đã được cập nhật
+                    onEditMilestone={(milestoneId, _, refreshCallback) => handleEditMilestone(milestoneId, item.id, refreshCallback)}
                   />
                 </div>
               )}
@@ -305,15 +336,16 @@ const ProjectUpdates: React.FC = () => {
       />
     )}
 
-    {/* {selectedMilestoneId && (
+    {/* Edit Milestone Modal */}
+    {selectedMilestoneId !== null && editingMilestoneProjectId !== null && (
       <EditMilestoneModal
         visible={isEditMilestoneModalVisible}
         milestoneId={selectedMilestoneId}
-        projectId={expandedProjectId}
+        projectId={editingMilestoneProjectId} // Truyền projectId của milestone đang edit
         onClose={handleEditMilestoneModalClose}
         onSuccess={handleEditMilestoneSuccess}
       />
-    )} */}
+    )}
     </>
   );
 };

@@ -1,18 +1,25 @@
 export type MilestoneStatus =
-  | 'PENDING'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'DELAYED'
-  | 'CANCELLED';
+  | 'NEW'
+  | 'SENT'
+  | 'REVIEWED';
 
 export interface Milestone {
   id: number;
-  title: string | null;
+  name: string | null;
   description: string | null;
   startDate: string | null;
-  endDate: string | null; 
+  deadlineDate: string | null; 
   status: MilestoneStatus | null;
   completionDate: string | null; 
   notes: string | null;
+  completed?: boolean;
 }
 
+export interface MilestoneUpdateRequestData {
+  name?: string;
+  description?: string;
+  startDate?: string | null;
+  deadlineDate?: string | null;
+  status?: MilestoneStatus;
+  notes?: string;
+}
