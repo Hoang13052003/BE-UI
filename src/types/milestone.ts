@@ -5,7 +5,6 @@ export interface Milestone {
   name: string | null;
   description: string | null;
   startDate: string | null;
-  endDate: string | null;
   deadlineDate: string | null;
   status: MilestoneStatus | null;
   completionDate: string | null;
