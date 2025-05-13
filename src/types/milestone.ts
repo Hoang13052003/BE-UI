@@ -16,6 +16,8 @@ export interface MilestoneUpdateRequestData {
   description?: string;
   startDate?: string | null;
   deadlineDate?: string | null;
+  completionDate?: string | null;
   status?: MilestoneStatus;
   notes?: string;
+
 }

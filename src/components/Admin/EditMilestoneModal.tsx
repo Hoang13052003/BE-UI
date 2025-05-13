@@ -68,6 +68,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
         description: values.description,
         startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : null,
         deadlineDate: values.deadlineDate ? values.deadlineDate.format('YYYY-MM-DD') : null,
+        completionDate: values.completionDate ? values.completionDate.format('YYYY-MM-DD') : null,
         status: values.status,
         notes: values.notes,
       };
@@ -135,7 +136,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
           <Form.Item name="deadlineDate" label="Deadline Date">
             <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
           </Form.Item>
-          <Form.Item name="completionDate" label="Completion Date (Display Only)">
+          <Form.Item name="completionDate" label="Completion Date">
             <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
           </Form.Item>
           <Form.Item

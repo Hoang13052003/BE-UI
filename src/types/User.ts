@@ -23,3 +23,8 @@ export interface UpdateUserPayload {
   role?: "ADMIN" | "USER";
   // projects?: ProjectName[];
 }
+
+export interface UserIdAndEmailResponse {
+  id: number;
+  email: string;
+}

@@ -85,8 +85,8 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
 
   const formik = useFormik<LoginFormValues>({
     initialValues: {
-      email: "koten686868@gmail.com",
-      password: "123456",
+      email: "nguyenvana123@example.com",
+      password: "220203",
     },
     validationSchema,
     onSubmit: handleSubmit,

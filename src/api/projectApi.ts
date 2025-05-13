@@ -90,13 +90,6 @@ export const getMilestoneStatusesApi = async (): Promise<string[]> => {
   const { data } = await axiosClient.get("/api/enum/milestone-statuses");
   return data;
 };
-
-export const getClientIdByEmailApi = async (email: string): Promise<number> => {
-  const { data } = await axiosClient.get(
-    `/api/private/user/id-by-email?email=${encodeURIComponent(email)}`
-  );
-  return data;
-};
 export interface MilestoneRequest {
   name: string;
   description: string;
