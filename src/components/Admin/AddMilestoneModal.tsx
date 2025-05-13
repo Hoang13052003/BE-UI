@@ -34,11 +34,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
 
   const loadMilestoneStatuses = async () => {
     try {
-      // Assuming getMilestoneStatusesApi exists and works as intended
-      // const statuses = await getMilestoneStatusesApi();
-      // setStatusOptions(statuses);
-      // Placeholder if API is not ready:
-      setStatusOptions(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'DELAYED', 'CANCELLED']);
+      setStatusOptions(['NEW', 'SENT', 'REVIEWED']);
     } catch (error) {
       console.error('Failed to load milestone statuses:', error);
       message.error('Failed to load milestone statuses');
@@ -150,12 +146,12 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
           name="status"
           label="Status"
           rules={[{ required: true, message: 'Please select status' }]}
-          initialValue="PENDING" // Set a default status
+          initialValue="NEW" // Set a default status
         >
           <Select placeholder="Select status">
             {statusOptions.map(status => (
               <Select.Option key={status} value={status}>
-                {status}
+                {status.replace('_', ' ')}
               </Select.Option>
             ))}
           </Select>

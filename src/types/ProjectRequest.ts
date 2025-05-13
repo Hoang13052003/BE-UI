@@ -3,7 +3,7 @@ export interface ProjectRequest {
   name: string;
   description: string;
   type: "FIXED_PRICE" | "LABOR"; // Updated enum values
-  status: "PLANNING" | "IN_PROGRESS" | "COMPLETED" | "DELAYED" | "CANCELLED" | "ON_HOLD"; // Updated enum values
+  status: "NEW" | "PENDING" | "PROGRESS" | "CLOSED"; // Updated enum values
   startDate: string; // Format: "YYYY-MM-DD"
   plannedEndDate: string; // Format: "YYYY-MM-DD"
   totalBudget: number;

@@ -9,7 +9,7 @@ export interface Project {
   name: string;
   description: string;
   type: "FIXED_PRICE" | "LABOR"; // Updated enum values
-  status: "NEW" | "PENDING" | "PROCCESS" | "CLOSED"; // Updated enum values
+  status: "NEW" | "PENDING" | "PROGRESS" | "CLOSED"; // Updated enum values
   startDate: string; // Format: "YYYY-MM-DD"
   plannedEndDate: string; // Format: "YYYY-MM-DD"
   actualEndDate: string | null; // Format: "YYYY-MM-DD" (can be null)
