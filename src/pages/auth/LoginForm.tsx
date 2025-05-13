@@ -9,14 +9,13 @@ import image from "../../assets/Image-login-page.svg";
 import * as yup from "yup";
 import { useFormik } from "formik";
 import { forgotPasswordApi, loginApi } from "../../api/authApi";
-import { openErrorNotification } from "../../components/ErrorNotification";
+import { useTranslation } from "react-i18next";
 
 const validationSchema = yup.object({
   email: yup
     .string()
-    .required("Email or username is required")
+    .required("Email is required")
     .test("is-valid", "Enter a valid email or username", (value) => {
-      // Check if it's a valid email or just a username (at least 3 chars)
       const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
       return !!value && (emailRegex.test(value) || value.length >= 3);
     }),
@@ -38,21 +37,20 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = (props) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
-  // const [snackBarMessage, setSnackBarMessage] = useState("");
   const handleSubmit = async (values: LoginFormValues) => {
     try {
       setLoading(true);
       const { email, password } = values;
-      openErrorNotification("Login failed. Sai Pass or MK.");
       const data = await loginApi(email, password);
   
-      console.log("Login data:", data);
-
       const accessToken = data.jwt;
+      const tokenRefresh = data.jwtRefreshToken;
       // Gọi hàm xử lý login từ props
       if(accessToken) {
         localStorage.setItem('token', accessToken);
+        localStorage.setItem('tokenRefresh', tokenRefresh);
         await props.handleLogin();
       }
       else {
@@ -83,13 +81,12 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
     } catch (error) {
       console.error("Error sending password reset link:", error);
     }
-
   }
 
   const formik = useFormik<LoginFormValues>({
     initialValues: {
-      email: "nguyenvana123@example.com",
-      password: "220203",
+      email: "koten686868@gmail.com",
+      password: "123456",
     },
     validationSchema,
     onSubmit: handleSubmit,
@@ -108,10 +105,10 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
 
         <div className="login-form-container">
           <h1 className="welcome-text">
-            Welcome To <span className="brand-name">ProgressHub</span>
+            {t('common.welcome')} <span className="brand-name">{t('common.appName')}</span>
           </h1>
           <p className="login-description">
-            Please sign-in to your account and start the adventure
+            {t('auth.login.description')}
           </p>
 
           <Form
@@ -133,7 +130,7 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
               <Input
                 id="email"
                 name="email"
-                placeholder="Enter Your Email"
+                placeholder={t('auth.input.email')}
                 size="large"
                 value={formik.values.email}
                 onChange={formik.handleChange}
@@ -142,7 +139,7 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
             </Form.Item>
 
             <Form.Item
-              label="Password"
+              label={t('auth.password')}
               validateStatus={
                 formik.touched.password && formik.errors.password ? "error" : ""
               }
@@ -151,7 +148,7 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
               <Input.Password
                 id="password"
                 name="password"
-                placeholder="Enter Your Password"
+                placeholder={t('auth.input.password')}
                 size="large"
                 value={formik.values.password}
                 onChange={formik.handleChange}
@@ -168,13 +165,13 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
                 htmlType="submit"
                 loading={loading}
               >
-                Sign In
+                {t('auth.login.title')}
               </Button>
             </Form.Item>
 
             <div className="account-options">
               <p>
-                New on our platform? <a href="/register">Create an account</a>
+                {t('auth.login.new')} <a href="/register">{t('auth.login.register')}</a>
               </p>
               {/* <p className="or-divider">or</p>
 
@@ -198,8 +195,8 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
             </div>
 
             <div className="forgot-password">
-              <a href="#" onClick={() => handleForgotPassword(formik.values)}>
-                Forgot Password?
+              <a href="" onClick={() => handleForgotPassword(formik.values)}>
+                {t('auth.login.forgotPassword')}
               </a>
             </div>
           </Form>

@@ -22,6 +22,7 @@ const Logout = () => {
       // Nếu logout thành công, xóa token và chuyển hướng về trang đăng nhập
       logout();
       localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
   
       alert('Đăng xuất thành công!');
       navigate('/login', { replace: true });

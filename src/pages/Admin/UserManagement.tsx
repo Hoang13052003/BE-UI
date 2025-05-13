@@ -1,5 +1,5 @@
 // UserManagement.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   Row,
@@ -12,7 +12,9 @@ import {
   Space,
   Avatar,
   Select,
-  Statistic
+  Statistic,
+  message,
+  Modal,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -22,196 +24,316 @@ import {
   PlusOutlined,
   SearchOutlined
 } from '@ant-design/icons';
-
+import { filterUsers } from '../../api/userApi';
+import { User } from '../../types/User';
+import AddUser from '../../components/Admin/user/AddUser';
+import UpdateUser from '../../components/Admin/user/UpdateUser';
+import DeleteUser from '../../components/Admin/user/DeleteUser';
 const { Title, Text } = Typography;
 
-interface User {
-  key: string;
-  name: string;
-  email: string;
-  role: string;
-  projects: string[];
-  status: 'Active' | 'Inactive';
-  lastLogin: string;
-}
+// Role options defined as constants
+const ROLE_OPTIONS = [
+  { value: 'ALL', label: 'All Roles' },
+  { value: 'ADMIN', label: 'Administrator' },
+  { value: 'USER', label: 'Regular User' }
+];
 
 const UserManagement: React.FC = () => {
-  const users: User[] = [
-    {
-      key: '1',
-      name: 'John Smith',
-      email: 'john@example.com',
-      role: 'Client',
-      projects: ['E-commerce Platform'],
-      status: 'Active',
-      lastLogin: '2024-01-20 14:30'
-    },
-    {
-      key: '2',
-      name: 'Sarah Johnson',
-      email: 'sarah@example.com',
-      role: 'Client',
-      projects: ['Mobile App', 'Website Redesign'],
-      status: 'Inactive',
-      lastLogin: '2024-01-15 09:45'
-    },
-    {
-      key: '3',
-      name: 'Michael Brown',
-      email: 'michael@example.com',
-      role: 'Client',
-      projects: ['CRM System'],
-      status: 'Active',
-      lastLogin: '2024-01-19 16:20'
-    }
-  ];
+  // State management
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [searchText, setSearchText] = useState<string>('');
+  const [totalCount, setTotalCount] = useState<number>(0);
+  
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [modalContent, setModalContent] = useState<'add' | 'update' | 'delete' | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
+  // Stats counters
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [activeUsers, setActiveUsers] = useState<number>(0);
+  const [inactiveUsers, setInactiveUsers] = useState<number>(0);
+  
+  // Fetch users on component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Handler for modal close and refresh
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setModalContent(null);
+    setSelectedUserId(null);
+    fetchUsers();
+  };
+
+  // Fetch users from API
+  const fetchUsers = async (page = 0, pageSize = 10, currentRole?: string) => {
+    try {
+      setLoading(true);
+      
+      const criteria = {
+        fullName: searchText || undefined,
+        role: currentRole !== 'ALL' ? currentRole : undefined,
+        email: searchText || undefined,
+      };
+
+      const response = await filterUsers(criteria, page, pageSize);
+      
+      const formattedUsers = response.users.map((user:User) => ({
+        ...user,
+        key: user.id.toString()
+      }));
+      
+      setUsers(formattedUsers);
+      setTotalCount(Number(response.totalCount));
+      
+      // Update statistics
+      setTotalUsers(Number(response.totalCount));
+      const active = formattedUsers.filter((user: User) => user.isActive).length;
+      setActiveUsers(active);
+      setInactiveUsers(formattedUsers.length - active);
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      message.error('Failed to load users');
+      setLoading(false);
+    }
+  };
+  
+  // Handler for search input change
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchText(e.target.value);
+  };
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      fetchUsers(0, 10);
+    }
+  };
+  // Handler for role filter change
+  const handleRoleFilter = async (value:string) => {
+    fetchUsers(0, 10, value);
+  };
+  
+  // Define table columns
   const columns: ColumnsType<User> = [
     {
       title: 'User',
       key: 'user',
-      render: (_: undefined, record: User) => (
+      width: '20%',
+      render: (_, record) => (
         <Space>
-          <Avatar icon={<UserOutlined />} />
+          <Avatar 
+            src={record.image} 
+            icon={!record.image && <UserOutlined />} 
+            className="bg-blue-500"
+          />
           <div>
-            <div>{record.name}</div>
-            <Text type="secondary" style={{ fontSize: '12px' }}>{record.email}</Text>
+            <div className="font-medium">{record.fullName}</div>
+            <Text type="secondary" className="text-xs">{record.email}</Text>
           </div>
         </Space>
       ),
     },
     {
       title: 'Role',
-      dataIndex: 'role',
       key: 'role',
+      width: '6%',
+      render: (_, record) => (
+        <Tag color={record.role === 'ADMIN' ? 'purple' : 'blue'}>
+          {record.role || 'N/A'}
+        </Tag>
+      )
     },
     {
       title: 'Projects',
       key: 'projects',
-      render: (_: undefined, record: User) => (
-        <Space wrap>
-          {record.projects.map((project) => (
-            <Tag key={project} color="blue">{project}</Tag>
-          ))}
-        </Space>
+      width: '30%',
+      render: (_, record) => (
+        record.projects.map((project, index) => (
+          <Tag key={index} color="geekblue" className="mr-1">
+            {project.name}
+          </Tag>
+        ))
       ),
     },
     {
-      title: 'Status',
-      key: 'status',
-      dataIndex: 'status',
-      render: (status: 'Active' | 'Inactive') => (
-        <Tag color={status === 'Active' ? 'success' : 'error'}>
-          {status}
-        </Tag>
-      ),
+      title: 'Note',
+      dataIndex: 'note',
+      key: 'note',
+      ellipsis: true,
+      width: '30%',
     },
-    {
-      title: 'Last Login',
-      dataIndex: 'lastLogin',
-      key: 'lastLogin',
-    },
+    
     {
       title: 'Actions',
       key: 'actions',
-      render: () => (
+      width: '14%',
+      render: (_, record) => (
         <Space>
           <Button 
-            type="text" 
             icon={<EditOutlined />}
+            onClick={() => handleEditUser(record.id)}
           />
           <Button 
-            type="text" 
             icon={<DeleteOutlined />}
             danger
+            onClick={() => handleDeleteUser(record.id)}
           />
         </Space>
       ),
     },
   ];
+  
+  // Handler for edit user button
+  const handleEditUser = (userId: number) => {
+    setSelectedUserId(userId);
+    setModalContent('update');
+    setIsModalVisible(true);
+  };
+  
+  // Handler for delete user button
+  const handleDeleteUser = (userId: number) => {
+    setSelectedUserId(userId);
+    setModalContent('delete');
+    setIsModalVisible(true);
+  };
+  
+  // Handler for add user button
+  const handleAddUser = () => {
+    setModalContent('add');
+    setIsModalVisible(true);
+  };
 
   return (
-    <Card>
-        <div style={{ marginBottom: 24 }}>
-          <Title level={5}>Users</Title>
-          <Text type="secondary">Manage user accounts and permissions</Text>
-        </div>
+    <Card className="shadow-sm backgroud-default">
+      <div className="mb-6">
+        <Title level={5}>Users</Title>
+        <Text type="secondary">Manage user accounts and permissions</Text>
+      </div>
 
-        {/* Stats Cards */}
-        <Row gutter={24}>
-          <Col span={6}>
-            <Statistic 
-              title="Total Users"
-              value={24}
-              valueStyle={{ color: '#1677ff' }}
+      {/* Stats Cards */}
+      <Row gutter={24} className="mb-8">
+        <Col span={6}>
+          <Statistic 
+            title="Total Users"
+            value={totalUsers}
+            valueStyle={{ color: '#1677ff' }}
+          />
+        </Col>
+        <Col span={6}>
+          <Statistic
+            title="Active Users"
+            value={activeUsers}
+            valueStyle={{ color: '#52c41a' }}
+          />
+        </Col>
+        <Col span={6}>
+          <Statistic
+            title="Inactive Users"
+            value={inactiveUsers}
+            valueStyle={{ color: '#ff4d4f' }}
+          />
+        </Col>
+        <Col span={6}>
+          <Statistic
+            title="New This Month"
+            value={inactiveUsers}
+            valueStyle={{ color: '#1677ff' }}
+          />
+        </Col>
+      </Row>
+
+      {/* User List */}
+      <div className="mt-8">
+        <Title level={5}>User List</Title>
+        
+        {/* Search and Filter */}
+        <Row justify="space-between" className="mb-4">
+          <Col>
+            <Input
+              placeholder="Search users..."
+              prefix={<SearchOutlined className="text-gray-400" />}
+              style={{ width: 250 }}
+              value={searchText}
+              onChange={handleSearch}
+              onKeyPress={handleSearchKeyPress}
+              className="rounded-md"
             />
           </Col>
-          <Col span={6}>
-            <Statistic
-              title="Active Users"
-              value={18}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="Inactive Users"
-              value={6}
-              valueStyle={{ color: '#ff4d4f' }}
-            />
-          </Col>
-          <Col span={6}>
-            <Statistic
-              title="New This Month"
-              value={5}
-              valueStyle={{ color: '#1677ff' }}
-            />
+          <Col>
+            <Space>
+              <Select 
+              style={{ width: 130 }}
+              defaultValue={'ALL'}
+              onChange={(value) => handleRoleFilter(value)}
+              options={ROLE_OPTIONS.map(option => ({
+                value: option.value,
+                label: option.label
+              }))}
+              className="rounded-md"
+              />
+              <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleAddUser}
+              className="bg-blue-600 hover:bg-blue-700 rounded-md"
+              >
+              Add User
+              </Button>
+            </Space>
           </Col>
         </Row>
 
-        {/* User List */}
-        <div style={{ marginTop: 32 }}>
-          <Title level={5}>User List</Title>
+        {/* Users Table */}
+        <Table 
           
-          {/* Search and Filter */}
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Input
-                placeholder="Search users..."
-                prefix={<SearchOutlined />}
-                style={{ width: 250 }}
-              />
-            </Col>
-            <Col>
-              <Space>
-                <Select 
-                  defaultValue="All Roles"
-                  style={{ width: 120 }}
-                  options={[
-                    { value: 'all', label: 'All Roles' },
-                    { value: 'admin', label: 'Admin' },
-                    { value: 'client', label: 'Client' },
-                  ]}
-                />
-                <Button type="primary" icon={<PlusOutlined />}>
-                  Add User
-                </Button>
-              </Space>
-            </Col>
-          </Row>
+          columns={columns} 
+          dataSource={users}
+          rootClassName="backgroud-default"
+          loading={loading}
+          pagination={{ 
+            total: totalCount,
+            showSizeChanger: true,
+            showTotal: (total) => `Total ${total} users`,
+            onChange: (page, pageSize) => {
+              // Convert antd's 1-based page number to 0-based for the API
+              fetchUsers(page - 1, pageSize);
+            }
+          }}
+          className="mt-2 backgroud-default"
+          rowClassName="hover:bg-gray-50"
+        />
+      </div>
 
-          {/* Users Table */}
-          <Table 
-            columns={columns} 
-            dataSource={users}
-            pagination={{ 
-              total: 24,
-              pageSize: 10,
-              showTotal: (total) => `Total ${total} users`
-            }}
-          />
-        </div>
-      </Card>
+      {/* Modals */}
+      <Modal
+        title={
+          modalContent === 'add'
+            ? 'Add New User'
+            : modalContent === 'update'
+            ? 'Update User'
+            : modalContent === 'delete'
+            ? 'Delete User'
+            : ''
+        }
+        open={isModalVisible}
+        onCancel={handleModalClose}
+        footer={null}
+        width={modalContent === 'delete' ? 400 : 600}
+      >
+        {modalContent === 'add' && (
+          <AddUser onSuccess={handleModalClose} />
+        )}
+        {modalContent === 'update' && selectedUserId && (
+          <UpdateUser userId={selectedUserId} onSuccess={handleModalClose} />
+        )}
+        {modalContent === 'delete' && selectedUserId && (
+          <DeleteUser userId={selectedUserId} onSuccess={handleModalClose} />
+        )}
+      </Modal>
+    </Card>
   );
 };
 

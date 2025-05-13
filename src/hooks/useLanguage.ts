@@ -1,7 +1,7 @@
-import { useTranslation } from 'react-i18next';
-import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
+import { useState, useCallback, useEffect } from "react";
 
-export type Language = 'en' | 'zh';
+export type Language = "en" | "vi";
 
 interface UseLanguageReturn {
   language: Language;
@@ -11,16 +11,21 @@ interface UseLanguageReturn {
 
 const useLanguage = (): UseLanguageReturn => {
   const { i18n, t } = useTranslation();
-  const [language, setLanguage] = useState<Language>(localStorage.getItem('i18nextLng') as Language || 'en');
+  const [language, setLanguage] = useState<Language>(
+    (localStorage.getItem("i18nextLng") as Language) || "en"
+  );
 
   useEffect(() => {
-    setLanguage((i18n.language as Language) || 'en');
+    setLanguage((i18n.language as Language) || "en");
   }, [i18n.language]);
 
-  const changeLanguage = useCallback((lang: Language) => {
-    i18n.changeLanguage(lang);
-    setLanguage(lang);
-  }, [i18n]);
+  const changeLanguage = useCallback(
+    (lang: Language) => {
+      i18n.changeLanguage(lang);
+      setLanguage(lang);
+    },
+    [i18n]
+  );
 
   return { language, changeLanguage, t };
 };

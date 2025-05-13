@@ -9,17 +9,17 @@ import DashboardClient from './pages/Client/DashboardClient';
 import DashboardAdmin from './pages/Admin/DashboardAdmin';
 // import HeroSection from './components/home/HeroSection';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
-import Dashboard from './pages/Admin/Dashboard';
 import UserManagement from './pages/Admin/UserManagement';
 import ProjectUpdates from './pages/Admin/ProjectUpdates';
 import Notifications from './pages/Admin/Notifications';
 import SystemSettings from './pages/Admin/SystemSettings';
-import Overview from './pages/Client/overview';
 import ProjectDetails from './pages/Client/ProjectDetails';
 import DocumentsPage from './pages/Client/DocumentsPage';
 import MessagesAndNotes from './pages/Client/MessagesAndNotes';
 import ProfileSettings from './pages/Client/ProfileSettings';
 import HomeIntroSection from './pages/HomeIntroSection';
+import OverviewAdmin from './pages/Admin/Overview';
+import Overview from './pages/Client/Overview';
 
 function App() {
   return (
@@ -39,7 +39,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/" element={<LayoutShare />} >
               <Route path="admin/" element={<DashboardAdmin />} >
-                <Route path="overview" element={<Dashboard />} />
+                <Route path="overview" element={<OverviewAdmin />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="updates" element={<ProjectUpdates />} />
                 <Route path="notifications" element={<Notifications />} />

@@ -4,8 +4,10 @@ import { Input, Button, Form } from "antd";
 import image from "../../assets/image-reset-password.svg";
 import { useFormik } from "formik";
 import { resetPasswordApi } from "../../api/authApi";
+import { useTranslation } from "react-i18next";
 
 const ResetPasswordPage: React.FC = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const resettoken = searchParams.get("token");
   const navigate = useNavigate();
@@ -70,10 +72,10 @@ const ResetPasswordPage: React.FC = () => {
 
         <div className="login-form-container">
           <h1 className="welcome-text">
-            Welcome back! 👋
+            {t('common.welcomeback')} 👋
           </h1>
           <p className="login-description">
-            Please sign-in to your account and start the adventure
+            {t('auth.forgotPassword.description')}
           </p>
 
           <Form
@@ -95,7 +97,7 @@ const ResetPasswordPage: React.FC = () => {
               <Input.Password
                 id="newPassword"
                 name="newPassword"
-                placeholder="Enter Your new password"
+                placeholder={t('auth.input.newPassword')}
                 size="large"
                 value={formik.values.newPassword}
                 onChange={formik.handleChange}
@@ -116,7 +118,7 @@ const ResetPasswordPage: React.FC = () => {
               <Input.Password
                 id="passwordConfirmation"
                 name="passwordConfirmation"
-                placeholder="Enter Your new password confirmation"
+                placeholder={t('auth.input.newPasswordConfirm')}
                 size="large"
                 value={formik.values.passwordConfirmation}
                 onChange={formik.handleChange}
@@ -132,13 +134,13 @@ const ResetPasswordPage: React.FC = () => {
                 htmlType="submit"
                 loading={loading}
               >
-                Reset Password
+                {t('auth.resetPassword')}
               </Button>
             </Form.Item>
 
             <div className="account-options">
               <p>
-                New on our platform? <a href="/login">Login now</a>
+                {t('auth.register.exist-account')} <a href="/login">{t('auth.login.title')}</a>
               </p>
               {/* <p className="or-divider">or</p>
 
