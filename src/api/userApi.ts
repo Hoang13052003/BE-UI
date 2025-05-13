@@ -1,5 +1,15 @@
 import { UpdateUserPayload, User } from "../types/User";
 import axiosClient from "./axiosClient";
+import { UserIdAndEmailResponse } from "../types/User";
+
+export interface UserSearchParams {
+  'searchTerm.contains'?: string;
+  'searchTerm.equals'?: string;
+  'searchTerm.in'?: string[];
+  page?: number;
+  size?: number;
+  sort?: string;
+}
 
 export const filterUsers = async (
   criteria: { fullName?: string; email?: string; role?: string },
@@ -77,4 +87,25 @@ export const resetPassword = (
 export const getUserInfoApi = async (): Promise<User> => {
   const { data } = await axiosClient.get("/api/private/user/info");
   return data;
+};
+
+export const searchUsersByEmailOrUsernameApi = async (
+  searchParams: UserSearchParams
+): Promise<{
+  users: UserIdAndEmailResponse[];
+  totalItems: number;
+}> => {
+  try {
+    const response = await axiosClient.get('/api/private/admin/user/search-id-email', {
+      params: searchParams
+    });
+    
+    return {
+      users: response.data,
+      totalItems: parseInt(response.headers['x-total-count'] || '0', 10)
+    };
+  } catch (error) {
+    console.error('[userApi.ts] Failed to search users by email or username', error);
+    throw error;
+  }
 };

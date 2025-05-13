@@ -1,9 +1,8 @@
 // filepath: d:\labsparkmind\BE-UI\src\components\Admin\MilestoneDetailsDisplay.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, Checkbox, message } from 'antd'; // Removed AntModal
-import type { CheckboxChangeEvent } from 'antd/es/checkbox';
-import { confirmAlert } from 'react-confirm-alert'; // Import
-import 'react-confirm-alert/src/react-confirm-alert.css'; // Import css (better to import globally in App.tsx or index.tsx)
+import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, message } from 'antd';
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
 import {
   CalendarOutlined,
   FlagOutlined,
@@ -11,18 +10,17 @@ import {
   ClockCircleOutlined,
   FileTextOutlined,
   PlusOutlined,
-  EditOutlined, // Vẫn cần nếu dùng ở đâu đó khác, hoặc có thể bỏ nếu ActionButton đã có
-  DeleteOutlined // Vẫn cần nếu dùng ở đâu đó khác, hoặc có thể bỏ nếu ActionButton đã có
+  EditOutlined,
+  DeleteOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons';
 import {
   getMilestonesByProjectIdApi,
-  deleteMilestoneApi,
-  updateMilestoneCompletionStatusApi,
-  isMilestoneCompletedApi // <<< ADD THIS IMPORT
+  deleteMilestoneApi
 } from '../../api/milestoneApi';
 import { Milestone, MilestoneStatus } from '../../types/milestone';
 import MilestoneItemActions from './MilestoneDetailsButton/MilestoneItemActions';
-import MilestoneInfo from './MilestoneDetailsDisplay/MilestoneInfo'; // Import component mới
+import MilestoneInfo from './MilestoneDetailsDisplay/MilestoneInfo';
 
 const { Text, Paragraph } = Typography;
 
@@ -36,7 +34,6 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingCompletionId, setUpdatingCompletionId] = useState<number | null>(null);
 
   const fetchMilestones = useCallback(async () => {
     if (!projectId) {
@@ -87,142 +84,29 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
           onClick: () => {}
         }
       ],
-      overlayClassName: "custom-overlay-class-name" // Optional: for custom styling
-    });
-  };
-
-  // Update the handleCompletionChange function to accept direct status instead of checkbox event
-  const handleCompletionChange = async (item: Milestone, targetCompletedStatus: boolean) => {
-    if (!item || typeof item.id === 'undefined') {
-      message.error("Milestone data is invalid.");
-      return;
-    }
-
-    setUpdatingCompletionId(item.id); // Indicate loading state early
-
-    let currentServerCompletedStatus: boolean;
-    try {
-      currentServerCompletedStatus = await isMilestoneCompletedApi(item.id);
-    } catch (err: any) {
-      message.error(err.response?.data?.message || "Failed to verify current milestone status. Please try again.");
-      console.error(`Failed to fetch isMilestoneCompleted for milestone ${item.id}:`, err);
-      setUpdatingCompletionId(null);
-      return;
-    }
-
-    // If local state is out of sync with server, update local state first
-    // This 'item.completed' will be the most up-to-date version before attempting the change.
-    let itemCompletedBeforeAttempt = item.completed;
-    if (item.completed !== currentServerCompletedStatus) {
-      setMilestones(prevMilestones =>
-        prevMilestones.map(m => (m.id === item.id ? { ...m, completed: currentServerCompletedStatus } : m))
-      );
-      itemCompletedBeforeAttempt = currentServerCompletedStatus; // Update our reference
-      // If after syncing, the target status is already met, no need to proceed with update
-      if (currentServerCompletedStatus === targetCompletedStatus) {
-        message.info(`Milestone is already ${targetCompletedStatus ? 'Done' : 'To Do'}. Refreshed status.`);
-        setUpdatingCompletionId(null);
-        return;
-      }
-    } else if (currentServerCompletedStatus === targetCompletedStatus) {
-      // Local state was in sync, and it's already the target state
-      message.info(`Milestone is already ${targetCompletedStatus ? 'Done' : 'To Do'}.`);
-      setUpdatingCompletionId(null);
-      return;
-    }
-
-    const actionText = targetCompletedStatus ? "mark as Done" : "mark as To Do";
-
-    confirmAlert({
-      title: `Confirm Action`,
-      message: `Are you sure you want to ${actionText} this milestone: "${item.name || 'Unnamed Milestone'}"?`,
-      buttons: [
-        {
-          label: 'Yes',
-          onClick: async () => {
-            console.log(`[HANDLE COMPLETION] User clicked Yes. Item ID: ${item.id}, Current item.completed: ${item.completed}, Target completed status: ${targetCompletedStatus}`);
-            console.log(`[HANDLE COMPLETION] itemCompletedBeforeAttempt: ${itemCompletedBeforeAttempt}`);
-
-            // 1. Optimistic UI Update: Change button state immediately
-            setMilestones(prevMilestones => {
-              const newMilestones = prevMilestones.map(m =>
-                m.id === item.id ? { ...m, completed: targetCompletedStatus } : m
-              );
-              const updatedItemOptimistically = newMilestones.find(m => m.id === item.id);
-              console.log("[OPTIMISTIC UPDATE] New item 'completed' status (optimistic):", updatedItemOptimistically?.completed);
-              console.log("[OPTIMISTIC UPDATE] Full new milestones array (optimistic):", newMilestones);
-              return newMilestones;
-            });
-
-            try {
-              // 2. Call the API
-              console.log(`[API CALL] Calling updateMilestoneCompletionStatusApi for ID: ${item.id} with completed: ${targetCompletedStatus}`);
-              const updatedMilestone = await updateMilestoneCompletionStatusApi(item.id as number, targetCompletedStatus);
-              console.log("[API CALL SUCCESS] Received updatedMilestone from API:", updatedMilestone);
-              message.success(`Milestone successfully ${targetCompletedStatus ? 'marked as Done' : 'marked as To Do'}.`);
-              
-              // 3. Sync with the full server response
-              setMilestones(prevMilestones => {
-                const newMilestonesFromServer = prevMilestones.map(m => (m.id === item.id ? { ...updatedMilestone } : m));
-                const finalUpdatedItem = newMilestonesFromServer.find(m => m.id === item.id);
-                console.log("[SERVER SYNC] New item 'completed' status (from server):", finalUpdatedItem?.completed);
-                console.log("[SERVER SYNC] Full new milestones array (from server):", newMilestonesFromServer);
-                return newMilestonesFromServer;
-              });
-
-            } catch (err: any) {
-              console.error("[API CALL FAILED]", err);
-              message.error(`Failed to ${actionText}. ` + (err.response?.data?.message || err.message));
-              // 4. Revert optimistic update on failure
-              setMilestones(prevMilestones => {
-                const revertedMilestones = prevMilestones.map(m =>
-                  m.id === item.id ? { ...m, completed: itemCompletedBeforeAttempt } : m
-                );
-                const revertedItem = revertedMilestones.find(m => m.id === item.id);
-                console.log("[REVERT] Reverted item 'completed' status to:", revertedItem?.completed);
-                return revertedMilestones;
-              });
-            } finally {
-              console.log("[FINALLY] Clearing updatingCompletionId");
-              setUpdatingCompletionId(null);
-            }
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => {
-            setUpdatingCompletionId(null); // Clear loading state if user cancels
-          }
-        }
-      ],
-      onClickOutside: () => {
-        if (updatingCompletionId === item.id) {
-          setUpdatingCompletionId(null);
-        }
-      },
+      overlayClassName: "custom-overlay-class-name"
     });
   };
 
   const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'emty'; // Return "emty" for null/undefined
+    if (!dateString) return 'emty';
     try {
       const date = new Date(dateString);
-      // Check if date is valid before formatting
       if (isNaN(date.getTime())) {
         console.warn("Invalid Date encountered:", dateString);
-        return 'emty'; // Return "emty" for invalid date
+        return 'emty';
       }
       return date.toLocaleDateString();
     } catch (e) {
       console.error("Error formatting date:", dateString, e);
-      return 'emty'; // Return "emty" on error
+      return 'emty';
     }
   };
 
   const getMilestoneStatusColor = (status: MilestoneStatus | null | undefined): string => {
-    if (!status) return 'default'; // Handle null or undefined
+    if (!status) return 'default';
 
-    switch (String(status).toUpperCase()) { // Convert to string before uppercasing
+    switch (String(status).toUpperCase()) {
       case 'NEW': return 'processing';
       case 'SENT': return 'blue';
       case 'REVIEWED': return 'success';
@@ -231,9 +115,9 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
   };
 
   const getStatusIcon = (status: MilestoneStatus | null | undefined) => {
-    if (!status) return null; // Handle null or undefined
+    if (!status) return null;
 
-    switch (String(status).toUpperCase()) { // Convert to string before uppercasing
+    switch (String(status).toUpperCase()) {
       case 'NEW': return <FlagOutlined />;
       case 'SENT': return <ClockCircleOutlined />;
       case 'REVIEWED': return <CheckCircleOutlined />;
@@ -258,14 +142,13 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => onAddMilestone(fetchMilestones)} // Truyền fetchMilestones làm callback
+            onClick={() => onAddMilestone(fetchMilestones)}
           >
             Add Milestone
           </Button>
         </Col>
       </Row>
       {error && <Alert message="Error" description={error} type="error" showIcon style={{marginBottom: 10}} />}
-
 
       {(!Array.isArray(milestones) || milestones.length === 0) && !loading && !error && (
         <Text type="secondary">No milestones found for this project. Click "Add Milestone" to create one.</Text>
@@ -287,49 +170,10 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
                 background: item.completed ? '#f6ffed' : '#ffffff',
                 marginBottom: '12px',
                 border: `1px solid ${item.completed ? '#b7eb8f' : '#f0f0f0'}`,
-                opacity: updatingCompletionId === item.id ? 0.7 : 1,
-                transition: 'background 0.3s ease, border 0.3s ease, opacity 0.3s ease'
+                transition: 'background 0.3s ease, border 0.3s ease'
               }}
             >
               <Row gutter={[16, 16]} style={{ width: '100%' }} align="middle">
-                <Col flex="none">
-                  {item.completed ? (
-                    <Button 
-                      type="text"
-                      onClick={() => handleCompletionChange(item, false)}
-                      disabled={updatingCompletionId === item.id}
-                      icon={<CheckCircleOutlined />}
-                      style={{
-                        color: '#52c41a',
-                        backgroundColor: '#f6ffed',
-                        border: '1px solid #b7eb8f',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '4px 12px'
-                      }}
-                    >
-                      <span style={{ marginLeft: 4 }}>Done</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => handleCompletionChange(item, true)}
-                      disabled={updatingCompletionId === item.id}
-                      icon={<ClockCircleOutlined />}
-                      style={{
-                        color: '#096dd9',
-                        backgroundColor: '#e6f7ff',
-                        border: '1px solid #91d5ff',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '4px 12px'
-                      }}
-                    >
-                      <span style={{ marginLeft: 4 }}>To Do</span>
-                    </Button>
-                  )}
-                </Col>
                 <Col flex="auto">
                   <MilestoneInfo
                     name={item.name}
@@ -347,7 +191,6 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
                             projectId={projectId}
                             onEdit={(milestoneIdToEdit, projId) => onEditMilestone(milestoneIdToEdit, projId, fetchMilestones)}
                             onDelete={handleDeleteMilestone}
-                            disabled={updatingCompletionId === item.id}
                         />
                     )}
                     <Tag
@@ -366,12 +209,19 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
                         <CalendarOutlined />
                         <Text type="secondary">Due: {formatDate(item.deadlineDate)}</Text>
                       </Space>
-                      {item.completed && item.completionDate && (
-                        <Space size={4}>
+                      <Space size={4}>
+                        {item.completionDate ? (
+                          <>
                             <CheckCircleOutlined style={{ color: '#52c41a' }} />
                             <Text type="secondary">Completed: {formatDate(item.completionDate)}</Text>
-                        </Space>
-                      )}
+                          </>
+                        ) : (
+                          <>
+                            <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                            <Text type="secondary">Incomplete</Text>
+                          </>
+                        )}
+                      </Space>
                     </Space>
                   </Space>
                 </Col>
