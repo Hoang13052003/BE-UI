@@ -1,5 +1,5 @@
 // UserManagement.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   Row,
@@ -24,32 +24,26 @@ import {
   PlusOutlined,
   SearchOutlined
 } from '@ant-design/icons';
-import { getAllUsers } from '../../api/userApi';
+import { filterUsers } from '../../api/userApi';
 import { User } from '../../types/User';
 import AddUser from '../../components/Admin/user/AddUser';
 import UpdateUser from '../../components/Admin/user/UpdateUser';
 import DeleteUser from '../../components/Admin/user/DeleteUser';
-
 const { Title, Text } = Typography;
-
-interface UserTableData extends User {
-  key: string;
-}
 
 // Role options defined as constants
 const ROLE_OPTIONS = [
-  { value: 'all', label: 'All Roles' },
-  { value: 'ADMIN', label: 'Admin' },
-  { value: 'USER', label: 'User' }
+  { value: 'ALL', label: 'All Roles' },
+  { value: 'ADMIN', label: 'Administrator' },
+  { value: 'USER', label: 'Regular User' }
 ];
 
 const UserManagement: React.FC = () => {
   // State management
-  const [users, setUsers] = useState<UserTableData[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [filteredUsers, setFilteredUsers] = useState<UserTableData[]>([]);
   const [searchText, setSearchText] = useState<string>('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [totalCount, setTotalCount] = useState<number>(0);
   
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [modalContent, setModalContent] = useState<'add' | 'update' | 'delete' | null>(null);
@@ -64,12 +58,7 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
-  
-  // Apply filters when dependencies change
-  useEffect(() => {
-    applyFilters();
-  }, [searchText, roleFilter, users]);
-  
+
   // Handler for modal close and refresh
   const handleModalClose = () => {
     setIsModalVisible(false);
@@ -79,26 +68,29 @@ const UserManagement: React.FC = () => {
   };
 
   // Fetch users from API
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 0, pageSize = 10, currentRole?: string) => {
     try {
       setLoading(true);
-      const usersData = await getAllUsers();
-      console.log('Fetched users:', usersData);
+      
+      const criteria = {
+        fullName: searchText || undefined,
+        role: currentRole !== 'ALL' ? currentRole : undefined,
+        email: searchText || undefined,
+      };
 
-      // Filter out users with isDeleted = false
-      // const activeUsersData = usersData.filter(user => user.deleted === false);
-      // console.log('Active users:', activeUsersData);
-      // Transform API data to table format
-      const formattedUsers = usersData.map(user => ({
+      const response = await filterUsers(criteria, page, pageSize);
+      
+      const formattedUsers = response.users.map((user:User) => ({
         ...user,
         key: user.id.toString()
       }));
       
       setUsers(formattedUsers);
+      setTotalCount(Number(response.totalCount));
       
-      // Calculate stats
-      setTotalUsers(formattedUsers.length);
-      const active = formattedUsers.filter(user => !user.key).length;
+      // Update statistics
+      setTotalUsers(Number(response.totalCount));
+      const active = formattedUsers.filter((user: User) => user.isActive).length;
       setActiveUsers(active);
       setInactiveUsers(formattedUsers.length - active);
       
@@ -110,46 +102,27 @@ const UserManagement: React.FC = () => {
     }
   };
   
-  // Apply filters to the user list
-  const applyFilters = () => {
-    let result = [...users];
-    
-    // Apply search filter
-    if (searchText) {
-      result = result.filter(
-        user => 
-          user.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-    
-    // Apply role filter
-    if (roleFilter !== 'all') {
-      result = result.filter(user => 
-        user.role?.toUpperCase() === roleFilter
-      );
-    }
-    
-    setFilteredUsers(result);
-  };
-  
   // Handler for search input change
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value);
   };
-  
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      fetchUsers(0, 10);
+    }
+  };
   // Handler for role filter change
-  const handleRoleFilter = (value: string) => {
-    setRoleFilter(value);
+  const handleRoleFilter = async (value:string) => {
+    fetchUsers(0, 10, value);
   };
   
   // Define table columns
-  const columns: ColumnsType<UserTableData> = [
+  const columns: ColumnsType<User> = [
     {
       title: 'User',
       key: 'user',
       width: '20%',
-      render: (_: undefined, record: UserTableData) => (
+      render: (_, record) => (
         <Space>
           <Avatar 
             src={record.image} 
@@ -234,7 +207,7 @@ const UserManagement: React.FC = () => {
   };
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm backgroud-default">
       <div className="mb-6">
         <Title level={5}>Users</Title>
         <Text type="secondary">Manage user accounts and permissions</Text>
@@ -263,17 +236,13 @@ const UserManagement: React.FC = () => {
             valueStyle={{ color: '#ff4d4f' }}
           />
         </Col>
-        {/* <Col span={6}>
+        <Col span={6}>
           <Statistic
             title="New This Month"
-            value={users.filter(User => {
-              const oneMonthAgo = new Date();
-              oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-              // return new Date(user.createdAt) > oneMonthAgo;
-            }).length}
+            value={inactiveUsers}
             valueStyle={{ color: '#1677ff' }}
           />
-        </Col> */}
+        </Col>
       </Row>
 
       {/* User List */}
@@ -289,25 +258,29 @@ const UserManagement: React.FC = () => {
               style={{ width: 250 }}
               value={searchText}
               onChange={handleSearch}
+              onKeyPress={handleSearchKeyPress}
               className="rounded-md"
             />
           </Col>
           <Col>
             <Space>
               <Select 
-                defaultValue="all"
-                style={{ width: 120 }}
-                onChange={handleRoleFilter}
-                options={ROLE_OPTIONS}
-                className="rounded-md"
+              style={{ width: 130 }}
+              defaultValue={'ALL'}
+              onChange={(value) => handleRoleFilter(value)}
+              options={ROLE_OPTIONS.map(option => ({
+                value: option.value,
+                label: option.label
+              }))}
+              className="rounded-md"
               />
               <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                onClick={handleAddUser}
-                className="bg-blue-600 hover:bg-blue-700 rounded-md"
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleAddUser}
+              className="bg-blue-600 hover:bg-blue-700 rounded-md"
               >
-                Add User
+              Add User
               </Button>
             </Space>
           </Col>
@@ -315,14 +288,21 @@ const UserManagement: React.FC = () => {
 
         {/* Users Table */}
         <Table 
+          
           columns={columns} 
-          dataSource={filteredUsers.length > 0 ? filteredUsers : users}
+          dataSource={users}
+          rootClassName="backgroud-default"
           loading={loading}
           pagination={{ 
-            pageSize: 10,
-            showTotal: (total) => `Total ${total} users`
+            total: totalCount,
+            showSizeChanger: true,
+            showTotal: (total) => `Total ${total} users`,
+            onChange: (page, pageSize) => {
+              // Convert antd's 1-based page number to 0-based for the API
+              fetchUsers(page - 1, pageSize);
+            }
           }}
-          className="mt-2"
+          className="mt-2 backgroud-default"
           rowClassName="hover:bg-gray-50"
         />
       </div>

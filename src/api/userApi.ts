@@ -1,11 +1,43 @@
-import { User } from "../types/User";
+import { UpdateUserPayload, User } from "../types/User";
 import axiosClient from "./axiosClient";
 
-export interface UpdateUserPayload {
-  email?: string;
-  role?: "admin" | "client";
-  projects?: string[];
-}
+export const filterUsers = async (
+  criteria: { fullName?: string; email?: string; role?: string },
+  page: number,
+  size: number
+) => {
+  try {
+    const params: Record<string, string | number> = {
+      page,
+      size,
+    };
+
+    if (criteria.fullName) {
+      params["fullName.contains"] = criteria.fullName;
+    }
+
+    if (criteria.email) {
+      params["email.contains"] = criteria.email;
+    }
+
+    if (criteria.role) {
+      params["role.equals"] = criteria.role;
+    }
+
+    const response = await axiosClient.get("/api/private/admin/user", {
+      params,
+    });
+
+    const { data, headers } = response;
+    const totalCount = headers["x-total-count"];
+    const links = headers["x-link"];
+
+    return { users: data, totalCount, links };
+  } catch (error) {
+    console.error("Error fetching filtered users:", error);
+    throw error;
+  }
+};
 
 export const getAllUsers = async (): Promise<User[]> => {
   const { data } = await axiosClient.get<User[]>("/api/private/admin/all-user");
@@ -22,10 +54,10 @@ export const createUser = (data: User): Promise<User> => {
 };
 
 export const updateUser = (
-  userId: string,
+  id: number,
   data: UpdateUserPayload
 ): Promise<User> => {
-  return axiosClient.put(`/users/${userId}`, data);
+  return axiosClient.put(`/api/private/admin/update-user/${id}`, data);
 };
 
 export const deleteUser = async (id: number): Promise<void> => {

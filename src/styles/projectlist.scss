@@ -1,0 +1,30 @@
+.progress-bar-container {
+  width: 100px;
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: #1890ff;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.projects-table .ant-table-cell {
+  vertical-align: top;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}

@@ -1,74 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Select, Spin } from 'antd';
+import { Form, Input, Button, Select, Spin, message } from 'antd';
 import { MailOutlined, UserOutlined } from '@ant-design/icons';
-// import { UserOutlined, MailOutlined, FileTextOutlined } from '@ant-design/icons';
-// import { userApi } from '../../api/userApi';
+import { getUser, updateUser } from '../../../api/userApi';
+import { UpdateUserPayload } from '../../../types/User';
+import { ApiError } from '../../../types/ApiError';
 
 interface UpdateUserProps {
   userId: number;
   onSuccess: () => void;
 }
 
-// interface UpdateUserFormValues {
-//   fullName: string;
-//   email: string;
-//   roleId: number;
-//   note?: string;
-// }
-
-// Define role options as constants
 const ROLE_OPTIONS = [
-  { value: 1, label: 'ADMIN' },
-  { value: 2, label: 'USER' }
+  { value: 'ADMIN', label: 'Admin' },
+  { value: 'USER', label: 'User' }
 ];
 
 const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
   const [form] = Form.useForm();
-  // const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // fetchUserDetails();
+    fetchUserDetails();
   }, [userId]);
 
-  // const fetchUserDetails = async () => {
-  //   try {
+  const fetchUserDetails = async () => {
+    try {
       setIsLoading(true);
-  //     const userData = await userApi.getUserById(userId);
+      const userData = await getUser(userId);
       
-  //     // Set form values from user data
-  //     form.setFieldsValue({
-  //       fullName: userData.fullName,
-  //       email: userData.email,
-  //       roleId: userData.role?.id || null,
-  //       note: userData.note
-  //     });
+      form.setFieldsValue({
+        fullName: userData.fullName,
+        email: userData.email,
+        role: userData.role,
+        note: userData.note
+      });
       
-  //     setIsLoading(false);
-  //   } catch (error: any) {
-  //     message.error(`Failed to fetch user details: ${error.message || 'Something went wrong'}`);
-  //     setIsLoading(false);
-  //   }
-  // };
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      message.error('Failed to fetch user details');
+      console.error('Error fetching user:', apiError.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // const handleSubmit = async (values: UpdateUserFormValues) => {
-  //   setIsSubmitting(true);
-  //   try {
-  //     await userApi.updateUser(userId, values);
-  //     message.success('User updated successfully');
-  //     onSuccess();
-  //   } catch (error: any) {
-  //     // Handle specific error cases
-  //     if (error.response?.status === 409) {
-  //       message.error('Email already exists. Please use a different email.');
-  //     } else {
-  //       message.error(`Failed to update user: ${error.response?.data?.message || 'Something went wrong'}`);
-  //     }
-  //     console.error('Error updating user:', error);
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
+  const handleSubmit = async (values: UpdateUserPayload) => {
+    setIsSubmitting(true);
+    try {
+      await updateUser(userId, values);
+      message.success('User updated successfully');
+      onSuccess();
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      if (apiError.response?.status === 409) {
+        message.error('Email already exists. Please use a different email.');
+      } else {
+        message.error('Failed to update user');
+      }
+      console.error('Error updating user:', apiError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -84,7 +78,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
         form={form}
         name="updateUserForm"
         layout="vertical"
-        // onFinish={handleSubmit}
+        onFinish={handleSubmit}
         autoComplete="off"
       >
         <Form.Item
@@ -120,7 +114,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
 
         <Form.Item
           label="Role"
-          name="roleId"
+          name="role"
           rules={[{ required: true, message: 'Please select a role' }]}
         >
           <Select
@@ -146,7 +140,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
             <Button 
               type="primary" 
               htmlType="submit"
-              // loading={isSubmitting}
+              loading={isSubmitting}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Update User

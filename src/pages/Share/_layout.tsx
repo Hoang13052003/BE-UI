@@ -14,11 +14,13 @@ import {
 } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
 import ukicon from "../../assets/uk-icon.svg";
-import chinaicon from "../../assets/china-flag-icon.svg";
+import vietnameicon from "../../assets/vietnam-flag-icon.svg";
 import useLanguage, { Language } from "../../hooks/useLanguage";
+// import { useTranslation } from 'react-i18next';
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
 import Logout from "../../components/LogoutComponent";
+import { useTranslation } from "react-i18next";
 
 const { Header } = Layout;
 
@@ -30,14 +32,15 @@ const languages = [
     name: 'English', 
     flagUrl: ukicon
   },
-  { 
-    code: 'zh', 
-    name: '中文', 
-    flagUrl: chinaicon
-  },
+  {
+    code: 'vi',
+    name: 'Vietnamese',
+    flagUrl: vietnameicon,
+  }
 ];
 
 const LayoutShare: React.FC = () => {
+  const { t } = useTranslation(); // Sử dụng hook useTranslation
   const { language, changeLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const { userDetails, isAuthenticated } = useAuth();
@@ -49,22 +52,22 @@ const LayoutShare: React.FC = () => {
     {
       key: "profile",
       icon: <ProfileOutlined />,
-      label: "Profile",
+      label: t('profile.title'),
     },
     {
       key: "settings",
       icon: <SettingOutlined />,
-      label: "Settings",
+      label: t('settings.title'),
     },
     {
       key: "support",
       icon: <QuestionCircleOutlined />,
-      label: "Support",
+      label: t('navigation.support'),
     },
     {
       key: "logout",
       icon: <CloseCircleOutlined />,
-      label: "Logout",
+      label: t('auth.logout'),
       onClick: handleLogout,
     },
   ];
@@ -144,7 +147,7 @@ const LayoutShare: React.FC = () => {
                 icon={<LoginOutlined />}
                 onClick={() => { navigate('/login') }}
               >
-                Login now
+                {t('common.getStarted')}
               </Button>
             </Tooltip>
           </Menu.Item>
@@ -212,12 +215,6 @@ const LayoutShare: React.FC = () => {
                     </Avatar>
                     <span className="user-name">{userDetails?.fullName}</span> {/* Display full name */}
                   </div>
-                  {/* <div className="user-profile">
-                    <Avatar className="user-avatar">JT</Avatar>
-                    <div className="user-info">
-                      <div className="user-name">{userDetails?.fullName}</div>
-                    </div>
-                  </div> */}
                 </Dropdown>
               </React.Fragment>
             ) : (
@@ -229,7 +226,7 @@ const LayoutShare: React.FC = () => {
                     onClick={() => { navigate('/login') }}
                     className="login-btn"
                   >
-                    Login now
+                    {t('common.getStarted')}
                   </Button>
                 </Tooltip>
               </React.Fragment>

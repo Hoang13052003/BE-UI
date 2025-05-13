@@ -1,7 +1,9 @@
-export interface Project {
+export interface ProjectName {
   id: number;
   name: string;
 }
+
+export type UserRole = "ADMIN" | "USER";
 
 export interface User {
   id: number;
@@ -10,6 +12,14 @@ export interface User {
   image: string | null;
   note: string;
   role: string;
-  projects: Project[];
-  deleted?: boolean;
+  projects: ProjectName[];
+  isActive: boolean;
+}
+
+export interface UpdateUserPayload {
+  email?: string;
+  fullName?: string;
+  note?: string;
+  role?: "ADMIN" | "USER";
+  // projects?: ProjectName[];
 }

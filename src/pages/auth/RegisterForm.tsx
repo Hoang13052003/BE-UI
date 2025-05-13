@@ -4,6 +4,7 @@ import { useFormik } from "formik";
 import * as yup from "yup";
 import image from "../../assets/Image-login-page.svg";
 import { signupApi } from "../../api/authApi";
+import { useTranslation } from "react-i18next";
 // import { useNavigate } from "react-router-dom";
 
 const validationSchema = yup.object({
@@ -28,6 +29,7 @@ interface RegisterProps {
 }
 
 const RegisterForm: React.FC<RegisterProps> = (props) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const handleSubmit = async (values: RegisterValues) => {
     try {
@@ -63,8 +65,8 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
         </div>
 
         <div className="register-form-container">
-          <h1 className="welcome-text">Join <span className="brand-name">ProgressHub</span></h1>
-          <p className="register-description">Create your account to get started</p>
+          <h1 className="welcome-text">{t('auth.register.title-form')}</h1>
+          <p className="register-description">{t('auth.register.description')}</p>
 
           <Form className="register-form" layout="vertical" onFinish={formik.handleSubmit}>
             <Form.Item
@@ -74,7 +76,7 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
             >
               <Input
                 name="fullName"
-                placeholder="Enter your fullName"
+                placeholder={t('auth.input.fullName')}
                 size="large"
                 value={formik.values.fullName}
                 onChange={formik.handleChange}
@@ -89,7 +91,7 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
             >
               <Input
                 name="email"
-                placeholder="Enter your email"
+                placeholder={t('auth.input.email')}
                 size="large"
                 value={formik.values.email}
                 onChange={formik.handleChange}
@@ -104,7 +106,7 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
             >
               <Input.Password
                 name="password"
-                placeholder="Enter your password"
+                placeholder={t('auth.input.password')}
                 size="large"
                 value={formik.values.password}
                 onChange={formik.handleChange}
@@ -119,7 +121,7 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
             >
               <Input.Password
                 name="confirmPassword"
-                placeholder="Confirm your password"
+                placeholder={t('auth.input.confirmPassword')}
                 size="large"
                 value={formik.values.confirmPassword}
                 onChange={formik.handleChange}
@@ -136,13 +138,13 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
                 loading={loading}
                 className="sign-up-button"
               >
-                Sign Up
+                {t('auth.register.title')}
               </Button>
             </Form.Item>
 
             <div className="account-options">
               <p>
-                Already have an account? <a href="/login">Sign in</a>
+                {t('auth.register.exist-account')} <a href="/login">{t('auth.login.title')}</a>
               </p>
             </div>
           </Form>
