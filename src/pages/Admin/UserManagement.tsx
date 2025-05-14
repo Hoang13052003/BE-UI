@@ -24,8 +24,8 @@ import {
   PlusOutlined,
   SearchOutlined
 } from '@ant-design/icons';
-import { filterUsers } from '../../api/userApi';
-import { User } from '../../types/User';
+import { filterUsers, getUserManager } from '../../api/userApi';
+import { User, UserManager } from '../../types/User';
 import AddUser from '../../components/Admin/user/AddUser';
 import UpdateUser from '../../components/Admin/user/UpdateUser';
 import DeleteUser from '../../components/Admin/user/DeleteUser';
@@ -41,6 +41,12 @@ const ROLE_OPTIONS = [
 const UserManagement: React.FC = () => {
   // State management
   const [users, setUsers] = useState<User[]>([]);
+  const [managers, setManagers] = useState<UserManager>({
+    totalUsers: 0,
+    activeUsers: 0,
+    inactiveUsers: 0,
+    lockedUsers: 0
+  });
   const [loading, setLoading] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -50,13 +56,14 @@ const UserManagement: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // Stats counters
-  const [totalUsers, setTotalUsers] = useState<number>(0);
-  const [activeUsers, setActiveUsers] = useState<number>(0);
-  const [inactiveUsers, setInactiveUsers] = useState<number>(0);
+  // const [totalUsers, setTotalUsers] = useState<number>(0);
+  // const [activeUsers, setActiveUsers] = useState<number>(0);
+  // const [inactiveUsers, setInactiveUsers] = useState<number>(0);
   
   // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
+    fetchUserManager();
   }, []);
 
   // Handler for modal close and refresh
@@ -65,8 +72,23 @@ const UserManagement: React.FC = () => {
     setModalContent(null);
     setSelectedUserId(null);
     fetchUsers();
+    fetchUserManager();
   };
 
+  const fetchUserManager = async() =>{
+    try {
+      setLoading(true);
+
+      const data = await getUserManager();
+
+      setManagers(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch manager:', error);
+      message.error('Failed to load manager');
+      setLoading(false);
+    }
+  }
   // Fetch users from API
   const fetchUsers = async (page = 0, pageSize = 10, currentRole?: string) => {
     try {
@@ -87,12 +109,6 @@ const UserManagement: React.FC = () => {
       
       setUsers(formattedUsers);
       setTotalCount(Number(response.totalCount));
-      
-      // Update statistics
-      setTotalUsers(Number(response.totalCount));
-      const active = formattedUsers.filter((user: User) => user.isActive).length;
-      setActiveUsers(active);
-      setInactiveUsers(formattedUsers.length - active);
       
       setLoading(false);
     } catch (error) {
@@ -218,28 +234,28 @@ const UserManagement: React.FC = () => {
         <Col span={6}>
           <Statistic 
             title="Total Users"
-            value={totalUsers}
+            value={managers.totalUsers}
             valueStyle={{ color: '#1677ff' }}
           />
         </Col>
         <Col span={6}>
           <Statistic
             title="Active Users"
-            value={activeUsers}
+            value={managers.activeUsers}
             valueStyle={{ color: '#52c41a' }}
           />
         </Col>
         <Col span={6}>
           <Statistic
             title="Inactive Users"
-            value={inactiveUsers}
+            value={managers.inactiveUsers}
             valueStyle={{ color: '#ff4d4f' }}
           />
         </Col>
         <Col span={6}>
           <Statistic
-            title="New This Month"
-            value={inactiveUsers}
+            title="User Lock"
+            value={managers.lockedUsers}
             valueStyle={{ color: '#1677ff' }}
           />
         </Col>

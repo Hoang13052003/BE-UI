@@ -16,6 +16,13 @@ export interface User {
   isActive: boolean;
 }
 
+export interface UserManager {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  lockedUsers: number;
+}
+
 export interface UpdateUserPayload {
   email?: string;
   fullName?: string;

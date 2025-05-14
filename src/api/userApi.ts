@@ -1,4 +1,4 @@
-import { UpdateUserPayload, User } from "../types/User";
+import { UpdateUserPayload, User, UserManager } from "../types/User";
 import axiosClient from "./axiosClient";
 
 export const filterUsers = async (
@@ -39,8 +39,10 @@ export const filterUsers = async (
   }
 };
 
-export const getAllUsers = async (): Promise<User[]> => {
-  const { data } = await axiosClient.get<User[]>("/api/private/admin/all-user");
+export const getUserManager = async (): Promise<UserManager> => {
+  const { data } = await axiosClient.get<UserManager>(
+    "/api/private/admin/user-manager"
+  );
   return data;
 };
 
