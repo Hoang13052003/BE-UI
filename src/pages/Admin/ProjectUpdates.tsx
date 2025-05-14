@@ -29,6 +29,7 @@ import AddProjectModal from '../../components/Admin/AddProjectModal';
 import AddMilestoneModal from '../../components/Admin/AddMilestoneModal';
 import MilestoneDetailsDisplay from '../../components/Admin/MilestoneDetailsDisplay';
 import EditMilestoneModal from '../../components/Admin/EditMilestoneModal'; // Bỏ comment dòng này
+import TimelogDetailsDisplay from '../../components/Admin/TimelogDetailsDisplay';
 
 const { Text, Title } = Typography;
 
@@ -41,6 +42,7 @@ const ProjectUpdates: React.FC = () => {
   const [isAddMilestoneModalVisible, setIsAddMilestoneModalVisible] = useState<boolean>(false);
   const [selectedProjectIdForMilestone, setSelectedProjectIdForMilestone] = useState<number | null>(null);
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
+  const [expandedTimelogProjectId, setExpandedTimelogProjectId] = useState<number | null>(null);
   
   // States cho EditMilestoneModal
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
@@ -171,6 +173,10 @@ const ProjectUpdates: React.FC = () => {
     setExpandedProjectId(prevId => (prevId === projectId ? null : projectId));
   };
 
+  const toggleTimelogDetail = (projectId: number) => {
+    setExpandedTimelogProjectId(prevId => (prevId === projectId ? null : projectId));
+  };
+
   if (loading && projects.length === 0) {
     return (
       <Card>
@@ -249,11 +255,13 @@ const ProjectUpdates: React.FC = () => {
                 ),
                 item.type === 'LABOR' && (
                   <Button
-                    key="edit-timelog"
+                    key="show-timelog"
                     type="text"
-                    icon={<ClockCircleOutlined />}
-                    // onClick={() => handleEditTimelog(item.id)} // Cần hàm handleEditTimelog
-                  > Edit Timelog </Button>
+                    icon={expandedTimelogProjectId === item.id ? <UpOutlined /> : <DownOutlined />}
+                    onClick={() => toggleTimelogDetail(item.id)}
+                  >
+                    {expandedTimelogProjectId === item.id ? 'Hide Timelog' : 'Show Timelog'}
+                  </Button>
                 ),
                 <Button
                   key="delete"
@@ -310,12 +318,17 @@ const ProjectUpdates: React.FC = () => {
                   <MilestoneDetailsDisplay
                     projectId={item.id}
                     onAddMilestone={(refreshCallback) => handleAddMilestoneClick(item.id, refreshCallback)}
-                    // Truyền hàm handleEditMilestone đã được cập nhật
                     onEditMilestone={(milestoneId, _, refreshCallback) => handleEditMilestone(milestoneId, item.id, refreshCallback)}
                   />
                 </div>
               )}
-            </List.Item>
+
+              {expandedTimelogProjectId === item.id && item.type === 'LABOR' && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
+                  <TimelogDetailsDisplay projectId={item.id} users={[]} />
+                </div>
+              )}
+            </List.Item>  
           );
         }}
       />
