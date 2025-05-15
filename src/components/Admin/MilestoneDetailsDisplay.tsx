@@ -6,7 +6,6 @@ import {
   FlagOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  FileTextOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -17,10 +16,9 @@ import {
   deleteMilestoneApi
 } from '../../api/milestoneApi';
 import { Milestone, MilestoneStatus } from '../../types/milestone';
-import MilestoneItemActions from './MilestoneDetailsButton/MilestoneItemActions';
 import MilestoneInfo from './MilestoneDetailsDisplay/MilestoneInfo';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 interface MilestoneDetailsDisplayProps {
   projectId: number;

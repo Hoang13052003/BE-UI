@@ -23,7 +23,6 @@ interface TimelogDetailsDisplayProps {
 
 const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({ 
   projectId, 
-  onEditTimeLog,
   users = [] // Default to empty array if not provided
 }) => {
   const [timelogs, setTimelogs] = useState<TimeLogResponse[]>([]);

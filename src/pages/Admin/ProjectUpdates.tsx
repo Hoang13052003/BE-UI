@@ -2,41 +2,30 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   List,
-  Tag,
   Typography,
-  Space,
   Button,
   Row,
   Spin,
   Alert,
   message,
-  Tooltip,
-  Col
+  Col,
+  Popconfirm
 } from 'antd';
 import {
-  EditOutlined,
   DeleteOutlined,
-  CalendarOutlined,
-  UserOutlined,
-  PlusOutlined,
-  ClockCircleOutlined,
-  DownOutlined,
-  UpOutlined
-} from '@ant-design/icons';
+  PlusOutlined} from '@ant-design/icons';
 import { getProjectsApi, deleteProjectApi } from '../../api/projectApi';
 import { Project } from '../../types/project';
 import AddProjectModal from '../../components/Admin/AddProjectModal';
 import AddMilestoneModal from '../../components/Admin/AddMilestoneModal';
-import MilestoneDetailsDisplay from '../../components/Admin/MilestoneDetailsDisplay';
 import EditMilestoneModal from '../../components/Admin/EditMilestoneModal';
-import TimelogDetailsDisplay from '../../components/Admin/TimelogDetailsDisplay';
 import EditProjectModal from '../../components/Admin/EditProjectModal';
-import { confirmAlert } from 'react-confirm-alert';
-import 'react-confirm-alert/src/react-confirm-alert.css';
 import ProjectDetailsDisplay from '../../components/Admin/ProjectDetailsDisplay';
-const { Text, Title } = Typography;
+import { useTheme } from '../../contexts/ThemeContext'; // Thêm dòng này
+const { Title } = Typography;
 
 const ProjectUpdates: React.FC = () => {
+  const { theme } = useTheme(); // Thêm dòng này
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,20 +65,6 @@ const ProjectUpdates: React.FC = () => {
     fetchProjects();
   }, [fetchProjects]);
 
-  const getStatusColor = (status: Project['status']) => {
-    switch (status) {
-      case 'NEW':
-        return 'cyan'; 
-      case 'PENDING':
-        return 'gold'; 
-      case 'PROGRESS':
-        return 'blue'; 
-      case 'CLOSED':
-        return 'green';
-      default:
-        return 'default';
-    }
-  };
 
   const handleDelete = async (id: number) => {
     setDeletingId(id);
@@ -224,9 +199,13 @@ const ProjectUpdates: React.FC = () => {
   return (
     <>
     <Card
+      style={{
+        background: theme === 'dark' ? '#181818' : '#fff',
+        color: theme === 'dark' ? '#fff' : '#000'
+      }}
       title={
         <Row justify="space-between" align="middle" style={{ width: '100%' }}>
-          <Col><Title level={5} style={{ margin: 0 }}>Project Updates</Title></Col>
+          <Col><Title level={5} style={{ margin: 0, color: theme === 'dark' ? '#fff' : undefined }}>Project Updates</Title></Col>
           <Col>
             <Button
               type="primary"
@@ -241,33 +220,42 @@ const ProjectUpdates: React.FC = () => {
     >
     {error && !loading && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
       <List
-  loading={loading}
-  itemLayout="vertical"
-  dataSource={projects}
-  renderItem={(item: Project) => (
-    <ProjectDetailsDisplay
-      project={item}
-      isExpanded={expandedProjectId === item.id}
-      expandedTimelogProjectId={expandedTimelogProjectId}
-      deletingId={deletingId}
-      onEditProject={handleEditProject}
-      onDeleteProject={(id) =>
-        confirmAlert({
-          title: 'Confirm Deletion',
-          message: 'Are you sure you want to delete this project?',
-          buttons: [
-            { label: 'Yes', onClick: () => handleDelete(id) },
-            { label: 'No', onClick: () => {} },
-          ],
-        })
-      }
-      onToggleMilestoneDetail={toggleMilestoneDetail}
-      onToggleTimelogDetail={toggleTimelogDetail}
-      onAddMilestone={handleAddMilestoneClick}
-      onEditMilestone={handleEditMilestone}
-    />
-  )}
-/>
+        loading={loading}
+        itemLayout="vertical"
+        dataSource={projects}
+        renderItem={(item: Project) => (
+          <ProjectDetailsDisplay
+            project={item}
+            isExpanded={expandedProjectId === item.id}
+            expandedTimelogProjectId={expandedTimelogProjectId}
+            deletingId={deletingId}
+            onEditProject={handleEditProject}
+            onDeleteProject={() => null}
+            onToggleMilestoneDetail={toggleMilestoneDetail}
+            onToggleTimelogDetail={toggleTimelogDetail}
+            onAddMilestone={handleAddMilestoneClick}
+            onEditMilestone={handleEditMilestone}
+            theme={theme} // truyền theme xuống
+            deleteButton={(
+              <Popconfirm
+                title="Bạn có chắc muốn xóa dự án này?"
+                onConfirm={() => handleDelete(item.id)}
+                okText="Có"
+                cancelText="Không"
+              >
+                <Button
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  danger
+                  loading={deletingId === item.id}
+                >
+                  Delete
+                </Button>
+              </Popconfirm>
+            )}
+          />
+        )}
+      />
     </Card>
 
     <AddProjectModal

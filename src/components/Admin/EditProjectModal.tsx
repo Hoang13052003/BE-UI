@@ -8,9 +8,7 @@ import {
   Select,
   Button,
   notification,
-  Spin,
-  Divider
-} from 'antd';
+  Spin} from 'antd';
 import { updateProjectApi, ProjectUpdateRequest } from '../../api/projectApi';
 import { searchUsersByEmailOrUsernameApi, UserSearchParams } from '../../api/userApi';
 import { UserIdAndEmailResponse } from '../../types/User';
@@ -48,7 +46,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   // States cho tìm kiếm người dùng
   const [users, setUsers] = useState<UserIdAndEmailResponse[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const [, setSearchValue] = useState('');
 
   // Load dữ liệu dự án khi modal được mở và projectId thay đổi
   useEffect(() => {
