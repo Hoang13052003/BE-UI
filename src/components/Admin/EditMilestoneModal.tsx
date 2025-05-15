@@ -6,7 +6,7 @@ import {
   MilestoneUpdateRequestData,
 } from '../../api/milestoneApi';
 import { Milestone, MilestoneStatus } from '../../types/milestone';
-import moment from 'moment';
+import dayjs from 'dayjs';
 
 const { Option } = Select;
 
@@ -36,9 +36,9 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
           form.setFieldsValue({
             name: data.name,
             description: data.description,
-            startDate: data.startDate ? moment(data.startDate) : null,
-            deadlineDate: data.deadlineDate ? moment(data.deadlineDate) : null,
-            completionDate: data.completionDate ? moment(data.completionDate) : null,
+            startDate: data.startDate ? dayjs(data.startDate) : null,
+            deadlineDate: data.deadlineDate ? dayjs(data.deadlineDate) : null,
+            completionDate: data.completionDate ? dayjs(data.completionDate) : null,
             status: data.status,
             notes: data.notes,
           });
@@ -110,9 +110,9 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
           initialValues={{
             name: initialMilestoneData.name,
             description: initialMilestoneData.description,
-            startDate: initialMilestoneData.startDate ? moment(initialMilestoneData.startDate) : undefined,
-            deadlineDate: initialMilestoneData.deadlineDate ? moment(initialMilestoneData.deadlineDate) : undefined,
-            completionDate: initialMilestoneData.completionDate ? moment(initialMilestoneData.completionDate) : undefined,
+            startDate: initialMilestoneData.startDate ? dayjs(initialMilestoneData.startDate) : undefined,
+            deadlineDate: initialMilestoneData.deadlineDate ? dayjs(initialMilestoneData.deadlineDate) : undefined,
+            completionDate: initialMilestoneData.completionDate ? dayjs(initialMilestoneData.completionDate) : undefined,
             status: initialMilestoneData.status,
             notes: initialMilestoneData.notes,
           }}

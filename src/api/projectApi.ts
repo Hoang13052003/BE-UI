@@ -107,3 +107,34 @@ export const addMilestoneToProjectApi = async (
     milestoneData
   );
 };
+
+export interface ProjectUpdateRequest {
+  name?: string;
+  description?: string;
+  type?: "FIXED_PRICE" | "LABOR"; // Sử dụng các giá trị từ type Project
+  status?: "NEW" | "PENDING" | "PROGRESS" | "CLOSED"; // Sử dụng các giá trị từ type Project
+  startDate?: string;
+  plannedEndDate?: string;
+  totalBudget?: number;
+  totalEstimatedHours?: number;
+  userIds?: number[]; // Danh sách id của users, khác với Project.users nên cần định nghĩa riêng
+}
+
+export const updateProjectApi = async (
+  projectId: number,
+  projectData: ProjectUpdateRequest
+): Promise<Project> => {
+  try {
+    const { data } = await axiosClient.put(`/api/projects/${projectId}`, projectData);
+    return data;
+  } catch (error: any) {
+    if (error.response) {
+      if (error.response.status === 404) {
+        throw new Error('Project not found');
+      } else if (error.response.status === 400) {
+        throw new Error(error.response.data.message || 'Invalid project data');
+      }
+    }
+    throw error;
+  }
+};

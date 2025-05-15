@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, Typography, Spin, Alert, Space, Row, Col, Button } from 'antd';
+import { List, Typography, Spin, Alert, Space, Row, Col, Button, Popconfirm, message } from 'antd';
 import {
   CalendarOutlined,
   ClockCircleOutlined,
@@ -11,6 +11,7 @@ import {
 import dayjs from 'dayjs';
 import { getTimeLogsByProjectIdApi, TimeLogResponse, deleteTimeLogApi } from '../../api/timelogApi';
 import AddTimeLogModal from './AddTimeLogModal';
+  import EditTimeLogModal from './EditTimeLogModal';
 
 const { Text, Title } = Typography;
 
@@ -29,6 +30,8 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingTimelog, setEditingTimelog] = useState<TimeLogResponse | null>(null);
 
   // Fetch timelogs data
   const fetchTimelogs = async () => {
@@ -62,10 +65,19 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   const handleDeleteTimeLog = async (timelogId: number) => {
     try {
       await deleteTimeLogApi(timelogId);
-      // Refresh the timelogs after deletion
+      message.success('Xóa bản ghi thành công');
       fetchTimelogs();
     } catch (err) {
       console.error('Error deleting time log:', err);
+      message.error('Xóa bản ghi thất bại');
+    }
+  };
+
+  const handleEditTimeLog = (timelogId: number) => {
+    const timelog = timelogs.find(t => t.id === timelogId);
+    if (timelog) {
+      setEditingTimelog(timelog);
+      setIsEditModalVisible(true);
     }
   };
 
@@ -121,20 +133,21 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
                   type="text" 
                   icon={<EditOutlined />} 
                   size="small"
-                  onClick={() => onEditTimeLog && onEditTimeLog(item.id)}
+                  onClick={() => handleEditTimeLog(item.id)}
                 >
                   Edit
                 </Button>,
-                <Button 
-                  key="delete" 
-                  type="text" 
-                  icon={<DeleteOutlined />} 
-                  danger 
-                  size="small"
-                  onClick={() => handleDeleteTimeLog(item.id)}
+                <Popconfirm
+                  key="delete"
+                  title="Bạn có chắc muốn xóa bản ghi này?"
+                  onConfirm={() => handleDeleteTimeLog(item.id)}
+                  okText="Có"
+                  cancelText="Không"
                 >
-                  Delete
-                </Button>
+                  <Button type="text" icon={<DeleteOutlined />} danger size="small">
+                    Delete
+                  </Button>
+                </Popconfirm>,
               ]}
             >
               <List.Item.Meta
@@ -172,6 +185,19 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         visible={isAddModalVisible}
         onClose={() => setIsAddModalVisible(false)}
         onSuccess={fetchTimelogs}
+        projectId={projectId}
+        users={users}
+      />
+
+      {/* Edit Time Log Modal */}
+      <EditTimeLogModal
+        visible={isEditModalVisible}
+        onClose={() => setIsEditModalVisible(false)}
+        onSuccess={() => {
+          setIsEditModalVisible(false);
+          fetchTimelogs();
+        }}
+        initialValues={editingTimelog}
         projectId={projectId}
         users={users}
       />
