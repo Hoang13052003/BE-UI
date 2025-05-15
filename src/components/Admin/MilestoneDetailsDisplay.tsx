@@ -1,8 +1,6 @@
 // filepath: d:\labsparkmind\BE-UI\src\components\Admin\MilestoneDetailsDisplay.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, message } from 'antd';
-import { confirmAlert } from 'react-confirm-alert';
-import 'react-confirm-alert/src/react-confirm-alert.css';
+import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, Popconfirm, message } from 'antd';
 import {
   CalendarOutlined,
   FlagOutlined,
@@ -60,32 +58,15 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
     fetchMilestones();
   }, [fetchMilestones]);
 
-  const handleDeleteMilestone = (milestoneId: number) => {
-    console.log('handleDeleteMilestone called for milestoneId:', milestoneId);
-    confirmAlert({
-      title: 'Confirm to delete',
-      message: 'Are you sure you want to delete this milestone? This action cannot be undone.',
-      buttons: [
-        {
-          label: 'Yes, delete it',
-          onClick: async () => {
-            try {
-              await deleteMilestoneApi(milestoneId);
-              setMilestones(prevMilestones => prevMilestones.filter(m => m.id !== milestoneId));
-              message.success('Milestone deleted successfully!');
-            } catch (err: any) {
-              console.error(`Failed to delete milestone ${milestoneId}:`, err);
-              message.error(err.response?.data?.message || 'Failed to delete milestone.');
-            }
-          }
-        },
-        {
-          label: 'No, cancel',
-          onClick: () => {}
-        }
-      ],
-      overlayClassName: "custom-overlay-class-name"
-    });
+  const handleDeleteMilestone = async (milestoneId: number) => {
+    try {
+      await deleteMilestoneApi(milestoneId);
+      message.success('Xóa milestone thành công');
+      fetchMilestones();
+    } catch (err: any) {
+      console.error(`Error deleting milestone ${milestoneId}:`, err);
+      message.error(err.response?.data?.message || 'Xóa milestone thất bại');
+    }
   };
 
   const formatDate = (dateString: string | null | undefined): string => {
@@ -185,13 +166,26 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
 
                 <Col xs={24} sm={8} md={7} style={{ textAlign: 'right' }}>
                   <Space direction="vertical" size={8} align="end">
-                    {item.id && ( 
-                        <MilestoneItemActions
-                            milestoneId={item.id}
-                            projectId={projectId}
-                            onEdit={(milestoneIdToEdit, projId) => onEditMilestone(milestoneIdToEdit, projId, fetchMilestones)}
-                            onDelete={handleDeleteMilestone}
-                        />
+                    {item.id && (
+                      <Space size="middle">
+                        <Button
+                          type="text"
+                          icon={<EditOutlined />}
+                          onClick={() => onEditMilestone(item.id, projectId, fetchMilestones)}
+                        >
+                          Edit
+                        </Button>
+                        <Popconfirm
+                          title="Bạn có chắc muốn xóa milestone này?"
+                          onConfirm={() => handleDeleteMilestone(item.id)}
+                          okText="Có"
+                          cancelText="Không"
+                        >
+                          <Button type="text" icon={<DeleteOutlined />} danger>
+                            Delete
+                          </Button>
+                        </Popconfirm>
+                      </Space>
                     )}
                     <Tag
                       color={getMilestoneStatusColor(item.status)}

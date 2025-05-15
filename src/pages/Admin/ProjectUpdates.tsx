@@ -11,7 +11,7 @@ import {
   Alert,
   message,
   Tooltip,
-  Col // Thêm Col nếu chưa có
+  Col
 } from 'antd';
 import {
   EditOutlined,
@@ -28,9 +28,12 @@ import { Project } from '../../types/project';
 import AddProjectModal from '../../components/Admin/AddProjectModal';
 import AddMilestoneModal from '../../components/Admin/AddMilestoneModal';
 import MilestoneDetailsDisplay from '../../components/Admin/MilestoneDetailsDisplay';
-import EditMilestoneModal from '../../components/Admin/EditMilestoneModal'; // Bỏ comment dòng này
+import EditMilestoneModal from '../../components/Admin/EditMilestoneModal';
 import TimelogDetailsDisplay from '../../components/Admin/TimelogDetailsDisplay';
-
+import EditProjectModal from '../../components/Admin/EditProjectModal';
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
+import ProjectDetailsDisplay from '../../components/Admin/ProjectDetailsDisplay';
 const { Text, Title } = Typography;
 
 const ProjectUpdates: React.FC = () => {
@@ -47,10 +50,14 @@ const ProjectUpdates: React.FC = () => {
   // States cho EditMilestoneModal
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
   const [isEditMilestoneModalVisible, setIsEditMilestoneModalVisible] = useState(false);
-  const [editingMilestoneProjectId, setEditingMilestoneProjectId] = useState<number | null>(null); // ProjectId của milestone đang edit
+  const [editingMilestoneProjectId, setEditingMilestoneProjectId] = useState<number | null>(null);
 
   const [currentMilestoneRefreshCallback, setCurrentMilestoneRefreshCallback] = useState<(() => void) | null>(null);
 
+  // Thêm các states cho EditProjectModal
+  const [isEditProjectModalVisible, setIsEditProjectModalVisible] = useState<boolean>(false);
+  const [selectedProjectForEdit, setSelectedProjectForEdit] = useState<number | null>(null);
+  
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -91,7 +98,7 @@ const ProjectUpdates: React.FC = () => {
       setProjects(prev => prev.filter(project => project.id !== id));
       message.success('Project deleted successfully!');
       if (expandedProjectId === id) {
-        setExpandedProjectId(null); // Collapse if the deleted project was expanded
+        setExpandedProjectId(null);
       }
     } catch (err) {
       setError("Failed to delete project. Please try again later.");
@@ -139,17 +146,15 @@ const ProjectUpdates: React.FC = () => {
     }
   };
 
-  // Hàm được gọi khi nhấn nút Edit trong MilestoneDetailsDisplay
   const handleEditMilestone = (milestoneId: number, projectId: number, refreshCallback?: () => void) => {
     setSelectedMilestoneId(milestoneId);
-    setEditingMilestoneProjectId(projectId); // Lưu projectId của milestone đang edit
+    setEditingMilestoneProjectId(projectId);
     if (refreshCallback) {
         setCurrentMilestoneRefreshCallback(() => refreshCallback);
     }
     setIsEditMilestoneModalVisible(true);
   };
 
-  // Hàm đóng EditMilestoneModal
   const handleEditMilestoneModalClose = () => {
     setIsEditMilestoneModalVisible(false);
     setSelectedMilestoneId(null);
@@ -157,14 +162,13 @@ const ProjectUpdates: React.FC = () => {
     setCurrentMilestoneRefreshCallback(null);
   };
 
-  // Hàm xử lý khi EditMilestoneModal thành công
   const handleEditMilestoneSuccess = () => {
     setIsEditMilestoneModalVisible(false);
     setSelectedMilestoneId(null);
     setEditingMilestoneProjectId(null);
     message.success('Milestone updated successfully!');
     if (currentMilestoneRefreshCallback) {
-      currentMilestoneRefreshCallback(); // Gọi callback để refresh list milestone
+      currentMilestoneRefreshCallback();
       setCurrentMilestoneRefreshCallback(null);
     }
   };
@@ -177,6 +181,23 @@ const ProjectUpdates: React.FC = () => {
     setExpandedTimelogProjectId(prevId => (prevId === projectId ? null : projectId));
   };
 
+  const handleEditProject = (projectId: number) => {
+    setSelectedProjectForEdit(projectId);
+    setIsEditProjectModalVisible(true);
+  };
+  
+  const handleEditProjectModalClose = () => {
+    setIsEditProjectModalVisible(false);
+    setSelectedProjectForEdit(null);
+  };
+  
+  const handleEditProjectSuccess = () => {
+    setIsEditProjectModalVisible(false);
+    setSelectedProjectForEdit(null);
+    message.success('Project updated successfully!');
+    fetchProjects();
+  };
+  
   if (loading && projects.length === 0) {
     return (
       <Card>
@@ -220,118 +241,33 @@ const ProjectUpdates: React.FC = () => {
     >
     {error && !loading && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
       <List
-        loading={loading}
-        itemLayout="vertical"
-        dataSource={projects}
-        renderItem={(item: Project) => {
-          const isExpanded = expandedProjectId === item.id;
-          return (
-            <List.Item
-              key={item.id}
-              style={{
-                background: '#f9fafb',
-                borderRadius: '8px',
-                marginBottom: '16px',
-                padding: '16px',
-                transition: 'all 0.3s ease',
-                border: '1px solid #e8e8e8',
-              }}
-              actions={[
-                <Button
-                  key="edit-project"
-                  type="text"
-                  icon={<EditOutlined />}
-                  // onClick={() => handleEditProject(item.id)} // Cần hàm handleEditProject nếu muốn edit project
-                > Edit Project </Button>,
-                item.type === 'FIXED_PRICE' && (
-                  <Button
-                    key="milestone-details"
-                    type="text"
-                    icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
-                    onClick={() => toggleMilestoneDetail(item.id)}
-                  >
-                    {isExpanded ? 'Hide Milestones' : 'Show Milestones'}
-                  </Button>
-                ),
-                item.type === 'LABOR' && (
-                  <Button
-                    key="show-timelog"
-                    type="text"
-                    icon={expandedTimelogProjectId === item.id ? <UpOutlined /> : <DownOutlined />}
-                    onClick={() => toggleTimelogDetail(item.id)}
-                  >
-                    {expandedTimelogProjectId === item.id ? 'Hide Timelog' : 'Show Timelog'}
-                  </Button>
-                ),
-                <Button
-                  key="delete"
-                  type="text"
-                  icon={<DeleteOutlined />}
-                  danger
-                  loading={deletingId === item.id}
-                  onClick={() => handleDelete(item.id)}
-                />
-              ].filter(Boolean)}
-            >
-              <Row justify="space-between" align="top">
-                <Space direction="vertical" size={2} style={{ flex: 1 }}>
-                  <Space size={8} wrap>
-                    <Tag color={getStatusColor(item.status)}>{item.status}</Tag>
-                    <Tag>{item.type}</Tag>
-                  </Space>
-
-                  <Text strong style={{ fontSize: '16px' }}>{item.name}</Text>
-                  <Text type="secondary">{item.description}</Text>
-
-                  <Space size={16} style={{ marginTop: 8, flexWrap: 'wrap' }}>
-                    <Space>
-                    <UserOutlined />
-                  <Text type="secondary">
-                    {item.users && item.users.length > 0 ? (
-                      item.users.length > 2 ? (
-                        <Tooltip title={item.users.map(user => user.email).join(', ')}>
-                          {item.users.slice(0, 2).map(user => user.email).join(', ')}
-                          {`, and ${item.users.length - 2} more`}
-                        </Tooltip>
-                      ) : (
-                        item.users.map(user => user.email).join(', ')
-                      )
-                    ) : (
-                      'N/A'
-                    )}
-                  </Text>
-                    </Space>
-                    <Space>
-                      <CalendarOutlined />
-                      <Text type="secondary">Start: {item.startDate ? new Date(item.startDate).toLocaleDateString() : 'N/A'}</Text>
-                    </Space>
-                    <Space>
-                      <CalendarOutlined />
-                      <Text type="secondary">Planned End: {item.plannedEndDate ? new Date(item.plannedEndDate).toLocaleDateString() : 'N/A'}</Text>
-                    </Space>
-                  </Space>
-                </Space>
-              </Row>
-
-              {isExpanded && item.type === 'FIXED_PRICE' && (
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
-                  <MilestoneDetailsDisplay
-                    projectId={item.id}
-                    onAddMilestone={(refreshCallback) => handleAddMilestoneClick(item.id, refreshCallback)}
-                    onEditMilestone={(milestoneId, _, refreshCallback) => handleEditMilestone(milestoneId, item.id, refreshCallback)}
-                  />
-                </div>
-              )}
-
-              {expandedTimelogProjectId === item.id && item.type === 'LABOR' && (
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
-                  <TimelogDetailsDisplay projectId={item.id} users={[]} />
-                </div>
-              )}
-            </List.Item>  
-          );
-        }}
-      />
+  loading={loading}
+  itemLayout="vertical"
+  dataSource={projects}
+  renderItem={(item: Project) => (
+    <ProjectDetailsDisplay
+      project={item}
+      isExpanded={expandedProjectId === item.id}
+      expandedTimelogProjectId={expandedTimelogProjectId}
+      deletingId={deletingId}
+      onEditProject={handleEditProject}
+      onDeleteProject={(id) =>
+        confirmAlert({
+          title: 'Confirm Deletion',
+          message: 'Are you sure you want to delete this project?',
+          buttons: [
+            { label: 'Yes', onClick: () => handleDelete(id) },
+            { label: 'No', onClick: () => {} },
+          ],
+        })
+      }
+      onToggleMilestoneDetail={toggleMilestoneDetail}
+      onToggleTimelogDetail={toggleTimelogDetail}
+      onAddMilestone={handleAddMilestoneClick}
+      onEditMilestone={handleEditMilestone}
+    />
+  )}
+/>
     </Card>
 
     <AddProjectModal
@@ -354,9 +290,19 @@ const ProjectUpdates: React.FC = () => {
       <EditMilestoneModal
         visible={isEditMilestoneModalVisible}
         milestoneId={selectedMilestoneId}
-        projectId={editingMilestoneProjectId} // Truyền projectId của milestone đang edit
+        projectId={editingMilestoneProjectId}
         onClose={handleEditMilestoneModalClose}
         onSuccess={handleEditMilestoneSuccess}
+      />
+    )}
+
+    {isEditProjectModalVisible && selectedProjectForEdit && (
+      <EditProjectModal
+        visible={isEditProjectModalVisible}
+        projectId={selectedProjectForEdit}
+        projectData={projects.find(p => p.id === selectedProjectForEdit)}
+        onClose={handleEditProjectModalClose}
+        onSuccess={handleEditProjectSuccess}
       />
     )}
     </>

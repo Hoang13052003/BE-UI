@@ -393,5 +393,33 @@
       "confirm": "Yes, do it",
       "cancel": "Cancel"
     }
+  },
+  "project": {
+    "edit": {
+      "title": "Edit Project"
+    },
+    "form": {
+      "name": "Project Name",
+      "description": "Description",
+      "type": "Project Type",
+      "status": "Status",
+      "startDate": "Start Date",
+      "plannedEndDate": "Planned End Date",
+      "totalBudget": "Total Budget",
+      "totalEstimatedHours": "Total Estimated Hours",
+      "teamMembers": "Team Members",
+      "searchUsersHint": "Enter email or name to search"
+    },
+    "type": {
+      "fixedPrice": "Fixed Price Project",
+      "labor": "Labor Hour Project"
+    },
+    "status": {
+      "notStarted": "Not Started",
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "closed": "Closed"
+    }
   }
+  
 }

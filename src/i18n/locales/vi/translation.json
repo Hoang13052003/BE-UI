@@ -410,5 +410,32 @@
       "confirm": "Vâng, thực hiện",
       "cancel": "Hủy bỏ"
     }
+  },
+  "project": {
+  "edit": {
+    "title": "Chỉnh sửa dự án"
+  },
+  "form": {
+    "name": "Tên dự án",
+    "description": "Mô tả",
+    "type": "Loại dự án",
+    "status": "Trạng thái",
+    "startDate": "Ngày bắt đầu",
+    "plannedEndDate": "Ngày kết thúc dự kiến",
+    "totalBudget": "Ngân sách",
+    "totalEstimatedHours": "Số giờ ước tính",
+    "teamMembers": "Thành viên dự án",
+    "searchUsersHint": "Nhập email hoặc tên để tìm kiếm"
+  },
+  "type": {
+    "fixedPrice": "Dự án giá cố định",
+    "labor": "Dự án tính giờ lao động"
+  },
+  "status": {
+    "notStarted": "Chưa bắt đầu",
+    "pending": "Đang chờ",
+    "inProgress": "Đang thực hiện",
+    "closed": "Đã đóng"
   }
+}
 }
