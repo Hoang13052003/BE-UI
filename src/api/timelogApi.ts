@@ -66,3 +66,10 @@ export const getTimeLogsByDateRangeApi = async (
   });
   return data;
 };
+
+export const putUpdateTimeLogApi = async (
+  timelogId: number,
+  payload: TimeLogRequest
+): Promise<void> => {
+  await axiosClient.put(`/api/timelogs/${timelogId}`, payload);
+};
