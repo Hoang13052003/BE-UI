@@ -3,9 +3,9 @@ import axiosClient from "./axiosClient";
 import { UserIdAndEmailResponse } from "../types/User";
 
 export interface UserSearchParams {
-  'searchTerm.contains'?: string;
-  'searchTerm.equals'?: string;
-  'searchTerm.in'?: string[];
+  "searchTerm.contains"?: string;
+  "searchTerm.equals"?: string;
+  "searchTerm.in"?: string[];
   page?: number;
   size?: number;
   sort?: string;
@@ -65,6 +65,31 @@ export const createUser = (data: User): Promise<User> => {
   return axiosClient.post("/api/private/admin/create-user", data);
 };
 
+export const assignProjectToUser = async (
+  userId: number,
+  projectId: number
+): Promise<void> => {
+  await axiosClient.post("/api/private/admin/assign-project", null, {
+    params: {
+      userId,
+      projectId,
+    },
+  });
+};
+
+// Add new API function to remove project from user
+export const removeProjectFromUser = async (
+  userId: number,
+  projectId: number
+): Promise<void> => {
+  await axiosClient.delete("/api/private/admin/remove-project-form-user", {
+    params: {
+      userId,
+      projectId,
+    },
+  });
+};
+
 export const updateUser = (
   id: number,
   data: UpdateUserPayload
@@ -98,16 +123,22 @@ export const searchUsersByEmailOrUsernameApi = async (
   totalItems: number;
 }> => {
   try {
-    const response = await axiosClient.get('/api/private/admin/user/search-id-email', {
-      params: searchParams
-    });
-    
+    const response = await axiosClient.get(
+      "/api/private/admin/user/search-id-email",
+      {
+        params: searchParams,
+      }
+    );
+
     return {
       users: response.data,
-      totalItems: parseInt(response.headers['x-total-count'] || '0', 10)
+      totalItems: parseInt(response.headers["x-total-count"] || "0", 10),
     };
   } catch (error) {
-    console.error('[userApi.ts] Failed to search users by email or username', error);
+    console.error(
+      "[userApi.ts] Failed to search users by email or username",
+      error
+    );
     throw error;
   }
 };

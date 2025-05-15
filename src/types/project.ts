@@ -15,5 +15,6 @@ export interface Project {
   actualEndDate: string | null; // Format: "YYYY-MM-DD" (can be null)
   totalBudget: number;
   totalEstimatedHours: number | null; // Updated to allow null based on sample data
+  progress: number;
   users: ProjectUser[]; // List of users assigned to the project
 }

@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Card, Row, Col, Button, Space,
-  Statistic, 
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  Row,
+  Col,
+  Button,
+  Space,
+  Statistic,
   // List, Typography,
   Spin,
   Alert,
-} from 'antd';
-import { ArrowUpOutlined } from '@ant-design/icons';
+} from "antd";
+import { ArrowUpOutlined } from "@ant-design/icons";
 
-import DashboardChart from '../../components/Admin/dashboard/DashboardChart';
+import DashboardChart from "../../components/Admin/dashboard/DashboardChart";
 // import TimeLogChart from '../../components/Admin/dashboard/TimeLogChart';
-import ProjectList from '../../components/Admin/dashboard/ProjectList';
-import { DashboardSummary, getAdminDashboardSummary } from '../../api/dashboardAdminApi';
-
-// const { Title } = Typography;
-
-// interface Feedback {
-//   project: string;
-//   message: string;
-//   time: string;
-// }
+import ProjectList from "../../components/Admin/dashboard/ProjectList";
+import {
+  DashboardSummary,
+  getAdminDashboardSummary,
+} from "../../api/dashboardAdminApi";
 
 const Overview: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
@@ -30,15 +29,10 @@ const Overview: React.FC = () => {
     onTrackCount: 0,
     delayedCount: 0,
     atRiskCount: 0,
-    recentFeedback: [],
     projectStatus: {
       labels: [],
-      data: []
+      data: [],
     },
-    timeLog: {
-      labels: [],
-      data: []
-    }
   });
 
   // Define columns for milestones table
@@ -49,7 +43,7 @@ const Overview: React.FC = () => {
       try {
         setLoading(true);
         const data = await getAdminDashboardSummary();
-        console.log('Dashboard Data:', data.projectStatus);
+        console.log("Dashboard Data:", data.projectStatus);
         setDashboardData(data);
         setError(null);
       } catch (err) {
@@ -80,8 +74,9 @@ const Overview: React.FC = () => {
 
   // Calculate percentages safely
   const calculatePercent = (value: number) => {
-    return dashboardData.activeProjects ? 
-      Math.round((value / dashboardData.activeProjects) * 100) : 0;
+    return dashboardData.activeProjects
+      ? Math.round((value / dashboardData.activeProjects) * 100)
+      : 0;
   };
 
   return (
@@ -106,8 +101,8 @@ const Overview: React.FC = () => {
             <Statistic
               title="On Track"
               value={dashboardData.onTrackCount}
-               suffix={`${calculatePercent(dashboardData.onTrackCount)}%`}
-              valueStyle={{ color: '#3f8600' }}
+              suffix={`${calculatePercent(dashboardData.onTrackCount)}%`}
+              valueStyle={{ color: "#3f8600" }}
               prefix={<ArrowUpOutlined />}
             />
           </Card>
@@ -118,7 +113,7 @@ const Overview: React.FC = () => {
               title="Delayed"
               value={dashboardData.delayedCount}
               suffix={`${calculatePercent(dashboardData.delayedCount)}%`}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: "#cf1322" }}
             />
           </Card>
         </Col>
@@ -128,7 +123,7 @@ const Overview: React.FC = () => {
               title="At Risk"
               value={dashboardData.atRiskCount}
               suffix={`${calculatePercent(dashboardData.atRiskCount)}%`}
-              valueStyle={{ color: '#faad14' }}
+              valueStyle={{ color: "#faad14" }}
             />
           </Card>
         </Col>
@@ -155,14 +150,23 @@ const Overview: React.FC = () => {
           </Card>
         </Col>
         <Col span={8}>
-            <Card
-              loading={loading}
-              title="Recent Feedback"
-              style={{ height: '404px', position: 'relative', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}
-              bodyStyle={{ padding: '16px' }}
-              extra={<Button type="link" style={{ fontWeight: 'bold' }}>View All</Button>}
-            >
-              {/* <List
+          <Card
+            loading={loading}
+            title="Recent Feedback"
+            style={{
+              height: "404px",
+              position: "relative",
+              borderRadius: "8px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+            }}
+            bodyStyle={{ padding: "16px" }}
+            extra={
+              <Button type="link" style={{ fontWeight: "bold" }}>
+                View All
+              </Button>
+            }
+          >
+            {/* <List
               dataSource={dashboardData.recentFeedback}
               renderItem={(item: Feedback, index: number) => (
                 <List.Item key={index} style={{ padding: '12px 0', borderBottom: index === dashboardData.recentFeedback.length - 1 ? 'none' : '1px solid #f0f0f0' }}>
@@ -186,15 +190,12 @@ const Overview: React.FC = () => {
                 </List.Item>
               )}
               /> */}
-            </Card>
+          </Card>
         </Col>
       </Row>
 
       {/* Milestones Table */}
-      <Card 
-        title="Projects" 
-        className="mb-4"
-      >
+      <Card title="Projects" className="mb-4">
         <ProjectList />
       </Card>
     </div>

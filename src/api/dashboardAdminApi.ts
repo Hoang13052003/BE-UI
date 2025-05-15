@@ -1,6 +1,5 @@
 import { Project } from "../types/project";
 import axiosClient from "./axiosClient";
-import { Feedback } from "./feedbackApi";
 
 // export interface Attachment {
 //   id: number;
@@ -20,12 +19,7 @@ export interface DashboardSummary {
   onTrackCount: number;
   delayedCount: number;
   atRiskCount: number;
-  recentFeedback: Feedback[];
   projectStatus: {
-    labels: string[];
-    data: number[];
-  };
-  timeLog: {
     labels: string[];
     data: number[];
   };

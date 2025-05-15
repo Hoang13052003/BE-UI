@@ -1,3 +1,5 @@
+import { Project } from "./project";
+
 export interface ProjectName {
   id: number;
   name: string;
@@ -12,7 +14,7 @@ export interface User {
   image: string | null;
   note: string;
   role: string;
-  projects: ProjectName[];
+  projects: Project[];
   isActive: boolean;
 }
 
