@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Tag, Typography, message } from 'antd';
-import { Link } from 'react-router-dom';
-import type { ColumnsType } from 'antd/es/table';
-import { filterProjects } from '../../../api/projectApi';
-import { Project } from '../../../types/project';
+import React, { useState, useEffect } from "react";
+import { Table, Tag, Typography, message } from "antd";
+import { Link } from "react-router-dom";
+import type { ColumnsType } from "antd/es/table";
+import { filterProjects } from "../../../api/projectApi";
+import { Project } from "../../../types/project";
 
 const { Text } = Typography;
 
@@ -20,22 +20,22 @@ const ProjectList: React.FC = () => {
       const response = await filterProjects(
         {
           // Add any default criteria if needed
-          projectName: undefined,
+          name: undefined,
           status: undefined,
           startDate: undefined,
-          endDate: undefined
+          endDate: undefined,
         },
         page,
         size
       );
 
-      if (response.users) {
-        setProjects(response.users);
+      if (response.projects) {
+        setProjects(response.projects);
         setTotalCount(response.totalCount || 0);
       }
     } catch (error) {
-      console.error('Failed to fetch projects:', error);
-      message.error('Failed to load projects');
+      console.error("Failed to fetch projects:", error);
+      message.error("Failed to load projects");
     } finally {
       setLoading(false);
     }
@@ -47,82 +47,81 @@ const ProjectList: React.FC = () => {
 
   // Status color mapping
   const statusColors: Record<string, string> = {
-    'NEW': 'blue',
-    'PENDING': 'orange',
-    'PROGRESS': 'green',
-    'CLOSED': 'gray'
+    NEW: "blue",
+    PENDING: "orange",
+    PROGRESS: "green",
+    CLOSED: "gray",
   };
 
-  // Calculate progress based on status
-  const calculateProgress = (status: string): number => {
-    switch (status) {
-      case 'NEW':
-        return 0;
-      case 'PENDING':
-        return 25;
-      case 'PROGRESS':
-        return 75;
-      case 'CLOSED':
-        return 100;
-      default:
-        return 0;
-    }
-  };
-
+  // // Calculate progress based on status
+  // const calculateProgress = (status: string): number => {
+  //   switch (status) {
+  //     case "NEW":
+  //       return 0;
+  //     case "PENDING":
+  //       return 25;
+  //     case "PROGRESS":
+  //       return 75;
+  //     case "CLOSED":
+  //       return 100;
+  //     default:
+  //       return 0;
+  //   }
+  // };
 
   const columns: ColumnsType<Project> = [
     {
-      title: 'Project Name',
-      key: 'name',
+      title: "Project Name",
+      key: "name",
       render: (_, record) => (
         <div>
           <div className="font-medium">{record.name}</div>
-          <Text type="secondary" className="text-sm">{record.description}</Text>
+          <Text type="secondary" className="text-sm">
+            {record.description}
+          </Text>
         </div>
       ),
     },
     {
-      title: 'Type',
-      key: 'type',
-      render: (_, record) => (
-        <Tag color="blue">{record.type}</Tag>
-      ),
+      title: "Type",
+      key: "type",
+      render: (_, record) => <Tag color="blue">{record.type}</Tag>,
     },
     {
-      title: 'Progress',
-      key: 'progress',
+      title: "Progress",
+      key: "progress",
       render: (_, record) => (
         <div className="flex items-center">
           <div className="progress-bar-container">
-            <div 
+            <div
               className="progress-bar-fill"
-              style={{ width: `${calculateProgress(record.status) || 0}%` }}
+              style={{ width: `${record.progress || 0}%` }}
             />
           </div>
-          <span className="ml-2">{calculateProgress(record.status) || 0}%</span>
+          <span className="ml-2">{record.progress || 0}%</span>
         </div>
       ),
     },
     {
-      title: 'Status',
-      key: 'status',
+      title: "Status",
+      key: "status",
       render: (_, record) => {
         return (
-          <Tag color={statusColors[record.status] || 'default'}>
+          <Tag color={statusColors[record.status] || "default"}>
             {record.status}
           </Tag>
         );
-      }
+      },
     },
     {
-      title: 'Deadline',
-      key: 'deadline',
+      title: "Deadline",
+      key: "deadline",
       render: (_, record) => {
         const formatDate = (date: string) => {
-          return new Date(date).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
+          return new Date(date).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
           });
         };
 
@@ -139,14 +138,17 @@ const ProjectList: React.FC = () => {
       },
     },
     {
-      title: 'Action',
-      key: 'action',
+      title: "Action",
+      key: "action",
       render: (_, record) => (
-        <Link to={`/projects/${record.id}`} className="text-blue-600 hover:text-blue-700">
+        <Link
+          to={`/projects/${record.id}`}
+          className="text-blue-600 hover:text-blue-700"
+        >
           View Details
         </Link>
       ),
-    },    
+    },
   ];
 
   return (
@@ -164,7 +166,7 @@ const ProjectList: React.FC = () => {
           setPageSize(size);
         },
         showSizeChanger: true,
-        showTotal: (total) => `Total ${total} projects`
+        showTotal: (total) => `Total ${total} projects`,
       }}
       className="projects-table"
     />

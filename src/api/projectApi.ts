@@ -4,7 +4,7 @@ import { ProjectRequest } from "../types/ProjectRequest";
 
 export const filterProjects = async (
   criteria: {
-    projectName?: string;
+    name?: string;
     status?: string;
     startDate?: string;
     endDate?: string;
@@ -18,8 +18,8 @@ export const filterProjects = async (
       size,
     };
 
-    if (criteria.projectName) {
-      params["projectName.contains"] = criteria.projectName;
+    if (criteria.name) {
+      params["name.contains"] = criteria.name;
     }
     if (criteria.status) {
       params["status.contains"] = criteria.status;
@@ -39,7 +39,7 @@ export const filterProjects = async (
     const totalCount = headers["x-total-count"];
     const links = headers["x-link"];
 
-    return { users: data, totalCount, links };
+    return { projects: data, totalCount, links };
   } catch (error) {
     console.error("Error fetching filtered projects:", error);
     throw error;

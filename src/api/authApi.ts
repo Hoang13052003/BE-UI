@@ -58,14 +58,24 @@ export const logoutApi = async (): Promise<AuthResponse> => {
 export const signupApi = async (
   email: string,
   password: string,
-  fullName: string
+  fullName: string,
+  recaptchaToken: string
 ) => {
-  const response = await axiosClient.post("/api/auth/signup", {
-    email,
-    password,
-    fullName,
-  });
-  return response.data;
+  try {
+    console.log("Sending signup request with token:", recaptchaToken);
+
+    const response = await axiosClient.post("/api/auth/signup", {
+      email,
+      password,
+      fullName,
+      recaptchaToken, // Đảm bảo tên field này match với backend DTO
+    });
+
+    return response.data;
+  } catch (error: unknown) {
+    console.error("Signup API Error:", error);
+    throw error;
+  }
 };
 
 export const getUserInfoApi = async (): Promise<UserInfo> => {
