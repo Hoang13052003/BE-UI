@@ -1,12 +1,11 @@
 // filepath: d:\labsparkmind\BE-UI\src\components\Admin\MilestoneDetailsDisplay.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, Popconfirm, message } from 'antd';
+import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, Popconfirm, message, Pagination } from 'antd';
 import {
   CalendarOutlined,
   FlagOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  FileTextOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -17,10 +16,9 @@ import {
   deleteMilestoneApi
 } from '../../api/milestoneApi';
 import { Milestone, MilestoneStatus } from '../../types/milestone';
-import MilestoneItemActions from './MilestoneDetailsButton/MilestoneItemActions';
 import MilestoneInfo from './MilestoneDetailsDisplay/MilestoneInfo';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 interface MilestoneDetailsDisplayProps {
   projectId: number;
@@ -32,6 +30,11 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   const fetchMilestones = useCallback(async () => {
     if (!projectId) {
@@ -43,8 +46,13 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
     setLoading(true);
     setError(null);
     try {
-      const data = await getMilestonesByProjectIdApi(projectId);
-      setMilestones(Array.isArray(data) ? data : []);
+      const { milestones: milestoneData, totalItems } = await getMilestonesByProjectIdApi(
+        projectId,
+        currentPage,
+        pageSize
+      );
+      setMilestones(Array.isArray(milestoneData) ? milestoneData : []);
+      setTotalItems(totalItems);
     } catch (err: any) {
       console.error(`Failed to fetch milestones for project ${projectId}:`, err);
       setError(err.response?.data?.message || 'Failed to load milestone details.');
@@ -52,11 +60,20 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, currentPage, pageSize]);
 
   useEffect(() => {
     fetchMilestones();
   }, [fetchMilestones]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page - 1); // Chuyển từ 1-based sang 0-based index
+  };
+
+  const handlePageSizeChange = (current: number, size: number) => {
+    setPageSize(size);
+    setCurrentPage(0); // Reset về trang đầu tiên khi thay đổi kích thước
+  };
 
   const handleDeleteMilestone = async (milestoneId: number) => {
     try {
@@ -136,93 +153,111 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
       )}
 
       {Array.isArray(milestones) && milestones.length > 0 && (
-        <List
-          className="milestone-list"
-          itemLayout="horizontal"
-          dataSource={milestones}
-          loading={loading && milestones.length > 0}
-          renderItem={(item) => (
-            <List.Item
-              key={item.id}
-              className={`milestone-item ${item.completed ? 'milestone-completed' : ''}`}
-              style={{
-                padding: '16px',
-                borderRadius: '6px',
-                background: item.completed ? '#f6ffed' : '#ffffff',
-                marginBottom: '12px',
-                border: `1px solid ${item.completed ? '#b7eb8f' : '#f0f0f0'}`,
-                transition: 'background 0.3s ease, border 0.3s ease'
-              }}
-            >
-              <Row gutter={[16, 16]} style={{ width: '100%' }} align="middle">
-                <Col flex="auto">
-                  <MilestoneInfo
-                    name={item.name}
-                    description={item.description}
-                    notes={item.notes}
-                    completed={item.completed}
-                  />
-                </Col>
+        <>
+          <List
+            className="milestone-list"
+            itemLayout="horizontal"
+            dataSource={milestones}
+            loading={loading && milestones.length > 0}
+            renderItem={(item) => (
+              <List.Item
+                key={item.id}
+                className={`milestone-item ${item.completed ? 'milestone-completed' : ''}`}
+                style={{
+                  padding: '16px',
+                  borderRadius: '6px',
+                  background: item.completed ? '#f6ffed' : '#ffffff',
+                  marginBottom: '12px',
+                  border: `1px solid ${item.completed ? '#b7eb8f' : '#f0f0f0'}`,
+                  transition: 'background 0.3s ease, border 0.3s ease'
+                }}
+              >
+                <Row gutter={[16, 16]} style={{ width: '100%' }} align="middle">
+                  <Col flex="auto">
+                    <MilestoneInfo
+                      name={item.name}
+                      description={item.description}
+                      notes={item.notes}
+                      completed={item.completed}
+                    />
+                  </Col>
 
-                <Col xs={24} sm={8} md={7} style={{ textAlign: 'right' }}>
-                  <Space direction="vertical" size={8} align="end">
-                    {item.id && (
-                      <Space size="middle">
-                        <Button
-                          type="text"
-                          icon={<EditOutlined />}
-                          onClick={() => onEditMilestone(item.id, projectId, fetchMilestones)}
-                        >
-                          Edit
-                        </Button>
-                        <Popconfirm
-                          title="Bạn có chắc muốn xóa milestone này?"
-                          onConfirm={() => handleDeleteMilestone(item.id)}
-                          okText="Có"
-                          cancelText="Không"
-                        >
-                          <Button type="text" icon={<DeleteOutlined />} danger>
-                            Delete
+                  <Col xs={24} sm={8} md={7} style={{ textAlign: 'right' }}>
+                    <Space direction="vertical" size={8} align="end">
+                      {item.id && (
+                        <Space size="middle">
+                          <Button
+                            type="text"
+                            icon={<EditOutlined />}
+                            onClick={() => onEditMilestone(item.id, projectId, fetchMilestones)}
+                          >
+                            Edit
                           </Button>
-                        </Popconfirm>
-                      </Space>
-                    )}
-                    <Tag
-                      color={getMilestoneStatusColor(item.status)}
-                      icon={getStatusIcon(item.status)}
-                      style={{ padding: '2px 8px', fontSize: '13px', margin: 0 }}
-                    >
-                      {item.status ? String(item.status).replace('_', ' ') : 'emty'}
-                    </Tag>
-                    <Space direction="vertical" size={4} style={{ fontSize: '12px' }}>
-                      <Space size={4}>
-                        <CalendarOutlined />
-                        <Text type="secondary">Start: {formatDate(item.startDate)}</Text>
-                      </Space>
-                      <Space size={4}>
-                        <CalendarOutlined />
-                        <Text type="secondary">Due: {formatDate(item.deadlineDate)}</Text>
-                      </Space>
-                      <Space size={4}>
-                        {item.completionDate ? (
-                          <>
-                            <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                            <Text type="secondary">Completed: {formatDate(item.completionDate)}</Text>
-                          </>
-                        ) : (
-                          <>
-                            <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                            <Text type="secondary">Incomplete</Text>
-                          </>
-                        )}
+                          <Popconfirm
+                            title="Bạn có chắc muốn xóa milestone này?"
+                            onConfirm={() => handleDeleteMilestone(item.id)}
+                            okText="Có"
+                            cancelText="Không"
+                          >
+                            <Button type="text" icon={<DeleteOutlined />} danger>
+                              Delete
+                            </Button>
+                          </Popconfirm>
+                        </Space>
+                      )}
+                      <Tag
+                        color={getMilestoneStatusColor(item.status)}
+                        icon={getStatusIcon(item.status)}
+                        style={{ padding: '2px 8px', fontSize: '13px', margin: 0 }}
+                      >
+                        {item.status ? String(item.status).replace('_', ' ') : 'emty'}
+                      </Tag>
+                      <Space direction="vertical" size={4} style={{ fontSize: '12px' }}>
+                        <Space size={4}>
+                          <CalendarOutlined />
+                          <Text type="secondary">Start: {formatDate(item.startDate)}</Text>
+                        </Space>
+                        <Space size={4}>
+                          <CalendarOutlined />
+                          <Text type="secondary">Due: {formatDate(item.deadlineDate)}</Text>
+                        </Space>
+                        <Space size={4}>
+                          {item.completionDate ? (
+                            <>
+                              <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                              <Text type="secondary">Completed: {formatDate(item.completionDate)}</Text>
+                            </>
+                          ) : (
+                            <>
+                              <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                              <Text type="secondary">Incomplete</Text>
+                            </>
+                          )}
+                        </Space>
                       </Space>
                     </Space>
-                  </Space>
-                </Col>
-              </Row>
-            </List.Item>
+                  </Col>
+                </Row>
+              </List.Item>
+            )}
+          />
+
+          {/* Thêm phân trang */}
+          {totalItems > pageSize && (
+            <Row justify="end" style={{ marginTop: 16 }}>
+              <Pagination
+                current={currentPage + 1} // Chuyển từ 0-based index trong code sang 1-based index cho UI
+                pageSize={pageSize}
+                total={totalItems}
+                onChange={handlePageChange}
+                showSizeChanger
+                onShowSizeChange={handlePageSizeChange}
+                pageSizeOptions={['5', '10', '20', '50']}
+                showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+              />
+            </Row>
           )}
-        />
+        </>
       )}
     </div>
   );

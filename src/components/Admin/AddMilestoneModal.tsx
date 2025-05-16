@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, DatePicker, Select, Button, message } from 'antd';
-import { getMilestoneStatusesApi, addMilestoneToProjectApi, MilestoneRequest } from '../../api/projectApi'; // Ensure this API path is correct
+import { addMilestoneToProjectApi, MilestoneRequest } from '../../api/projectApi'; // Ensure this API path is correct
 import TextArea from 'antd/lib/input/TextArea';
 
 interface AddMilestoneModalProps { // Renamed interface

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { List, Typography, Spin, Alert, Space, Row, Col, Button, Popconfirm, message } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { List, Typography, Spin, Alert, Space, Row, Col, Button, Popconfirm, message, Pagination } from 'antd';
 import {
   CalendarOutlined,
   ClockCircleOutlined,
@@ -11,7 +11,7 @@ import {
 import dayjs from 'dayjs';
 import { getTimeLogsByProjectIdApi, TimeLogResponse, deleteTimeLogApi } from '../../api/timelogApi';
 import AddTimeLogModal from './AddTimeLogModal';
-  import EditTimeLogModal from './EditTimeLogModal';
+import EditTimeLogModal from './EditTimeLogModal';
 
 const { Text, Title } = Typography;
 
@@ -23,7 +23,6 @@ interface TimelogDetailsDisplayProps {
 
 const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({ 
   projectId, 
-  onEditTimeLog,
   users = [] // Default to empty array if not provided
 }) => {
   const [timelogs, setTimelogs] = useState<TimeLogResponse[]>([]);
@@ -32,13 +31,23 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingTimelog, setEditingTimelog] = useState<TimeLogResponse | null>(null);
+  
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalItems, setTotalItems] = useState<number>(0);
 
-  // Fetch timelogs data
-  const fetchTimelogs = async () => {
+  // Fetch timelogs data với phân trang
+  const fetchTimelogs = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getTimeLogsByProjectIdApi(projectId);
-      setTimelogs(data);
+      const { timelogs: timelogData, totalItems } = await getTimeLogsByProjectIdApi(
+        projectId,
+        currentPage,
+        pageSize
+      );
+      setTimelogs(timelogData);
+      setTotalItems(totalItems);
       setError(null);
     } catch (err) {
       setError('Failed to load time logs. Please try again later.');
@@ -46,11 +55,11 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, currentPage, pageSize]);
 
   useEffect(() => {
     fetchTimelogs();
-  }, [projectId]);
+  }, [fetchTimelogs]);
 
   // Format date
   const formatDate = (dateString: string): string => {
@@ -79,6 +88,17 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
       setEditingTimelog(timelog);
       setIsEditModalVisible(true);
     }
+  };
+
+  // Xử lý thay đổi trang
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page - 1); // Chuyển từ 1-based index trong UI sang 0-based index cho API
+  };
+
+  // Xử lý thay đổi số lượng item trên trang
+  const handlePageSizeChange = (current: number, size: number) => {
+    setPageSize(size);
+    setCurrentPage(0); // Reset về trang đầu tiên khi thay đổi kích thước
   };
 
   if (loading && timelogs.length === 0) {
@@ -111,73 +131,91 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
       )}
 
       {timelogs.length > 0 && (
-        <List
-          className="timelog-list"
-          itemLayout="horizontal"
-          dataSource={timelogs}
-          loading={loading}
-          renderItem={(item) => (
-            <List.Item
-              key={item.id}
-              style={{
-                padding: '12px',
-                borderRadius: '6px',
-                background: '#ffffff',
-                marginBottom: '8px',
-                border: '1px solid #f0f0f0',
-                transition: 'background 0.3s ease'
-              }}
-              actions={[
-                <Button 
-                  key="edit" 
-                  type="text" 
-                  icon={<EditOutlined />} 
-                  size="small"
-                  onClick={() => handleEditTimeLog(item.id)}
-                >
-                  Edit
-                </Button>,
-                <Popconfirm
-                  key="delete"
-                  title="Bạn có chắc muốn xóa bản ghi này?"
-                  onConfirm={() => handleDeleteTimeLog(item.id)}
-                  okText="Có"
-                  cancelText="Không"
-                >
-                  <Button type="text" icon={<DeleteOutlined />} danger size="small">
-                    Delete
-                  </Button>
-                </Popconfirm>,
-              ]}
-            >
-              <List.Item.Meta
-                title={<Text strong>{item.taskDescription}</Text>}
-                description={
-                  <Space direction="vertical" size={2}>
-                    <Row>
-                      <Col xs={24} md={12}>
-                        <Space>
-                          <UserOutlined />
-                          <Text type="secondary">{item.performerFullName}</Text>
-                        </Space>
-                      </Col>
-                      <Col xs={24} md={12}>
-                        <Space>
-                          <ClockCircleOutlined />
-                          <Text type="secondary">{item.hoursSpent} hours</Text>
-                        </Space>
-                      </Col>
-                    </Row>
-                    <Space>
-                      <CalendarOutlined />
-                      <Text type="secondary">{formatDate(item.taskDate)}</Text>
+        <>
+          <List
+            className="timelog-list"
+            itemLayout="horizontal"
+            dataSource={timelogs}
+            loading={loading}
+            renderItem={(item) => (
+              <List.Item
+                key={item.id}
+                style={{
+                  padding: '12px',
+                  borderRadius: '6px',
+                  background: '#ffffff',
+                  marginBottom: '8px',
+                  border: '1px solid #f0f0f0',
+                  transition: 'background 0.3s ease'
+                }}
+                actions={[
+                  <Button 
+                    key="edit" 
+                    type="text" 
+                    icon={<EditOutlined />} 
+                    size="small"
+                    onClick={() => handleEditTimeLog(item.id)}
+                  >
+                    Edit
+                  </Button>,
+                  <Popconfirm
+                    key="delete"
+                    title="Bạn có chắc muốn xóa bản ghi này?"
+                    onConfirm={() => handleDeleteTimeLog(item.id)}
+                    okText="Có"
+                    cancelText="Không"
+                  >
+                    <Button type="text" icon={<DeleteOutlined />} danger size="small">
+                      Delete
+                    </Button>
+                  </Popconfirm>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={<Text strong>{item.taskDescription}</Text>}
+                  description={
+                    <Space direction="vertical" size={2}>
+                      <Row>
+                        <Col xs={24} md={12}>
+                          <Space>
+                            <UserOutlined />
+                            <Text type="secondary">{item.performerFullName}</Text>
+                          </Space>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <Space>
+                            <ClockCircleOutlined />
+                            <Text type="secondary">{item.hoursSpent} hours</Text>
+                          </Space>
+                        </Col>
+                      </Row>
+                      <Space>
+                        <CalendarOutlined />
+                        <Text type="secondary">{formatDate(item.taskDate)}</Text>
+                      </Space>
                     </Space>
-                  </Space>
-                }
+                  }
+                />
+              </List.Item>
+            )}
+          />
+          
+          {/* Thêm phân trang */}
+          {totalItems > 0 && (
+            <Row justify="end" style={{ marginTop: 16 }}>
+              <Pagination
+                current={currentPage + 1} // Chuyển từ 0-based index trong code sang 1-based index cho UI
+                pageSize={pageSize}
+                total={totalItems}
+                onChange={handlePageChange}
+                showSizeChanger
+                onShowSizeChange={handlePageSizeChange}
+                pageSizeOptions={['5', '10', '20', '50']}
+                showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
               />
-            </List.Item>
+            </Row>
           )}
-        />
+        </>
       )}
 
       {/* Add Time Log Modal */}

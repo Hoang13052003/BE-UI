@@ -2,11 +2,8 @@ import React from 'react';
 import { List, Tag, Typography, Space, Button, Row, Tooltip } from 'antd';
 import {
   EditOutlined,
-  DeleteOutlined,
   CalendarOutlined,
   UserOutlined,
-  PlusOutlined,
-  ClockCircleOutlined,
   DownOutlined,
   UpOutlined
 } from '@ant-design/icons';
@@ -27,6 +24,8 @@ interface ProjectDetailsDisplayProps {
   onToggleTimelogDetail: (id: number) => void;
   onAddMilestone: (projectId: number, refreshCallback?: () => void) => void;
   onEditMilestone: (milestoneId: number, projectId: number, refreshCallback?: () => void) => void;
+  deleteButton?: React.ReactNode;
+  theme?: string; // Thêm dòng này
 }
 
 const getStatusColor = (status: Project['status']) => {
@@ -43,24 +42,25 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   project,
   isExpanded,
   expandedTimelogProjectId,
-  deletingId,
   onEditProject,
-  onDeleteProject,
   onToggleMilestoneDetail,
   onToggleTimelogDetail,
   onAddMilestone,
-  onEditMilestone
+  onEditMilestone,
+  deleteButton,
+  theme // Thêm dòng này
 }) => {
   return (
     <List.Item
       key={project.id}
       style={{
-        background: '#f9fafb',
+        background: theme === 'dark' ? '#181818' : '#f9fafb', // Sử dụng theme
         borderRadius: '8px',
         marginBottom: '16px',
         padding: '16px',
         transition: 'all 0.3s ease',
-        border: '1px solid #e8e8e8',
+        border: theme === 'dark' ? '1px solid #333' : '1px solid #e8e8e8', // Sử dụng theme
+        color: theme === 'dark' ? '#fff' : undefined // Sử dụng theme
       }}
       actions={[
         <Button
@@ -91,14 +91,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             {expandedTimelogProjectId === project.id ? 'Hide Timelog' : 'Show Timelog'}
           </Button>
         ),
-        <Button
-          key="delete"
-          type="text"
-          icon={<DeleteOutlined />}
-          danger
-          loading={deletingId === project.id}
-          onClick={() => onDeleteProject(project.id)}
-        />
+        deleteButton // Thay vì tự tạo nút xóa, dùng prop deleteButton
       ].filter(Boolean)}
     >
       <Row justify="space-between" align="top">

@@ -1,9 +1,33 @@
 import axiosClient from "./axiosClient";
 import { Milestone, MilestoneUpdateRequestData} from "../types/milestone";
+import { SortConfig, fetchPaginatedData, PaginatedResult } from './apiUtils';
 
-export const getMilestonesByProjectIdApi = async (projectId: number): Promise<Milestone[]> => {
-  const { data } = await axiosClient.get(`/api/projects/${projectId}/milestones`);
-  return data;
+export interface MilestoneFetchResult extends PaginatedResult<Milestone> {
+  milestones: Milestone[]; // Tương thích với code cũ
+}
+
+export const getMilestonesByProjectIdApi = async (
+  projectId: number,
+  page: number = 0,
+  size: number = 10,
+  sortConfig?: SortConfig | SortConfig[]
+): Promise<MilestoneFetchResult> => {
+  try {
+    const result = await fetchPaginatedData<Milestone>(
+      `/api/projects/${projectId}/milestones`, 
+      page, 
+      size, 
+      sortConfig
+    );
+    
+    return {
+      ...result,
+      milestones: result.items
+    };
+  } catch (error) {
+    console.error("Error fetching milestones:", error);
+    throw error;
+  }
 };
 
 export const deleteMilestoneApi = async (milestoneId: number): Promise<void> => {

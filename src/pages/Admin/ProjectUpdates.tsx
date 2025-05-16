@@ -2,41 +2,31 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   List,
-  Tag,
   Typography,
-  Space,
   Button,
   Row,
   Spin,
   Alert,
   message,
-  Tooltip,
-  Col
+  Col,
+  Popconfirm,
+  Pagination
 } from 'antd';
 import {
-  EditOutlined,
   DeleteOutlined,
-  CalendarOutlined,
-  UserOutlined,
-  PlusOutlined,
-  ClockCircleOutlined,
-  DownOutlined,
-  UpOutlined
-} from '@ant-design/icons';
-import { getProjectsApi, deleteProjectApi } from '../../api/projectApi';
+  PlusOutlined} from '@ant-design/icons';
+import { fetchProjects, deleteProjectApi } from '../../api/projectApi';
 import { Project } from '../../types/project';
 import AddProjectModal from '../../components/Admin/AddProjectModal';
 import AddMilestoneModal from '../../components/Admin/AddMilestoneModal';
-import MilestoneDetailsDisplay from '../../components/Admin/MilestoneDetailsDisplay';
 import EditMilestoneModal from '../../components/Admin/EditMilestoneModal';
-import TimelogDetailsDisplay from '../../components/Admin/TimelogDetailsDisplay';
 import EditProjectModal from '../../components/Admin/EditProjectModal';
-import { confirmAlert } from 'react-confirm-alert';
-import 'react-confirm-alert/src/react-confirm-alert.css';
 import ProjectDetailsDisplay from '../../components/Admin/ProjectDetailsDisplay';
-const { Text, Title } = Typography;
+import { useTheme } from '../../contexts/ThemeContext';
+const { Title } = Typography;
 
 const ProjectUpdates: React.FC = () => {
+  const { theme } = useTheme();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +36,11 @@ const ProjectUpdates: React.FC = () => {
   const [selectedProjectIdForMilestone, setSelectedProjectIdForMilestone] = useState<number | null>(null);
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
   const [expandedTimelogProjectId, setExpandedTimelogProjectId] = useState<number | null>(null);
+  
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalItems, setTotalItems] = useState<number>(0);
   
   // States cho EditMilestoneModal
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
@@ -58,45 +53,36 @@ const ProjectUpdates: React.FC = () => {
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] = useState<boolean>(false);
   const [selectedProjectForEdit, setSelectedProjectForEdit] = useState<number | null>(null);
   
-  const fetchProjects = useCallback(async () => {
+  const loadProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getProjectsApi();
-      setProjects(data);
+      const { projects: projectData, totalItems: total } = await fetchProjects(currentPage, pageSize);
+      setProjects(projectData);
+      setTotalItems(total);
     } catch (err) {
       console.error("Failed to fetch projects:", err);
       setError("Failed to fetch projects. Please try again later.");
     } finally {
       setLoading(false);
     }
-  },[]);
+  }, [currentPage, pageSize]);
 
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    loadProjects();
+  }, [loadProjects]);
 
-  const getStatusColor = (status: Project['status']) => {
-    switch (status) {
-      case 'NEW':
-        return 'cyan'; 
-      case 'PENDING':
-        return 'gold'; 
-      case 'PROGRESS':
-        return 'blue'; 
-      case 'CLOSED':
-        return 'green';
-      default:
-        return 'default';
-    }
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page - 1); // Chuyển từ 1-based sang 0-based index
   };
 
   const handleDelete = async (id: number) => {
     setDeletingId(id);
     try {
       await deleteProjectApi(id);
-      setProjects(prev => prev.filter(project => project.id !== id));
       message.success('Project deleted successfully!');
+      // Tải lại dữ liệu sau khi xóa thay vì lọc mảng hiện tại
+      loadProjects();
       if (expandedProjectId === id) {
         setExpandedProjectId(null);
       }
@@ -119,7 +105,7 @@ const ProjectUpdates: React.FC = () => {
   const handleAddProjectSuccess = () => {
     setIsAddProjectModalVisible(false);
     message.success('Project added successfully!');
-    fetchProjects();
+    loadProjects();
   };
 
   const handleAddMilestoneClick = (projectId: number, refreshCallback?: () => void) => {
@@ -195,7 +181,7 @@ const ProjectUpdates: React.FC = () => {
     setIsEditProjectModalVisible(false);
     setSelectedProjectForEdit(null);
     message.success('Project updated successfully!');
-    fetchProjects();
+    loadProjects();
   };
   
   if (loading && projects.length === 0) {
@@ -224,9 +210,13 @@ const ProjectUpdates: React.FC = () => {
   return (
     <>
     <Card
+      style={{
+        background: theme === 'dark' ? '#181818' : '#fff',
+        color: theme === 'dark' ? '#fff' : '#000'
+      }}
       title={
         <Row justify="space-between" align="middle" style={{ width: '100%' }}>
-          <Col><Title level={5} style={{ margin: 0 }}>Project Updates</Title></Col>
+          <Col><Title level={5} style={{ margin: 0, color: theme === 'dark' ? '#fff' : undefined }}>Project Updates</Title></Col>
           <Col>
             <Button
               type="primary"
@@ -241,33 +231,61 @@ const ProjectUpdates: React.FC = () => {
     >
     {error && !loading && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
       <List
-  loading={loading}
-  itemLayout="vertical"
-  dataSource={projects}
-  renderItem={(item: Project) => (
-    <ProjectDetailsDisplay
-      project={item}
-      isExpanded={expandedProjectId === item.id}
-      expandedTimelogProjectId={expandedTimelogProjectId}
-      deletingId={deletingId}
-      onEditProject={handleEditProject}
-      onDeleteProject={(id) =>
-        confirmAlert({
-          title: 'Confirm Deletion',
-          message: 'Are you sure you want to delete this project?',
-          buttons: [
-            { label: 'Yes', onClick: () => handleDelete(id) },
-            { label: 'No', onClick: () => {} },
-          ],
-        })
-      }
-      onToggleMilestoneDetail={toggleMilestoneDetail}
-      onToggleTimelogDetail={toggleTimelogDetail}
-      onAddMilestone={handleAddMilestoneClick}
-      onEditMilestone={handleEditMilestone}
-    />
-  )}
-/>
+        loading={loading}
+        itemLayout="vertical"
+        dataSource={projects}
+        renderItem={(item: Project) => (
+          <ProjectDetailsDisplay
+            project={item}
+            isExpanded={expandedProjectId === item.id}
+            expandedTimelogProjectId={expandedTimelogProjectId}
+            deletingId={deletingId}
+            onEditProject={handleEditProject}
+            onDeleteProject={() => null}
+            onToggleMilestoneDetail={toggleMilestoneDetail}
+            onToggleTimelogDetail={toggleTimelogDetail}
+            onAddMilestone={handleAddMilestoneClick}
+            onEditMilestone={handleEditMilestone}
+            theme={theme}
+            deleteButton={(
+              <Popconfirm
+                title="Bạn có chắc muốn xóa dự án này?"
+                onConfirm={() => handleDelete(item.id)}
+                okText="Có"
+                cancelText="Không"
+              >
+                <Button
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  danger
+                  loading={deletingId === item.id}
+                >
+                  Delete
+                </Button>
+              </Popconfirm>
+            )}
+          />
+        )}
+      />
+      
+      {/* Phân trang */}
+      {totalItems > 0 && (
+        <Row justify="end" style={{ marginTop: 16 }}>
+          <Pagination
+            current={currentPage + 1} // Chuyển từ 0-based về 1-based index cho UI
+            pageSize={pageSize}
+            total={totalItems}
+            onChange={handlePageChange}
+            showSizeChanger
+            onShowSizeChange={(current, size) => {
+              setPageSize(size);
+              setCurrentPage(0); // Reset về trang đầu tiên khi thay đổi kích thước
+            }}
+            pageSizeOptions={['5', '10', '20', '50']}
+            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+          />
+        </Row>
+      )}
     </Card>
 
     <AddProjectModal
