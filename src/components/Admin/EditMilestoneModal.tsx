@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, DatePicker, Select, Spin, Alert, message } from 'antd';
+import { Modal, Form, Input, Button, DatePicker, Select, Spin, Alert } from 'antd';
 import {
   getMilestoneByIdApi,
   updateMilestoneApi,
@@ -18,7 +18,7 @@ interface EditMilestoneModalProps {
   onSuccess: () => void;
 }
 
-const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milestoneId, projectId, onClose, onSuccess }) => {
+const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milestoneId, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
