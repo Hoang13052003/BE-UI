@@ -1,5 +1,5 @@
 // UserManagement.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Row,
@@ -15,48 +15,57 @@ import {
   Statistic,
   message,
   Modal,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   EditOutlined,
   DeleteOutlined,
   UserOutlined,
   PlusOutlined,
-  SearchOutlined
-} from '@ant-design/icons';
-import { filterUsers } from '../../api/userApi';
-import { User } from '../../types/User';
-import AddUser from '../../components/Admin/user/AddUser';
-import UpdateUser from '../../components/Admin/user/UpdateUser';
-import DeleteUser from '../../components/Admin/user/DeleteUser';
+  ProjectOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import { filterUsers, getUserManager } from "../../api/userApi";
+import { User, UserManager } from "../../types/User";
+import AddUser from "../../components/Admin/user/AddUser";
+import UpdateUser from "../../components/Admin/user/UpdateUser";
+import DeleteUser from "../../components/Admin/user/DeleteUser";
+import AddAssignProjects from "../../components/Admin/user/AddAssignProjects";
+import { Project } from "../../types/project";
 const { Title, Text } = Typography;
 
 // Role options defined as constants
 const ROLE_OPTIONS = [
-  { value: 'ALL', label: 'All Roles' },
-  { value: 'ADMIN', label: 'Administrator' },
-  { value: 'USER', label: 'Regular User' }
+  { value: "ALL", label: "All Roles" },
+  { value: "ADMIN", label: "Administrator" },
+  { value: "USER", label: "Regular User" },
 ];
 
 const UserManagement: React.FC = () => {
   // State management
   const [users, setUsers] = useState<User[]>([]);
+  const [managers, setManagers] = useState<UserManager>({
+    totalUsers: 0,
+    activeUsers: 0,
+    inactiveUsers: 0,
+    lockedUsers: 0,
+  });
   const [loading, setLoading] = useState<boolean>(false);
-  const [searchText, setSearchText] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>("");
   const [totalCount, setTotalCount] = useState<number>(0);
-  
+
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [modalContent, setModalContent] = useState<'add' | 'update' | 'delete' | null>(null);
+  const [modalContent, setModalContent] = useState<
+    "add" | "update" | "delete" | null
+  >(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  // Stats counters
-  const [totalUsers, setTotalUsers] = useState<number>(0);
-  const [activeUsers, setActiveUsers] = useState<number>(0);
-  const [inactiveUsers, setInactiveUsers] = useState<number>(0);
-  
+  const [isAssignProjectVisible, setIsAssignProjectVisible] = useState(false);
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
   // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
+    fetchUserManager();
   }, []);
 
   // Handler for modal close and refresh
@@ -65,118 +74,132 @@ const UserManagement: React.FC = () => {
     setModalContent(null);
     setSelectedUserId(null);
     fetchUsers();
+    fetchUserManager();
   };
 
+  const fetchUserManager = async () => {
+    try {
+      setLoading(true);
+
+      const data = await getUserManager();
+
+      setManagers(data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Failed to fetch manager:", error);
+      message.error("Failed to load manager");
+      setLoading(false);
+    }
+  };
   // Fetch users from API
   const fetchUsers = async (page = 0, pageSize = 10, currentRole?: string) => {
     try {
       setLoading(true);
-      
+
       const criteria = {
         fullName: searchText || undefined,
-        role: currentRole !== 'ALL' ? currentRole : undefined,
+        role: currentRole !== "ALL" ? currentRole : undefined,
         email: searchText || undefined,
       };
 
       const response = await filterUsers(criteria, page, pageSize);
-      
-      const formattedUsers = response.users.map((user:User) => ({
+
+      const formattedUsers = response.users.map((user: User) => ({
         ...user,
-        key: user.id.toString()
+        key: user.id.toString(),
       }));
-      
+
       setUsers(formattedUsers);
       setTotalCount(Number(response.totalCount));
-      
-      // Update statistics
-      setTotalUsers(Number(response.totalCount));
-      const active = formattedUsers.filter((user: User) => user.isActive).length;
-      setActiveUsers(active);
-      setInactiveUsers(formattedUsers.length - active);
-      
+
       setLoading(false);
     } catch (error) {
-      console.error('Failed to fetch users:', error);
-      message.error('Failed to load users');
+      console.error("Failed to fetch users:", error);
+      message.error("Failed to load users");
       setLoading(false);
     }
   };
-  
+
   // Handler for search input change
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value);
   };
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       fetchUsers(0, 10);
     }
   };
   // Handler for role filter change
-  const handleRoleFilter = async (value:string) => {
+  const handleRoleFilter = async (value: string) => {
     fetchUsers(0, 10, value);
   };
-  
+
   // Define table columns
   const columns: ColumnsType<User> = [
     {
-      title: 'User',
-      key: 'user',
-      width: '20%',
+      title: "User",
+      key: "user",
+      width: "20%",
       render: (_, record) => (
         <Space>
-          <Avatar 
-            src={record.image} 
-            icon={!record.image && <UserOutlined />} 
+          <Avatar
+            src={record.image}
+            icon={!record.image && <UserOutlined />}
             className="bg-blue-500"
           />
           <div>
             <div className="font-medium">{record.fullName}</div>
-            <Text type="secondary" className="text-xs">{record.email}</Text>
+            <Text type="secondary" className="text-xs">
+              {record.email}
+            </Text>
           </div>
         </Space>
       ),
     },
     {
-      title: 'Role',
-      key: 'role',
-      width: '6%',
+      title: "Role",
+      key: "role",
+      width: "6%",
       render: (_, record) => (
-        <Tag color={record.role === 'ADMIN' ? 'purple' : 'blue'}>
-          {record.role || 'N/A'}
+        <Tag color={record.role === "ADMIN" ? "purple" : "blue"}>
+          {record.role || "N/A"}
         </Tag>
-      )
+      ),
     },
     {
-      title: 'Projects',
-      key: 'projects',
-      width: '30%',
-      render: (_, record) => (
+      title: "Projects",
+      key: "projects",
+      width: "30%",
+      render: (_, record) =>
         record.projects.map((project, index) => (
           <Tag key={index} color="geekblue" className="mr-1">
             {project.name}
           </Tag>
-        ))
-      ),
+        )),
     },
     {
-      title: 'Note',
-      dataIndex: 'note',
-      key: 'note',
+      title: "Note",
+      dataIndex: "note",
+      key: "note",
       ellipsis: true,
-      width: '30%',
+      width: "30%",
     },
-    
+
     {
-      title: 'Actions',
-      key: 'actions',
-      width: '14%',
+      title: "Actions",
+      key: "actions",
+      width: "14%",
       render: (_, record) => (
         <Space>
-          <Button 
+          <Button
             icon={<EditOutlined />}
             onClick={() => handleEditUser(record.id)}
           />
-          <Button 
+          <Button
+            onClick={() => handleAssignProject(record.id, record.projects)}
+            icon={<ProjectOutlined />}
+          />
+          <Button
             icon={<DeleteOutlined />}
             danger
             onClick={() => handleDeleteUser(record.id)}
@@ -185,25 +208,40 @@ const UserManagement: React.FC = () => {
       ),
     },
   ];
-  
+
   // Handler for edit user button
   const handleEditUser = (userId: number) => {
     setSelectedUserId(userId);
-    setModalContent('update');
+    setModalContent("update");
     setIsModalVisible(true);
   };
-  
+
   // Handler for delete user button
   const handleDeleteUser = (userId: number) => {
     setSelectedUserId(userId);
-    setModalContent('delete');
+    setModalContent("delete");
     setIsModalVisible(true);
   };
-  
+
   // Handler for add user button
   const handleAddUser = () => {
-    setModalContent('add');
+    setModalContent("add");
     setIsModalVisible(true);
+  };
+
+  // Handler for assign project button
+  const handleAssignProject = (userId: number, projects: Project[]) => {
+    setSelectedUserId(userId);
+    setUserProjects(projects);
+    setIsAssignProjectVisible(true);
+  };
+
+  // Handler for modal close
+  const handleAssignProjectClose = () => {
+    setIsAssignProjectVisible(false);
+    setSelectedUserId(null);
+    setUserProjects([]);
+    fetchUsers(); // Refresh user list after assignment
   };
 
   return (
@@ -216,31 +254,31 @@ const UserManagement: React.FC = () => {
       {/* Stats Cards */}
       <Row gutter={24} className="mb-8">
         <Col span={6}>
-          <Statistic 
+          <Statistic
             title="Total Users"
-            value={totalUsers}
-            valueStyle={{ color: '#1677ff' }}
+            value={managers.totalUsers}
+            valueStyle={{ color: "#1677ff" }}
           />
         </Col>
         <Col span={6}>
           <Statistic
             title="Active Users"
-            value={activeUsers}
-            valueStyle={{ color: '#52c41a' }}
+            value={managers.activeUsers}
+            valueStyle={{ color: "#52c41a" }}
           />
         </Col>
         <Col span={6}>
           <Statistic
             title="Inactive Users"
-            value={inactiveUsers}
-            valueStyle={{ color: '#ff4d4f' }}
+            value={managers.inactiveUsers}
+            valueStyle={{ color: "#ff4d4f" }}
           />
         </Col>
         <Col span={6}>
           <Statistic
-            title="New This Month"
-            value={inactiveUsers}
-            valueStyle={{ color: '#1677ff' }}
+            title="User Lock"
+            value={managers.lockedUsers}
+            valueStyle={{ color: "#1677ff" }}
           />
         </Col>
       </Row>
@@ -248,7 +286,7 @@ const UserManagement: React.FC = () => {
       {/* User List */}
       <div className="mt-8">
         <Title level={5}>User List</Title>
-        
+
         {/* Search and Filter */}
         <Row justify="space-between" className="mb-4">
           <Col>
@@ -264,43 +302,42 @@ const UserManagement: React.FC = () => {
           </Col>
           <Col>
             <Space>
-              <Select 
-              style={{ width: 130 }}
-              defaultValue={'ALL'}
-              onChange={(value) => handleRoleFilter(value)}
-              options={ROLE_OPTIONS.map(option => ({
-                value: option.value,
-                label: option.label
-              }))}
-              className="rounded-md"
+              <Select
+                style={{ width: 130 }}
+                defaultValue={"ALL"}
+                onChange={(value) => handleRoleFilter(value)}
+                options={ROLE_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                }))}
+                className="rounded-md"
               />
-              <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={handleAddUser}
-              className="bg-blue-600 hover:bg-blue-700 rounded-md"
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAddUser}
+                className="bg-blue-600 hover:bg-blue-700 rounded-md"
               >
-              Add User
+                Add User
               </Button>
             </Space>
           </Col>
         </Row>
 
         {/* Users Table */}
-        <Table 
-          
-          columns={columns} 
+        <Table
+          columns={columns}
           dataSource={users}
           rootClassName="backgroud-default"
           loading={loading}
-          pagination={{ 
+          pagination={{
             total: totalCount,
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} users`,
             onChange: (page, pageSize) => {
               // Convert antd's 1-based page number to 0-based for the API
               fetchUsers(page - 1, pageSize);
-            }
+            },
           }}
           className="mt-2 backgroud-default"
           rowClassName="hover:bg-gray-50"
@@ -310,29 +347,36 @@ const UserManagement: React.FC = () => {
       {/* Modals */}
       <Modal
         title={
-          modalContent === 'add'
-            ? 'Add New User'
-            : modalContent === 'update'
-            ? 'Update User'
-            : modalContent === 'delete'
-            ? 'Delete User'
-            : ''
+          modalContent === "add"
+            ? "Add New User"
+            : modalContent === "update"
+            ? "Update User"
+            : modalContent === "delete"
+            ? "Delete User"
+            : ""
         }
         open={isModalVisible}
         onCancel={handleModalClose}
         footer={null}
-        width={modalContent === 'delete' ? 400 : 600}
+        width={modalContent === "delete" ? 400 : 600}
       >
-        {modalContent === 'add' && (
-          <AddUser onSuccess={handleModalClose} />
-        )}
-        {modalContent === 'update' && selectedUserId && (
+        {modalContent === "add" && <AddUser onSuccess={handleModalClose} />}
+        {modalContent === "update" && selectedUserId && (
           <UpdateUser userId={selectedUserId} onSuccess={handleModalClose} />
         )}
-        {modalContent === 'delete' && selectedUserId && (
+        {modalContent === "delete" && selectedUserId && (
           <DeleteUser userId={selectedUserId} onSuccess={handleModalClose} />
         )}
       </Modal>
+
+      {/* Add AssignProject Modal */}
+      <AddAssignProjects
+        visible={isAssignProjectVisible}
+        onClose={handleAssignProjectClose}
+        onSuccess={handleAssignProjectClose}
+        userId={selectedUserId || 0}
+        projects={userProjects} // Pass existing projects if needed
+      />
     </Card>
   );
 };
