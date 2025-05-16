@@ -56,9 +56,13 @@ export const updateMilestoneApi = async (
 
 export const updateMilestoneCompletionStatusApi = async (
   milestoneId: number,
-  completed: boolean
+  completed: boolean,
+  completionPercentage?: number
 ): Promise<Milestone> => { // Assuming the API returns the updated milestone
-  const { data } = await axiosClient.patch(`/api/milestones/${milestoneId}/complete`, { completed });
+  const { data } = await axiosClient.patch(`/api/milestones/${milestoneId}/complete`, { 
+    completed, 
+    ...(completionPercentage !== undefined && { completionPercentage })
+  });
   return data;
 };
 

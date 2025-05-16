@@ -172,13 +172,13 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
                   transition: 'background 0.3s ease, border 0.3s ease'
                 }}
               >
-                <Row gutter={[16, 16]} style={{ width: '100%' }} align="middle">
-                  <Col flex="auto">
+                <Row gutter={[16, 16]} style={{ width: '100%' }} align="middle">                  <Col flex="auto">
                     <MilestoneInfo
-                      name={item.name}
+                      name={item.name || ''}
                       description={item.description}
                       notes={item.notes}
                       completed={item.completed}
+                      completionPercentage={item.completionPercentage}
                     />
                   </Col>
 
@@ -243,20 +243,18 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
           />
 
           {/* Thêm phân trang */}
-          {totalItems > pageSize && (
-            <Row justify="end" style={{ marginTop: 16 }}>
-              <Pagination
-                current={currentPage + 1} // Chuyển từ 0-based index trong code sang 1-based index cho UI
-                pageSize={pageSize}
-                total={totalItems}
-                onChange={handlePageChange}
-                showSizeChanger
-                onShowSizeChange={handlePageSizeChange}
-                pageSizeOptions={['5', '10', '20', '50']}
-                showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
-              />
-            </Row>
-          )}
+          <Row justify="end" style={{ marginTop: 16 }}>
+            <Pagination
+              current={currentPage + 1} // Chuyển từ 0-based index trong code sang 1-based index cho UI
+              pageSize={pageSize}
+              total={totalItems}
+              onChange={handlePageChange}
+              showSizeChanger
+              onShowSizeChange={handlePageSizeChange}
+              pageSizeOptions={['5', '10', '20', '50']}
+              showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+            />
+          </Row>
         </>
       )}
     </div>

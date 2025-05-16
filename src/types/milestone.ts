@@ -10,6 +10,7 @@ export interface Milestone {
   completionDate: string | null;
   notes: string | null;
   completed?: boolean;
+  completionPercentage?: number;
 }
 export interface MilestoneUpdateRequestData {
   name?: string;
@@ -19,5 +20,5 @@ export interface MilestoneUpdateRequestData {
   completionDate?: string | null;
   status?: MilestoneStatus;
   notes?: string;
-
+  completionPercentage?: number;
 }

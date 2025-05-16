@@ -19,7 +19,7 @@ import MessagesAndNotes from './pages/Client/MessagesAndNotes';
 import ProfileSettings from './pages/Client/ProfileSettings';
 import HomeIntroSection from './pages/HomeIntroSection';
 import OverviewAdmin from './pages/Admin/Overview';
-import Overview from './pages/Client/Overview';
+import Overview from './pages/Client/overview';
 
 function App() {
   return (

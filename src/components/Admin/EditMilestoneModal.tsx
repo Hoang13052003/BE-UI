@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, DatePicker, Select, Spin, Alert } from 'antd';
+import { Modal, Form, Input, DatePicker, Select, Button, message, Alert, Spin, Slider } from 'antd';
 import {
   getMilestoneByIdApi,
   updateMilestoneApi,
@@ -31,8 +31,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
       setLoading(true);
       setError(null);
       getMilestoneByIdApi(milestoneId)
-        .then(data => {
-          setInitialMilestoneData(data);
+        .then(data => {          setInitialMilestoneData(data);
           form.setFieldsValue({
             name: data.name,
             description: data.description,
@@ -41,6 +40,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
             completionDate: data.completionDate ? dayjs(data.completionDate) : null,
             status: data.status,
             notes: data.notes,
+            completionPercentage: data.completionPercentage,
           });
           setLoading(false);
         })
@@ -62,8 +62,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
     }
     setLoading(true);
     setError(null);
-    try {
-      const milestoneUpdateData: MilestoneUpdateRequestData = {
+    try {      const milestoneUpdateData: MilestoneUpdateRequestData = {
         name: values.name,
         description: values.description,
         startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : null,
@@ -71,6 +70,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
         completionDate: values.completionDate ? values.completionDate.format('YYYY-MM-DD') : null,
         status: values.status,
         notes: values.notes,
+        completionPercentage: values.completionPercentage,
       };
       const filteredUpdateData = Object.entries(milestoneUpdateData).reduce((acc, [key, value]) => {
         if (value !== undefined) {
@@ -110,11 +110,11 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
           initialValues={{
             name: initialMilestoneData.name,
             description: initialMilestoneData.description,
-            startDate: initialMilestoneData.startDate ? dayjs(initialMilestoneData.startDate) : undefined,
-            deadlineDate: initialMilestoneData.deadlineDate ? dayjs(initialMilestoneData.deadlineDate) : undefined,
+            startDate: initialMilestoneData.startDate ? dayjs(initialMilestoneData.startDate) : undefined,            deadlineDate: initialMilestoneData.deadlineDate ? dayjs(initialMilestoneData.deadlineDate) : undefined,
             completionDate: initialMilestoneData.completionDate ? dayjs(initialMilestoneData.completionDate) : undefined,
             status: initialMilestoneData.status,
             notes: initialMilestoneData.notes,
+            completionPercentage: initialMilestoneData.completionPercentage,
           }}
         >
           <Form.Item
@@ -149,12 +149,38 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
                 <Option key={status} value={status}>{status.replace('_', ' ')}</Option>
               ))}
             </Select>
-          </Form.Item>
-          <Form.Item
+          </Form.Item>          <Form.Item
             name="notes"
             label="Notes"
           >
             <Input.TextArea rows={2} />
+          </Form.Item>
+
+          <Form.Item
+            name="completionPercentage"
+            label="Completion Percentage"
+            rules={[
+              {
+                type: 'number',
+                min: 0,
+                max: 100,
+                message: 'Completion percentage must be between 0 and 100'
+              }
+            ]}
+          >
+            <Slider 
+              min={0} 
+              max={100} 
+              step={1}
+              tooltip={{ open: true, formatter: (value) => `${value}%`, placement: 'bottom'}}
+              marks={{
+                0: '0%',
+                25: '25%',
+                50: '50%',
+                75: '75%',
+                100: '100%'
+              }}
+            />
           </Form.Item>
 
           <Form.Item style={{ textAlign: 'right' }}>

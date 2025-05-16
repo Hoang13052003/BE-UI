@@ -1,53 +1,56 @@
 import React from 'react';
-import { Typography, Space } from 'antd';
+import { Typography, Progress } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
 
-const { Text, Paragraph } = Typography;
 
 interface MilestoneInfoProps {
-  name: string | null;
-  description: string | null;
-  notes: string | null;
+  name: string;
+  description?: string | null;
+  notes?: string | null;
   completed?: boolean;
+  completionPercentage?: number | null;
 }
 
-const MilestoneInfo: React.FC<MilestoneInfoProps> = ({ name, description, notes, completed }) => {
-  const textDecorationStyle = completed ? 'line-through' : 'none';
-  const textColor = completed ? 'text-secondary' : undefined; // Optional: làm mờ chữ hơn khi completed
+const MilestoneInfo: React.FC<MilestoneInfoProps> = ({
+  name,
+  description,
+  notes,
+  completed,
+  completionPercentage
+}) => {
+  // Xử lý trường hợp completionPercentage là null, mặc định là 0
+  const actualCompletionPercentage = completionPercentage === null ? 0 : completionPercentage;
 
   return (
-    <Space direction="vertical" size={4} style={{ width: '100%' }}>
-      <Text
-        strong
-        style={{ fontSize: '16px', textDecoration: textDecorationStyle }}
-        className={textColor} // Áp dụng class nếu có
-      >
-        {name || 'Unnamed Milestone'} {/* Cung cấp giá trị mặc định tốt hơn 'emty' */}
-      </Text>
-      {description && ( // Chỉ render Paragraph nếu có description
-        <Paragraph
-          type="secondary"
-          style={{ whiteSpace: 'pre-wrap', margin: 0, textDecoration: textDecorationStyle }}
-          className={textColor}
-        >
-          {description}
-        </Paragraph>
-      )}
-      {notes && ( // Chỉ render phần notes nếu có notes
-        <div style={{ marginTop: completed && !description ? 0 : 8 }}> {/* Điều chỉnh margin nếu không có description */}
-          <Space align="start">
-            <FileTextOutlined style={{ color: '#8c8c8c', marginTop: '4px' }} />
-            <Paragraph
-              type="secondary"
-              style={{ margin: 0, whiteSpace: 'pre-wrap', textDecoration: textDecorationStyle }}
-              className={textColor}
-            >
-              {notes}
-            </Paragraph>
-          </Space>
+    <div className="milestone-info">
+      <Typography.Title level={5} style={{ margin: '0 0 8px 0' }}>
+        {name}
+      </Typography.Title>
+      
+      {/* Hiển thị Progress bar với giá trị mặc định là 0 nếu completionPercentage là null */}
+      {completionPercentage !== undefined && (
+        <div style={{ marginBottom: '12px' }}>
+          <Progress
+            percent={actualCompletionPercentage}
+            size="small"
+            status={completed ? "success" : "active"}
+            strokeColor={completed ? "#52c41a" : undefined}
+          />
         </div>
       )}
-    </Space>
+
+      {description && (
+        <Typography.Paragraph style={{ margin: '0 0 8px 0' }}>
+          {description}
+        </Typography.Paragraph>
+      )}
+      
+      {notes && (
+        <Typography.Paragraph type="secondary" style={{ margin: 0, fontSize: '0.9em' }}>
+          <strong>Notes:</strong> {notes}
+        </Typography.Paragraph>
+      )}
+    </div>
   );
 };
 
