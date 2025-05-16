@@ -1,6 +1,30 @@
 import axiosClient from "./axiosClient";
 import { Project } from "../types/project";
 import { ProjectRequest } from "../types/ProjectRequest";
+import { SortConfig, fetchPaginatedData, PaginatedResult } from './apiUtils';
+
+export interface FetchProjectsResult extends PaginatedResult<Project> {
+  projects: Project[]; // Tương thích với code cũ
+}
+
+export const fetchProjects = async (
+  page: number,
+  size: number,
+  sortConfig?: SortConfig | SortConfig[]
+): Promise<FetchProjectsResult> => {
+  try {
+    const result = await fetchPaginatedData<Project>('/api/projects', page, size, sortConfig);
+    
+    // Trả về kết quả theo định dạng cũ để đảm bảo tương thích
+    return {
+      ...result,
+      projects: result.items
+    };
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    throw error;
+  }
+};
 
 export const filterProjects = async (
   criteria: {
@@ -13,10 +37,7 @@ export const filterProjects = async (
   size: number
 ) => {
   try {
-    const params: Record<string, string | number> = {
-      page,
-      size,
-    };
+    const params: Record<string, string | number> = {};
 
     if (criteria.name) {
       params["name.contains"] = criteria.name;
@@ -31,35 +52,19 @@ export const filterProjects = async (
       params["endDate.contains"] = criteria.endDate;
     }
 
-    const response = await axiosClient.get("api/projects/filters", {
-      params,
-    });
-
-    const { data, headers } = response;
-    const totalCount = headers["x-total-count"];
-    const links = headers["x-link"];
-
-    return { projects: data, totalCount, links };
+    const result = await fetchPaginatedData<Project>('api/projects/filters', page, size, undefined, params);
+    
+    return { 
+      projects: result.items, 
+      totalCount: result.totalItems, 
+      links: result.navigationLinks 
+    };
   } catch (error) {
     console.error("Error fetching filtered projects:", error);
     throw error;
   }
 };
 
-/**
- * Fetches a list of projects.
- * Assumes the endpoint returns an array of Project objects.
- */
-export const getProjectsApi = async (): Promise<Project[]> => {
-  const { data } = await axiosClient.get("/api/projects");
-  return data;
-};
-
-/**
- * Creates a new project.
- * @param projectData The data for the new project (matching ProjectRequestDto).
- * Assumes the endpoint returns the created Project object upon success (201 Created).
- */
 export const createProjectApi = async (
   projectData: ProjectRequest
 ): Promise<Project> => {
@@ -67,29 +72,10 @@ export const createProjectApi = async (
   return data;
 };
 
-/**
- * Deletes a project by its ID.
- * @param projectId The ID of the project to delete.
- * Assumes the endpoint returns no content on success (204 No Content).
- */
 export const deleteProjectApi = async (projectId: number): Promise<void> => {
   await axiosClient.delete(`/api/projects/${projectId}`);
 };
 
-export const getProjectTypesApi = async (): Promise<string[]> => {
-  const { data } = await axiosClient.get("/api/enum/project-types");
-  return data;
-};
-
-export const getProjectStatusesApi = async (): Promise<string[]> => {
-  const { data } = await axiosClient.get("/api/enum/project-statuses");
-  return data;
-};
-
-export const getMilestoneStatusesApi = async (): Promise<string[]> => {
-  const { data } = await axiosClient.get("/api/enum/milestone-statuses");
-  return data;
-};
 export interface MilestoneRequest {
   name: string;
   description: string;

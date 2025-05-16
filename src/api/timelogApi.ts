@@ -1,4 +1,5 @@
 import axiosClient from "./axiosClient";
+import { SortConfig, fetchPaginatedData, PaginatedResult } from './apiUtils';
 
 export interface TimeLogRequest {
   projectId: number;
@@ -20,13 +21,36 @@ export interface TimeLogResponse {
   createdAt?: string;
 }
 
-export const createTimeLogApi = async (payload: TimeLogRequest): Promise<TimeLogResponse> => {
-  const { data } = await axiosClient.post('/api/timelogs', payload);
-  return data;
+export interface TimeLogFetchResult extends PaginatedResult<TimeLogResponse> {
+  timelogs: TimeLogResponse[]; // Tương thích với code cũ
+}
+
+export const getTimeLogsByProjectIdApi = async (
+  projectId: number,
+  page: number = 0,
+  size: number = 10,
+  sortConfig?: SortConfig | SortConfig[]
+): Promise<TimeLogFetchResult> => {
+  try {
+    const result = await fetchPaginatedData<TimeLogResponse>(
+      `/api/timelogs/project/${projectId}`, 
+      page, 
+      size, 
+      sortConfig
+    );
+    
+    return {
+      ...result,
+      timelogs: result.items
+    };
+  } catch (error) {
+    console.error("Error fetching timelogs:", error);
+    throw error;
+  }
 };
 
-export const getTimeLogsByProjectIdApi = async (projectId: number): Promise<TimeLogResponse[]> => {
-  const { data } = await axiosClient.get(`/api/timelogs/project/${projectId}`);
+export const createTimeLogApi = async (payload: TimeLogRequest): Promise<TimeLogResponse> => {
+  const { data } = await axiosClient.post('/api/timelogs', payload);
   return data;
 };
 

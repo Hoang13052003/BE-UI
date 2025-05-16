@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
-import { getProjectTypesApi, getProjectStatusesApi } from '../api/projectApi';
-import { message } from 'antd';
+
+export enum ProjectTypeEnum {
+  FIXED_PRICE = 'FIXED_PRICE',
+  LABOR = 'LABOR'
+}
+
+export enum ProjectStatusEnum {
+  NEW = 'NEW',
+  PENDING = 'PENDING',
+  PROGRESS = 'PROGRESS',
+  CLOSED = 'CLOSED'
+}
 
 export const useProjectEnums = () => {
   const [typeOptions, setTypeOptions] = useState<string[]>([]);
@@ -9,36 +19,23 @@ export const useProjectEnums = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state update on unmounted component
+    // Simulate loading for consistent UI behavior (optional)
     setLoading(true);
-    setError(null);
-    Promise.all([
-      getProjectTypesApi(),
-      getProjectStatusesApi(),
-    ])
-      .then(([types, statuses]) => {
-        if (isMounted) {
-          setTypeOptions(types);
-          setStatusOptions(statuses);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          const errMsg = "Không tải được danh sách loại dự án hoặc trạng thái.";
-          message.error(errMsg);
-          setError(errMsg);
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setLoading(false);
-        }
-      });
-
-      return () => {
-        isMounted = false; // Cleanup function to set flag false when component unmounts
-      };
-  }, []); // Fetch only once
+    
+    try {
+      // Convert enum objects to arrays of strings
+      const types = Object.values(ProjectTypeEnum);
+      const statuses = Object.values(ProjectStatusEnum);
+      
+      setTypeOptions(types);
+      setStatusOptions(statuses);
+      setError(null);
+    } catch (err) {
+      setError("Không thể tải danh sách loại dự án hoặc trạng thái.");
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Still run once on component mount
 
   return { typeOptions, statusOptions, loading, error };
 };

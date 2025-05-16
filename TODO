@@ -1,85 +1,134 @@
-Cách thêm nút Edit Milestone với ID
+Ok, đây là mô tả chi tiết để một AI khác có thể hiểu và code phần frontend React sử dụng Axios để tương tác với API phân trang `GET /api/projects` của bạn:
 
-Vấn đề cần giải quyết
-thêm nút Edit cho mỗi milestone để người dùng có thể chỉnh sửa. Khi người dùng nhấn nút Edit, bạn cần biết đang sửa milestone nào bằng cách lấy ID của milestone đó.
+---
 
-Giải pháp đơn giản gồm 3 bước:
-Bước 1: Thêm prop mới trong MilestoneDetailsDisplay
+**Yêu cầu cho AI Lập Trình Frontend (React + Axios): Tương tác với API Phân Trang Project**
 
-// Thêm prop mới trong interface
-interface MilestoneDetailsDisplayProps {
-  projectId: number;
-  onAddMilestone: () => void;
-  onEditMilestone: (milestoneId: number) => void; // Thêm dòng này
-}
+**Mục tiêu:** Xây dựng một hoặc nhiều component React để hiển thị danh sách project lấy từ API `GET /api/projects`, hỗ trợ đầy đủ các tính năng phân trang (chuyển trang, thay đổi số lượng mục/trang, sắp xếp) và hiển thị thông tin phân trang cho người dùng.
 
+**Công nghệ sử dụng:**
+*   React (sử dụng Hooks: `useState`, `useEffect`)
+*   Axios (để thực hiện các yêu cầu HTTP)
 
-Bước 2: Thêm nút Edit vào mỗi milestone
+**Chi tiết về API `GET /api/projects` (đã cung cấp ở trên, tóm tắt lại các điểm chính cho client):**
+*   **Endpoint:** `GET /api/projects`
+*   **Tham số Query:**
+    *   `page` (Integer, 0-indexed, ví dụ: `0`, `1`, ...)
+    *   `size` (Integer, ví dụ: `10`, `20`)
+    *   `sort` (String, ví dụ: `name,asc` hoặc `startDate,desc`. Có thể có nhiều tham số `sort`)
+*   **Phản hồi thành công (200 OK):**
+    *   **Body:** Mảng JSON các đối tượng project.
+    *   **Headers:**
+        *   `X-Total-Count`: Tổng số project.
+        *   `Link`: Chuỗi chứa các URL điều hướng (ví dụ: `<url>; rel="next", <url>; rel="first"`).
 
-// Trong phần render của milestone (có thể đặt nút ở bất kỳ vị trí nào)
-<Row gutter={[16, 16]} style={{ width: '100%' }}>
-  {/* Left Column giữ nguyên... */}
-  
-  {/* Right Column: thêm nút Edit ở đầu */}
-  <Col xs={24} sm={8} md={6} style={{ textAlign: 'right' }}>
-    <Space direction="vertical" size={8} align="end">
-      {/* Thêm nút Edit Milestone */}
-      <Button
-        type="text"
-        icon={<EditOutlined />} // Nhớ import EditOutlined từ '@ant-design/icons'
-        onClick={() => onEditMilestone(item.id)}
-        size="small"
-      >
-        Edit
-      </Button>
-      
-      {/* Phần còn lại giữ nguyên */}
-      <Tag color={getMilestoneStatusColor(item.status)}>
-        {item.status ? String(item.status).replace('_', ' ') : 'emty'}
-      </Tag>
-      {...}
-    </Space>
-  </Col>
-</Row>
+**Cấu trúc Component React và Logic cần triển khai:**
 
+1.  **Service/API Layer (ví dụ: `projectApiService.js`):**
+    *   **Hàm `fetchProjects(page, size, sortConfig)`:**
+        *   Sử dụng `axios.get` để gọi API `/api/projects`.
+        *   **Tham số đầu vào:**
+            *   `page` (number): Số trang hiện tại.
+            *   `size` (number): Số lượng project mỗi trang.
+            *   `sortConfig` (object, tùy chọn): Ví dụ `{ property: 'name', direction: 'asc' }`. Hàm này cần chuyển đổi `sortConfig` thành chuỗi query `sort=name,asc`. Nếu có nhiều điều kiện sort, cần tạo nhiều tham số `sort`.
+        *   **Xây dựng URL:** Tạo URL động với các tham số `page`, `size`, và `sort`.
+        *   **Thực hiện Request:**
+            ```javascript
+            axios.get(apiUrl, { params: { page, size, sort: sortQueryString } });
+            ```
+        *   **Xử lý Response:**
+            *   Lấy dữ liệu project từ `response.data`.
+            *   Lấy `X-Total-Count` từ `response.headers['x-total-count']`.
+            *   Lấy `Link` header từ `response.headers['link']`.
+            *   **Gọi hàm `parseLinkHeader` (xem mục 2) để xử lý `Link` header.**
+            *   **Trả về một object:**
+                ```javascript
+                {
+                  projects: response.data, // Mảng các project
+                  totalItems: parseInt(response.headers['x-total-count'], 10),
+                  navigationLinks: parsedLinks // Object từ parseLinkHeader
+                }
+                ```
+        *   **Xử lý Lỗi:** Bắt lỗi từ Axios và trả về hoặc throw lỗi để component xử lý.
 
-Bước 3: Trong component cha (ProjectUpdates.tsx), xử lý sự kiện Edit
+2.  **Utility Function (ví dụ: `utils.js` hoặc trong service):**
+    *   **Hàm `parseLinkHeader(header)`:**
+        *   **Tham số đầu vào:** Chuỗi `Link` header (ví dụ: `<http://.../api/projects?page=1&size=10>; rel="next", <http://.../api/projects?page=0&size=10>; rel="first"`).
+        *   **Chức năng:** Phân tích chuỗi này để trích xuất các URL và `rel` type của chúng.
+        *   **Trả về một object:**
+            ```javascript
+            // Ví dụ output
+            {
+              next: 'http://.../api/projects?page=1&size=10',
+              first: 'http://.../api/projects?page=0&size=10',
+              // ... các rel khác như 'prev', 'last' nếu có
+            }
+            ```
+            *Lưu ý:* Chỉ trả về URL, không cần giữ lại `rel="..."`.
 
-// Thêm state mới
-const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
-const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+3.  **Component React Chính (ví dụ: `ProjectList.js`):**
+    *   **State (sử dụng `useState`):**
+        *   `projects` (array, default: `[]`): Danh sách project của trang hiện tại.
+        *   `currentPage` (number, default: `0`): Trang hiện tại (0-indexed).
+        *   `itemsPerPage` (number, default: `10`): Số project mỗi trang.
+        *   `totalItems` (number, default: `0`): Tổng số project.
+        *   `sortConfig` (object, default: `{ property: 'name', direction: 'asc' }` hoặc giá trị mặc định khác): Cấu hình sắp xếp hiện tại.
+        *   `navigationLinks` (object, default: `{}`): Lưu trữ các link điều hướng từ `parseLinkHeader`.
+        *   `loading` (boolean, default: `true` ban đầu): Trạng thái đang tải dữ liệu.
+        *   `error` (string/object, default: `null`): Lưu trữ thông tin lỗi.
+    *   **Effect Hook (`useEffect`):**
+        *   Sử dụng để gọi API khi `currentPage`, `itemsPerPage`, hoặc `sortConfig` thay đổi.
+        *   Bên trong `useEffect`:
+            *   Set `loading` thành `true`.
+            *   Gọi hàm `fetchProjects` từ service layer với các state hiện tại.
+            *   Khi nhận được kết quả:
+                *   Cập nhật state `projects`, `totalItems`, `navigationLinks`.
+                *   Set `loading` thành `false`.
+                *   Xóa `error`.
+            *   Nếu có lỗi:
+                *   Set `error` với thông tin lỗi.
+                *   Set `loading` thành `false`.
+        *   **Dependencies của `useEffect`:** `[currentPage, itemsPerPage, sortConfig]`.
+    *   **Hàm xử lý sự kiện:**
+        *   `handlePageChange(newPageNumber)`: Cập nhật `currentPage`.
+        *   `handleItemsPerPageChange(newSize)`: Cập nhật `itemsPerPage` (và có thể reset `currentPage` về `0`).
+        *   `handleSortChange(property)`: Cập nhật `sortConfig`. Nếu click lại vào cột đang sort thì đảo chiều `direction`.
+        *   Các hàm điều hướng dựa trên `navigationLinks`:
+            *   `goToNextPage()`: Nếu `navigationLinks.next` tồn tại, phân tích URL này để lấy `page` và `size` (hoặc chỉ cần `page` nếu `size` không đổi) và cập nhật `currentPage`.
+            *   `goToPrevPage()`, `goToFirstPage()`, `goToLastPage()`: Tương tự.
+    *   **Tính toán giá trị phụ:**
+        *   `totalPages = Math.ceil(totalItems / itemsPerPage)`.
+    *   **Render Logic (JSX):**
+        *   Hiển thị trạng thái `loading` (ví dụ: spinner).
+        *   Hiển thị `error` nếu có.
+        *   Hiển thị bảng/danh sách các `projects`:
+            *   Mỗi project hiển thị các thông tin cần thiết.
+            *   Header của bảng có thể click để thay đổi `sortConfig`.
+        *   **Hiển thị cụm điều khiển phân trang:**
+            *   Thông tin: "Page {`currentPage + 1`} of {`totalPages`}" hoặc "Showing {`projects.length`} of {`totalItems`} items".
+            *   Nút "First": Disabled nếu không có `navigationLinks.first` hoặc `currentPage === 0`.
+            *   Nút "Previous": Disabled nếu không có `navigationLinks.prev` hoặc `currentPage === 0`.
+            *   Nút "Next": Disabled nếu không có `navigationLinks.next` hoặc `currentPage + 1 >= totalPages`.
+            *   Nút "Last": Disabled nếu không có `navigationLinks.last` hoặc `currentPage + 1 >= totalPages`.
+            *   (Tùy chọn) Dropdown/Input để người dùng thay đổi `itemsPerPage`.
 
-// Hàm xử lý khi click nút Edit
-const handleEditMilestone = (milestoneId: number) => {
-  setSelectedMilestoneId(milestoneId); // Lưu lại ID milestone được chọn
-  setIsEditModalVisible(true); // Mở modal chỉnh sửa
-};
+**Luồng hoạt động gợi ý:**
 
-// Khi sử dụng MilestoneDetailsDisplay, truyền hàm xử lý vào
-<MilestoneDetailsDisplay
-  projectId={item.id}
-  onAddMilestone={() => handleAddMilestoneClick(item.id)}
-  onEditMilestone={handleEditMilestone} // Truyền hàm này vào
-/>
+1.  Component `ProjectList` được mount.
+2.  `useEffect` được kích hoạt, gọi `fetchProjects` với `currentPage=0`, `itemsPerPage=10` (hoặc giá trị mặc định).
+3.  Dữ liệu được trả về, state được cập nhật, UI render danh sách project và các nút phân trang.
+4.  Người dùng click nút "Next".
+5.  `goToNextPage()` được gọi. Nó sẽ phân tích URL từ `navigationLinks.next` (hoặc đơn giản là `setCurrentPage(currentPage + 1)`).
+6.  Việc thay đổi `currentPage` kích hoạt lại `useEffect`, gọi lại API để lấy dữ liệu cho trang mới.
+7.  UI được cập nhật.
 
-// Ở dưới cùng, thêm modal chỉnh sửa (chạy khi nút Edit được click)
-{selectedMilestoneId && (
-  <EditMilestoneModal
-    visible={isEditModalVisible}
-    milestoneId={selectedMilestoneId} // Truyền ID milestone vào modal
-    onClose={() => setIsEditModalVisible(false)}
-    onSuccess={() => {
-      setIsEditModalVisible(false);
-      fetchProjects(); // Tải lại dữ liệu
-    }}
-  />
-)}
+**Lưu ý quan trọng cho AI:**
 
+*   Xử lý trường hợp `totalItems` là 0.
+*   Đảm bảo các nút phân trang được disabled/enabled một cách chính xác.
+*   Cung cấp phản hồi rõ ràng cho người dùng khi đang tải hoặc có lỗi.
+*   Việc phân tích URL từ `Link` header để lấy `page` và `size` cho các nút điều hướng là một cách tiếp cận robust. Một cách khác đơn giản hơn (nhưng kém linh hoạt hơn nếu server thay đổi cấu trúc URL) là chỉ cần tăng/giảm `currentPage` và để `useEffect` tự động gọi lại API. Tuy nhiên, việc sử dụng `Link` header được khuyến khích.
 
-Cách thức hoạt động đơn giản:
-Khi người dùng nhấn nút "Edit" trên một milestone
-Hàm onEditMilestone(item.id) được gọi với ID của milestone đó
-Component cha lưu lại ID và hiển thị modal chỉnh sửa
-Modal nhận ID milestone và dùng nó để tải dữ liệu milestone từ API
-Sau khi chỉnh sửa xong, dữ liệu được cập nhật và giao diện được làm mới
-Có thể coi ID như "địa chỉ nhà" của mỗi milestone - đó là cách duy nhất để BE biết bạn đang muốn chỉnh sửa milestone nào.
+---
+
+Mô tả này cung cấp đủ thông tin để AI có thể bắt đầu xây dựng các component React cần thiết.
