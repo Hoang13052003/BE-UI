@@ -172,7 +172,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
               min={0} 
               max={100} 
               step={1}
-              tooltip={{ open: true, formatter: (value) => `${value}%`, placement: 'bottom'}}
+              tooltip={{formatter: (value) => `${value}%`, placement: 'bottom'}}
               marks={{
                 0: '0%',
                 25: '25%',

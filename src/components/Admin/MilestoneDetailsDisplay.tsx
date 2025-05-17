@@ -1,6 +1,6 @@
 // filepath: d:\labsparkmind\BE-UI\src\components\Admin\MilestoneDetailsDisplay.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, Popconfirm, message, Pagination } from 'antd';
+import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, Popconfirm, message, Pagination, Progress } from 'antd';
 import {
   CalendarOutlined,
   FlagOutlined,
@@ -24,9 +24,14 @@ interface MilestoneDetailsDisplayProps {
   projectId: number;
   onAddMilestone: (onSuccessRefresh?: () => void) => void;
   onEditMilestone: (milestoneId: number, projectId: number, onSuccessRefresh?: () => void) => void;
+  milestoneCount?: number; // Thêm prop này nếu cần truyền từ ngoài vào
 }
 
-const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ projectId, onAddMilestone, onEditMilestone }) => {
+const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
+  projectId,
+  onAddMilestone,
+  onEditMilestone,
+}) => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +111,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({ proje
 
     switch (String(status).toUpperCase()) {
       case 'NEW': return 'processing';
-      case 'SENT': return 'blue';
+      case 'SENT': return 'orange';
       case 'REVIEWED': return 'success';
       default: return 'default';
     }

@@ -237,6 +237,7 @@ const ProjectUpdates: React.FC = () => {
         renderItem={(item: Project) => (
           <ProjectDetailsDisplay
             project={item}
+            milestoneCount={item.milestoneCount} // Truyền milestoneCount vào đây
             isExpanded={expandedProjectId === item.id}
             expandedTimelogProjectId={expandedTimelogProjectId}
             deletingId={deletingId}

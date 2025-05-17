@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, Tag, Typography, Space, Button, Row, Tooltip } from 'antd';
+import { List, Tag, Typography, Space, Button, Row, Tooltip, Progress } from 'antd';
 import {
   EditOutlined,
   CalendarOutlined,
@@ -26,6 +26,7 @@ interface ProjectDetailsDisplayProps {
   onEditMilestone: (milestoneId: number, projectId: number, refreshCallback?: () => void) => void;
   deleteButton?: React.ReactNode;
   theme?: string; // Thêm dòng này
+  milestoneCount?: number; // Thêm dòng này
 }
 
 const getStatusColor = (status: Project['status']) => {
@@ -48,8 +49,31 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   onAddMilestone,
   onEditMilestone,
   deleteButton,
-  theme // Thêm dòng này
+  theme,
+  milestoneCount // <-- nhận prop milestoneCount
 }) => {
+  // Tạo mảng màu dựa trên số lượng milestone theo từng trạng thái
+  const createMilestoneStatusColors = () => {
+    const colors = [];
+    
+    // Thêm màu cho NEW milestones
+    for (let i = 0; i < project.newMilestoneCount; i++) {
+      colors.push('#1890ff'); // Xanh nước biển cho NEW
+    }
+    
+    // Thêm màu cho SENT milestones
+    for (let i = 0; i < project.sentMilestoneCount; i++) {
+      colors.push('#faad14'); // Màu vàng cho SENT
+    }
+    
+    // Thêm màu cho REVIEWED milestones
+    for (let i = 0; i < project.reviewedMilestoneCount; i++) {
+      colors.push('#52c41a'); // Xanh lá cây cho REVIEWED
+    }
+    
+    return colors;
+  };
+  
   return (
     <List.Item
       key={project.id}
@@ -101,6 +125,18 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             <Tag>{project.type}</Tag>
           </Space>
           <Text strong style={{ fontSize: '16px' }}>{project.name}</Text>
+          {/* Progress bar tổng số milestone */}
+          {typeof project.milestoneCount === 'number' && project.milestoneCount > 0 && (
+            <div style={{ margin: '8px 0', maxWidth: 300 }}>
+              <Progress
+                steps={project.milestoneCount}
+                percent={100}
+                strokeColor={createMilestoneStatusColors()}
+                format={() => `${project.milestoneCount} milestones`}
+                strokeWidth={15}
+              />
+            </div>
+          )}
           <Text type="secondary">{project.description}</Text>
           <Space size={16} style={{ marginTop: 8, flexWrap: 'wrap' }}>
             <Space>
@@ -122,11 +158,15 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             </Space>
             <Space>
               <CalendarOutlined />
-              <Text type="secondary">Start: {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'}</Text>
+              <Text type="secondary">
+                Start: {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'}
+              </Text>
             </Space>
             <Space>
               <CalendarOutlined />
-              <Text type="secondary">Planned End: {project.plannedEndDate ? new Date(project.plannedEndDate).toLocaleDateString() : 'N/A'}</Text>
+              <Text type="secondary">
+                Planned End: {project.plannedEndDate ? new Date(project.plannedEndDate).toLocaleDateString() : 'N/A'}
+              </Text>
             </Space>
           </Space>
         </Space>
