@@ -14,7 +14,8 @@ import {
 } from 'antd';
 import {
   DeleteOutlined,
-  PlusOutlined} from '@ant-design/icons';
+  PlusOutlined
+} from '@ant-design/icons';
 import { fetchProjects, deleteProjectApi } from '../../api/projectApi';
 import { Project } from '../../types/project';
 import AddProjectModal from '../../components/Admin/AddProjectModal';
@@ -36,12 +37,12 @@ const ProjectUpdates: React.FC = () => {
   const [selectedProjectIdForMilestone, setSelectedProjectIdForMilestone] = useState<number | null>(null);
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
   const [expandedTimelogProjectId, setExpandedTimelogProjectId] = useState<number | null>(null);
-  
+
   // Phân trang
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [totalItems, setTotalItems] = useState<number>(0);
-  
+
   // States cho EditMilestoneModal
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
   const [isEditMilestoneModalVisible, setIsEditMilestoneModalVisible] = useState(false);
@@ -52,7 +53,7 @@ const ProjectUpdates: React.FC = () => {
   // Thêm các states cho EditProjectModal
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] = useState<boolean>(false);
   const [selectedProjectForEdit, setSelectedProjectForEdit] = useState<number | null>(null);
-  
+
   const loadProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -136,7 +137,7 @@ const ProjectUpdates: React.FC = () => {
     setSelectedMilestoneId(milestoneId);
     setEditingMilestoneProjectId(projectId);
     if (refreshCallback) {
-        setCurrentMilestoneRefreshCallback(() => refreshCallback);
+      setCurrentMilestoneRefreshCallback(() => refreshCallback);
     }
     setIsEditMilestoneModalVisible(true);
   };
@@ -171,19 +172,30 @@ const ProjectUpdates: React.FC = () => {
     setSelectedProjectForEdit(projectId);
     setIsEditProjectModalVisible(true);
   };
-  
+
   const handleEditProjectModalClose = () => {
     setIsEditProjectModalVisible(false);
     setSelectedProjectForEdit(null);
   };
-  
+
   const handleEditProjectSuccess = () => {
     setIsEditProjectModalVisible(false);
     setSelectedProjectForEdit(null);
     message.success('Project updated successfully!');
     loadProjects();
   };
-  
+
+  const handleTimelogUploadError = useCallback(() => {
+    // You could show a notification at the page level
+    message.error({
+      content: 'There was an error uploading the timelog file.',
+      duration: 5,
+      style: { marginTop: '20px' },
+    });
+
+    // Optionally: Refresh projects or related data
+  }, []);
+
   if (loading && projects.length === 0) {
     return (
       <Card>
@@ -199,7 +211,7 @@ const ProjectUpdates: React.FC = () => {
   if (error && projects.length === 0) {
     return (
       <Card>
-         <Row justify="space-between" align="middle">
+        <Row justify="space-between" align="middle">
           <Col><Title level={5} style={{ margin: 0 }}>Project Updates</Title></Col>
         </Row>
         <Alert message="Error" description={error} type="error" showIcon />
@@ -209,121 +221,122 @@ const ProjectUpdates: React.FC = () => {
 
   return (
     <>
-    <Card
-      style={{
-        background: theme === 'dark' ? '#181818' : '#fff',
-        color: theme === 'dark' ? '#fff' : '#000'
-      }}
-      title={
-        <Row justify="space-between" align="middle" style={{ width: '100%' }}>
-          <Col><Title level={5} style={{ margin: 0, color: theme === 'dark' ? '#fff' : undefined }}>Project Updates</Title></Col>
-          <Col>
-            <Button
-              type="primary"
-              icon={<PlusOutlined/>}
-              onClick={handleAddProjectModalOpen}
-            >
-                Add Project
-            </Button>
-          </Col>
-        </Row>
-      }
-    >
-    {error && !loading && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
-      <List
-        loading={loading}
-        itemLayout="vertical"
-        dataSource={projects}
-        renderItem={(item: Project) => (
-          <ProjectDetailsDisplay
-            project={item}
-            milestoneCount={item.milestoneCount} // Truyền milestoneCount vào đây
-            isExpanded={expandedProjectId === item.id}
-            expandedTimelogProjectId={expandedTimelogProjectId}
-            deletingId={deletingId}
-            onEditProject={handleEditProject}
-            onDeleteProject={() => null}
-            onToggleMilestoneDetail={toggleMilestoneDetail}
-            onToggleTimelogDetail={toggleTimelogDetail}
-            onAddMilestone={handleAddMilestoneClick}
-            onEditMilestone={handleEditMilestone}
-            theme={theme}
-            deleteButton={(
-              <Popconfirm
-                title="Bạn có chắc muốn xóa dự án này?"
-                onConfirm={() => handleDelete(item.id)}
-                okText="Có"
-                cancelText="Không"
+      <Card
+        style={{
+          background: theme === 'dark' ? '#181818' : '#fff',
+          color: theme === 'dark' ? '#fff' : '#000'
+        }}
+        title={
+          <Row justify="space-between" align="middle" style={{ width: '100%' }}>
+            <Col><Title level={5} style={{ margin: 0, color: theme === 'dark' ? '#fff' : undefined }}>Project Updates</Title></Col>
+            <Col>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAddProjectModalOpen}
               >
-                <Button
-                  type="text"
-                  icon={<DeleteOutlined />}
-                  danger
-                  loading={deletingId === item.id}
+                Add Project
+              </Button>
+            </Col>
+          </Row>
+        }
+      >
+        {error && !loading && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+        <List
+          loading={loading}
+          itemLayout="vertical"
+          dataSource={projects}
+          renderItem={(item: Project) => (
+            <ProjectDetailsDisplay
+              project={item}
+              milestoneCount={item.milestoneCount} // Truyền milestoneCount vào đây
+              isExpanded={expandedProjectId === item.id}
+              expandedTimelogProjectId={expandedTimelogProjectId}
+              deletingId={deletingId}
+              onEditProject={handleEditProject}
+              onDeleteProject={() => null}
+              onToggleMilestoneDetail={toggleMilestoneDetail}
+              onToggleTimelogDetail={toggleTimelogDetail}
+              onAddMilestone={handleAddMilestoneClick}
+              onEditMilestone={handleEditMilestone}
+              theme={theme}
+              onTimelogUploadError={handleTimelogUploadError}
+              deleteButton={(
+                <Popconfirm
+                  title="Bạn có chắc muốn xóa dự án này?"
+                  onConfirm={() => handleDelete(item.id)}
+                  okText="Có"
+                  cancelText="Không"
                 >
-                  Delete
-                </Button>
-              </Popconfirm>
-            )}
-          />
-        )}
-      />
-      
-      {/* Phân trang */}
-      {totalItems > 0 && (
-        <Row justify="end" style={{ marginTop: 16 }}>
-          <Pagination
-            current={currentPage + 1} // Chuyển từ 0-based về 1-based index cho UI
-            pageSize={pageSize}
-            total={totalItems}
-            onChange={handlePageChange}
-            showSizeChanger
-            onShowSizeChange={(current, size) => {
-              setPageSize(size);
-              setCurrentPage(0); // Reset về trang đầu tiên khi thay đổi kích thước
-            }}
-            pageSizeOptions={['5', '10', '20', '50']}
-            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
-          />
-        </Row>
-      )}
-    </Card>
+                  <Button
+                    type="text"
+                    icon={<DeleteOutlined />}
+                    danger
+                    loading={deletingId === item.id}
+                  >
+                    Delete
+                  </Button>
+                </Popconfirm>
+              )}
+            />
+          )}
+        />
 
-    <AddProjectModal
+        {/* Phân trang */}
+        {totalItems > 0 && (
+          <Row justify="end" style={{ marginTop: 16 }}>
+            <Pagination
+              current={currentPage + 1} // Chuyển từ 0-based về 1-based index cho UI
+              pageSize={pageSize}
+              total={totalItems}
+              onChange={handlePageChange}
+              showSizeChanger
+              onShowSizeChange={(current, size) => {
+                setPageSize(size);
+                setCurrentPage(0); // Reset về trang đầu tiên khi thay đổi kích thước
+              }}
+              pageSizeOptions={['5', '10', '20', '50']}
+              showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+            />
+          </Row>
+        )}
+      </Card>
+
+      <AddProjectModal
         visible={isAddProjectModalVisible}
         onClose={handleAddProjectModalClose}
         onSuccess={handleAddProjectSuccess}
       />
 
-    {selectedProjectIdForMilestone && (
-      <AddMilestoneModal
-        visible={isAddMilestoneModalVisible}
-        projectId={selectedProjectIdForMilestone}
-        onClose={handleMilestoneModalClose}
-        onSuccess={handleMilestoneSuccess}
-      />
-    )}
+      {selectedProjectIdForMilestone && (
+        <AddMilestoneModal
+          visible={isAddMilestoneModalVisible}
+          projectId={selectedProjectIdForMilestone}
+          onClose={handleMilestoneModalClose}
+          onSuccess={handleMilestoneSuccess}
+        />
+      )}
 
-    {/* Edit Milestone Modal */}
-    {selectedMilestoneId !== null && editingMilestoneProjectId !== null && (
-      <EditMilestoneModal
-        visible={isEditMilestoneModalVisible}
-        milestoneId={selectedMilestoneId}
-        projectId={editingMilestoneProjectId}
-        onClose={handleEditMilestoneModalClose}
-        onSuccess={handleEditMilestoneSuccess}
-      />
-    )}
+      {/* Edit Milestone Modal */}
+      {selectedMilestoneId !== null && editingMilestoneProjectId !== null && (
+        <EditMilestoneModal
+          visible={isEditMilestoneModalVisible}
+          milestoneId={selectedMilestoneId}
+          projectId={editingMilestoneProjectId}
+          onClose={handleEditMilestoneModalClose}
+          onSuccess={handleEditMilestoneSuccess}
+        />
+      )}
 
-    {isEditProjectModalVisible && selectedProjectForEdit && (
-      <EditProjectModal
-        visible={isEditProjectModalVisible}
-        projectId={selectedProjectForEdit}
-        projectData={projects.find(p => p.id === selectedProjectForEdit)}
-        onClose={handleEditProjectModalClose}
-        onSuccess={handleEditProjectSuccess}
-      />
-    )}
+      {isEditProjectModalVisible && selectedProjectForEdit && (
+        <EditProjectModal
+          visible={isEditProjectModalVisible}
+          projectId={selectedProjectForEdit}
+          projectData={projects.find(p => p.id === selectedProjectForEdit)}
+          onClose={handleEditProjectModalClose}
+          onSuccess={handleEditProjectSuccess}
+        />
+      )}
     </>
   );
 };

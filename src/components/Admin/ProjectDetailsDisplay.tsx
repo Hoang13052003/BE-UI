@@ -27,6 +27,7 @@ interface ProjectDetailsDisplayProps {
   deleteButton?: React.ReactNode;
   theme?: string; // Thêm dòng này
   milestoneCount?: number; // Thêm dòng này
+  onTimelogUploadError?: () => void;
 }
 
 const getStatusColor = (status: Project['status']) => {
@@ -182,7 +183,14 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       )}
       {expandedTimelogProjectId === project.id && project.type === 'LABOR' && (
         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
-          <TimelogDetailsDisplay projectId={project.id} users={[]} />
+          <TimelogDetailsDisplay
+            projectId={project.id}
+            users={(project.users || []).map(user => ({
+              id: user.id,
+              name: user.email // Sử dụng user.email làm giá trị cho 'name'
+            }))}
+              
+          />
         </div>
       )}
     </List.Item>
