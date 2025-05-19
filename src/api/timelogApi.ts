@@ -21,6 +21,15 @@ export interface TimeLogResponse {
   createdAt?: string;
 }
 
+export interface ExcelUploadResponseDTO {
+  message?: string;
+  totalRowsInFile: number;
+  successfulImports: number;
+  failedImports: number;
+  error?: string;
+  errorsDetails?: string[]; // Đã định nghĩa là optional string array
+}
+
 export interface TimeLogFetchResult extends PaginatedResult<TimeLogResponse> {
   timelogs: TimeLogResponse[]; // Tương thích với code cũ
 }
@@ -96,4 +105,82 @@ export const putUpdateTimeLogApi = async (
   payload: TimeLogRequest
 ): Promise<void> => {
   await axiosClient.put(`/api/timelogs/${timelogId}`, payload);
+};
+
+export const uploadTimelogsExcelApi = async (
+  projectId: number,
+  file: File
+): Promise<ExcelUploadResponseDTO> => {
+  try {
+    if (!file) {
+      const noFileResponse = {
+        error: 'No file selected',
+        totalRowsInFile: 0,
+        successfulImports: 0,
+        failedImports: 0,
+        errorsDetails: ['No file selected for upload.']
+      };
+      console.log('[timelogApi.ts] No file selected, returning:', noFileResponse);
+      return noFileResponse;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('projectId', projectId.toString());
+
+    console.log('[timelogApi.ts] Sending FormData to API for projectId:', projectId);
+
+    const { data } = await axiosClient.post( // Giả sử axiosClient được cấu hình đúng
+      `/api/timelogs/upload-excel`, 
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    console.log('[timelogApi.ts] Raw data from API:', data);
+
+    const successResponse: ExcelUploadResponseDTO = {
+      message: data.message || '',
+      totalRowsInFile: data.totalRowsInFile || 0,
+      successfulImports: data.successfulImports || 0,
+      failedImports: data.failedImports || 0,
+      error: data.error || undefined,
+      errorsDetails: data.errorsDetails || []
+    };
+    console.log('[timelogApi.ts] Parsed success response:', successResponse);
+    return successResponse;
+
+  } catch (error: any) {
+    console.error('[timelogApi.ts] Failed to upload Excel file (raw error object):', error);
+    
+    const responseData = error.response?.data;
+    console.log('[timelogApi.ts] Error responseData from API:', responseData);
+    
+    if (responseData && typeof responseData === 'object') {
+      const errorDto: ExcelUploadResponseDTO = {
+        message: responseData.message,
+        totalRowsInFile: responseData.totalRowsInFile || 0,
+        successfulImports: responseData.successfulImports || 0,
+        failedImports: typeof responseData.failedImports === 'number' ? responseData.failedImports : (responseData.error ? 1 : 0),
+        error: responseData.error || error.message || 'Failed to upload Excel file.',
+        errorsDetails: responseData.errorsDetails || [] 
+      };
+      console.log('[timelogApi.ts] Parsed error DTO:', errorDto);
+      return errorDto;
+    }
+    
+    const fallbackErrorDto: ExcelUploadResponseDTO = {
+      message: undefined,
+      totalRowsInFile: 0,
+      successfulImports: 0,
+      failedImports: 1,
+      error: error.message || 'An unexpected error occurred during file upload.',
+      errorsDetails: [error.message || 'An unexpected error occurred. Please check network or contact support.']
+    };
+    console.log('[timelogApi.ts] Fallback error DTO:', fallbackErrorDto);
+    return fallbackErrorDto;
+  }
 };

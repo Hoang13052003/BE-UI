@@ -83,6 +83,7 @@ export interface MilestoneRequest {
   deadlineDate: string;
   status: string;
   notes: string;
+  completionPercentage?: number;
 }
 export const addMilestoneToProjectApi = async (
   projectId: number,
