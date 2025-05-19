@@ -6,11 +6,15 @@ import App from './App.tsx'
 import './styles/main.scss'
 import './App.css'
 import './i18n';
-
+import { App as AntApp } from 'antd';
+import 'react-confirm-alert/src/react-confirm-alert.css';
+import 'antd/dist/reset.css'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <App />
+      <AntApp>
+        <App />
+      </AntApp>
     </ThemeProvider>
   </StrictMode>,
 )

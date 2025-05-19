@@ -1,20 +1,425 @@
 {
-    "welcome": "Welcome to our website",
-    "hello": "Hello",
-    "description": "This is a sample application with i18n support",
-    "changeLanguage": "Change language",
-    "vietnamese": "Vietnamese",
+  "common": {
+    "appName": "ProgressHub",
+    "welcome": "Welcome to ",
+    "welcomeback": "Welcome back!",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "noData": "No data available",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "showMore": "Show More",
+    "showLess": "Show Less",
+    "getStarted": "Get Started"
+  },
+  "auth": {
+    "input": {
+        "fullName": "Enter your full name",
+        "email": "Enter your email",
+        "newPassword": "Enter your new password",
+        "password": "Enter your password",
+        "newPasswordConfirm": "Confirm your new password",
+        "confirmPassword": "Confirm your password"
+      },
+    "login": {
+      "title": "Login",
+      "description": "Please sign-in to your account and start the adventure",
+      "forgotPassword": "Forgot Password?",
+      "new": "New on our platform?",
+      "register": "Create new an account"
+    },
+    "register": {
+      "title": "Register",
+      "title-form": "Join ProgressHub",
+      "exist-account":"If you already have an account?",
+      "description": "Create your account to get started"
+    },
+    "forgotPassword":{ 
+      "title": "Forgot Password?",
+      "description": "Please change your password and log in to your account to start the adventure"
+    },
+    "resetPassword": "Reset Password",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "username": "Username",
+    "rememberMe": "Remember Me",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "createAccount": "Create an account",
+    "alreadyHaveAccount": "Already have an account?",
+    "newUser": "New on our platform?",
+    "resetPasswordSuccess": "Password has been reset successfully!",
+    "resetPasswordInstruction": "Enter your new password below",
+    "forgotPasswordInstruction": "Enter your email and we'll send you instructions to reset your password",
+    "loginSuccess": "Login successful!",
+    "registerSuccess": "Registration successful!",
+    "logoutSuccess": "Logout successful!",
+    "loginToYourAccount": "Please sign-in to your account and start the adventure",
+    "registerDescription": "Create your account to get started"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "settings": "Settings",
+    "projects": "Projects",
+    "clients": "Clients",
+    "tasks": "Tasks",
+    "reports": "Reports",
+    "team": "Team",
+    "calendar": "Calendar",
+    "notifications": "Notifications",
+    "messages": "Messages",
+    "support": "Support",
+    "documentation": "Documentation",
+    "adminPanel": "Admin Panel",
+    "userManagement": "User Management"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "totalProjects": "Total Projects",
+    "activeProjects": "Active Projects",
+    "completedProjects": "Completed Projects",
+    "pendingTasks": "Pending Tasks",
+    "completedTasks": "Completed Tasks",
+    "teamMembers": "Team Members",
+    "recentActivity": "Recent Activity",
+    "projectProgress": "Project Progress",
+    "deadlines": "Upcoming Deadlines",
+    "overview": "Overview",
+    "statistics": "Statistics",
+    "performance": "Performance"
+  },
+  "projects": {
+    "title": "Projects",
+    "createProject": "Create Project",
+    "editProject": "Edit Project",
+    "deleteProject": "Delete Project",
+    "projectName": "Project Name",
+    "projectType": "Project Type",
+    "projectStatus": "Project Status",
+    "client": "Client",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "deadline": "Deadline",
+    "budget": "Budget",
+    "team": "Team",
+    "description": "Description",
+    "progress": "Progress",
+    "status": {
+      "active": "Active",
+      "completed": "Completed",
+      "onHold": "On Hold",
+      "cancelled": "Cancelled",
+      "pending": "Pending"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "tasks": {
+    "title": "Tasks",
+    "createTask": "Create Task",
+    "editTask": "Edit Task",
+    "deleteTask": "Delete Task",
+    "taskName": "Task Name",
+    "assignedTo": "Assigned To",
+    "dueDate": "Due Date",
+    "priority": "Priority",
+    "status": "Status",
+    "description": "Description",
+    "attachment": "Attachment",
+    "addAttachment": "Add Attachment",
+    "comments": "Comments",
+    "addComment": "Add Comment",
+    "markAsComplete": "Mark as Complete",
+    "status": {
+      "todo": "To Do",
+      "inProgress": "In Progress",
+      "review": "Review",
+      "completed": "Completed"
+    }
+  },
+  "timeTracking": {
+    "title": "Time Tracking",
+    "startTimer": "Start Timer",
+    "stopTimer": "Stop Timer",
+    "addTimeLog": "Add Time Log",
+    "editTimeLog": "Edit Time Log",
+    "deleteTimeLog": "Delete Time Log",
+    "date": "Date",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "duration": "Duration",
+    "project": "Project",
+    "task": "Task",
+    "description": "Description",
+    "totalHours": "Total Hours",
+    "weeklyReport": "Weekly Report",
+    "monthlyReport": "Monthly Report"
+  },
+  "team": {
+    "title": "Team",
+    "addMember": "Add Member",
+    "editMember": "Edit Member",
+    "removeMember": "Remove Member",
+    "name": "Name",
+    "role": "Role",
+    "email": "Email",
+    "phone": "Phone",
+    "department": "Department",
+    "joinDate": "Join Date",
+    "skills": "Skills",
+    "projects": "Projects",
+    "performance": "Performance"
+  },
+  "reports": {
+    "title": "Reports",
+    "projectReport": "Project Report",
+    "timeReport": "Time Report",
+    "clientReport": "Client Report",
+    "teamReport": "Team Report",
+    "financialReport": "Financial Report",
+    "generateReport": "Generate Report",
+    "export": "Export",
+    "print": "Print",
+    "period": "Period",
+    "filters": "Filters",
+    "groupBy": "Group By",
+    "chartType": "Chart Type"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "profile": "Profile",
+    "security": "Security",
+    "notifications": "Notifications",
+    "appearance": "Appearance",
+    "language": "Language",
+    "theme": "Theme",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "changePassword": "Change Password",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "emailNotifications": "Email Notifications",
+    "pushNotifications": "Push Notifications",
+    "saveChanges": "Save Changes",
     "english": "English",
-    "buttons": {
-      "submit": "Submit",
+    "vietnamese": "Vietnamese",
+    "chinese": "Chinese"
+  },
+  "profile": {
+    "title": "Profile",
+    "personalInfo": "Personal Information",
+    "contactInfo": "Contact Information",
+    "changePhoto": "Change Photo",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "bio": "Bio",
+    "position": "Position",
+    "department": "Department",
+    "joinDate": "Join Date",
+    "skills": "Skills",
+    "education": "Education",
+    "experience": "Experience",
+    "socialProfiles": "Social Profiles"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllAsRead": "Mark All as Read",
+    "clearAll": "Clear All",
+    "newMessage": "New Message",
+    "projectUpdate": "Project Update",
+    "taskAssigned": "Task Assigned",
+    "deadlineApproaching": "Deadline Approaching",
+    "systemUpdate": "System Update",
+    "noNotifications": "No notifications",
+    "viewAll": "View All"
+  },
+  "errors": {
+    "required": {
+      "email": "Email is required",
+      "password": "Password is required",
+      "confirmPassword": "Confirm password is required"
+    },
+    "invalidEmail": "Invalid email address",
+    "passwordMismatch": "Passwords do not match",
+    "invalidCredentials": "Invalid email or password",
+    "somethingWentWrong": "Something went wrong. Please try again.",
+    "unauthorized": "You are not authorized to access this page",
+    "forbidden": "Access denied",
+    "notFound": "Page not found",
+    "serverError": "Server error",
+    "networkError": "Network error. Please check your connection.",
+    "sessionExpired": "Your session has expired. Please login again."
+  },
+  "homeIntro": {
+    "title": "Track your project progress anytime, anywhere.",
+    "subtitle": "Stay informed with real-time updates on milestones, work hours, and recent activity from our team.",
+    "tabs": {
+      "overview": "Overview",
+      "forUsers": "For Users",
+      "forAdmins": "For Admins"
+    },
+    "projectTypes": {
+      "fixedPrice": "Fixed Price Projects",
+      "laborHour": "Labor Hour Projects",
+      "additionalFeatures": "Additional Features"
+    },
+    "projectFeatures": {
+      "trackMilestones": "Track milestone completion",
+      "viewDeadlines": "View project deadlines",
+      "progressVisualization": "Progress visualization",
+      "milestoneFiltering": "Milestone filtering",
+      "trackHours": "Track total hours used",
+      "weeklyLogs": "Weekly task logs",
+      "teamTracking": "Team member tracking",
+      "timesheetReports": "Timesheet reports",
+      "emailNotifications": "Email notifications",
+      "reportExports": "Report exports",
+      "multiLanguage": "Multi-language support",
+      "mobileResponsive": "Mobile responsive"
+    },
+    "userFeatures": {
+      "secureLogin": {
+        "title": "Secure Login",
+        "description": "Easy access with password recovery and profile management"
+      },
+      "projectDashboard": {
+        "title": "Project Dashboard",
+        "description": "Clear overview of all your projects with completion status"
+      },
+      "progressTracking": {
+        "title": "Progress Tracking",
+        "description": "Detailed timeline view of project milestones and updates"
+      },
+      "documentation": {
+        "title": "Documentation",
+        "description": "Access to project documents and attachments"
+      },
+      "communication": {
+        "title": "Communication",
+        "description": "Built-in messaging system for project discussions"
+      },
+      "multiLanguage": {
+        "title": "Multi-language",
+        "description": "Interface available in multiple languages"
+      }
+    },
+    "adminFeatures": {
+      "adminDashboard": {
+        "title": "Admin Dashboard",
+        "description": "Comprehensive overview of all projects and their status"
+      },
+      "userManagement": {
+        "title": "User Management",
+        "description": "Create and manage user accounts with role assignments"
+      },
+      "projectManagement": {
+        "title": "Project Management",
+        "description": "Create, edit, and track multiple projects"
+      },
+      "progressUpdates": {
+        "title": "Progress Updates",
+        "description": "Regular project updates and milestone tracking"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Automated email notifications for important updates"
+      },
+      "mobileAccess": {
+        "title": "Mobile Access",
+        "description": "Full functionality on mobile devices"
+      }
+    },
+    "chart": {
+      "title": "Project Progress Overview"
+    }
+  },
+  "adminPages": {
+    "dashboard": "Data Overview",
+    "userManagement": "User Management",
+    "projectManagement": "Project Management",
+    "notifications": "Notifications",
+    "systemSettings": "System Settings",
+    "analytics": "Analytics",
+    "logs": "Logs",
+    "backups": "Backups",
+    "maintenance": "Maintenance"
+  },
+  "clientPages": {
+    "dashboard": "Data Overview",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "reports": "Reports",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "messages": "Messages",
+    "settings": "Settings"
+  },
+  "components": {
+    "todoList": {
+      "title": "To Do List",
+      "search": "Search here...",
+      "filter": "Filter",
+      "thisWeek": "This Week",
+      "nextWeek": "Next Week",
+      "thisMonth": "This Month",
+      "task": "Task",
+      "status": "Status",
+      "assignedTo": "Assigned To",
+      "deadline": "Deadline",
+      "priority": "Priority"
+    },
+    "confirmation": {
+      "areYouSure": "Are you sure?",
+      "cannotUndo": "This action cannot be undone.",
+      "confirm": "Yes, do it",
       "cancel": "Cancel"
+    }
+  },
+  "project": {
+    "edit": {
+      "title": "Edit Project"
     },
-    "navbar": {
-      "home": "Home",
-      "about": "About",
-      "contact": "Contact"
+    "form": {
+      "name": "Project Name",
+      "description": "Description",
+      "type": "Project Type",
+      "status": "Status",
+      "startDate": "Start Date",
+      "plannedEndDate": "Planned End Date",
+      "totalBudget": "Total Budget",
+      "totalEstimatedHours": "Total Estimated Hours",
+      "teamMembers": "Team Members",
+      "searchUsersHint": "Enter email or name to search"
     },
-    "errors": {
-      "header": "Page not found enggggggggg"
+    "type": {
+      "fixedPrice": "Fixed Price Project",
+      "labor": "Labor Hour Project"
+    },
+    "status": {
+      "notStarted": "Not Started",
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "closed": "Closed"
     }
   }
+  
+}

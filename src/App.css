@@ -10,3 +10,10 @@ html, body {
     width: 100%;
     height: 100%;
 }
+
+.react-confirm-alert-overlay {
+  z-index: 2000 !important;
+}
+.react-confirm-alert {
+  z-index: 2100 !important;
+}

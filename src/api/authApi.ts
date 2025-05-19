@@ -1,7 +1,5 @@
 import axiosClient from "./axiosClient";
 
-export const KEY_TOKEN = "accessToken";
-
 export interface UserInfo {
   id: number;
   email: string;
@@ -11,8 +9,25 @@ export interface UserInfo {
   role: string;
 }
 
-export const loginApi = async (email: string, password: string) => {
-  const { data } = await axiosClient.post("/api/auth/login", {
+export interface LoginResponse {
+  jwt: string;
+  jwtRefreshToken: string;
+}
+
+export interface AuthResponse {
+  message: string;
+}
+
+export interface ChangePasswordData {
+  token?: string;
+  newPassword?: string;
+}
+
+export const loginApi = async (
+  email: string,
+  password: string
+): Promise<LoginResponse> => {
+  const { data } = await axiosClient.post<LoginResponse>("/api/auth/login", {
     email,
     password,
   });
@@ -35,21 +50,32 @@ export const resetPasswordApi = async (token: string, newPassword: string) => {
   return data;
 };
 
-export const logoutApi = async (): Promise<void> => {
-  await axiosClient.delete("/api/auth/logout");
+export const logoutApi = async (): Promise<AuthResponse> => {
+  const { data } = await axiosClient.delete<AuthResponse>("/api/auth/logout");
+  return data;
 };
 
 export const signupApi = async (
   email: string,
   password: string,
-  fullName: string
+  fullName: string,
+  recaptchaToken: string
 ) => {
-  const response = await axiosClient.post("/api/auth/signup", {
-    email,
-    password,
-    fullName,
-  });
-  return response.data;
+  try {
+    console.log("Sending signup request with token:", recaptchaToken);
+
+    const response = await axiosClient.post("/api/auth/signup", {
+      email,
+      password,
+      fullName,
+      recaptchaToken, // Đảm bảo tên field này match với backend DTO
+    });
+
+    return response.data;
+  } catch (error: unknown) {
+    console.error("Signup API Error:", error);
+    throw error;
+  }
 };
 
 export const getUserInfoApi = async (): Promise<UserInfo> => {

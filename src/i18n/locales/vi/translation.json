@@ -1,0 +1,441 @@
+{
+  "common": {
+    "appName": "ProgressHub",
+    "welcome": "Chào mừng đến với ",
+    "welcomeback": "Chào mừng trở lại!",
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "success": "Thành công",
+    "confirm": "Xác nhận",
+    "cancel": "Hủy bỏ",
+    "save": "Lưu",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "noData": "Không có dữ liệu",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "previous": "Trước đó",
+    "showMore": "Xem thêm",
+    "showLess": "Thu gọn",
+    "getStarted": "Bắt đầu ngay"
+  },
+  "auth": {
+    "input": {
+        "fullName": "Nhập họ và tên của bạn",
+        "email": "Nhập email của bạn",
+        "newPassword": "Nhập mật khẩu mới của bạn",
+        "password": "Nhập mật khẩu của bạn",
+        "newPasswordConfirm":"Xác nhận mật khẩu mới",
+        "confirmPassword": "Xác nhận mật khẩu"
+    },
+    "login": {
+      "title": "Đăng nhập",
+      "description": "Vui lòng đăng nhập vào tài khoản của bạn và bắt đầu cuộc phiêu lưu",
+      "forgotPassword": "Quên mật khẩu?",
+      "new": "Mới trên nền tảng của chúng tôi?",
+      "register": "Tạo tài khoản mới"
+      
+    },
+    "register": {
+      "title": "Đăng ký",
+      "title-form": "Tham gia ProgressHub",
+      "exist-account":"Nếu bạn đã có tài khoản?",
+      "description": "Tạo tài khoản của bạn để bắt đầu"
+    },
+    "forgotPassword":{ 
+      "title": "Quên mật khẩu?",
+      "description": "Vui lòng đổi mật khẩu và đăng nhập vào tài khoản của bạn để bắt đầu cuộc phiêu lưu"
+    },
+    "resetPassword": "Đặt lại mật khẩu",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "fullName": "Họ và tên",
+    "username": "Tên đăng nhập",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "signIn": "Đăng nhập",
+    "signUp": "Đăng ký",
+    "createAccount": "Tạo tài khoản",
+    "alreadyHaveAccount": "Đã có tài khoản?",
+    "newUser": "Bạn là người dùng mới?",
+    "resetPasswordSuccess": "Đặt lại mật khẩu thành công!",
+    "resetPasswordInstruction": "Nhập mật khẩu mới của bạn bên dưới",
+    "forgotPasswordInstruction": "Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn để đặt lại mật khẩu",
+    "loginSuccess": "Đăng nhập thành công!",
+    "registerSuccess": "Đăng ký thành công!",
+    "logoutSuccess": "Đăng xuất thành công!",
+    "loginToYourAccount": "Vui lòng đăng nhập vào tài khoản của bạn và bắt đầu trải nghiệm",
+    "registerDescription": "Tạo tài khoản của bạn để bắt đầu"
+  },
+  "navigation": {
+    "home": "Trang chủ",
+    "dashboard": "Bảng điều khiển",
+    "profile": "Hồ sơ",
+    "settings": "Cài đặt",
+    "projects": "Dự án",
+    "clients": "Khách hàng",
+    "tasks": "Nhiệm vụ",
+    "reports": "Báo cáo",
+    "team": "Đội ngũ",
+    "calendar": "Lịch",
+    "notifications": "Thông báo",
+    "messages": "Tin nhắn",
+    "support": "Hỗ trợ",
+    "documentation": "Tài liệu",
+    "adminPanel": "Bảng quản trị",
+    "userManagement": "Quản lý người dùng"
+  },
+  "dashboard": {
+    "welcome": "Chào mừng trở lại",
+    "totalProjects": "Tổng số dự án",
+    "activeProjects": "Dự án đang hoạt động",
+    "completedProjects": "Dự án hoàn thành",
+    "pendingTasks": "Nhiệm vụ đang chờ",
+    "completedTasks": "Nhiệm vụ hoàn thành",
+    "teamMembers": "Thành viên đội",
+    "recentActivity": "Hoạt động gần đây",
+    "projectProgress": "Tiến độ dự án",
+    "deadlines": "Các hạn chót sắp tới",
+    "overview": "Tổng quan",
+    "statistics": "Thống kê",
+    "performance": "Hiệu suất"
+  },
+  "projects": {
+    "title": "Dự án",
+    "createProject": "Tạo dự án",
+    "editProject": "Chỉnh sửa dự án",
+    "deleteProject": "Xóa dự án",
+    "projectName": "Tên dự án",
+    "projectType": "Loại dự án",
+    "projectStatus": "Trạng thái dự án",
+    "client": "Khách hàng",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
+    "deadline": "Hạn chót",
+    "budget": "Ngân sách",
+    "team": "Đội ngũ",
+    "description": "Mô tả",
+    "progress": "Tiến độ",
+    "status": {
+      "active": "Đang hoạt động",
+      "completed": "Hoàn thành",
+      "onHold": "Tạm hoãn",
+      "cancelled": "Đã hủy",
+      "pending": "Đang chờ"
+    },
+    "priority": {
+      "high": "Cao",
+      "medium": "Trung bình",
+      "low": "Thấp"
+    }
+  },
+  "tasks": {
+    "title": "Nhiệm vụ",
+    "createTask": "Tạo nhiệm vụ",
+    "editTask": "Chỉnh sửa nhiệm vụ",
+    "deleteTask": "Xóa nhiệm vụ",
+    "taskName": "Tên nhiệm vụ",
+    "assignedTo": "Được giao cho",
+    "dueDate": "Ngày đến hạn",
+    "priority": "Ưu tiên",
+    "status": "Trạng thái",
+    "description": "Mô tả",
+    "attachment": "Tệp đính kèm",
+    "addAttachment": "Thêm tệp đính kèm",
+    "comments": "Bình luận",
+    "addComment": "Thêm bình luận",
+    "markAsComplete": "Đánh dấu hoàn thành",
+    "status": {
+      "todo": "Cần làm",
+      "inProgress": "Đang thực hiện",
+      "review": "Đang xem xét",
+      "completed": "Hoàn thành"
+    }
+  },
+  "timeTracking": {
+    "title": "Theo dõi thời gian",
+    "startTimer": "Bắt đầu đếm giờ",
+    "stopTimer": "Dừng đếm giờ",
+    "addTimeLog": "Thêm ghi chép thời gian",
+    "editTimeLog": "Chỉnh sửa ghi chép thời gian",
+    "deleteTimeLog": "Xóa ghi chép thời gian",
+    "date": "Ngày",
+    "startTime": "Thời gian bắt đầu",
+    "endTime": "Thời gian kết thúc",
+    "duration": "Thời lượng",
+    "project": "Dự án",
+    "task": "Nhiệm vụ",
+    "description": "Mô tả",
+    "totalHours": "Tổng số giờ",
+    "weeklyReport": "Báo cáo hàng tuần",
+    "monthlyReport": "Báo cáo hàng tháng"
+  },
+  "clients": {
+    "title": "Khách hàng",
+    "addClient": "Thêm khách hàng",
+    "editClient": "Chỉnh sửa khách hàng",
+    "deleteClient": "Xóa khách hàng",
+    "clientName": "Tên khách hàng",
+    "contactPerson": "Người liên hệ",
+    "email": "Email",
+    "phone": "Điện thoại",
+    "address": "Địa chỉ",
+    "company": "Công ty",
+    "projects": "Dự án",
+    "status": "Trạng thái",
+    "notes": "Ghi chú"
+  },
+  "team": {
+    "title": "Đội ngũ",
+    "addMember": "Thêm thành viên",
+    "editMember": "Chỉnh sửa thành viên",
+    "removeMember": "Xóa thành viên",
+    "name": "Tên",
+    "role": "Vai trò",
+    "email": "Email",
+    "phone": "Điện thoại",
+    "department": "Phòng ban",
+    "joinDate": "Ngày tham gia",
+    "skills": "Kỹ năng",
+    "projects": "Dự án",
+    "performance": "Hiệu suất"
+  },
+  "reports": {
+    "title": "Báo cáo",
+    "projectReport": "Báo cáo dự án",
+    "timeReport": "Báo cáo thời gian",
+    "clientReport": "Báo cáo khách hàng",
+    "teamReport": "Báo cáo đội ngũ",
+    "financialReport": "Báo cáo tài chính",
+    "generateReport": "Tạo báo cáo",
+    "export": "Xuất",
+    "print": "In",
+    "period": "Khoảng thời gian",
+    "filters": "Bộ lọc",
+    "groupBy": "Nhóm theo",
+    "chartType": "Loại biểu đồ"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "account": "Tài khoản",
+    "profile": "Hồ sơ",
+    "security": "Bảo mật",
+    "notifications": "Thông báo",
+    "appearance": "Giao diện",
+    "language": "Ngôn ngữ",
+    "theme": "Chủ đề",
+    "darkMode": "Chế độ tối",
+    "lightMode": "Chế độ sáng",
+    "changePassword": "Đổi mật khẩu",
+    "twoFactorAuth": "Xác thực hai yếu tố",
+    "emailNotifications": "Thông báo qua email",
+    "pushNotifications": "Thông báo đẩy",
+    "saveChanges": "Lưu thay đổi",
+    "english": "Tiếng Anh",
+    "vietnamese": "Tiếng Việt",
+    "chinese": "Tiếng Trung"
+  },
+  "profile": {
+    "title": "Hồ sơ",
+    "personalInfo": "Thông tin cá nhân",
+    "contactInfo": "Thông tin liên hệ",
+    "changePhoto": "Đổi ảnh",
+    "fullName": "Họ và tên",
+    "email": "Email",
+    "phone": "Điện thoại",
+    "address": "Địa chỉ",
+    "bio": "Tiểu sử",
+    "position": "Chức vụ",
+    "department": "Phòng ban",
+    "joinDate": "Ngày tham gia",
+    "skills": "Kỹ năng",
+    "education": "Học vấn",
+    "experience": "Kinh nghiệm",
+    "socialProfiles": "Mạng xã hội"
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "markAllAsRead": "Đánh dấu tất cả đã đọc",
+    "clearAll": "Xóa tất cả",
+    "newMessage": "Tin nhắn mới",
+    "projectUpdate": "Cập nhật dự án",
+    "taskAssigned": "Nhiệm vụ được giao",
+    "deadlineApproaching": "Sắp đến hạn chót",
+    "systemUpdate": "Cập nhật hệ thống",
+    "noNotifications": "Không có thông báo",
+    "viewAll": "Xem tất cả"
+  },
+  "errors": {
+    "required": {
+      "email": "Email là bắt buộc",
+      "password": "Mật khẩu là bắt buộc",
+      "confirmPassword": "Xác nhận mật khẩu là bắt buộc"
+    },
+    "invalidEmail": "Địa chỉ email không hợp lệ",
+    "passwordMismatch": "Mật khẩu không khớp",
+    "invalidCredentials": "Email hoặc mật khẩu không hợp lệ",
+    "somethingWentWrong": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "unauthorized": "Bạn không được phép truy cập trang này",
+    "forbidden": "Truy cập bị từ chối",
+    "notFound": "Không tìm thấy trang",
+    "serverError": "Lỗi máy chủ",
+    "networkError": "Lỗi mạng. Vui lòng kiểm tra kết nối của bạn.",
+    "sessionExpired": "Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại."
+  },
+  "homeIntro": {
+    "title": "Theo dõi tiến độ dự án mọi lúc, mọi nơi.",
+    "subtitle": "Cập nhật thông tin với các bản cập nhật thời gian thực về các mốc quan trọng, giờ làm việc và hoạt động gần đây từ đội ngũ của chúng tôi.",
+    "tabs": {
+      "overview": "Tổng quan",
+      "forUsers": "Dành cho người dùng",
+      "forAdmins": "Dành cho quản trị viên"
+    },
+    "projectTypes": {
+      "fixedPrice": "Dự án giá cố định",
+      "laborHour": "Dự án tính giờ lao động",
+      "additionalFeatures": "Tính năng bổ sung"
+    },
+    "projectFeatures": {
+      "trackMilestones": "Theo dõi hoàn thành cột mốc",
+      "viewDeadlines": "Xem thời hạn dự án",
+      "progressVisualization": "Trực quan hóa tiến độ",
+      "milestoneFiltering": "Lọc cột mốc",
+      "trackHours": "Theo dõi tổng số giờ sử dụng",
+      "weeklyLogs": "Nhật ký công việc hàng tuần",
+      "teamTracking": "Theo dõi thành viên đội",
+      "timesheetReports": "Báo cáo bảng chấm công",
+      "emailNotifications": "Thông báo qua email",
+      "reportExports": "Xuất báo cáo",
+      "multiLanguage": "Hỗ trợ đa ngôn ngữ",
+      "mobileResponsive": "Tương thích trên di động"
+    },
+    "userFeatures": {
+      "secureLogin": {
+        "title": "Đăng nhập an toàn",
+        "description": "Truy cập dễ dàng với khôi phục mật khẩu và quản lý hồ sơ"
+      },
+      "projectDashboard": {
+        "title": "Bảng điều khiển dự án",
+        "description": "Tổng quan rõ ràng về tất cả các dự án của bạn với trạng thái hoàn thành"
+      },
+      "progressTracking": {
+        "title": "Theo dõi tiến độ",
+        "description": "Xem chi tiết dòng thời gian của các cột mốc và cập nhật dự án"
+      },
+      "documentation": {
+        "title": "Tài liệu",
+        "description": "Truy cập tài liệu dự án và tệp đính kèm"
+      },
+      "communication": {
+        "title": "Giao tiếp",
+        "description": "Hệ thống tin nhắn tích hợp cho thảo luận dự án"
+      },
+      "multiLanguage": {
+        "title": "Đa ngôn ngữ",
+        "description": "Giao diện có sẵn bằng nhiều ngôn ngữ"
+      }
+    },
+    "adminFeatures": {
+      "adminDashboard": {
+        "title": "Bảng điều khiển quản trị",
+        "description": "Tổng quan toàn diện về tất cả các dự án và trạng thái của chúng"
+      },
+      "userManagement": {
+        "title": "Quản lý người dùng",
+        "description": "Tạo và quản lý tài khoản người dùng với phân công vai trò"
+      },
+      "projectManagement": {
+        "title": "Quản lý dự án",
+        "description": "Tạo, chỉnh sửa và theo dõi nhiều dự án"
+      },
+      "progressUpdates": {
+        "title": "Cập nhật tiến độ",
+        "description": "Cập nhật dự án thường xuyên và theo dõi cột mốc"
+      },
+      "notifications": {
+        "title": "Thông báo",
+        "description": "Thông báo email tự động cho các cập nhật quan trọng"
+      },
+      "mobileAccess": {
+        "title": "Truy cập di động",
+        "description": "Đầy đủ chức năng trên thiết bị di động"
+      }
+    },
+    "chart": {
+      "title": "Tổng quan tiến độ dự án"
+    }
+  },
+  "adminPages": {
+    "dashboard": "Tổng quan dữ liệu",
+    "userManagement": "Quản lý người dùng",
+    "projectManagement": "Quản lý dự án",
+    "notifications": "Thông báo",
+    "systemSettings": "Cài đặt hệ thống",
+    "analytics": "Phân tích",
+    "logs": "Nhật ký",
+    "backups": "Sao lưu",
+    "maintenance": "Bảo trì"
+  },
+  "clientPages": {
+    "dashboard": "Tổng quan dữ liệu",
+    "projects": "Dự án",
+    "tasks": "Nhiệm vụ",
+    "reports": "Báo cáo",
+    "team": "Đội ngũ",
+    "notifications": "Thông báo",
+    "messages": "Tin nhắn",
+    "profile": "Hồ sơ",
+    "settings": "Cài đặt"
+  },
+  "components": {
+    "todoList": {
+      "title": "Danh sách công việc",
+      "search": "Tìm kiếm tại đây...",
+      "filter": "Lọc",
+      "thisWeek": "Tuần này",
+      "nextWeek": "Tuần sau",
+      "thisMonth": "Tháng này",
+      "task": "Nhiệm vụ",
+      "status": "Trạng thái",
+      "assignedTo": "Được giao cho",
+      "deadline": "Hạn chót",
+      "priority": "Ưu tiên"
+    },
+    "confirmation": {
+      "areYouSure": "Bạn có chắc chắn không?",
+      "cannotUndo": "Hành động này không thể hoàn tác.",
+      "confirm": "Vâng, thực hiện",
+      "cancel": "Hủy bỏ"
+    }
+  },
+  "project": {
+  "edit": {
+    "title": "Chỉnh sửa dự án"
+  },
+  "form": {
+    "name": "Tên dự án",
+    "description": "Mô tả",
+    "type": "Loại dự án",
+    "status": "Trạng thái",
+    "startDate": "Ngày bắt đầu",
+    "plannedEndDate": "Ngày kết thúc dự kiến",
+    "totalBudget": "Ngân sách",
+    "totalEstimatedHours": "Số giờ ước tính",
+    "teamMembers": "Thành viên dự án",
+    "searchUsersHint": "Nhập email hoặc tên để tìm kiếm"
+  },
+  "type": {
+    "fixedPrice": "Dự án giá cố định",
+    "labor": "Dự án tính giờ lao động"
+  },
+  "status": {
+    "notStarted": "Chưa bắt đầu",
+    "pending": "Đang chờ",
+    "inProgress": "Đang thực hiện",
+    "closed": "Đã đóng"
+  }
+}
+}

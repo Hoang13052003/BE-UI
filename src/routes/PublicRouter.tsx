@@ -6,8 +6,8 @@ const PublicRoute = () => {
 
   // Nếu đã đăng nhập thì redirect về home tùy theo role
   if (userRole) {
-    if (userRole === "ADMIN") return <Navigate to="/admin/home" replace />;
-    if (userRole === "USER") return <Navigate to="/client/home" replace />;
+    if (userRole === "ADMIN") return <Navigate to="/admin/overview" replace />;
+    if (userRole === "USER") return <Navigate to="/client/overview" replace />;
   }
 
   return <Outlet />; // Cho phép truy cập nếu chưa đăng nhập
