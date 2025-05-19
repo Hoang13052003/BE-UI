@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, DatePicker, Select, Button, message } from 'antd';
+import { Modal, Form, Input, DatePicker, Select, Button, message, InputNumber, Slider } from 'antd';
 import { addMilestoneToProjectApi, MilestoneRequest } from '../../api/projectApi'; // Ensure this API path is correct
 import TextArea from 'antd/lib/input/TextArea';
 
@@ -44,15 +44,14 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const values = await form.validateFields();
-
-      const milestoneData: MilestoneRequest = {
+      const values = await form.validateFields();      const milestoneData: MilestoneRequest = {
         name: values.name,
         description: values.description,
         startDate: values.startDate.format('YYYY-MM-DD'),
         deadlineDate: values.deadlineDate.format('YYYY-MM-DD'),
         status: values.status,
         notes: values.notes || '',
+        completionPercentage: values.completionPercentage,
       };
 
       // Ensure addMilestoneToProjectApi exists and works as intended
@@ -155,13 +154,41 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
               </Select.Option>
             ))}
           </Select>
-        </Form.Item>
-
-        <Form.Item
+        </Form.Item>        <Form.Item
           name="notes"
           label="Notes"
         >
           <TextArea rows={3} placeholder="Enter notes (optional)" />
+        </Form.Item>
+
+        <Form.Item
+          name="completionPercentage"
+          label="Completion Percentage"
+          rules={[
+            {
+              type: 'number',
+              min: 0,
+              max: 100,
+              message: 'Completion percentage must be between 0 and 100'
+            }
+          ]}
+        >
+          <Slider 
+            min={0} 
+            max={100} 
+            step={1}
+            tooltip={{
+              formatter: (value) => `${value}%`,
+              placement: 'bottom'
+            }}
+            marks={{
+              0: '0%',
+              25: '25%',
+              50: '50%',  
+              75: '75%',
+              100: '100%'
+            }}
+          />
         </Form.Item>
       </Form>
     </Modal>

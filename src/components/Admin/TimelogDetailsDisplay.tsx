@@ -12,18 +12,19 @@ import dayjs from 'dayjs';
 import { getTimeLogsByProjectIdApi, TimeLogResponse, deleteTimeLogApi } from '../../api/timelogApi';
 import AddTimeLogModal from './AddTimeLogModal';
 import EditTimeLogModal from './EditTimeLogModal';
+import FileDropUpload from './FileDropUpload';
 
 const { Text, Title } = Typography;
 
 interface TimelogDetailsDisplayProps {
   projectId: number;
   onEditTimeLog?: (timelogId: number) => void;
-  users: { id: number; name: string }[]; // Array of users for the dropdown
+  users: { id: number; name: string }[];
 }
 
-const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({ 
-  projectId, 
-  users = [] // Default to empty array if not provided
+const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
+  projectId,
+  users = []
 }) => {
   const [timelogs, setTimelogs] = useState<TimeLogResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -31,23 +32,21 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingTimelog, setEditingTimelog] = useState<TimeLogResponse | null>(null);
-  
-  // Phân trang
+
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [totalItems, setTotalItems] = useState<number>(0);
 
-  // Fetch timelogs data với phân trang
   const fetchTimelogs = useCallback(async () => {
     try {
       setLoading(true);
-      const { timelogs: timelogData, totalItems } = await getTimeLogsByProjectIdApi(
+      const { timelogs: timelogData, totalItems: newTotalItems } = await getTimeLogsByProjectIdApi(
         projectId,
         currentPage,
         pageSize
       );
       setTimelogs(timelogData);
-      setTotalItems(totalItems);
+      setTotalItems(newTotalItems);
       setError(null);
     } catch (err) {
       setError('Failed to load time logs. Please try again later.');
@@ -61,7 +60,14 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     fetchTimelogs();
   }, [fetchTimelogs]);
 
-  // Format date
+  // Xử lý sự kiện thành công khi upload
+  const handleUploadComplete = useCallback(() => {
+    // Refresh danh sách timelogs sau khi upload thành công
+    fetchTimelogs();
+    // Hiển thị toast thành công (nếu muốn thêm)
+    message.success('Time logs updated successfully');
+  }, []);
+
   const formatDate = (dateString: string): string => {
     try {
       return dayjs(dateString).format('MMMM D, YYYY');
@@ -70,7 +76,6 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     }
   };
 
-  // Handle delete time log
   const handleDeleteTimeLog = async (timelogId: number) => {
     try {
       await deleteTimeLogApi(timelogId);
@@ -90,16 +95,18 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     }
   };
 
-  // Xử lý thay đổi trang
   const handlePageChange = (page: number) => {
-    setCurrentPage(page - 1); // Chuyển từ 1-based index trong UI sang 0-based index cho API
+    setCurrentPage(page - 1);
   };
 
-  // Xử lý thay đổi số lượng item trên trang
   const handlePageSizeChange = (current: number, size: number) => {
     setPageSize(size);
-    setCurrentPage(0); // Reset về trang đầu tiên khi thay đổi kích thước
+    setCurrentPage(0);
   };
+
+  const handleUploadError = useCallback(() => {
+    fetchTimelogs();
+  }, [fetchTimelogs]);
 
   if (loading && timelogs.length === 0) {
     return <div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>;
@@ -110,22 +117,36 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   }
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
         <Col>
           <Title level={5}>Project Time Tracking</Title>
         </Col>
         <Col>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setIsAddModalVisible(true)}
-          >
-            Add Time Log
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setIsAddModalVisible(true)}
+            >
+              Add Time Log
+            </Button>
+          </Space>
         </Col>
       </Row>
 
+      {/* File Upload Section - Đơn giản hơn vì đã dùng toast */}
+      {/* Loại bỏ div căn giữa và div giới hạn chiều rộng */}
+      <div style={{ marginBottom: '20px' }}>
+        <FileDropUpload
+          projectId={projectId}
+          onUploadComplete={handleUploadComplete}
+          onUploadError={handleUploadError}
+          width="100%"
+        />
+      </div>
+
+      {/* Nội dung hiện tại của bạn: danh sách timelogs, phân trang, modals */}
       {timelogs.length === 0 && !loading && (
         <Text type="secondary">No time entries found for this project. Click "Add Time Log" to create one.</Text>
       )}
@@ -149,10 +170,10 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
                   transition: 'background 0.3s ease'
                 }}
                 actions={[
-                  <Button 
-                    key="edit" 
-                    type="text" 
-                    icon={<EditOutlined />} 
+                  <Button
+                    key="edit"
+                    type="text"
+                    icon={<EditOutlined />}
                     size="small"
                     onClick={() => handleEditTimeLog(item.id)}
                   >
@@ -199,12 +220,11 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
               </List.Item>
             )}
           />
-          
-          {/* Thêm phân trang */}
+
           {totalItems > 0 && (
             <Row justify="end" style={{ marginTop: 16 }}>
               <Pagination
-                current={currentPage + 1} // Chuyển từ 0-based index trong code sang 1-based index cho UI
+                current={currentPage + 1}
                 pageSize={pageSize}
                 total={totalItems}
                 onChange={handlePageChange}
@@ -218,7 +238,6 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         </>
       )}
 
-      {/* Add Time Log Modal */}
       <AddTimeLogModal
         visible={isAddModalVisible}
         onClose={() => setIsAddModalVisible(false)}
@@ -227,7 +246,6 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         users={users}
       />
 
-      {/* Edit Time Log Modal */}
       <EditTimeLogModal
         visible={isEditModalVisible}
         onClose={() => setIsEditModalVisible(false)}

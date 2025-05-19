@@ -17,4 +17,8 @@ export interface Project {
   totalEstimatedHours: number | null; // Updated to allow null based on sample data
   progress: number;
   users: ProjectUser[]; // List of users assigned to the project
+  milestoneCount: number;
+  newMilestoneCount: number;      
+  sentMilestoneCount: number;     
+  reviewedMilestoneCount: number; 
 }

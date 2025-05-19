@@ -19,50 +19,55 @@ import MessagesAndNotes from './pages/Client/MessagesAndNotes';
 import ProfileSettings from './pages/Client/ProfileSettings';
 import HomeIntroSection from './pages/HomeIntroSection';
 import OverviewAdmin from './pages/Admin/Overview';
-import Overview from './pages/Client/Overview';
+import Overview from './pages/Client/overview';
+import { AlertProvider } from './contexts/AlertContext';
+import AlertContainer from './components/AlertContainer';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route element={<PublicRoute />}>
-            <Route path="/" element={<LayoutShare />} >
-              <Route index element={<HomeIntroSection />} />
+    <AlertProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route element={<PublicRoute />}>
+              <Route path="/" element={<LayoutShare />} >
+                <Route index element={<HomeIntroSection />} />
+              </Route>
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/register" element={<RegisterComponent />} />
+              <Route path="/login" element={<LoginComponent />} />
             </Route>
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/register" element={<RegisterComponent />} />
-            <Route path="/login" element={<LoginComponent />} />
-          </Route>
 
-          {/* Route cho Admin */}
-          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-            <Route path="/" element={<LayoutShare />} >
-              <Route path="admin/" element={<DashboardAdmin />} >
-                <Route path="overview" element={<OverviewAdmin />} />
-                <Route path="users" element={<UserManagement />} />
-                <Route path="updates" element={<ProjectUpdates />} />
-                <Route path="notifications" element={<Notifications />} />
-                <Route path="settings" element={<SystemSettings />} />
+            {/* Route cho Admin */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+              <Route path="/" element={<LayoutShare />} >
+                <Route path="admin/" element={<DashboardAdmin />} >
+                  <Route path="overview" element={<OverviewAdmin />} />
+                  <Route path="users" element={<UserManagement />} />
+                  <Route path="updates" element={<ProjectUpdates />} />
+                  <Route path="notifications" element={<Notifications />} />
+                  <Route path="settings" element={<SystemSettings />} />
+                </Route>
               </Route>
             </Route>
-          </Route>
 
-          {/* Route cho Client */}
-          <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
-            <Route path="/" element={<LayoutShare />} >
-              <Route path="client/" element={<DashboardClient />} >
-                <Route path="overview" element={<Overview />} />
-                <Route path="profiles" element={<ProfileSettings />} />
-                <Route path="projects/documents" element={<DocumentsPage />} />
-                <Route path="projects/messages" element={<MessagesAndNotes />} />
-                <Route path="projects/details/:id" element={<ProjectDetails />} />
+            {/* Route cho Client */}
+            <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
+              <Route path="/" element={<LayoutShare />} >
+                <Route path="client/" element={<DashboardClient />} >
+                  <Route path="overview" element={<Overview />} />
+                  <Route path="profiles" element={<ProfileSettings />} />
+                  <Route path="projects/documents" element={<DocumentsPage />} />
+                  <Route path="projects/messages" element={<MessagesAndNotes />} />
+                  <Route path="projects/details/:id" element={<ProjectDetails />} />
+                </Route>
               </Route>
             </Route>
-          </Route>
-        </Routes>
-      </Router>
-    </AuthProvider>
+          </Routes>
+        </Router>
+        <AlertContainer /> {/* Đặt ở ngoài cùng, sau Router */}
+      </AuthProvider>
+    </AlertProvider>
   );
 }
 
