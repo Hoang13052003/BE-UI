@@ -1,7 +1,7 @@
 import axiosClient from "./axiosClient";
 import { Project } from "../types/project";
 import { ProjectRequest } from "../types/ProjectRequest";
-import { SortConfig, fetchPaginatedData, PaginatedResult } from './apiUtils';
+import { SortConfig, fetchPaginatedData, PaginatedResult } from "./apiUtils";
 
 export interface FetchProjectsResult extends PaginatedResult<Project> {
   projects: Project[]; // Tương thích với code cũ
@@ -13,12 +13,17 @@ export const fetchProjects = async (
   sortConfig?: SortConfig | SortConfig[]
 ): Promise<FetchProjectsResult> => {
   try {
-    const result = await fetchPaginatedData<Project>('/api/projects', page, size, sortConfig);
-    
+    const result = await fetchPaginatedData<Project>(
+      "/api/projects",
+      page,
+      size,
+      sortConfig
+    );
+
     // Trả về kết quả theo định dạng cũ để đảm bảo tương thích
     return {
       ...result,
-      projects: result.items
+      projects: result.items,
     };
   } catch (error) {
     console.error("Error fetching projects:", error);
@@ -52,12 +57,18 @@ export const filterProjects = async (
       params["endDate.contains"] = criteria.endDate;
     }
 
-    const result = await fetchPaginatedData<Project>('api/projects/filters', page, size, undefined, params);
-    
-    return { 
-      projects: result.items, 
-      totalCount: result.totalItems, 
-      links: result.navigationLinks 
+    const result = await fetchPaginatedData<Project>(
+      "api/projects/filters",
+      page,
+      size,
+      undefined,
+      params
+    );
+
+    return {
+      projects: result.items,
+      totalCount: result.totalItems,
+      links: result.navigationLinks,
     };
   } catch (error) {
     console.error("Error fetching filtered projects:", error);
@@ -112,14 +123,33 @@ export const updateProjectApi = async (
   projectData: ProjectUpdateRequest
 ): Promise<Project> => {
   try {
-    const { data } = await axiosClient.put(`/api/projects/${projectId}`, projectData);
+    const { data } = await axiosClient.put(
+      `/api/projects/${projectId}`,
+      projectData
+    );
     return data;
   } catch (error: any) {
     if (error.response) {
       if (error.response.status === 404) {
-        throw new Error('Project not found');
+        throw new Error("Project not found");
       } else if (error.response.status === 400) {
-        throw new Error(error.response.data.message || 'Invalid project data');
+        throw new Error(error.response.data.message || "Invalid project data");
+      }
+    }
+    throw error;
+  }
+};
+
+export const getProjectById = async (id: number): Promise<Project> => {
+  try {
+    const { data } = await axiosClient.get<Project>(`/api/projects/${id}`);
+    return data;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if (error.message === "Project not found") {
+        throw error;
+      } else if (error.message === "Invalid project data") {
+        throw error;
       }
     }
     throw error;
