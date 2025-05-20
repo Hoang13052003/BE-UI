@@ -1,27 +1,29 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import LoginComponent from './components/LoginComponent';
-import ProtectedRoute from './routes/ProtectedRoute';
-import { AuthProvider } from './contexts/AuthContext';
-import RegisterComponent from './components/RegisterComponent';
-import PublicRoute from './routes/PublicRouter';
-import LayoutShare from './pages/Share/_layout';
-import DashboardClient from './pages/Client/DashboardClient';
-import DashboardAdmin from './pages/Admin/DashboardAdmin';
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import LoginComponent from "./components/LoginComponent";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
+import RegisterComponent from "./components/RegisterComponent";
+import PublicRoute from "./routes/PublicRouter";
+import LayoutShare from "./pages/Share/_layout";
+import DashboardClient from "./pages/Client/DashboardClient";
+import DashboardAdmin from "./pages/Admin/DashboardAdmin";
 // import HeroSection from './components/home/HeroSection';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage';
-import UserManagement from './pages/Admin/UserManagement';
-import ProjectUpdates from './pages/Admin/ProjectUpdates';
-import Notifications from './pages/Admin/Notifications';
-import SystemSettings from './pages/Admin/SystemSettings';
-import ProjectDetails from './pages/Client/ProjectDetails';
-import DocumentsPage from './pages/Client/DocumentsPage';
-import MessagesAndNotes from './pages/Client/MessagesAndNotes';
-import ProfileSettings from './pages/Client/ProfileSettings';
-import HomeIntroSection from './pages/HomeIntroSection';
-import OverviewAdmin from './pages/Admin/Overview';
-import Overview from './pages/Client/overview';
-import { AlertProvider } from './contexts/AlertContext';
-import AlertContainer from './components/AlertContainer';
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import UserManagement from "./pages/Admin/UserManagement";
+import ProjectUpdates from "./pages/Admin/ProjectUpdates";
+import Notifications from "./pages/Admin/Notifications";
+import SystemSettings from "./pages/Admin/SystemSettings";
+import ProjectDetails from "./pages/Client/ProjectDetails";
+import DocumentsPage from "./pages/Client/DocumentsPage";
+import MessagesAndNotes from "./pages/Client/MessagesAndNotes";
+import ProfileSettings from "./pages/Client/ProfileSettings";
+import HomeIntroSection from "./pages/HomeIntroSection";
+import OverviewAdmin from "./pages/Admin/Overview";
+import Overview from "./pages/Client/Overview";
+import { AlertProvider } from "./contexts/AlertContext";
+import AlertContainer from "./components/AlertContainer";
+import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
+import ProjectUpdateDetailsPage from "./pages/Admin/ProjectsUpdate/ProjectUpdateDetailsPage";
 
 function App() {
   return (
@@ -30,7 +32,7 @@ function App() {
         <Router>
           <Routes>
             <Route element={<PublicRoute />}>
-              <Route path="/" element={<LayoutShare />} >
+              <Route path="/" element={<LayoutShare />}>
                 <Route index element={<HomeIntroSection />} />
               </Route>
               <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -39,12 +41,20 @@ function App() {
             </Route>
 
             {/* Route cho Admin */}
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-              <Route path="/" element={<LayoutShare />} >
-                <Route path="admin/" element={<DashboardAdmin />} >
+            <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+              <Route path="/" element={<LayoutShare />}>
+                <Route path="admin/" element={<DashboardAdmin />}>
                   <Route path="overview" element={<OverviewAdmin />} />
                   <Route path="users" element={<UserManagement />} />
                   <Route path="updates" element={<ProjectUpdates />} />
+                  <Route
+                    path="project-progress"
+                    element={<ProjectProgressPage />}
+                  />
+                  <Route
+                    path="project-updates/:id"
+                    element={<ProjectUpdateDetailsPage />}
+                  />
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="settings" element={<SystemSettings />} />
                 </Route>
@@ -52,14 +62,23 @@ function App() {
             </Route>
 
             {/* Route cho Client */}
-            <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
-              <Route path="/" element={<LayoutShare />} >
-                <Route path="client/" element={<DashboardClient />} >
+            <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
+              <Route path="/" element={<LayoutShare />}>
+                <Route path="client/" element={<DashboardClient />}>
                   <Route path="overview" element={<Overview />} />
                   <Route path="profiles" element={<ProfileSettings />} />
-                  <Route path="projects/documents" element={<DocumentsPage />} />
-                  <Route path="projects/messages" element={<MessagesAndNotes />} />
-                  <Route path="projects/details/:id" element={<ProjectDetails />} />
+                  <Route
+                    path="projects/documents"
+                    element={<DocumentsPage />}
+                  />
+                  <Route
+                    path="projects/messages"
+                    element={<MessagesAndNotes />}
+                  />
+                  <Route
+                    path="projects/details/:id"
+                    element={<ProjectDetails />}
+                  />
                 </Route>
               </Route>
             </Route>

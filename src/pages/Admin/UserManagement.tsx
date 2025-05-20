@@ -199,11 +199,13 @@ const UserManagement: React.FC = () => {
             onClick={() => handleAssignProject(record.id, record.projects)}
             icon={<ProjectOutlined />}
           />
-          <Button
-            icon={<DeleteOutlined />}
-            danger
-            onClick={() => handleDeleteUser(record.id)}
-          />
+          {record.role !== "ADMIN" && (
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              onClick={() => handleDeleteUser(record.id)}
+            />
+          )}
         </Space>
       ),
     },
