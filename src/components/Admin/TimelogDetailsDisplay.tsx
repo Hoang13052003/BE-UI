@@ -12,7 +12,7 @@ import dayjs from 'dayjs';
 import { getTimeLogsByProjectIdApi, TimeLogResponse, deleteTimeLogApi } from '../../api/timelogApi';
 import AddTimeLogModal from './AddTimeLogModal';
 import EditTimeLogModal from './EditTimeLogModal';
-import FileDropUpload from './FileDropUpload';
+import FileDropUpload from '../../components/Admin/FileDropUpload/FileDropUpload';
 
 const { Text, Title } = Typography;
 
@@ -134,10 +134,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
           </Space>
         </Col>
       </Row>
-
-      {/* File Upload Section - Đơn giản hơn vì đã dùng toast */}
-      {/* Loại bỏ div căn giữa và div giới hạn chiều rộng */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '34px', marginTop: '8px' }}>
         <FileDropUpload
           projectId={projectId}
           onUploadComplete={handleUploadComplete}

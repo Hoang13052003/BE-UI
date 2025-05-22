@@ -72,9 +72,15 @@ export const getProjectUpdatesApi = async (
       sortConfig
     );
 
+    // Extract the actual array of updates.
+    // (result.items as any) is used to bypass TypeScript's potentially incorrect typing
+    // of result.items as T[] when it's actually { content: T[] } at runtime.
+    const actualUpdatesArray = (result.items as any)?.content || [];
+
     return {
-      ...result,
-      updates: result.items.content,
+      ...result, // Spread original result properties
+      items: actualUpdatesArray, // Ensure the 'items' property also holds the correct array
+      updates: actualUpdatesArray, // Ensure 'updates' holds the correct array
     };
   } catch (error) {
     console.error("Error fetching project updates:", error);
@@ -98,11 +104,15 @@ export const getAllProjectUpdatesApi = async (
       filters
     );
 
-    console.log("Data: " + JSON.stringify(result));
+    console.log("Data: " + JSON.stringify(result)); // Log confirms result.items is an object with a 'content' array
+
+    // Extract the actual array of updates
+    const actualUpdatesArray = (result.items as any)?.content || [];
 
     return {
-      ...result,
-      updates: result.items.content,
+      ...result, // Spread original result properties
+      items: actualUpdatesArray, // Ensure the 'items' property also holds the correct array
+      updates: actualUpdatesArray, // Ensure 'updates' holds the correct array
     };
   } catch (error) {
     console.error("Error fetching all project updates:", error);

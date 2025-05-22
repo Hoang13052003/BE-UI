@@ -26,10 +26,12 @@ import { Project } from "../../../types/project";
 import {
   ProjectUpdateRequest,
   createProjectUpdateApi,
-  uploadAttachmentApi,
   getProjectStatusesApi,
 } from "../../../api/projectUpdateApi";
 import dayjs from "dayjs";
+import { useAttachmentUpload } from "../../../hooks/useAttachmentUpload"; // Import hook mới
+import type { UploadFile } from "antd/es/upload/interface";
+import { FolderFileItem } from "../../../api/attachmentApi"; // Thêm dòng này để lấy type
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -44,6 +46,9 @@ interface AddProjectUpdateModalProps {
   initialProjectId: number | null;
 }
 
+// Nếu muốn đổi tên cho rõ hơn
+type ProjectUpdateRequestPayload = ProjectUpdateRequest;
+
 const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
   visible,
   onClose,
@@ -52,9 +57,13 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
   initialProjectId,
 }) => {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [fileList, setFileList] = useState<any[]>([]);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
+  // Thêm state lưu folder items
+  const [folderItemsToUpload, setFolderItemsToUpload] = useState<FolderFileItem[]>([]);
+
+  // Sử dụng hook upload
+  const { isUploading, uploadFilesIndividually, uploadFolderContents } = useAttachmentUpload();
 
   // Fetch status options when modal opens
   useEffect(() => {
@@ -65,7 +74,6 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           setStatusOptions(statuses);
         } catch (error) {
           console.error("Failed to fetch project statuses:", error);
-          // Fallback to default statuses
           setStatusOptions([
             "NEW",
             "PENDING",
@@ -79,62 +87,112 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
 
       fetchStatuses();
 
-      // Set initial form values if initialProjectId is provided
       if (initialProjectId) {
         form.setFieldsValue({
           projectId: initialProjectId,
         });
       }
     } else {
-      // Reset form and file list when modal closes
       form.resetFields();
       setFileList([]);
     }
   }, [visible, form, initialProjectId]);
 
+  // Hàm xử lý khi người dùng chọn thư mục bằng input webkitdirectory
+  const handleNativeFolderSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const filesFromInput: File[] = Array.from(event.target.files);
+      const items: FolderFileItem[] = [];
+      let rootDirName = '';
+
+      // Cố gắng xác định tên thư mục gốc từ file đầu tiên
+      if (filesFromInput.length > 0 && (filesFromInput[0] as any).webkitRelativePath) {
+        const firstPath = (filesFromInput[0] as any).webkitRelativePath;
+        if (firstPath.includes('/')) {
+          rootDirName = firstPath.substring(0, firstPath.indexOf('/'));
+        }
+      }
+
+      for (const file of filesFromInput) {
+        let relativePath = (file as any).webkitRelativePath || file.name;
+
+        // Loại bỏ tên thư mục gốc khỏi relativePath nếu có
+        if (rootDirName && relativePath.startsWith(rootDirName + '/')) {
+          relativePath = relativePath.substring(rootDirName.length + 1);
+        }
+        // Nếu sau khi loại bỏ, path rỗng (file nằm ngay thư mục gốc đã chọn), thì dùng tên file
+        if (!relativePath) {
+          relativePath = file.name;
+        }
+
+        items.push({
+          file: file,
+          relativePath: relativePath,
+        });
+      }
+      setFolderItemsToUpload(items);
+      setFileList([]); // Xóa fileList của Dragger nếu chọn folder
+      message.info(`${items.length} files selected from folder.`);
+    }
+  };
+
   // Handle form submission
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      setLoading(true);
 
-      // Prepare update data
-      const updateData: ProjectUpdateRequest = {
+      const updateData: ProjectUpdateRequestPayload = {
         projectId: values.projectId,
         updateDate: values.updateDate.format("YYYY-MM-DD"),
         summary: values.summary,
         details: values.details,
         statusAtUpdate: values.statusAtUpdate,
         completionPercentage: values.completionPercentage,
-        isPublished: values.isPublished,
+        published: values.isPublished,
         internalNotes: values.internalNotes,
       };
 
-      // Create the update
+      // 1. Tạo ProjectUpdate trước
       const createdUpdate = await createProjectUpdateApi(updateData);
+      const projectUpdateId = createdUpdate.id;
 
-      // Upload attachments if any
-      if (fileList.length > 0) {
-        const uploadPromises = fileList.map((file) =>
-          uploadAttachmentApi(createdUpdate.id, file.originFileObj)
-        );
-
-        await Promise.all(uploadPromises);
+      if (!projectUpdateId) {
+        throw new Error("Failed to get ID from created project update.");
       }
 
-      message.success("Project update created successfully");
+      // Ưu tiên upload folder nếu có
+      if (folderItemsToUpload.length > 0) {
+        const folderUploadResult = await uploadFolderContents(projectUpdateId, folderItemsToUpload);
+        if (folderUploadResult.failedUploads.length > 0) {
+          console.warn("Some folder files failed to upload:", folderUploadResult.failedUploads);
+          if (folderUploadResult.successfulUploads.length === 0) return;
+        }
+      } else if (fileList.length > 0) {
+        const individualUploadResult = await uploadFilesIndividually(projectUpdateId, fileList);
+        if (individualUploadResult.failedUploads.length > 0) {
+          console.warn("Some attachments failed to upload:", individualUploadResult.failedUploads);
+          if (individualUploadResult.successfulUploads.length === 0) return;
+        }
+      }
+
+      message.success("Project update created and attachments processed.", 3);
       onSuccess();
-    } catch (error) {
-      console.error("Failed to create project update:", error);
-      message.error("Failed to create project update");
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      console.error("Failed to create project update or an unexpected error occurred:", error);
+      const errorMessage = error?.response?.data?.message || error.message || "Operation failed. Please try again.";
+      message.error(errorMessage);
     }
   };
 
-  // Handle file upload
-  const handleFileChange = ({ fileList }: any) => {
-    setFileList(fileList);
+  const handleFileChange = (info: any) => {
+    let newFileList = [...info.fileList];
+    newFileList = newFileList.filter(file => {
+      if (file.status === 'removed') {
+        return false;
+      }
+      return !!file.originFileObj || file.status === 'done' || file.status === 'uploading';
+    });
+    setFileList(newFileList);
   };
 
   return (
@@ -144,13 +202,13 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
       onCancel={onClose}
       width={800}
       footer={[
-        <Button key="cancel" onClick={onClose}>
+        <Button key="cancel" onClick={onClose} disabled={isUploading}>
           Cancel
         </Button>,
         <Button
           key="submit"
           type="primary"
-          loading={loading}
+          loading={isUploading}
           onClick={handleSubmit}
         >
           Create Update
@@ -287,14 +345,23 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
 
         <Form.Item name="attachments">
           <Dragger
-            multiple
-            beforeUpload={() => false} // Prevent auto upload
+            multiple={true}
+            beforeUpload={() => false}
             fileList={fileList}
             onChange={handleFileChange}
+            onRemove={(file) => {
+              const index = fileList.findIndex(f => f.uid === file.uid);
+              if (index > -1) {
+                const newFileList = fileList.slice();
+                newFileList.splice(index, 1);
+                setFileList(newFileList);
+              }
+            }}
             showUploadList={{
               showRemoveIcon: true,
               removeIcon: <DeleteOutlined />,
             }}
+            disabled={isUploading}
           >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
@@ -323,6 +390,20 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
               </div>
             ))}
           </Space>
+        )}
+
+        {/* Thêm input chọn folder */}
+        <Divider>Or Upload Entire Folder</Divider>
+        <input
+          type="file"
+          onChange={handleNativeFolderSelection}
+          multiple
+          disabled={isUploading}
+          style={{ marginTop: '10px', display: 'block' }}
+          {...{ webkitdirectory: "", directory: "" }}
+        />
+        {folderItemsToUpload.length > 0 && (
+          <Text>{folderItemsToUpload.length} files selected from folder.</Text>
         )}
       </Form>
     </Modal>
