@@ -1,5 +1,14 @@
 // src/types/dto.ts
 
+export interface TreeNodeDto {
+  name: string;
+  path: string;
+  type: "file" | "directory"; 
+  size: number | null; 
+  lastModified: string | null; 
+  attachmentId: number | null;
+}
+
 export interface AttachmentResponseDto {
   id: number;
   projectUpdateId: number;

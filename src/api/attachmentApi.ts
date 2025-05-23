@@ -1,7 +1,7 @@
-import axiosClient from "./axiosClient"; // Đường dẫn đến file axiosClient của bạn
-import { AttachmentResponseDto } from "../types/Attachment"; // Giả sử bạn có type này
+import axiosClient from "./axiosClient";
+import { AttachmentResponseDto, TreeNodeDto } from "../types/Attachment";
 
-const API_BASE_PATH = "/api/attachments"; // Hoặc path bạn đã đặt trong Controller
+const API_BASE_PATH = "/api/attachments";
 
 /**
  * Uploads a single attachment file.
@@ -15,7 +15,7 @@ const API_BASE_PATH = "/api/attachments"; // Hoặc path bạn đã đặt trong
 export const uploadSingleAttachment = async (
   file: File,
   projectUpdateId: number,
-  logicalName?: string // logicalName là tùy chọn
+  logicalName?: string
 ): Promise<AttachmentResponseDto> => {
   const formData = new FormData();
   formData.append("file", file);
@@ -24,15 +24,12 @@ export const uploadSingleAttachment = async (
     formData.append("logicalName", logicalName);
   }
 
-  // Khi upload file, Content-Type phải là 'multipart/form-data'.
-  // axios sẽ tự động set Content-Type này khi bạn truyền FormData.
-  // Tuy nhiên, chúng ta cần override Content-Type mặc định ('application/json') của axiosClient.
   const response = await axiosClient.post<AttachmentResponseDto>(
     `${API_BASE_PATH}/upload-single`,
     formData,
     {
       headers: {
-        "Content-Type": "multipart/form-data", // Quan trọng cho file upload
+        "Content-Type": "multipart/form-data",
       },
     }
   );
@@ -49,39 +46,37 @@ export interface FolderFileItem {
 
 /**
  * Uploads multiple files, typically representing a folder structure.
+ * The backend expects the relativePath to be the key in FormData, URL encoded.
  *
  * @param filesWithRelativePaths An array of objects, each containing a File object
- *                               and its relativePath string.
+ *                               and its relativePath string (e.g., "src/main/App.java").
  * @param projectUpdateId The ID of the project update.
- * @returns A promise resolving to a list of AttachmentResponseDto for successfully uploaded files.
+ * @returns A promise resolving to an object containing successfulUploads and uploadErrors.
  */
 export const uploadFolderAttachments = async (
   filesWithRelativePaths: FolderFileItem[],
   projectUpdateId: number
-): Promise<AttachmentResponseDto[]> => {
+): Promise<{
+  successfulUploads: AttachmentResponseDto[];
+  uploadErrors: Array<{ fileKey?: string; originalFilename?: string; logicalName?: string; error: string }>;
+  message?: string;
+}> => {
   const formData = new FormData();
   formData.append("projectUpdateId", projectUpdateId.toString());
 
   for (const item of filesWithRelativePaths) {
     // Key của file part là relativePath đã được URL encode
     const encodedRelativePath = encodeURIComponent(item.relativePath);
-    formData.append(encodedRelativePath, item.file, item.file.name); // item.file.name là tên gốc
+    formData.append(encodedRelativePath, item.file, item.file.name);
   }
 
-  const response = await axiosClient.post<AttachmentResponseDto[]>(
+  const response = await axiosClient.post<any>(
     `${API_BASE_PATH}/upload-folder`,
     formData,
     {
       headers: {
-        "Content-Type": "multipart/form-data", // Quan trọng!
+        "Content-Type": "multipart/form-data",
       },
-      // Có thể thêm onUploadProgress nếu bạn muốn hiển thị tiến trình
-      // onUploadProgress: (progressEvent) => {
-      //   if (progressEvent.total) {
-      //     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-      //     console.log(`Upload Progress: ${percentCompleted}%`);
-      //   }
-      // },
     }
   );
 
@@ -124,7 +119,7 @@ export const softDeleteAttachmentsByLogicalName = async (
   projectId: number,
   logicalName: string
 ): Promise<void> => {
-  const encodedLogicalName = encodeURIComponent(logicalName); // Quan trọng: encode logicalName
+  const encodedLogicalName = encodeURIComponent(logicalName);
   await axiosClient.delete(
     `${API_BASE_PATH}/project/${projectId}/logical-name/${encodedLogicalName}`
   );
@@ -135,7 +130,6 @@ export const softDeleteAttachmentsByLogicalName = async (
  */
 export interface PresignedUrlResponse {
   url: string;
-  // Bạn có thể thêm các trường khác nếu backend trả về, ví dụ: expiresIn
 }
 
 /**
@@ -152,6 +146,49 @@ export const getPresignedUrlForDownload = async (
   );
   return response.data;
 };
+
+// === CÁC HÀM MỚI CHO API CÂY THƯ MỤC ===
+
+/**
+ * Retrieves the root directory structure for a specific project.
+ *
+ * @param projectId The ID of the project.
+ * @returns A promise resolving to an array of TreeNodeDto objects.
+ */
+export const getProjectTreeRoot = async (
+  projectId: number
+): Promise<TreeNodeDto[]> => {
+  const response = await axiosClient.get<TreeNodeDto[]>(
+    `${API_BASE_PATH}/project/${projectId}/tree`
+  );
+  return response.data;
+};
+
+/**
+ * Retrieves the directory structure for a given path within a specific project.
+ *
+ * @param projectId The ID of the project.
+ * @param path The relative path within the project (e.g., "src/main/java").
+ *             This path should NOT be URL encoded by the caller; the function will handle encoding.
+ * @returns A promise resolving to an array of TreeNodeDto objects.
+ */
+export const getProjectTreeByPath = async (
+  projectId: number,
+  path: string
+): Promise<TreeNodeDto[]> => {
+  // Path rỗng hoặc chỉ "/" nên được xử lý như gọi getProjectTreeRoot hoặc backend xử lý path rỗng
+  if (!path || path === "/") {
+    // Nếu path rỗng hoặc root, gọi API root thay vì endpoint có path
+    return getProjectTreeRoot(projectId);
+  }
+
+  const encodedPath = encodeURIComponent(path);
+  const response = await axiosClient.get<TreeNodeDto[]>(
+    `${API_BASE_PATH}/project/${projectId}/tree/${encodedPath}`
+  );
+  return response.data;
+};
+
 const attachmentApi = {
   uploadSingleAttachment,
   uploadFolderAttachments,
@@ -159,5 +196,8 @@ const attachmentApi = {
   getLatestAttachmentsForProject,
   softDeleteAttachmentsByLogicalName,
   getPresignedUrlForDownload,
+  getProjectTreeRoot,
+  getProjectTreeByPath,
 };
+
 export default attachmentApi;
