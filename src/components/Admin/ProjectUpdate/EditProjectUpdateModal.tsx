@@ -307,7 +307,7 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
           <Switch
             checkedChildren="Published"
             unCheckedChildren="Draft"
-            checked={updateData.isPublished}
+            checked={updateData.published}
           />
         </Form.Item>
 

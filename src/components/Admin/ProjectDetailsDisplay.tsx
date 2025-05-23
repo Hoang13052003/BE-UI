@@ -74,7 +74,30 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
     
     return colors;
   };
-  
+
+  // Thêm function để tính toán progress cho LABOR project
+  const calculateLaborProgress = () => {
+    if (project.type !== 'LABOR' || !project.totalEstimatedHours || !project.startDate) {
+      return { percent: 0, totalDays: 0, currentDay: 0 };
+    }
+
+    const HOURS_PER_DAY = 8; // 1 ngày = 8 giờ
+    const totalDays = Math.ceil(project.totalEstimatedHours / HOURS_PER_DAY);
+    
+    const startDate = new Date(project.startDate);
+    const currentDate = new Date();
+    
+    // Tính số ngày đã trôi qua từ startDate
+    const timeDiff = currentDate.getTime() - startDate.getTime();
+    const daysPassed = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    
+    // Đảm bảo currentDay không âm và không vượt quá totalDays
+    const currentDay = Math.max(0, Math.min(daysPassed, totalDays));
+    const percent = totalDays > 0 ? Math.round((currentDay / totalDays) * 100) : 0;
+    
+    return { percent, totalDays, currentDay };
+  };
+
   return (
     <List.Item
       key={project.id}
@@ -126,8 +149,28 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             <Tag>{project.type}</Tag>
           </Space>
           <Text strong style={{ fontSize: '16px' }}>{project.name}</Text>
-          {/* Progress bar tổng số milestone */}
-          {typeof project.milestoneCount === 'number' && project.milestoneCount > 0 && (
+          
+          {/* Progress bar cho LABOR projects */}
+          {project.type === 'LABOR' && project.totalEstimatedHours && (
+            <div style={{ margin: '8px 0' }}>
+              <Progress
+                type="circle"
+                size={80}
+                percent={calculateLaborProgress().percent}
+                format={() => {
+                  const { currentDay, totalDays, percent } = calculateLaborProgress();
+                  if (percent >= 100) {
+                    return 'Done';
+                  }
+                  return `${currentDay}/${totalDays} Days`;
+                }}
+                strokeColor={calculateLaborProgress().percent >= 100 ? '#52c41a' : '#1890ff'}
+              />
+            </div>
+          )}
+          
+          {/* Progress bar tổng số milestone cho FIXED_PRICE */}
+          {project.type === 'FIXED_PRICE' && typeof project.milestoneCount === 'number' && project.milestoneCount > 0 && (
             <div style={{ margin: '8px 0', maxWidth: 300 }}>
               <Progress
                 steps={project.milestoneCount}
@@ -138,6 +181,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               />
             </div>
           )}
+          
           <Text type="secondary">{project.description}</Text>
           <Space size={16} style={{ marginTop: 8, flexWrap: 'wrap' }}>
             <Space>

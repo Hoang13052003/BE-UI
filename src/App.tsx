@@ -25,6 +25,7 @@ import AlertContainer from "./components/AlertContainer";
 import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
 import ProjectUpdateDetailsPage from "./pages/Admin/ProjectsUpdate/ProjectUpdateDetailsPage";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import AttachmentDisplay from "./pages/Admin/AttachmentManager/AttachmentDisplay";
 
 function App() {
   return (
@@ -42,7 +43,6 @@ function App() {
                 <Route path="/login" element={<LoginComponent />} />
               </Route>
 
-              {/* Route cho Admin */}
               <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
                 <Route path="/" element={<LayoutShare />}>
                   <Route path="admin/" element={<DashboardAdmin />}>
@@ -60,6 +60,10 @@ function App() {
                     <Route path="notifications" element={<Notifications />} />
                     <Route path="settings" element={<SystemSettings />} />
                   </Route>
+                  <Route
+                    path="/admin/attachment-display/:projectId"
+                    element={<AttachmentDisplay />}
+                  />
                 </Route>
               </Route>
 

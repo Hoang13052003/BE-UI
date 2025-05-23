@@ -209,7 +209,14 @@ const ProjectProgressList: React.FC = () => {
       key: "projectName",
       render: (text: string, record: ProjectUpdate) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{text}</Text>
+          <Button 
+            color="default" 
+            variant="link"
+            onClick={() => navigate(`/admin/attachment-display/${record.projectId}`)}
+            style={{ padding: 0, height: 'auto', fontWeight: 'bold' }}
+          >
+            {text}
+          </Button>
           <Text
             type="secondary"
             style={{
