@@ -19,6 +19,12 @@ import {
 } from "../../../api/userApi";
 import { Project } from "../../../types/project";
 import { DeleteOutlined } from "@ant-design/icons";
+import { createNotification } from "../../../api/apiNotification";
+import {
+  CreateNotificationRequestDto,
+  MessageType,
+  NotificationPriority,
+} from "../../../types/Notification";
 const { Option } = Select;
 const { Title, Text } = Typography;
 
@@ -42,6 +48,14 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchedProjects, setSearchedProjects] = useState<Project[]>([]);
   const [assignedProjects, setAssignedProjects] = useState<Project[]>([]);
+  // const [metadata, setMetadata] = useState<Record<string, unknown>>({});
+
+  // const addMetadataField = (key: string, value: unknown) => {
+  //   setMetadata((prev) => ({
+  //     ...prev,
+  //     [key]: value,
+  //   }));
+  // };
 
   useEffect(() => {
     const fetchAssignedProjects = async () => {
@@ -75,6 +89,20 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
 
       await assignProjectToUser(userId, values.projectId);
       message.success("Project assigned successfully");
+
+      //create
+      const newNotification: CreateNotificationRequestDto = {
+        userId: userId, // ID của người dùng nhận thông báo
+        title: "Cập nhật dự án",
+        content: "Bạn mới vừa được thêm vào dự án!",
+        type: MessageType.PROJECT_ASSIGN,
+        priority: NotificationPriority.MEDIUM,
+        metadata: {
+          projectId: values.projectId,
+        },
+      };
+
+      await createNotification(newNotification);
 
       form.resetFields();
       onSuccess();

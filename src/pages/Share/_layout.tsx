@@ -21,22 +21,21 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
 import Logout from "../../components/LogoutComponent";
 import { useTranslation } from "react-i18next";
+import NotificationBell from "../../components/Admin/Notification/NotificationBell";
 
 const { Header } = Layout;
 
-
-
 const languages = [
-  { 
-    code: 'en', 
-    name: 'English', 
-    flagUrl: ukicon
+  {
+    code: "en",
+    name: "English",
+    flagUrl: ukicon,
   },
   {
-    code: 'vi',
-    name: 'Vietnamese',
+    code: "vi",
+    name: "Vietnamese",
     flagUrl: vietnameicon,
-  }
+  },
 ];
 
 const LayoutShare: React.FC = () => {
@@ -52,27 +51,25 @@ const LayoutShare: React.FC = () => {
     {
       key: "profile",
       icon: <ProfileOutlined />,
-      label: t('profile.title'),
+      label: t("profile.title"),
     },
     {
       key: "settings",
       icon: <SettingOutlined />,
-      label: t('settings.title'),
+      label: t("settings.title"),
     },
     {
       key: "support",
       icon: <QuestionCircleOutlined />,
-      label: t('navigation.support'),
+      label: t("navigation.support"),
     },
     {
       key: "logout",
       icon: <CloseCircleOutlined />,
-      label: t('auth.logout'),
+      label: t("auth.logout"),
       onClick: handleLogout,
     },
   ];
-
-
 
   const handleLanguageChange = (value: string) => {
     setCurrentLang(value as Language);
@@ -83,8 +80,6 @@ const LayoutShare: React.FC = () => {
 
   useEffect(() => {
     setCurrentLang(language);
-    
-  
   }, [language]);
 
   const MobileMenu: React.FC = () => {
@@ -92,7 +87,7 @@ const LayoutShare: React.FC = () => {
       <Menu>
         <Menu.Item key="1">
           <Select
-            style={{ width: '100%' }}
+            style={{ width: "100%" }}
             value={currentLang}
             onChange={handleLanguageChange}
             dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
@@ -114,24 +109,21 @@ const LayoutShare: React.FC = () => {
             ))}
           </Select>
         </Menu.Item>
-  
+
         <Menu.Item key="2">
           <Button
             type="text"
-            icon={theme === 'light' ? <SunOutlined /> : <MoonOutlined />}
+            icon={theme === "light" ? <SunOutlined /> : <MoonOutlined />}
             onClick={toggleTheme}
           />
         </Menu.Item>
-  
+
         {isAuthenticated ? (
           <>
             <Menu.Item key="3">
-              <Button
-                type="text"
-                icon={<BellFilled />}
-              />
+              <Button type="text" icon={<BellFilled />} />
             </Menu.Item>
-  
+
             <Menu.Item key="4">
               <Avatar className="user-avatar">JT</Avatar>
               <div className="user-info">
@@ -145,9 +137,11 @@ const LayoutShare: React.FC = () => {
               <Button
                 type="text"
                 icon={<LoginOutlined />}
-                onClick={() => { navigate('/login') }}
+                onClick={() => {
+                  navigate("/login");
+                }}
               >
-                {t('common.getStarted')}
+                {t("common.getStarted")}
               </Button>
             </Tooltip>
           </Menu.Item>
@@ -191,29 +185,31 @@ const LayoutShare: React.FC = () => {
             </Select>
             <Button
               type="text"
-              icon={theme === 'light' ? <SunOutlined /> : <MoonOutlined />}
+              icon={theme === "light" ? <SunOutlined /> : <MoonOutlined />}
               className="theme-toggle"
               onClick={toggleTheme}
             />
             {isAuthenticated ? (
               <React.Fragment>
-                <Button
-                  type="text"
-                  icon={<BellFilled />}
-                  className="notification-btn"
-                />
+                <NotificationBell />
+
                 <Dropdown
                   menu={{ items: userMenuItems }}
                   placement="bottomRight"
                   trigger={["click"]}
                   className="user-dropdown"
                 >
-                  {/* Wrap Avatar and Name in a div for layout */}
-                  <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                    }}
+                  >
                     <Avatar className="user-avatar" style={{ marginRight: 8 }}>
-                      {userDetails?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                      {userDetails?.fullName?.charAt(0)?.toUpperCase() || "U"}
                     </Avatar>
-                    <span className="user-name">{userDetails?.fullName}</span> {/* Display full name */}
+                    <span className="user-name">{userDetails?.fullName}</span>{" "}
                   </div>
                 </Dropdown>
               </React.Fragment>
@@ -223,10 +219,12 @@ const LayoutShare: React.FC = () => {
                   <Button
                     type="text"
                     icon={<LoginOutlined />}
-                    onClick={() => { navigate('/login') }}
+                    onClick={() => {
+                      navigate("/login");
+                    }}
                     className="login-btn"
                   >
-                    {t('common.getStarted')}
+                    {t("common.getStarted")}
                   </Button>
                 </Tooltip>
               </React.Fragment>
@@ -236,7 +234,7 @@ const LayoutShare: React.FC = () => {
           {/* Dropdown for mobile view */}
           <Dropdown
             overlay={<MobileMenu />}
-            trigger={['click']}
+            trigger={["click"]}
             className="mobile-dropdown"
           >
             <Button type="text" icon={<MenuOutlined />} />

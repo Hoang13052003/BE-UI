@@ -26,7 +26,7 @@ import {
   ClockCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ProjectUpdate,
   getProjectUpdateByIdApi,
@@ -128,7 +128,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
     if (id) {
       try {
         setLoading(true);
-        const updatedData = await getProjectUpdateByIdApi(parseInt(id));
+        const updatedData = await getProjectUpdateByIdApi(id);
         setUpdate(updatedData);
         message.success("Update modified successfully");
       } catch (error) {
@@ -233,7 +233,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Created By">
-                {update.createdByName}
+                {update.email}
               </Descriptions.Item>
               <Descriptions.Item label="Is Published">
                 <Tag color={update.published ? "green" : "orange"}>

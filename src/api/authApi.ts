@@ -42,7 +42,6 @@ export const forgotPasswordApi = async (email: string) => {
 };
 
 export const resetPasswordApi = async (token: string, newPassword: string) => {
-  alert("Có: " + token);
   const { data } = await axiosClient.post("/api/auth/reset-password", {
     token,
     newPassword,
@@ -50,8 +49,12 @@ export const resetPasswordApi = async (token: string, newPassword: string) => {
   return data;
 };
 
-export const logoutApi = async (): Promise<AuthResponse> => {
-  const { data } = await axiosClient.delete<AuthResponse>("/api/auth/logout");
+export const logoutApi = async (token: string): Promise<AuthResponse> => {
+  const { data } = await axiosClient.delete<AuthResponse>("/api/auth/logout", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return data;
 };
 
@@ -78,7 +81,9 @@ export const signupApi = async (
   }
 };
 
-export const getUserInfoApi = async (): Promise<UserInfo> => {
-  const { data } = await axiosClient.get("/api/private/user/info");
+export const getUserInfoApi = async (token: string): Promise<UserInfo> => {
+  const { data } = await axiosClient.get("/api/auth/user", {
+    params: { token },
+  });
   return data;
 };

@@ -1,24 +1,38 @@
-import React, { createContext, ReactNode, useContext } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage'; // Đảm bảo đường dẫn này đúng
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import useLocalStorage from "../hooks/useLocalStorage";
+import { message } from "antd";
+import notificationService from "../services/NotificationService";
 
 interface UserDetails {
-  // Định nghĩa các trường thông tin người dùng mà API trả về
   id: number;
   email: string;
   fullName: string;
-  image: string;
-  note: string;
+  image: string | null;
+  note: string | null;
   role: string;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   userRole: string | null;
-  userDetails: UserDetails | null; // Thêm trường này
-  login: (role: string, details: UserDetails) => void; // Cập nhật hàm login
+  userDetails: UserDetails | null;
+  token: string | null;
+  refreshToken: string | null;
+  loading: boolean;
+  login: (
+    token: string,
+    refreshToken: string,
+    userDetails: UserDetails
+  ) => void;
   logout: () => void;
-  // Có thể thêm hàm cập nhật user details nếu cần
-  updateUserDetails?: (details: UserDetails) => void;
+  updateUserDetails: (details: UserDetails) => void;
+  updateToken: (newToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,19 +42,77 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [storedRole, setStoredRole] = useLocalStorage<string | null>('userRole', null);
-  const [userDetails, setUserDetails] = useLocalStorage<UserDetails | null>('userDetails',null); // State cho user details
-  const isAuthenticated = !!storedRole;
-  const userRole = storedRole;
+  const [token, setToken] = useLocalStorage<string | null>("token", null);
+  const [refreshToken, setRefreshToken] = useLocalStorage<string | null>(
+    "tokenRefresh",
+    null
+  );
+  const [userDetails, setUserDetails] = useLocalStorage<UserDetails | null>(
+    "userDetails",
+    null
+  );
 
-  const login = (role: string, details: UserDetails) => {
-    setStoredRole(role);
-    setUserDetails(details); // Lưu thông tin người dùng
+  // Non-persistent state
+  const [loading, setLoading] = useState<boolean>(true);
+  const [initialized, setInitialized] = useState<boolean>(false);
+
+  // Derived state
+  const isAuthenticated = !!token && !!userDetails;
+  const userRole = userDetails?.role || null;
+
+  // Initialize authentication state
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setLoading(true);
+      try {
+        if (token && userDetails) {
+          notificationService.connect(token);
+        }
+      } catch (error) {
+        clearAuthState();
+        message.error("Session expired. Please login again.");
+      } finally {
+        setLoading(false);
+        setInitialized(true);
+      }
+    };
+
+    if (!initialized) {
+      initializeAuth();
+    }
+  }, []);
+
+  const clearAuthState = () => {
+    setToken(null);
+    setRefreshToken(null);
+    setUserDetails(null);
+
+    // Disconnect from WebSocket when logging out
+    notificationService.disconnect();
   };
 
+  const login = (
+    newToken: string,
+    newRefreshToken: string,
+    userDetails: UserDetails
+  ) => {
+    setToken(newToken);
+    setRefreshToken(newRefreshToken);
+    setUserDetails(userDetails);
+
+    // Connect to WebSocket after successful login
+    notificationService.connect(newToken);
+  };
+
+  // Logout function
   const logout = () => {
-    setStoredRole(null);
-    setUserDetails(null);
+    // Disconnect from WebSocket before clearing auth state
+    notificationService.disconnect();
+
+    // Clear auth state
+    clearAuthState();
+
+    message.info("You have been logged out.");
   };
 
   // Hàm cập nhật user details (tùy chọn)
@@ -48,8 +120,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUserDetails(details);
   };
 
+  // Update token (e.g., after refresh)
+  const updateToken = (newToken: string) => {
+    setToken(newToken);
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userRole, userDetails, login, logout, updateUserDetails }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        userRole,
+        userDetails,
+        token,
+        refreshToken,
+        loading,
+        login,
+        logout,
+        updateUserDetails,
+        updateToken,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -58,7 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

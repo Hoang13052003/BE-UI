@@ -24,67 +24,70 @@ import { AlertProvider } from "./contexts/AlertContext";
 import AlertContainer from "./components/AlertContainer";
 import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
 import ProjectUpdateDetailsPage from "./pages/Admin/ProjectsUpdate/ProjectUpdateDetailsPage";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
 function App() {
   return (
     <AlertProvider>
       <AuthProvider>
-        <Router>
-          <Routes>
-            <Route element={<PublicRoute />}>
-              <Route path="/" element={<LayoutShare />}>
-                <Route index element={<HomeIntroSection />} />
+        <NotificationProvider>
+          <Router>
+            <Routes>
+              <Route element={<PublicRoute />}>
+                <Route path="/" element={<LayoutShare />}>
+                  <Route index element={<HomeIntroSection />} />
+                </Route>
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/register" element={<RegisterComponent />} />
+                <Route path="/login" element={<LoginComponent />} />
               </Route>
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/register" element={<RegisterComponent />} />
-              <Route path="/login" element={<LoginComponent />} />
-            </Route>
 
-            {/* Route cho Admin */}
-            <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-              <Route path="/" element={<LayoutShare />}>
-                <Route path="admin/" element={<DashboardAdmin />}>
-                  <Route path="overview" element={<OverviewAdmin />} />
-                  <Route path="users" element={<UserManagement />} />
-                  <Route path="updates" element={<ProjectUpdates />} />
-                  <Route
-                    path="project-progress"
-                    element={<ProjectProgressPage />}
-                  />
-                  <Route
-                    path="project-updates/:id"
-                    element={<ProjectUpdateDetailsPage />}
-                  />
-                  <Route path="notifications" element={<Notifications />} />
-                  <Route path="settings" element={<SystemSettings />} />
+              {/* Route cho Admin */}
+              <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+                <Route path="/" element={<LayoutShare />}>
+                  <Route path="admin/" element={<DashboardAdmin />}>
+                    <Route path="overview" element={<OverviewAdmin />} />
+                    <Route path="users" element={<UserManagement />} />
+                    <Route path="updates" element={<ProjectUpdates />} />
+                    <Route
+                      path="project-progress"
+                      element={<ProjectProgressPage />}
+                    />
+                    <Route
+                      path="project-updates/:id"
+                      element={<ProjectUpdateDetailsPage />}
+                    />
+                    <Route path="notifications" element={<Notifications />} />
+                    <Route path="settings" element={<SystemSettings />} />
+                  </Route>
                 </Route>
               </Route>
-            </Route>
 
-            {/* Route cho Client */}
-            <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
-              <Route path="/" element={<LayoutShare />}>
-                <Route path="client/" element={<DashboardClient />}>
-                  <Route path="overview" element={<Overview />} />
-                  <Route path="profiles" element={<ProfileSettings />} />
-                  <Route
-                    path="projects/documents"
-                    element={<DocumentsPage />}
-                  />
-                  <Route
-                    path="projects/messages"
-                    element={<MessagesAndNotes />}
-                  />
-                  <Route
-                    path="projects/details/:id"
-                    element={<ProjectDetails />}
-                  />
+              {/* Route cho Client */}
+              <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
+                <Route path="/" element={<LayoutShare />}>
+                  <Route path="client/" element={<DashboardClient />}>
+                    <Route path="overview" element={<Overview />} />
+                    <Route path="profiles" element={<ProfileSettings />} />
+                    <Route
+                      path="projects/documents"
+                      element={<DocumentsPage />}
+                    />
+                    <Route
+                      path="projects/messages"
+                      element={<MessagesAndNotes />}
+                    />
+                    <Route
+                      path="projects/details/:id"
+                      element={<ProjectDetails />}
+                    />
+                  </Route>
                 </Route>
               </Route>
-            </Route>
-          </Routes>
-        </Router>
-        <AlertContainer /> {/* Đặt ở ngoài cùng, sau Router */}
+            </Routes>
+          </Router>
+          <AlertContainer /> {/* Đặt ở ngoài cùng, sau Router */}
+        </NotificationProvider>
       </AuthProvider>
     </AlertProvider>
   );

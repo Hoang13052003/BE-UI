@@ -106,7 +106,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
         details: values.details,
         statusAtUpdate: values.statusAtUpdate,
         completionPercentage: values.completionPercentage,
-        isPublished: values.isPublished,
+        published: values.isPublished,
         internalNotes: values.internalNotes,
       };
 
@@ -260,6 +260,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
                   75: "75%",
                   100: "100%",
                 }}
+                disabled={true}
               />
             </Form.Item>
           </Col>
