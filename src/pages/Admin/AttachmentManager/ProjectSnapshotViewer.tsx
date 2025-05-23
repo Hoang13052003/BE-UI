@@ -4,7 +4,7 @@ import { Card, Typography, Spin, Alert, Button, Breadcrumb } from 'antd'; // Th�
 import attachmentApi from '../../../api/attachmentApi'; // Đường dẫn API service
 import { TreeNodeDto, ProjectUpdateSummaryDto } from '../../../types/Attachment'; // Đường dẫn DTO types
 
-const { Title, Text } = Typography;
+const { Title} = Typography;
 
 // Hàm helper để định dạng ngày giờ (có thể dùng chung)
 const formatDate = (dateString: string | null): string => {
@@ -144,18 +144,17 @@ const ProjectSnapshotViewer: React.FC = () => {
   // Xây dựng breadcrumb items
   const breadcrumbItems = [{ title: <Link to={`/admin/projects/${projectId}/history`}>Project History</Link> }];
   if (currentProjectUpdate) {
-    breadcrumbItems.push({ title: `Snapshot: ${currentProjectUpdate.summary || 'Update ' + currentProjectUpdate.id} (${formatDateOnly(currentProjectUpdate.updateDate)})` });
+    breadcrumbItems.push({ 
+      title: <span>{`Snapshot: ${currentProjectUpdate.summary || 'Update ' + currentProjectUpdate.id} (${formatDateOnly(currentProjectUpdate.updateDate)})`}</span>
+    });
   }
   if (currentPath) {
     const pathSegments = currentPath.split('/');
     let accumulatedPath = '';
     pathSegments.forEach((segment, index) => {
       accumulatedPath += (index > 0 ? '/' : '') + segment;
-      // Link cho breadcrumb chỉ nên là setCurrentPath, không phải navigate tới URL mới
-      // Trừ khi bạn muốn mỗi segment breadcrumb là một link có thể load lại state đó
       breadcrumbItems.push({ 
         title: <span onClick={() => setCurrentPath(accumulatedPath)} style={{cursor: 'pointer'}}>{segment}</span>,
-        // path: accumulatedPath // Để sau này có thể làm link nếu cần
       });
     });
   } else {
