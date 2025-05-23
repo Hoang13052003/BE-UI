@@ -1,17 +1,22 @@
 import axiosClient from "./axiosClient";
-import { AttachmentResponseDto, TreeNodeDto } from "../types/Attachment";
+import {
+  AttachmentResponseDto,
+  TreeNodeDto,
+  FolderFileItem,
+  PresignedUrlResponse,
+  ProjectUpdateSummaryDto
+} from "../types/Attachment";
 
-const API_BASE_PATH = "/api/attachments";
+const API_ATTACHMENTS_BASE_PATH = "/api/attachments";
+// Base path cho các API liên quan đến Project/ProjectUpdate (nếu khác)
+// Dựa trên ProjectUpdateController của bạn, nó là /api/private/admin
+const API_PROJECT_UPDATES_BASE_PATH = "/api/private/admin";
 
-/**
- * Uploads a single attachment file.
- *
- * @param file The file to upload.
- * @param projectUpdateId The ID of the project update.
- * @param logicalName Optional logical name for the file. If not provided,
- *                    the original filename will be used by the backend.
- * @returns A promise resolving to the AttachmentResponseDto of the uploaded file.
- */
+
+// --- Các hàm hiện tại (upload, get latest, soft delete, presigned URL) ---
+// ... (giữ nguyên các hàm uploadSingleAttachment, uploadFolderAttachments, 
+// getLatestAttachmentsForProjectUpdate, getLatestAttachmentsForProject, 
+// softDeleteAttachmentsByLogicalName, getPresignedUrl) ...
 export const uploadSingleAttachment = async (
   file: File,
   projectUpdateId: number,
@@ -23,36 +28,13 @@ export const uploadSingleAttachment = async (
   if (logicalName) {
     formData.append("logicalName", logicalName);
   }
-
   const response = await axiosClient.post<AttachmentResponseDto>(
-    `${API_BASE_PATH}/upload-single`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    `${API_ATTACHMENTS_BASE_PATH}/upload-single`,
+    formData, { headers: { "Content-Type": "multipart/form-data" } }
   );
   return response.data;
 };
 
-/**
- * Represents a file to be uploaded as part of a folder structure.
- */
-export interface FolderFileItem {
-  file: File;
-  relativePath: string;
-}
-
-/**
- * Uploads multiple files, typically representing a folder structure.
- * The backend expects the relativePath to be the key in FormData, URL encoded.
- *
- * @param filesWithRelativePaths An array of objects, each containing a File object
- *                               and its relativePath string (e.g., "src/main/App.java").
- * @param projectUpdateId The ID of the project update.
- * @returns A promise resolving to an object containing successfulUploads and uploadErrors.
- */
 export const uploadFolderAttachments = async (
   filesWithRelativePaths: FolderFileItem[],
   projectUpdateId: number
@@ -63,23 +45,14 @@ export const uploadFolderAttachments = async (
 }> => {
   const formData = new FormData();
   formData.append("projectUpdateId", projectUpdateId.toString());
-
   for (const item of filesWithRelativePaths) {
-    // Key của file part là relativePath đã được URL encode
     const encodedRelativePath = encodeURIComponent(item.relativePath);
     formData.append(encodedRelativePath, item.file, item.file.name);
   }
-
   const response = await axiosClient.post<any>(
-    `${API_BASE_PATH}/upload-folder`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    `${API_ATTACHMENTS_BASE_PATH}/upload-folder`,
+    formData, { headers: { "Content-Type": "multipart/form-data" } }
   );
-
   return response.data;
 };
 
@@ -87,117 +60,148 @@ export const getLatestAttachmentsForProjectUpdate = async (
   projectUpdateId: number
 ): Promise<AttachmentResponseDto[]> => {
   const response = await axiosClient.get<AttachmentResponseDto[]>(
-    `${API_BASE_PATH}/project-update/${projectUpdateId}/latest`
+    `${API_ATTACHMENTS_BASE_PATH}/project-update/${projectUpdateId}/latest`
   );
   return response.data;
 };
 
-/**
- * Retrieves a list of all latest versions of attachments for a specific project.
- *
- * @param projectId The ID of the project.
- * @returns A promise resolving to a list of AttachmentResponseDto.
- */
 export const getLatestAttachmentsForProject = async (
   projectId: number
 ): Promise<AttachmentResponseDto[]> => {
   const response = await axiosClient.get<AttachmentResponseDto[]>(
-    `${API_BASE_PATH}/project/${projectId}/latest`
+    `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/latest`
   );
   return response.data;
 };
 
-/**
- * Soft-deletes all versions of an attachment identified by its logical name within a specific project.
- *
- * @param projectId The ID of the project.
- * @param logicalName The logical name (which can be a relative path) of the attachment to delete.
- *                    This name will be URL encoded before being sent in the path.
- * @returns A promise resolving to void on successful deletion.
- */
 export const softDeleteAttachmentsByLogicalName = async (
   projectId: number,
   logicalName: string
 ): Promise<void> => {
   const encodedLogicalName = encodeURIComponent(logicalName);
   await axiosClient.delete(
-    `${API_BASE_PATH}/project/${projectId}/logical-name/${encodedLogicalName}`
+    `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/logical-name/${encodedLogicalName}`
   );
 };
 
-/**
- * Interface for the Presigned URL response from the backend.
- */
-export interface PresignedUrlResponse {
-  url: string;
-}
-
-/**
- * Gets a presigned URL for downloading a specific attachment.
- *
- * @param attachmentId The ID of the attachment.
- * @returns A promise resolving to an object containing the presigned URL.
- */
-export const getPresignedUrlForDownload = async (
-  attachmentId: number
+export const getPresignedUrl = async (
+  attachmentId: number,
+  disposition: "inline" | "attachment" = "attachment"
 ): Promise<PresignedUrlResponse> => {
   const response = await axiosClient.get<PresignedUrlResponse>(
-    `${API_BASE_PATH}/download-url/${attachmentId}`
+    `${API_ATTACHMENTS_BASE_PATH}/download-url/${attachmentId}`,
+    { params: { disposition } }
   );
   return response.data;
 };
 
-// === CÁC HÀM MỚI CHO API CÂY THƯ MỤC ===
 
+// --- Đổi tên các hàm lấy cây thư mục HIỆN TẠI của Project ---
 /**
- * Retrieves the root directory structure for a specific project.
+ * Retrieves the root directory structure for the CURRENT state of a specific project.
  *
  * @param projectId The ID of the project.
  * @returns A promise resolving to an array of TreeNodeDto objects.
  */
-export const getProjectTreeRoot = async (
+export const getCurrentProjectTreeRoot = async ( // <<--- ĐỔI TÊN
   projectId: number
 ): Promise<TreeNodeDto[]> => {
   const response = await axiosClient.get<TreeNodeDto[]>(
-    `${API_BASE_PATH}/project/${projectId}/tree`
+    `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/tree` // Endpoint không đổi
   );
   return response.data;
 };
 
 /**
- * Retrieves the directory structure for a given path within a specific project.
+ * Retrieves the directory structure for a given path within the CURRENT state of a specific project.
  *
  * @param projectId The ID of the project.
- * @param path The relative path within the project (e.g., "src/main/java").
- *             This path should NOT be URL encoded by the caller; the function will handle encoding.
+ * @param path The relative path (e.g., "src/main/java"). Will be URL encoded.
  * @returns A promise resolving to an array of TreeNodeDto objects.
  */
-export const getProjectTreeByPath = async (
+export const getCurrentProjectTreeByPath = async ( // <<--- ĐỔI TÊN
   projectId: number,
   path: string
 ): Promise<TreeNodeDto[]> => {
-  // Path rỗng hoặc chỉ "/" nên được xử lý như gọi getProjectTreeRoot hoặc backend xử lý path rỗng
   if (!path || path === "/") {
-    // Nếu path rỗng hoặc root, gọi API root thay vì endpoint có path
-    return getProjectTreeRoot(projectId);
+    return getCurrentProjectTreeRoot(projectId); // Gọi hàm root nếu path rỗng
   }
-
   const encodedPath = encodeURIComponent(path);
   const response = await axiosClient.get<TreeNodeDto[]>(
-    `${API_BASE_PATH}/project/${projectId}/tree/${encodedPath}`
+    `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/tree/${encodedPath}` // Endpoint không đổi
   );
   return response.data;
 };
 
+
+// === CÁC HÀM MỚI CHO LỊCH SỬ VÀ SNAPSHOT ===
+
+/**
+ * Retrieves the history of project updates for a specific project.
+ *
+ * @param projectId The ID of the project.
+ * @returns A promise resolving to an array of ProjectUpdateSummaryDto objects.
+ */
+export const getProjectUpdateHistory = async (
+  projectId: number
+): Promise<ProjectUpdateSummaryDto[]> => {
+  const response = await axiosClient.get<ProjectUpdateSummaryDto[]>(
+    // Sử dụng API_PROJECT_UPDATES_BASE_PATH nếu endpoint nằm trong ProjectUpdateController
+    `${API_PROJECT_UPDATES_BASE_PATH}/projects/${projectId}/updates-history` 
+  );
+  return response.data;
+};
+
+/**
+ * Retrieves the root directory structure for a SNAPSHOT of a specific project update.
+ *
+ * @param projectUpdateId The ID of the project update.
+ * @returns A promise resolving to an array of TreeNodeDto objects for that snapshot.
+ */
+export const getProjectUpdateSnapshotTreeRoot = async (
+  projectUpdateId: number
+): Promise<TreeNodeDto[]> => {
+  const response = await axiosClient.get<TreeNodeDto[]>(
+    `${API_ATTACHMENTS_BASE_PATH}/project-update/${projectUpdateId}/snapshot-tree`
+  );
+  return response.data;
+};
+
+/**
+ * Retrieves the directory structure for a given path within a SNAPSHOT of a specific project update.
+ *
+ * @param projectUpdateId The ID of the project update.
+ * @param path The relative path (e.g., "src/main/java"). Will be URL encoded.
+ * @returns A promise resolving to an array of TreeNodeDto objects for that snapshot.
+ */
+export const getProjectUpdateSnapshotTreeByPath = async (
+  projectUpdateId: number,
+  path: string
+): Promise<TreeNodeDto[]> => {
+  if (!path || path === "/") {
+    return getProjectUpdateSnapshotTreeRoot(projectUpdateId); // Gọi hàm root snapshot nếu path rỗng
+  }
+  const encodedPath = encodeURIComponent(path);
+  const response = await axiosClient.get<TreeNodeDto[]>(
+    `${API_ATTACHMENTS_BASE_PATH}/project-update/${projectUpdateId}/snapshot-tree/${encodedPath}`
+  );
+  return response.data;
+};
+
+
+// Cập nhật object export
 const attachmentApi = {
   uploadSingleAttachment,
   uploadFolderAttachments,
   getLatestAttachmentsForProjectUpdate,
   getLatestAttachmentsForProject,
   softDeleteAttachmentsByLogicalName,
-  getPresignedUrlForDownload,
-  getProjectTreeRoot,
-  getProjectTreeByPath,
+  getPresignedUrl,
+  getCurrentProjectTreeRoot,        
+  getCurrentProjectTreeByPath,      
+  getProjectUpdateHistory,           
+  getProjectUpdateSnapshotTreeRoot,  
+  getProjectUpdateSnapshotTreeByPath,
 };
 
 export default attachmentApi;
