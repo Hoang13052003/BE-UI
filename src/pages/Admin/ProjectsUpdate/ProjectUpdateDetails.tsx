@@ -128,7 +128,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
     if (id) {
       try {
         setLoading(true);
-        const updatedData = await getProjectUpdateByIdApi(parseInt(id));
+        const updatedData = await getProjectUpdateByIdApi(id);
         setUpdate(updatedData);
         message.success("Update modified successfully");
       } catch (error) {

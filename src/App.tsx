@@ -19,11 +19,12 @@ import MessagesAndNotes from "./pages/Client/MessagesAndNotes";
 import ProfileSettings from "./pages/Client/ProfileSettings";
 import HomeIntroSection from "./pages/HomeIntroSection";
 import OverviewAdmin from "./pages/Admin/Overview";
-import Overview from "./pages/Client/Overview";
+import Overview from "./pages/Client/overview";
 import { AlertProvider } from "./contexts/AlertContext";
 import AlertContainer from "./components/AlertContainer";
 import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
 import ProjectUpdateDetailsPage from "./pages/Admin/ProjectsUpdate/ProjectUpdateDetailsPage";
+import AttachmentDisplay from './pages/Admin/AttachmentManager/AttachmentDisplay';
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
                   />
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="settings" element={<SystemSettings />} />
+                  <Route path="/admin/attachment-display/:projectId" element={<AttachmentDisplay />} />
                 </Route>
               </Route>
             </Route>
