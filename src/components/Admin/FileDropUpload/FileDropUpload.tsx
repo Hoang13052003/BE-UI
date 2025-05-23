@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Upload } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd/es/upload/interface';
-import { uploadTimelogsExcelApi, ExcelUploadResponseDTO } from '../../api/timelogApi';
-import { useAlert } from '../../contexts/AlertContext';
+import { uploadTimelogsExcelApi, ExcelUploadResponseDTO } from '../../../api/timelogApi';
+import { useAlert } from '../../../contexts/AlertContext';
+import '../FileDropUpload/FileDropUpload.css'; // We'll add a small CSS file for customizations
 
 interface FileDropUploadProps {
   projectId: number;
@@ -21,7 +22,6 @@ const FileDropUpload: React.FC<FileDropUploadProps> = ({
   height = 'auto',
 }) => {
   const [uploading, setUploading] = useState<boolean>(false);
-  // Lấy thêm addBatchAlerts từ context
   const { addAlert, addBatchAlerts } = useAlert();
 
   const draggerProps: UploadProps = {
@@ -163,36 +163,20 @@ const FileDropUpload: React.FC<FileDropUploadProps> = ({
   };
 
   return (
-    <Upload.Dragger
-      {...draggerProps}
-      disabled={uploading}
-      style={{
-        width: width,
-        height: height,
-        minHeight: '90px',
-        maxHeight: '120px',
-        background: '#fff',
-        borderRadius: '8px',
-        border: '1px dashed #d9d9d9',
-        padding: '12px 10px',
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-      }}
-    >
-      <p className="ant-upload-drag-icon" style={{ marginTop: '2px', marginBottom: '6px' }}>
-        <InboxOutlined />
-      </p>
-      <p className="ant-upload-text" style={{ fontSize: '14px', marginBottom: '4px' }}>
-        Click or drag file to this area to upload
-      </p>
-      <p className="ant-upload-hint" style={{ fontSize: '12px' }}>
-        Support for a single .xlsx or .xls file.
-      </p>
-    </Upload.Dragger>
+    <div className="custom-upload-container" style={{ width, height }}>
+      <Upload.Dragger
+        {...draggerProps}
+        disabled={uploading}
+        className="custom-uploader"
+      >
+        <p className="ant-upload-drag-icon">
+          <InboxOutlined />
+        </p>
+        <p className="ant-upload-text">
+          Click or drag file to this area to upload
+        </p>
+      </Upload.Dragger>
+    </div>
   );
 };
 
