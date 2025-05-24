@@ -15,7 +15,6 @@ export interface ProjectUpdate {
   details: string;
   statusAtUpdate: string;
   completionPercentage: number;
-  createdByUserId: number;
   createdByName: string;
   published: boolean;
   internalNotes: string;
@@ -104,8 +103,6 @@ export const getAllProjectUpdatesApi = async (
       filters
     );
 
-    console.log("Data: " + JSON.stringify(result)); // Log confirms result.items is an object with a 'content' array
-
     // Extract the actual array of updates
     const actualUpdatesArray = (result.items as any)?.content || [];
 
@@ -126,7 +123,7 @@ export const getProjectUpdateByIdApi = async (
 ): Promise<ProjectUpdate> => {
   try {
     const { data } = await axiosClient.get(
-      `api/private/admin/project-updates/${updateId}`
+      `api/notifications/project-updates/${updateId}`
     );
     return data;
   } catch (error) {

@@ -173,7 +173,9 @@ const UserManagement: React.FC = () => {
       render: (_, record) =>
         record.projects.map((project, index) => (
           <Tag key={index} color="geekblue" className="mr-1">
-            {project.name}
+            {project.name.length > 20
+              ? `${project.name.substring(0, 20)}...`
+              : project.name}
           </Tag>
         )),
     },

@@ -59,11 +59,6 @@ const Overview: React.FC = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Calculate percentages
-  // const onTrackPercent = Math.round((dashboardData.onTrackCount / dashboardData.activeProjects) * 100) || 0;
-  // const delayedPercent = Math.round((dashboardData.delayedCount / dashboardData.activeProjects) * 100) || 0;
-  // const atRiskPercent = Math.round((dashboardData.atRiskCount / dashboardData.activeProjects) * 100) || 0;
-
   if (loading) {
     return <Spin size="large" className="center-spinner" />;
   }

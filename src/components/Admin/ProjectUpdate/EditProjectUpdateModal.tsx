@@ -34,7 +34,6 @@ import {
   getProjectStatusesApi,
 } from "../../../api/projectUpdateApi";
 import dayjs from "dayjs";
-import { values } from "lodash";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -287,6 +286,7 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
                   75: "75%",
                   100: "100%",
                 }}
+                disabled={true}
               />
             </Form.Item>
           </Col>

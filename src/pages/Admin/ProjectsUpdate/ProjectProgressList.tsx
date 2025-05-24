@@ -136,8 +136,6 @@ const ProjectProgressList: React.FC = () => {
 
       setUpdates(result.updates);
 
-      // console.log("Data: " + JSON.stringify(result.updates));
-
       setPagination({
         ...pagination,
         total: result.totalItems,
@@ -209,13 +207,15 @@ const ProjectProgressList: React.FC = () => {
       key: "projectName",
       render: (text: string, record: ProjectUpdate) => (
         <Space direction="vertical" size={0}>
-          <Button 
-            color="default" 
+          <Button
+            color="default"
             variant="link"
-            onClick={() => navigate(`/admin/attachment-display/${record.projectId}`)}
-            style={{ padding: 0, height: 'auto', fontWeight: 'bold' }}
+            onClick={() =>
+              navigate(`/admin/attachment-display/${record.projectId}`)
+            }
+            style={{ padding: 0, height: "auto", fontWeight: "bold" }}
           >
-            {text}
+            {text.length > 20 ? `${text.substring(0, 20)}...` : text}
           </Button>
           <Text
             type="secondary"
@@ -280,11 +280,11 @@ const ProjectProgressList: React.FC = () => {
         </div>
       ),
     },
-    {
-      title: "Created By",
-      dataIndex: "email",
-      key: "createdBy",
-    },
+    // {
+    //   title: "Created By",
+    //   dataIndex: "email",
+    //   key: "createdBy",
+    // },
     {
       title: "Actions",
       key: "actions",
@@ -307,9 +307,9 @@ const ProjectProgressList: React.FC = () => {
                 View Details
               </Menu.Item>
               <Menu.Divider />
-              <Menu.Item 
-                key="delete" 
-                danger 
+              <Menu.Item
+                key="delete"
+                danger
                 icon={<DeleteOutlined />}
                 onClick={(e) => {
                   e.domEvent.stopPropagation();
@@ -328,7 +328,9 @@ const ProjectProgressList: React.FC = () => {
                   cancelText="No"
                   placement="left"
                 >
-                  <span style={{ display: 'block', width: '100%' }}>Delete</span>
+                  <span style={{ display: "block", width: "100%" }}>
+                    Delete
+                  </span>
                 </Popconfirm>
               </Menu.Item>
             </Menu>
