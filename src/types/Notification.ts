@@ -18,28 +18,6 @@ export enum NotificationPriority {
   URGENT = "URGENT",
 }
 
-// export interface NotificationPayload {
-//   messageType: MessageType;
-//   message?: string;
-//   unread?: number;
-
-//   // Full notification data fields (for new implementation)
-//   payload: {
-//     id?: string;
-//     userId?: number;
-//     title?: string;
-//     content?: string;
-//     type?: MessageType;
-//     priority?: NotificationPriority;
-//     read?: boolean;
-//     createdAt?: string; // ISO date string from backend
-//     metadata?: Record<string, unknown>;
-//   };
-
-//   // Allow any additional fields
-//   [key: string]: unknown;
-// }
-
 export interface Notification {
   id: string;
   title: string;

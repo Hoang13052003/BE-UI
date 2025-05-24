@@ -185,8 +185,6 @@ const NotificationBell: React.FC = () => {
 
   const handleNotificationClick = async (id: string) => {
     await markAsRead(id);
-    // Additional logic if needed (e.g., navigate to the relevant page)
-    // You could use the notification metadata to determine where to navigate
   };
 
   const handleRefresh = async () => {
@@ -216,15 +214,7 @@ const NotificationBell: React.FC = () => {
     }
   };
 
-  // Load notifications when dropdown is opened
   useEffect(() => {
-    // const interval = setInterval(() => {
-    //   if (open) return;
-    //   fetchNotifications();
-    // }, 30000); // 30 seconds
-
-    // return () => clearInterval(interval);
-
     fetchNotifications();
   }, [fetchNotifications, open]);
 

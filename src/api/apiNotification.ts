@@ -5,6 +5,7 @@ import {
   NotificationPageResponse,
   NotificationResponse,
 } from "../types/Notification";
+import { Project } from "../types/project";
 import axiosClient from "./axiosClient";
 
 /**
@@ -18,7 +19,6 @@ export const createNotification = async (
   const response = await axiosClient.post("/api/notifications", notification);
   return response.data;
 };
-
 /**
  * Lấy chi tiết thông báo theo ID
  * @param notificationId ID của thông báo
@@ -178,6 +178,24 @@ export const deleteMultipleNotifications = async (
   await Promise.all(notificationIds.map((id) => deleteNotification(id)));
 };
 
+export const getProjectById = async (id: number): Promise<Project> => {
+  try {
+    const { data } = await axiosClient.get<Project>(
+      `/api/notifications/projects/${id}`
+    );
+    return data;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if (error.message === "Project not found") {
+        throw error;
+      } else if (error.message === "Invalid project data") {
+        throw error;
+      }
+    }
+    throw error;
+  }
+};
+
 const apiNotification = {
   createNotification,
   getUserNotifications,
@@ -190,6 +208,7 @@ const apiNotification = {
   countUnreadNotifications,
   deleteNotification,
   deleteMultipleNotifications,
+  getProjectById,
 };
 
 export default apiNotification;

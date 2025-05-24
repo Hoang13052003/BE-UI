@@ -48,7 +48,7 @@ const NotificationContainer = styled.div`
   box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
     0 6px 16px 0 rgba(0, 0, 0, 0.08);
   background-color: #fff;
-  border-radius: 4px;
+  border-radius: 8px;
 `;
 
 const NotificationHeader = styled.div`

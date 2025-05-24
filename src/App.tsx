@@ -15,7 +15,7 @@ import Notifications from "./pages/Admin/Notifications";
 import SystemSettings from "./pages/Admin/SystemSettings";
 import ProjectDetails from "./pages/Client/ProjectDetails";
 import DocumentsPage from "./pages/Client/DocumentsPage";
-import MessagesAndNotes from "./pages/Client/MessagesAndNotes";
+import Messages from "./pages/Client/Messages";
 import ProfileSettings from "./pages/Client/ProfileSettings";
 import HomeIntroSection from "./pages/HomeIntroSection";
 import OverviewAdmin from "./pages/Admin/Overview";
@@ -88,10 +88,12 @@ function App() {
                       path="projects/documents"
                       element={<DocumentsPage />}
                     />
+                    <Route path="notifications" element={<Notifications />} />
                     <Route
-                      path="projects/messages"
-                      element={<MessagesAndNotes />}
+                      path="project-updates/:id"
+                      element={<ProjectUpdateDetailsPage />}
                     />
+                    <Route path="projects/messages" element={<Messages />} />
                     <Route
                       path="projects/details/:id"
                       element={<ProjectDetails />}

@@ -13,7 +13,11 @@ import {
   Badge,
   Spin,
 } from "antd";
-import { CloseOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import {
+  CloseOutlined,
+  ClockCircleOutlined,
+  FileTextOutlined,
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import {
@@ -24,7 +28,8 @@ import {
 import { getNotificationById } from "../../../api/apiNotification";
 import { Project } from "../../../types/project";
 import dayjs from "dayjs";
-import { getProjectById } from "../../../api/projectApi";
+import { getProjectById } from "../../../api/apiNotification";
+import { useAuth } from "../../../contexts/AuthContext";
 
 // Styled components
 const { Text } = Typography;
@@ -45,21 +50,6 @@ const HeaderSection = styled.div`
 const ContentSection = styled.div`
   margin-bottom: 24px;
 `;
-
-// const MetadataSection = styled.div`
-//   background-color: #fafafa;
-//   border-radius: 8px;
-//   padding: 16px;
-//   margin-bottom: 16px;
-// `;
-
-// const ActionSection = styled.div`
-//   display: flex;
-//   justify-content: space-between;
-//   align-items: center;
-//   padding: 16px 0;
-//   border-top: 1px solid #f0f0f0;
-// `;
 
 const PriorityBadge = styled(Badge)<{ priority: string }>`
   .ant-badge-status-dot {
@@ -82,6 +72,8 @@ const formatDateTime = (date: Date): string => {
 const getTypeColor = (type: MessageType): string => {
   switch (type) {
     case MessageType.PROJECT_ASSIGN:
+      return "blue";
+    case MessageType.PROJECT_UPDATED:
       return "blue";
     case MessageType.COMMENT_ADDED:
       return "orange";
@@ -120,19 +112,6 @@ const getTypeIcon = (type: MessageType): string => {
   }
 };
 
-const formatTypeName = (type: MessageType): string => {
-  switch (type) {
-    case MessageType.PROJECT_ASSIGN:
-      return "Assign projects";
-    case MessageType.COMMENT_ADDED:
-      return "Comment";
-    case MessageType.USER_UPDATE:
-      return "Update users";
-    default:
-      return "Notifications";
-  }
-};
-
 const getStatusColor = (status: string): string => {
   const statusMap: Record<string, string> = {
     NEW: "blue",
@@ -162,6 +141,8 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<NotificationResponse>();
   const [project, setProject] = useState<Project | null>(null);
+  const [metadata, setMetadata] = useState<any>(null);
+  const { userRole } = useAuth();
 
   // Fetch data by ID
   useEffect(() => {
@@ -175,6 +156,8 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
 
         if (data.metadata) {
           const { metadata } = data;
+
+          setMetadata(metadata);
 
           const projectData = await getProjectById(
             metadata.projectId as number
@@ -203,7 +186,7 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
         <HeaderSection>
           <div style={{ flex: 1 }}>
             <Tag color={getTypeColor(notification.type)}>
-              {formatTypeName(notification.type)}
+              {notification.title}
             </Tag>
             <PriorityBadge
               priority={notification.priority}
@@ -220,8 +203,30 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
             )}
           </div>
         </HeaderSection>
-        <hr style={{ color: "#EAEFEF" }}></hr>
-        <ContentSection>{notification.content}</ContentSection>
+        <Divider />
+
+        <ContentSection>
+          <Timeline
+            items={[
+              {
+                color: "green",
+                dot: <FileTextOutlined />,
+                children: (
+                  <>
+                    <Text style={{ fontSize: "16px" }} strong>
+                      Notification contents:{" "}
+                    </Text>
+                    <br />
+                    <Text style={{ fontSize: "14px" }}>
+                      {notification.content ||
+                        "No content available for this notification."}
+                    </Text>
+                  </>
+                ),
+              },
+            ]}
+          />
+        </ContentSection>
 
         <Divider />
 
@@ -251,13 +256,34 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
               </Descriptions.Item>
             </Descriptions>
             <Divider />
-            <Button
-              type="link"
-              onClick={() => navigate(`/admin/projects/${project.id}`)}
-              style={{ padding: "10px" }}
-            >
-              View Project Details
-            </Button>
+
+            {notification.type !== MessageType.PROJECT_UPDATED ? (
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (userRole === "ADMIN") {
+                    navigate(`/admin/projects/${project.id}`);
+                  } else {
+                    navigate(`/client/projects/${project.id}`);
+                  }
+                }}
+              >
+                View Project Details
+              </Button>
+            ) : (
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (userRole === "ADMIN") {
+                    navigate(`/admin/project-updates/${metadata.updateId}`);
+                  } else {
+                    navigate(`/client/project-updates/${metadata.updateId}`);
+                  }
+                }}
+              >
+                View Report Details
+              </Button>
+            )}
           </Card>
         )}
 
@@ -292,7 +318,17 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
         title={
           <Space>
             <Text>{getTypeIcon(notification.type)}</Text>
-            <Text>Chi tiết thông báo</Text>
+            <Text>{notification.title}</Text>
+            <PriorityBadge
+              priority={notification.priority}
+              status="processing"
+              color={priorityConfig.color}
+              text={
+                <span>
+                  {priorityConfig.icon} {priorityConfig.text}
+                </span>
+              }
+            />
           </Space>
         }
         open={visible}
@@ -313,7 +349,7 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
           <Text style={{ fontSize: "20px" }}>
             {getTypeIcon(notification.type)}
           </Text>
-          <Text>Details of notifications</Text>
+          <Text>{notification.title}</Text>
         </Space>
       }
       placement="right"

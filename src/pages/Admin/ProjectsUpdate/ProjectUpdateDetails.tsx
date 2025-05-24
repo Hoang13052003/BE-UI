@@ -8,7 +8,6 @@ import {
   Tag,
   Button,
   Divider,
-  List,
   Progress,
   Row,
   Col,
@@ -19,12 +18,11 @@ import {
 import {
   EditOutlined,
   DeleteOutlined,
-  DownloadOutlined,
-  PaperClipOutlined,
   ArrowLeftOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
+  SendOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import {
@@ -32,13 +30,16 @@ import {
   getProjectUpdateByIdApi,
   deleteProjectUpdateApi,
 } from "../../../api/projectUpdateApi";
-import { getProjectById } from "../../../api/projectApi";
+import { getProjectById } from "../../../api/apiNotification";
 import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
 import AttachmentsTree from "../../../components/Admin/ProjectUpdate/AttachmentsTree";
 import dayjs from "dayjs";
 import { Project } from "../../../types/project";
+import SendReportProjectUpdateModal from "../../../components/Admin/ProjectUpdate/SendReportProjectUpdateModal";
+import { useAuth } from "../../../contexts/AuthContext";
+import SendFeedbackModal from "../../Client/SendFeedbackModal";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
 
 // Helper function to get status color
 const getStatusColor = (status: string): string => {
@@ -75,9 +76,15 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(true);
   const [update, setUpdate] = useState<ProjectUpdate | null>(null);
-  const [project, setProject] = useState<Project | null>(null); // Bạn đã có state này
+  const [project, setProject] = useState<Project | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
+  const [isSendReportModalVisible, setIsSendReportModalVisible] =
+    useState<boolean>(false);
+  const [isSendFeedbackModalVisible, setIsSendFeedbackModalVisible] =
+    useState<boolean>(false);
   const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
+
+  const { userRole } = useAuth();
 
   // Fetch update details when component mounts
   useEffect(() => {
@@ -175,30 +182,52 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
   return (
     <Card>
       <div style={{ marginBottom: 20 }}>
-        <Space>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/admin/project-progress")}
-          >
-            Back to List
-          </Button>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => setIsEditModalVisible(true)}
-          >
-            Edit Update
-          </Button>
-          <Popconfirm
-            title="Are you sure you want to delete this update?"
-            onConfirm={handleDeleteUpdate}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button danger icon={<DeleteOutlined />}>
-              Delete
+        {userRole === "ADMIN" && (
+          <Space>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate("/admin/project-progress")}
+            >
+              Back to List
             </Button>
-          </Popconfirm>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => setIsEditModalVisible(true)}
+            >
+              Edit Update
+            </Button>
+            <Popconfirm
+              title="Are you sure you want to delete this update?"
+              onConfirm={handleDeleteUpdate}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />}>
+                Delete
+              </Button>
+            </Popconfirm>
+          </Space>
+        )}
+
+        <Space style={{ float: "right" }}>
+          {userRole === "ADMIN" ? (
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={() => setIsSendReportModalVisible(true)}
+            >
+              Send Report
+            </Button>
+          ) : (
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={() => setIsSendFeedbackModalVisible(true)}
+            >
+              Send Feedback
+            </Button>
+          )}
         </Space>
       </div>
 
@@ -256,7 +285,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             <Paragraph>{update.details}</Paragraph>
           </Card>
 
-          {update.internalNotes && (
+          {update.internalNotes && userRole === "ADMIN" ? (
             <Card
               title="Internal Notes"
               bordered={false}
@@ -269,7 +298,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             >
               <Paragraph>{update.internalNotes}</Paragraph>
             </Card>
-          )}
+          ) : null}
         </Col>
 
         <Col span={8}>
@@ -306,9 +335,15 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
               </Descriptions>
               <Divider />
               <Button
-                type="link"
-                onClick={() => navigate(`/admin/projects/${project.id}`)}
-                style={{ padding: 0 }}
+                type="primary"
+                onClick={() => {
+                  if (userRole === "ADMIN") {
+                    navigate(`/admin/projects/${project.id}`);
+                  } else {
+                    navigate(`/client/projects/${project.id}`);
+                  }
+                }}
+                style={{ padding: 10 }}
               >
                 View Project Details
               </Button>
@@ -317,7 +352,6 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
         </Col>
       </Row>
 
-      {/* Edit Update Modal */}
       {update && isEditModalVisible && (
         <EditProjectUpdateModal
           visible={isEditModalVisible}
@@ -325,6 +359,26 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
           onSuccess={handleUpdateSuccess}
           updateData={update}
           projects={availableProjects}
+        />
+      )}
+
+      {update && isSendReportModalVisible && (
+        <SendReportProjectUpdateModal
+          visible={isSendReportModalVisible}
+          onClose={() => setIsSendReportModalVisible(false)}
+          updateData={update}
+        />
+      )}
+
+      {update && isSendFeedbackModalVisible && (
+        <SendFeedbackModal
+          visible={isSendFeedbackModalVisible}
+          onClose={() => setIsSendFeedbackModalVisible(false)}
+          updateData={update}
+          onSuccess={() => {
+            setIsSendFeedbackModalVisible(false);
+            message.success("Feedback sent successfully!");
+          }}
         />
       )}
     </Card>

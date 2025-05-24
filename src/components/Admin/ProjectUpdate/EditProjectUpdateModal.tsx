@@ -34,7 +34,6 @@ import {
   getProjectStatusesApi,
 } from "../../../api/projectUpdateApi";
 import dayjs from "dayjs";
-import { values } from "lodash";
 
 const { TextArea } = Input;
 const { Option } = Select;

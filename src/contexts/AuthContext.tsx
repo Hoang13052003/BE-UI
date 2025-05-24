@@ -51,14 +51,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     "userDetails",
     null
   );
-
+  const [userRole, setUserRole] = useLocalStorage<string | null>(
+    "userRole",
+    null
+  );
   // Non-persistent state
   const [loading, setLoading] = useState<boolean>(true);
   const [initialized, setInitialized] = useState<boolean>(false);
 
   // Derived state
   const isAuthenticated = !!token && !!userDetails;
-  const userRole = userDetails?.role || null;
+  // const userRole = userDetails?.role || null;
 
   // Initialize authentication state
   useEffect(() => {
@@ -86,6 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     setRefreshToken(null);
     setUserDetails(null);
+    setUserRole(null);
 
     // Disconnect from WebSocket when logging out
     notificationService.disconnect();
@@ -99,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(newToken);
     setRefreshToken(newRefreshToken);
     setUserDetails(userDetails);
-
+    setUserRole(userDetails.role);
     // Connect to WebSocket after successful login
     notificationService.connect(newToken);
   };

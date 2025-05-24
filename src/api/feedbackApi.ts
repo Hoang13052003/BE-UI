@@ -1,69 +1,100 @@
 import axiosClient from "./axiosClient";
 
 export interface Feedback {
-  id: number;
+  id: string;
   projectId: number;
-  projectName: string;
-  message: string;
+  userId: number;
+  content: string;
   createdAt: string;
-  createdBy: number;
-  createdByName: string;
-  isRead: boolean;
+  read: boolean;
 }
 
-export interface FeedbackResponse {
-  feedback: Feedback[];
-  total: number;
+export interface CreateFeedbackRequest {
+  projectId: number;
+  userId: number;
+  content: string;
 }
 
-// Get all feedback with pagination and filters
-export const getAllFeedback = async (
-  page: number = 1,
-  limit: number = 10,
-  projectId?: number,
-  isRead?: boolean
-): Promise<FeedbackResponse> => {
-  const params = { page, limit, projectId, isRead };
-  const { data } = await axiosClient.get("/api/private/admin/feedback", {
-    params,
-  });
-  return data;
-};
+export interface UpdateFeedbackRequest {
+  projectId: number;
+  userId: number;
+  content: string;
+}
 
-// Get recent feedback (limited number)
-export const getRecentFeedback = async (
-  limit: number = 5
-): Promise<Feedback[]> => {
-  const params = { limit };
-  const { data } = await axiosClient.get("/api/private/admin/feedback/recent", {
-    params,
-  });
-  return data;
-};
+export interface PaginatedFeedbackResponse {
+  content: Feedback[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
 
-// Mark feedback as read
-export const markFeedbackAsRead = async (id: number): Promise<void> => {
-  await axiosClient.patch(`/api/private/admin/feedback/${id}/read`);
-};
-
-// Mark all feedback as read
-export const markAllFeedbackAsRead = async (): Promise<void> => {
-  await axiosClient.patch("/api/private/admin/feedback/read-all");
-};
-
-// Add new feedback
-export const addFeedback = async (
-  projectId: number,
-  message: string
+// Create new feedback
+export const createFeedback = async (
+  feedbackData: CreateFeedbackRequest
 ): Promise<Feedback> => {
-  const { data } = await axiosClient.post("/api/private/admin/feedback", {
-    projectId,
-    message,
-  });
+  const { data } = await axiosClient.post("/api/feedbacks", feedbackData);
+  return data;
+};
+
+// Update feedback
+export const updateFeedback = async (
+  id: string,
+  feedbackData: UpdateFeedbackRequest
+): Promise<Feedback> => {
+  const { data } = await axiosClient.put(`/api/feedbacks/${id}`, feedbackData);
   return data;
 };
 
 // Delete feedback
-export const deleteFeedback = async (id: number): Promise<void> => {
-  await axiosClient.delete(`/api/private/admin/feedback/${id}`);
+export const deleteFeedback = async (id: string): Promise<void> => {
+  await axiosClient.delete(`/api/feedbacks/${id}`);
+};
+
+// Get feedback by ID
+export const getFeedbackById = async (id: string): Promise<Feedback> => {
+  const { data } = await axiosClient.get(`/api/feedbacks/${id}`);
+  return data;
+};
+
+// Get feedbacks by user ID and project ID with pagination
+export const getFeedbacksByUserAndProject = async (
+  userId: number,
+  projectId: number,
+  page: number = 0,
+  size: number = 10,
+  sort?: string
+): Promise<PaginatedFeedbackResponse> => {
+  const params: any = { page, size };
+  if (sort) {
+    params.sort = sort;
+  }
+
+  const { data } = await axiosClient.get(
+    `/api/feedbacks/user/${userId}/project/${projectId}`,
+    { params }
+  );
+  return data;
+};
+
+// Alternative method for getting feedbacks with query parameters (if needed)
+export const getFeedbacks = async (
+  userId?: number,
+  projectId?: number,
+  page: number = 0,
+  size: number = 10,
+  sort?: string
+): Promise<PaginatedFeedbackResponse> => {
+  const params: any = { page, size };
+
+  if (userId) params.userId = userId;
+  if (projectId) params.projectId = projectId;
+  if (sort) params.sort = sort;
+
+  const { data } = await axiosClient.get("/api/feedbacks", { params });
+  return data;
 };

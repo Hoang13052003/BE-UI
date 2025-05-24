@@ -2,6 +2,7 @@ import axiosClient from "./axiosClient";
 import { Project } from "../types/project";
 import { ProjectRequest } from "../types/ProjectRequest";
 import { SortConfig, fetchPaginatedData, PaginatedResult } from "./apiUtils";
+import { User } from "../types/User";
 
 export interface FetchProjectsResult extends PaginatedResult<Project> {
   projects: Project[]; // Tương thích với code cũ
@@ -140,18 +141,9 @@ export const updateProjectApi = async (
   }
 };
 
-export const getProjectById = async (id: number): Promise<Project> => {
-  try {
-    const { data } = await axiosClient.get<Project>(`/api/projects/${id}`);
-    return data;
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      if (error.message === "Project not found") {
-        throw error;
-      } else if (error.message === "Invalid project data") {
-        throw error;
-      }
-    }
-    throw error;
-  }
+export const getUsersByProjectId = async (
+  projectId: number
+): Promise<User[]> => {
+  const response = await axiosClient.get(`/api/projects/${projectId}/users`);
+  return response.data;
 };
