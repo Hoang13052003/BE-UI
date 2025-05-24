@@ -29,9 +29,9 @@ import {
   getProjectStatusesApi,
 } from "../../../api/projectUpdateApi";
 import dayjs from "dayjs";
-import { useAttachmentUpload } from "../../../hooks/useAttachmentUpload"; // Import hook mới
+import { useAttachmentUpload } from "../../../hooks/useAttachmentUpload";
 import type { UploadFile } from "antd/es/upload/interface";
-import { FolderFileItem } from "../../../api/attachmentApi"; // Thêm dòng này để lấy type
+import { FolderFileItem } from "../../../types/Attachment"; 
 
 const { TextArea } = Input;
 const { Option } = Select;

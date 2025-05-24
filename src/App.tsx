@@ -25,7 +25,9 @@ import AlertContainer from "./components/AlertContainer";
 import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
 import ProjectUpdateDetailsPage from "./pages/Admin/ProjectsUpdate/ProjectUpdateDetailsPage";
 import { NotificationProvider } from "./contexts/NotificationContext";
-import AttachmentDisplay from "./pages/Admin/AttachmentManager/AttachmentDisplay";
+import AttachmentDisplay from "./pages/Admin/AttachmentManager/AttachmentDisplay"; // Component chứa ProjectFileExplorer (Component A)
+import ProjectUpdateHistory from "./pages/Admin/AttachmentManager/ProjectUpdateHistory"; // Component B (vừa tạo)
+import ProjectSnapshotViewer from "./pages/Admin/AttachmentManager/ProjectSnapshotViewer"; // Component C (sẽ tạo ở bước sau)
 
 function App() {
   return (
@@ -64,6 +66,15 @@ function App() {
                     path="/admin/attachment-display/:projectId"
                     element={<AttachmentDisplay />}
                   />
+                  <Route
+                    path="projects/:projectId/history"
+                    element={<ProjectUpdateHistory />}
+                  />
+                  <Route
+                    path="projects/:projectId/updates/:projectUpdateId/snapshot"
+                    element={<ProjectSnapshotViewer />}
+                  />{" "}
+                  {/* <<--- ROUTE CHO COMPONENT C */}
                 </Route>
               </Route>
 

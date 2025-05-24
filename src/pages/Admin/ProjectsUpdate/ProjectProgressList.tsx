@@ -307,19 +307,34 @@ const ProjectProgressList: React.FC = () => {
                 View Details
               </Menu.Item>
               <Menu.Divider />
-              <Menu.Item key="delete" danger icon={<DeleteOutlined />}>
+              <Menu.Item 
+                key="delete" 
+                danger 
+                icon={<DeleteOutlined />}
+                onClick={(e) => {
+                  e.domEvent.stopPropagation();
+                }}
+              >
                 <Popconfirm
                   title="Are you sure you want to delete this update?"
-                  onConfirm={() => handleDeleteUpdate(record.id)}
+                  onConfirm={(e) => {
+                    e?.stopPropagation();
+                    handleDeleteUpdate(record.id);
+                  }}
+                  onCancel={(e) => {
+                    e?.stopPropagation();
+                  }}
                   okText="Yes"
                   cancelText="No"
+                  placement="left"
                 >
-                  Delete
+                  <span style={{ display: 'block', width: '100%' }}>Delete</span>
                 </Popconfirm>
               </Menu.Item>
             </Menu>
           }
           trigger={["click"]}
+          placement="bottomRight"
         >
           <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>

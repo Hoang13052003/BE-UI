@@ -34,6 +34,7 @@ import {
 } from "../../../api/projectUpdateApi";
 import { getProjectById } from "../../../api/projectApi";
 import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
+import AttachmentsTree from "../../../components/Admin/ProjectUpdate/AttachmentsTree";
 import dayjs from "dayjs";
 import { Project } from "../../../types/project";
 
@@ -74,7 +75,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(true);
   const [update, setUpdate] = useState<ProjectUpdate | null>(null);
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<Project | null>(null); // Bạn đã có state này
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
   const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
 
@@ -88,11 +89,9 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
         const updateData = await getProjectUpdateByIdApi(id);
         setUpdate(updateData);
 
-        // Fetch project details
         if (updateData.projectId) {
           const projectData = await getProjectById(updateData.projectId);
-          setProject(projectData);
-          // Set available projects for edit modal
+          setProject(projectData); // project state được set ở đây
           setAvailableProjects([projectData]);
         }
       } catch (error) {
@@ -274,38 +273,11 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
         </Col>
 
         <Col span={8}>
-          <Card title="Attachments">
-            {update.attachments && update.attachments.length > 0 ? (
-              <List
-                itemLayout="horizontal"
-                dataSource={update.attachments}
-                renderItem={(item) => (
-                  <List.Item
-                    actions={[
-                      <Button
-                        type="link"
-                        icon={<DownloadOutlined />}
-                        href={item.storagePath}
-                        target="_blank"
-                      >
-                        Download
-                      </Button>,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      avatar={<PaperClipOutlined />}
-                      title={item.fileName}
-                      description={`${(item.fileSize / 1024).toFixed(
-                        2
-                      )} KB · ${dayjs(item.uploadedAt).format("YYYY-MM-DD")}`}
-                    />
-                  </List.Item>
-                )}
-              />
-            ) : (
-              <Text type="secondary">No attachments found</Text>
-            )}
-          </Card>
+          {/* Truyền projectId và projectName vào AttachmentsTree */}
+          <AttachmentsTree
+            projectId={update?.projectId}
+            projectName={project?.name || update?.projectName}
+          />
 
           {project && (
             <Card title="Project Information" style={{ marginTop: 16 }}>
