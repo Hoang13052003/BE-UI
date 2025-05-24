@@ -12,7 +12,7 @@ import { useAuth } from "./AuthContext";
 import {
   MessageType,
   Notification,
-  NotificationPayload,
+  // NotificationPayload,
   NotificationPriority,
   NotificationResponse,
 } from "../types/Notification";
@@ -134,7 +134,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   // Initial load of notifications and WebSocket setup
   useEffect(() => {
     if (isAuthenticated && token && userDetails) {
-      // Load initial notifications
+      // // Load initial notifications
       fetchNotifications();
       fetchUnreadCount();
 
@@ -164,35 +164,42 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchUnreadCount,
   ]);
 
-  const handleNotificationFromSocket = async (data: NotificationPayload) => {
-    console.log("New notification received via WebSocket:", data);
+  const handleNotificationFromSocket = useCallback((socketMessage: any) => {
+    console.log("=== Socket Message Received ===");
+    console.log("Full message:", socketMessage);
 
-    await fetchUnreadCount();
-    await fetchNotifications(0, 10);
+    const data = socketMessage.payload as NotificationResponse;
 
-    // if (data.id && data.title && data.content) {
-    //   const newNotification: Notification = {
-    //     id: data.id,
-    //     title: data.title,
-    //     content: data.content,
-    //     type: data.type || MessageType.USER_UPDATE,
-    //     priority: data.priority || NotificationPriority.MEDIUM,
-    //     metadata: data.metadata || {},
-    //     read: data.read || false,
-    //     timestamp: new Date(data.createdAt || new Date().toISOString()),
-    //   };
+    console.log("Notification data:", data);
 
-    //   setNotifications((prev) => [newNotification, ...prev]);
+    // Validate required fields
+    if (data && data.id && data.title && data.content) {
+      const newNotification: Notification = {
+        id: data.id.toString(),
+        title: data.title,
+        content: data.content,
+        type: data.type || null,
+        priority: data.priority ?? NotificationPriority.MEDIUM,
+        metadata: data.metadata ?? {},
+        read: data.read ?? false,
+        timestamp: data.createdAt ? new Date(data.createdAt) : new Date(),
+      };
 
-    //   if (!newNotification.read) {
-    //     setUnreadCount((prev) => prev + 1);
-    //   }
-    // } else {
-    //   console.log("Legacy notification format detected, fetching from API...");
-    //   await fetchUnreadCount();
-    //   await fetchNotifications(0, 10);
-    // }
-  };
+      setNotifications((prev) => {
+        const updated = [newNotification, ...prev];
+        return updated;
+      });
+
+      if (!newNotification.read) {
+        setUnreadCount((prev) => {
+          const newCount = prev + 1;
+          return newCount;
+        });
+      }
+    } else {
+      console.warn("Invalid notification data - missing required fields:");
+    }
+  }, []);
 
   // Mark a notification as read
   const markAsRead = async (id: string) => {
@@ -204,7 +211,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       setNotifications((prev) =>
         prev.map((notification) =>
           notification.id === id
-            ? { ...notification, isRead: true }
+            ? { ...notification, read: true }
             : notification
         )
       );

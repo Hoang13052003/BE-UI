@@ -104,8 +104,6 @@ export const getAllProjectUpdatesApi = async (
       filters
     );
 
-    console.log("Data: " + JSON.stringify(result)); // Log confirms result.items is an object with a 'content' array
-
     // Extract the actual array of updates
     const actualUpdatesArray = (result.items as any)?.content || [];
 

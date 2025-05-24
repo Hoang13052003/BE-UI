@@ -30,7 +30,7 @@ class NotificationService {
 
     try {
       // Replace with your backend WebSocket URL
-      const wsUrl = `http://localhost:8080/ws/notifications`;
+      const wsUrl = `ws://localhost:8080/ws/notifications`;
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
@@ -43,12 +43,15 @@ class NotificationService {
       };
 
       this.socket.onmessage = (event) => {
+        console.log("🔔 === WebSocket Message Received ===");
+        console.log("📨 Raw event data:", event);
+
         try {
           const data = JSON.parse(event.data);
           console.log("Received notification:", data);
 
-          // Check if there's a MESSAGE_TYPE field
-          const messageType = data.MESSAGE_TYPE;
+          const messageType = data.messageType;
+
           if (messageType && this.listeners.has(messageType)) {
             this.listeners
               .get(messageType)
@@ -57,6 +60,7 @@ class NotificationService {
 
           // Also notify 'all' listeners for any message
           if (this.listeners.has("all")) {
+            console.log("📢 Also notifying 'all' listeners...");
             this.listeners.get("all")?.forEach((callback) => callback(data));
           }
         } catch (error) {
@@ -77,6 +81,10 @@ class NotificationService {
       this.socket.onerror = (error) => {
         console.error("WebSocket error:", error);
         message.error("Connection error. Trying to reconnect...", 3);
+
+        if (!this.isConnected && this.token) {
+          this.attemptReconnect(this.token);
+        }
       };
     } catch (error) {
       console.error("Error setting up WebSocket:", error);
@@ -226,20 +234,20 @@ class NotificationService {
   /**
    * Send a test notification (for development/testing)
    */
-  sendTestMessage(messageType: MessageType, payload: any): void {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.error("Cannot send test message: WebSocket is not connected");
-      return;
-    }
+  // sendTestMessage(messageType: MessageType, payload: any): void {
+  //   if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+  //     console.error("Cannot send test message: WebSocket is not connected");
+  //     return;
+  //   }
 
-    const message = {
-      messageType,
-      ...payload,
-    };
+  //   const message = {
+  //     messageType,
+  //     ...payload,
+  //   };
 
-    this.socket.send(JSON.stringify(message));
-    console.log("Test message sent:", message);
-  }
+  //   this.socket.send(JSON.stringify(message));
+  //   console.log("Test message sent:", message);
+  // }
 }
 
 // Create a singleton instance

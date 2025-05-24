@@ -218,12 +218,14 @@ const NotificationBell: React.FC = () => {
 
   // Load notifications when dropdown is opened
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (open) return;
-      fetchNotifications();
-    }, 30000); // 30 seconds
+    // const interval = setInterval(() => {
+    //   if (open) return;
+    //   fetchNotifications();
+    // }, 30000); // 30 seconds
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
+
+    fetchNotifications();
   }, [fetchNotifications, open]);
 
   const content = (

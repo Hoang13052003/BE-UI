@@ -60,10 +60,13 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
   // Thêm state lưu folder items
-  const [folderItemsToUpload, setFolderItemsToUpload] = useState<FolderFileItem[]>([]);
+  const [folderItemsToUpload, setFolderItemsToUpload] = useState<
+    FolderFileItem[]
+  >([]);
 
   // Sử dụng hook upload
-  const { isUploading, uploadFilesIndividually, uploadFolderContents } = useAttachmentUpload();
+  const { isUploading, uploadFilesIndividually, uploadFolderContents } =
+    useAttachmentUpload();
 
   // Fetch status options when modal opens
   useEffect(() => {
@@ -99,17 +102,22 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
   }, [visible, form, initialProjectId]);
 
   // Hàm xử lý khi người dùng chọn thư mục bằng input webkitdirectory
-  const handleNativeFolderSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNativeFolderSelection = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     if (event.target.files && event.target.files.length > 0) {
       const filesFromInput: File[] = Array.from(event.target.files);
       const items: FolderFileItem[] = [];
-      let rootDirName = '';
+      let rootDirName = "";
 
       // Cố gắng xác định tên thư mục gốc từ file đầu tiên
-      if (filesFromInput.length > 0 && (filesFromInput[0] as any).webkitRelativePath) {
+      if (
+        filesFromInput.length > 0 &&
+        (filesFromInput[0] as any).webkitRelativePath
+      ) {
         const firstPath = (filesFromInput[0] as any).webkitRelativePath;
-        if (firstPath.includes('/')) {
-          rootDirName = firstPath.substring(0, firstPath.indexOf('/'));
+        if (firstPath.includes("/")) {
+          rootDirName = firstPath.substring(0, firstPath.indexOf("/"));
         }
       }
 
@@ -117,7 +125,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
         let relativePath = (file as any).webkitRelativePath || file.name;
 
         // Loại bỏ tên thư mục gốc khỏi relativePath nếu có
-        if (rootDirName && relativePath.startsWith(rootDirName + '/')) {
+        if (rootDirName && relativePath.startsWith(rootDirName + "/")) {
           relativePath = relativePath.substring(rootDirName.length + 1);
         }
         // Nếu sau khi loại bỏ, path rỗng (file nằm ngay thư mục gốc đã chọn), thì dùng tên file
@@ -162,15 +170,27 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
 
       // Ưu tiên upload folder nếu có
       if (folderItemsToUpload.length > 0) {
-        const folderUploadResult = await uploadFolderContents(projectUpdateId, folderItemsToUpload);
+        const folderUploadResult = await uploadFolderContents(
+          projectUpdateId,
+          folderItemsToUpload
+        );
         if (folderUploadResult.failedUploads.length > 0) {
-          console.warn("Some folder files failed to upload:", folderUploadResult.failedUploads);
+          console.warn(
+            "Some folder files failed to upload:",
+            folderUploadResult.failedUploads
+          );
           if (folderUploadResult.successfulUploads.length === 0) return;
         }
       } else if (fileList.length > 0) {
-        const individualUploadResult = await uploadFilesIndividually(projectUpdateId, fileList);
+        const individualUploadResult = await uploadFilesIndividually(
+          projectUpdateId,
+          fileList
+        );
         if (individualUploadResult.failedUploads.length > 0) {
-          console.warn("Some attachments failed to upload:", individualUploadResult.failedUploads);
+          console.warn(
+            "Some attachments failed to upload:",
+            individualUploadResult.failedUploads
+          );
           if (individualUploadResult.successfulUploads.length === 0) return;
         }
       }
@@ -178,19 +198,29 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
       message.success("Project update created and attachments processed.", 3);
       onSuccess();
     } catch (error: any) {
-      console.error("Failed to create project update or an unexpected error occurred:", error);
-      const errorMessage = error?.response?.data?.message || error.message || "Operation failed. Please try again.";
+      console.error(
+        "Failed to create project update or an unexpected error occurred:",
+        error
+      );
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "Operation failed. Please try again.";
       message.error(errorMessage);
     }
   };
 
   const handleFileChange = (info: any) => {
     let newFileList = [...info.fileList];
-    newFileList = newFileList.filter(file => {
-      if (file.status === 'removed') {
+    newFileList = newFileList.filter((file) => {
+      if (file.status === "removed") {
         return false;
       }
-      return !!file.originFileObj || file.status === 'done' || file.status === 'uploading';
+      return (
+        !!file.originFileObj ||
+        file.status === "done" ||
+        file.status === "uploading"
+      );
     });
     setFileList(newFileList);
   };
@@ -318,7 +348,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
                   75: "75%",
                   100: "100%",
                 }}
-                disabled={true}
+                // disabled={true}
               />
             </Form.Item>
           </Col>
@@ -351,7 +381,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
             fileList={fileList}
             onChange={handleFileChange}
             onRemove={(file) => {
-              const index = fileList.findIndex(f => f.uid === file.uid);
+              const index = fileList.findIndex((f) => f.uid === file.uid);
               if (index > -1) {
                 const newFileList = fileList.slice();
                 newFileList.splice(index, 1);
@@ -400,7 +430,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           onChange={handleNativeFolderSelection}
           multiple
           disabled={isUploading}
-          style={{ marginTop: '10px', display: 'block' }}
+          style={{ marginTop: "10px", display: "block" }}
           {...{ webkitdirectory: "", directory: "" }}
         />
         {folderItemsToUpload.length > 0 && (
