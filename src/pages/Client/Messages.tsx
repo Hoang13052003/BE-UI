@@ -98,43 +98,6 @@ const Messages: React.FC = () => {
     },
   ];
 
-  const projectNotes: ProjectNote[] = [
-    {
-      id: "1",
-      title: "Project Requirements",
-      description: "List of key requirements and specifications",
-      tags: ["important", "documentation"],
-      date: "2024-02-20",
-      author: "John Smith",
-    },
-    {
-      id: "2",
-      title: "Design Guidelines",
-      description: "Brand colors and typography specifications",
-      tags: ["design", "reference"],
-      date: "2024-02-18",
-      author: "Sarah Johnson",
-    },
-    {
-      id: "3",
-      title: "API Documentation",
-      description: "Endpoint specifications and examples",
-      tags: ["development", "technical"],
-      date: "2024-02-15",
-      author: "Mike Wilson",
-    },
-  ];
-
-  const moreMenu = (
-    <Menu
-      items={[
-        { key: "1", label: "Edit" },
-        { key: "2", label: "Delete" },
-        { key: "3", label: "Archive" },
-      ]}
-    />
-  );
-
   return (
     <Card>
       <Row gutter={24}>
