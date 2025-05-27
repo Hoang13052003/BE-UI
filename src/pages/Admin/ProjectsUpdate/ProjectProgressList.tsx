@@ -42,7 +42,7 @@ import { fetchProjects } from "../../../api/projectApi";
 import AddProjectUpdateModal from "../../../components/Admin/ProjectUpdate/AddProjectUpdateModal";
 import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
 import dayjs from "dayjs";
-import { Project } from "../../../types/project";
+import { Project, ApiPage } from "../../../types/project";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -86,7 +86,7 @@ const getTypeColor = (type: string): string => {
 
 const ProjectProgressList: React.FC = () => {
   const navigate = useNavigate();
-  const [updates, setUpdates] = useState<ProjectUpdate[]>([]);
+  const [updatesPage, setUpdatesPage] = useState<ApiPage<ProjectUpdate> | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -100,7 +100,8 @@ const ProjectProgressList: React.FC = () => {
   const [currentUpdate, setCurrentUpdate] = useState<ProjectUpdate | null>(
     null
   );
-  const [pagination, setPagination] = useState({
+  
+  const [tablePagination, setTablePagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
@@ -108,10 +109,8 @@ const ProjectProgressList: React.FC = () => {
 
   // Fetch project updates
   const fetchUpdates = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // Prepare filters
       const filters: Record<string, any> = {};
       if (selectedProject) {
         filters.projectId = selectedProject;
@@ -127,22 +126,28 @@ const ProjectProgressList: React.FC = () => {
         filters.status = statusFilter;
       }
 
-      const result = await getAllProjectUpdatesApi(
-        pagination.current - 1,
-        pagination.pageSize,
+      const resultPage = await getAllProjectUpdatesApi(
+        tablePagination.current - 1,
+        tablePagination.pageSize,
         { property: "updateDate", direction: "desc" },
         filters
       );
 
-      setUpdates(result.updates);
+      console.log("ProjectProgressList - Received ApiPage:", JSON.stringify(resultPage, null, 2));
+      setUpdatesPage(resultPage);
 
-      setPagination({
-        ...pagination,
-        total: result.totalItems,
-      });
+      setTablePagination(prev => ({
+        ...prev,
+        total: resultPage.totalElements,
+        current: resultPage.number + 1,
+        pageSize: resultPage.size,
+      }));
+
+
     } catch (error) {
       console.error("Failed to fetch project updates:", error);
       message.error("Failed to load project updates");
+      setUpdatesPage(null);
     } finally {
       setLoading(false);
     }
@@ -151,8 +156,8 @@ const ProjectProgressList: React.FC = () => {
     dateRange,
     searchText,
     statusFilter,
-    pagination.current,
-    pagination.pageSize,
+    tablePagination.current,
+    tablePagination.pageSize,
   ]);
 
   // Fetch projects for dropdown
@@ -175,10 +180,12 @@ const ProjectProgressList: React.FC = () => {
   }, [fetchUpdates]);
 
   // Handle table pagination change
-  const handleTableChange = (pagination: any) => {
-    setPagination({
-      ...pagination,
-    });
+  const handleTableChange = (paginationConfig: any) => {
+    setTablePagination(prev => ({
+      ...prev,
+      current: paginationConfig.current,
+      pageSize: paginationConfig.pageSize,
+    }));
   };
 
   // Handle delete update
@@ -350,10 +357,7 @@ const ProjectProgressList: React.FC = () => {
     setDateRange(null);
     setSearchText("");
     setStatusFilter(null);
-    setPagination({
-      ...pagination,
-      current: 1,
-    });
+    setTablePagination(prev => ({ ...prev, current: 1 }));
   };
 
   return (
@@ -455,13 +459,16 @@ const ProjectProgressList: React.FC = () => {
       {/* Updates Table */}
       <Table
         columns={columns}
-        dataSource={updates}
+        dataSource={updatesPage?.content || []}
         rowKey="id"
         loading={loading}
         pagination={{
-          ...pagination,
+          current: tablePagination.current,
+          pageSize: tablePagination.pageSize,
+          total: tablePagination.total,
           showSizeChanger: true,
           showTotal: (total) => `Total ${total} updates`,
+          pageSizeOptions: ['5', '10', '20', '50'],
         }}
         onChange={handleTableChange}
       />
