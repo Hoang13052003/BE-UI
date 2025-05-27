@@ -10,7 +10,7 @@ import DashboardAdmin from "./pages/Admin/DashboardAdmin";
 // import HeroSection from './components/home/HeroSection';
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import UserManagement from "./pages/Admin/UserManagement";
-import ProjectUpdates from "./pages/Admin/ProjectUpdates";
+import ProjectManager from "./pages/Admin/ProjectManager";
 import Notifications from "./pages/Admin/Notifications";
 import SystemSettings from "./pages/Admin/SystemSettings";
 import ProjectDetails from "./pages/Client/ProjectDetails";
@@ -24,9 +24,10 @@ import { AlertProvider } from "./contexts/AlertContext";
 import AlertContainer from "./components/AlertContainer";
 import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
 import ProjectUpdateDetailsPage from "./pages/Admin/ProjectsUpdate/ProjectUpdateDetailsPage";
-import AttachmentDisplay from './pages/Admin/AttachmentManager/AttachmentDisplay'; // Component chứa ProjectFileExplorer (Component A)
-import ProjectUpdateHistory from './pages/Admin/AttachmentManager/ProjectUpdateHistory'; // Component B (vừa tạo)
-import ProjectSnapshotViewer from './pages/Admin/AttachmentManager/ProjectSnapshotViewer'; // Component C (sẽ tạo ở bước sau)
+import AttachmentDisplay from './pages/Admin/AttachmentManager/AttachmentDisplay'; 
+import ProjectUpdateHistory from './pages/Admin/AttachmentManager/ProjectUpdateHistory'; 
+import ProjectSnapshotViewer from './pages/Admin/AttachmentManager/ProjectSnapshotViewer';
+import ProjectDetailPage from "./pages/Admin/ProjectDetailPage";
 
 function App() {
   return (
@@ -49,7 +50,7 @@ function App() {
                 <Route path="admin/" element={<DashboardAdmin />}>
                   <Route path="overview" element={<OverviewAdmin />} />
                   <Route path="users" element={<UserManagement />} />
-                  <Route path="updates" element={<ProjectUpdates />} />
+                  <Route path="updates" element={<ProjectManager />} />
                   <Route
                     path="project-progress"
                     element={<ProjectProgressPage />}
@@ -63,6 +64,10 @@ function App() {
                   <Route path="attachment-display/:projectId" element={<AttachmentDisplay />} />
                   <Route path="projects/:projectId/history" element={<ProjectUpdateHistory />} />
                   <Route path="projects/:projectId/updates/:projectUpdateId/snapshot" element={<ProjectSnapshotViewer />} /> {/* <<--- ROUTE CHO COMPONENT C */}
+                  <Route
+                    path="/admin/projects/:projectId/details"
+                    element={<ProjectDetailPage />}
+                  />
                 </Route>
               </Route>
             </Route>

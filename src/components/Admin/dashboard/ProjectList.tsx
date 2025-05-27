@@ -142,7 +142,7 @@ const ProjectList: React.FC = () => {
       key: "action",
       render: (_, record) => (
         <Link
-          to={`/projects/${record.id}`}
+          to={`/admin/projects/${record.id}/details`} 
           className="text-blue-600 hover:text-blue-700"
         >
           View Details

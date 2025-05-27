@@ -8,7 +8,6 @@ import {
   Tag,
   Button,
   Divider,
-  List,
   Progress,
   Row,
   Col,
@@ -19,24 +18,22 @@ import {
 import {
   EditOutlined,
   DeleteOutlined,
-  DownloadOutlined,
-  PaperClipOutlined,
   ArrowLeftOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ProjectUpdate,
   getProjectUpdateByIdApi,
   deleteProjectUpdateApi,
 } from "../../../api/projectUpdateApi";
-import { getProjectById } from "../../../api/projectApi";
 import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
 import AttachmentsTree from "../../../components/Admin/ProjectUpdate/AttachmentsTree";
 import dayjs from "dayjs";
 import { Project } from "../../../types/project";
+import { getProjectById } from "../../../api/dashboardAdminApi";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -224,7 +221,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
               </Descriptions.Item>
               <Descriptions.Item label="Completion">
                 <Progress
-                  percent={update.completionPercentage}
+                  percent={update.completionPercentage ?? 0} 
                   size="small"
                   status={
                     update.completionPercentage === 100 ? "success" : "active"

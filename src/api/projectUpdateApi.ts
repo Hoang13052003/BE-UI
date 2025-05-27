@@ -1,27 +1,29 @@
 // src/api/projectUpdateApi.ts
 import axiosClient from "./axiosClient";
-import { SortConfig, fetchPaginatedData, PaginatedResult } from "./apiUtils";
+// SỬ DỤNG fetchSpringPageData VÀ CÁC TYPE LIÊN QUAN ĐẾN ApiPage
+import { SortConfig, fetchSpringPageData } from "./apiUtils"; // << CHỈ CẦN fetchSpringPageData (và SortConfig)
+import { ApiPage } from "../types/project"; // << IMPORT ApiPage
 
 // Project Update Types
-export interface ProjectUpdate {
+export interface ProjectUpdate { // Kiểu này giữ nguyên, khớp với item trong 'content'
   id: number;
   projectId: number;
   projectName: string;
   projectType: string;
-  userId: number;
-  email: string;
+  userId: number; 
+  email: string;  
   updateDate: string;
-  summary: string;
-  details: string;
-  statusAtUpdate: string;
-  completionPercentage: number;
-  createdByUserId: number;
-  createdByName: string;
+  summary: string | null;
+  details: string | null;
+  statusAtUpdate: string; 
+  completionPercentage: number | null;
+  // createdByUserId?: number; // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
+  createdByName?: string;   // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
   published: boolean;
-  internalNotes: string;
+  internalNotes: string | null;
   attachments?: Attachment[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Attachment {
@@ -52,71 +54,56 @@ export interface ProjectUpdateEditRequest
   id: number;
 }
 
-export interface ProjectUpdateFetchResult
-  extends PaginatedResult<ProjectUpdate> {
-  updates: ProjectUpdate[];
-}
+// Bỏ ProjectUpdateFetchResult nếu không còn API nào dùng đến nó
+// export interface ProjectUpdateFetchResult extends PaginatedResult<ProjectUpdate> {
+//   updates: ProjectUpdate[];
+// }
 
-// Get updates for a specific project
+// Hàm getProjectUpdatesApi (lấy update cho 1 project cụ thể)
+// Nếu API `/api/private/admin/${projectId}/updates` cũng trả về Spring Page,
+// bạn cũng nên cho nó gọi fetchSpringPageData.
+// Hiện tại, tôi giả sử nó vẫn dùng fetchPaginatedData (cũ) nếu bạn chưa muốn sửa.
+// Nếu muốn sửa, hãy làm tương tự như getAllProjectUpdatesApi.
+/*
 export const getProjectUpdatesApi = async (
   projectId: number,
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[]
-): Promise<ProjectUpdateFetchResult> => {
-  try {
-    const result = await fetchPaginatedData<ProjectUpdate>(
-      `/api/private/admin/${projectId}/updates`,
-      page,
-      size,
-      sortConfig
-    );
-
-    // Extract the actual array of updates.
-    // (result.items as any) is used to bypass TypeScript's potentially incorrect typing
-    // of result.items as T[] when it's actually { content: T[] } at runtime.
-    const actualUpdatesArray = (result.items as any)?.content || [];
-
-    return {
-      ...result, // Spread original result properties
-      items: actualUpdatesArray, // Ensure the 'items' property also holds the correct array
-      updates: actualUpdatesArray, // Ensure 'updates' holds the correct array
-    };
-  } catch (error) {
-    console.error("Error fetching project updates:", error);
-    throw error;
-  }
+): Promise<ProjectUpdateFetchResult> => { // HOẶC Promise<ApiPage<ProjectUpdate>> nếu sửa
+  // ...
 };
+*/
 
-// Get all updates (admin only)
+// Get all updates (admin only) - SỬA HÀM NÀY
 export const getAllProjectUpdatesApi = async (
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[],
   filters?: Record<string, any>
-): Promise<ProjectUpdateFetchResult> => {
+): Promise<ApiPage<ProjectUpdate>> => { // << THAY ĐỔI KIỂU TRẢ VỀ THÀNH ApiPage
   try {
-    const result = await fetchPaginatedData<ProjectUpdate>(
-      "/api/private/admin/project-updates",
+    // Gọi hàm fetchSpringPageData (mới)
+    const apiPageResult = await fetchSpringPageData<ProjectUpdate>( 
+      "/api/private/admin/project-updates", // Endpoint của bạn
       page,
       size,
       sortConfig,
       filters
     );
+    
+    console.log("getAllProjectUpdatesApi - result from fetchSpringPageData:", JSON.stringify(apiPageResult, null, 2));
+    return apiPageResult; // Trả về trực tiếp kết quả từ fetchSpringPageData
 
-    console.log("Data: " + JSON.stringify(result)); // Log confirms result.items is an object with a 'content' array
-
-    // Extract the actual array of updates
-    const actualUpdatesArray = (result.items as any)?.content || [];
-
-    return {
-      ...result, // Spread original result properties
-      items: actualUpdatesArray, // Ensure the 'items' property also holds the correct array
-      updates: actualUpdatesArray, // Ensure 'updates' holds the correct array
-    };
   } catch (error) {
     console.error("Error fetching all project updates:", error);
-    throw error;
+    // Trả về một ApiPage rỗng khi có lỗi
+    const defaultSortInfo = { sorted: false, unsorted: true, empty: true };
+    const defaultPageable = { pageNumber: page, pageSize: size, offset: page * size, paged: true, unpaged: false, sort: defaultSortInfo };
+    return {
+        content: [], pageable: defaultPageable, last: true, totalPages: 0, totalElements: 0,
+        size: size, number: page, sort: defaultSortInfo, first: true, numberOfElements: 0, empty: true
+    } as ApiPage<ProjectUpdate>;
   }
 };
 

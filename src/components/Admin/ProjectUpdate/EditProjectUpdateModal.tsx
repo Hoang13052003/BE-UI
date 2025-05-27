@@ -9,7 +9,6 @@ import {
   Button,
   Switch,
   Slider,
-  Upload,
   Divider,
   message,
   Typography,
@@ -19,7 +18,6 @@ import {
   Popconfirm,
 } from "antd";
 import {
-  InboxOutlined,
   PaperClipOutlined,
   DeleteOutlined,
   DownloadOutlined,
@@ -29,16 +27,13 @@ import {
   ProjectUpdate,
   ProjectUpdateEditRequest,
   updateProjectUpdateApi,
-  uploadAttachmentApi,
   deleteAttachmentApi,
   getProjectStatusesApi,
 } from "../../../api/projectUpdateApi";
 import dayjs from "dayjs";
-import { values } from "lodash";
 
 const { TextArea } = Input;
 const { Option } = Select;
-const { Dragger } = Upload;
 const { Title, Text } = Typography;
 
 interface EditProjectUpdateModalProps {
@@ -58,7 +53,6 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
-  const [fileList, setFileList] = useState<any[]>([]);
   const [existingAttachments, setExistingAttachments] = useState<any[]>([]);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
 
@@ -105,9 +99,8 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
         setExistingAttachments([]);
       }
     } else {
-      // Reset form and file lists when modal closes
+      // Reset form when modal closes
       form.resetFields();
-      setFileList([]);
       setExistingAttachments([]);
     }
   }, [visible, form, updateData]);
@@ -134,15 +127,6 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
       // Update the project update
       await updateProjectUpdateApi(updateData.id, editData);
 
-      // Upload new attachments if any
-      if (fileList.length > 0) {
-        const uploadPromises = fileList.map((file) =>
-          uploadAttachmentApi(updateData.id, file.originFileObj)
-        );
-
-        await Promise.all(uploadPromises);
-      }
-
       message.success("Project update modified successfully");
       onSuccess();
     } catch (error) {
@@ -151,11 +135,6 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  // Handle file upload
-  const handleFileChange = ({ fileList }: any) => {
-    setFileList(fileList);
   };
 
   // Handle attachment deletion
@@ -349,36 +328,6 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
         ) : (
           <Text type="secondary">No attachments found</Text>
         )}
-
-        <Divider />
-        <Title level={5}>Add New Attachments</Title>
-        <Text type="secondary" style={{ marginBottom: 16, display: "block" }}>
-          Upload additional files related to this update (optional)
-        </Text>
-
-        <Form.Item name="attachments">
-          <Dragger
-            multiple
-            beforeUpload={() => false} // Prevent auto upload
-            fileList={fileList}
-            onChange={handleFileChange}
-            showUploadList={{
-              showRemoveIcon: true,
-              removeIcon: <DeleteOutlined />,
-            }}
-          >
-            <p className="ant-upload-drag-icon">
-              <InboxOutlined />
-            </p>
-            <p className="ant-upload-text">
-              Click or drag files to this area to upload
-            </p>
-            <p className="ant-upload-hint">
-              Support for single or bulk upload. Strictly prohibited from
-              uploading company data or other prohibited files.
-            </p>
-          </Dragger>
-        </Form.Item>
       </Form>
     </Modal>
   );
