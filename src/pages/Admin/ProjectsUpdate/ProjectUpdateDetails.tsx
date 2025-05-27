@@ -31,7 +31,6 @@ import {
   deleteProjectUpdateApi,
 } from "../../../api/projectUpdateApi";
 
-
 import { getProjectById } from "../../../api/apiNotification";
 
 import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
@@ -39,12 +38,11 @@ import AttachmentsTree from "../../../components/Admin/ProjectUpdate/Attachments
 import dayjs from "dayjs";
 import { Project } from "../../../types/project";
 
-<!-- import { getProjectById } from "../../../api/dashboardAdminApi"; -->
+// <!-- import { getProjectById } from "../../../api/dashboardAdminApi"; -->
 
 import SendReportProjectUpdateModal from "../../../components/Admin/ProjectUpdate/SendReportProjectUpdateModal";
 import { useAuth } from "../../../contexts/AuthContext";
 import SendFeedbackModal from "../../Client/SendFeedbackModal";
-
 
 const { Title, Paragraph } = Typography;
 
@@ -260,7 +258,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
               </Descriptions.Item>
               <Descriptions.Item label="Completion">
                 <Progress
-                  percent={update.completionPercentage ?? 0} 
+                  percent={update.completionPercentage ?? 0}
                   size="small"
                   status={
                     update.completionPercentage === 100 ? "success" : "active"
@@ -345,9 +343,9 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                 type="primary"
                 onClick={() => {
                   if (userRole === "ADMIN") {
-                    navigate(`/admin/projects/${project.id}`);
+                    navigate(`/admin/projects/${project.id}/details`);
                   } else {
-                    navigate(`/client/projects/${project.id}`);
+                    navigate(`/client/projects/${project.id}/details`);
                   }
                 }}
                 style={{ padding: 10 }}

@@ -6,12 +6,17 @@ import {
   ProjectDetail,
   ProjectUpdateTimelineItem,
   ProjectContextTimeLog,
-  ApiPage
+  ApiPage,
 } from "../types/project";
 import { Milestone } from "../types/milestone";
 import { ProjectRequest } from "../types/ProjectRequest";
-import { SortConfig, fetchPaginatedData, fetchSpringPageData, PaginatedResult } from "./apiUtils";
-
+import {
+  SortConfig,
+  fetchPaginatedData,
+  fetchSpringPageData,
+  PaginatedResult,
+} from "./apiUtils";
+import { User } from "../types/User";
 
 // --- CÁC HÀM API CŨ DÙNG fetchPaginatedData - GIỮ NGUYÊN ---
 export interface FetchProjectsResult extends PaginatedResult<Project> {
@@ -148,7 +153,8 @@ export const updateProjectApi = async (
   } catch (error: any) {
     if (error.response) {
       if (error.response.status === 404) throw new Error("Project not found");
-      else if (error.response.status === 400) throw new Error(error.response.data.message || "Invalid project data");
+      else if (error.response.status === 400)
+        throw new Error(error.response.data.message || "Invalid project data");
     }
     throw error;
   }
@@ -158,15 +164,18 @@ export const updateProjectApi = async (
 // CÁC HÀM API MỚI CHO PROJECT DETAIL - SẼ DÙNG fetchSpringPageData
 // ============================================================================
 
-export const getProjectDetailsApi = async (projectId: number): Promise<ProjectDetail> => {
+export const getProjectDetailsApi = async (
+  projectId: number
+): Promise<ProjectDetail> => {
   try {
-    const { data } = await axiosClient.get<ProjectDetail>(`/api/projects/${projectId}/details`);
+    const { data } = await axiosClient.get<ProjectDetail>(
+      `/api/projects/${projectId}/details`
+    );
     return data;
   } catch (error) {
     console.error(`Error fetching project details for ID ${projectId}:`, error);
     throw error;
   }
-
 };
 
 /**
@@ -180,8 +189,14 @@ export const getProjectUpdatesTimelineApi = async (
   sortConfig?: SortConfig | SortConfig[]
 ): Promise<ApiPage<ProjectUpdateTimelineItem>> => {
   try {
-    const defaultSort: SortConfig[] = [{ property: 'updateDate', direction: 'desc' }];
-    const currentSortConfig = sortConfig ? (Array.isArray(sortConfig) ? sortConfig : [sortConfig]) : defaultSort;
+    const defaultSort: SortConfig[] = [
+      { property: "updateDate", direction: "desc" },
+    ];
+    const currentSortConfig = sortConfig
+      ? Array.isArray(sortConfig)
+        ? sortConfig
+        : [sortConfig]
+      : defaultSort;
 
     const result = await fetchSpringPageData<ProjectUpdateTimelineItem>(
       `/api/projects/${projectId}/updates-timeline`,
@@ -191,12 +206,31 @@ export const getProjectUpdatesTimelineApi = async (
     );
     return result;
   } catch (error) {
-    console.error(`Error fetching project updates timeline for project ID ${projectId}:`, error);
+    console.error(
+      `Error fetching project updates timeline for project ID ${projectId}:`,
+      error
+    );
     const defaultSortInfo = { sorted: false, unsorted: true, empty: true };
-    const defaultPageable = { pageNumber: page, pageSize: size, offset: page * size, paged: true, unpaged: false, sort: defaultSortInfo };
+    const defaultPageable = {
+      pageNumber: page,
+      pageSize: size,
+      offset: page * size,
+      paged: true,
+      unpaged: false,
+      sort: defaultSortInfo,
+    };
     return {
-        content: [], pageable: defaultPageable, last: true, totalPages: 0, totalElements: 0,
-        size: size, number: page, sort: defaultSortInfo, first: true, numberOfElements: 0, empty: true
+      content: [],
+      pageable: defaultPageable,
+      last: true,
+      totalPages: 0,
+      totalElements: 0,
+      size: size,
+      number: page,
+      sort: defaultSortInfo,
+      first: true,
+      numberOfElements: 0,
+      empty: true,
     } as ApiPage<ProjectUpdateTimelineItem>;
   }
 };
@@ -212,8 +246,14 @@ export const getProjectMilestonesOverviewApi = async (
   sortConfig?: SortConfig | SortConfig[]
 ): Promise<ApiPage<Milestone>> => {
   try {
-    const defaultSort: SortConfig[] = [{ property: 'deadlineDate', direction: 'asc' }];
-    const currentSortConfig = sortConfig ? (Array.isArray(sortConfig) ? sortConfig : [sortConfig]) : defaultSort;
+    const defaultSort: SortConfig[] = [
+      { property: "deadlineDate", direction: "asc" },
+    ];
+    const currentSortConfig = sortConfig
+      ? Array.isArray(sortConfig)
+        ? sortConfig
+        : [sortConfig]
+      : defaultSort;
 
     const result = await fetchSpringPageData<Milestone>(
       `/api/projects/${projectId}/milestones-overview`,
@@ -223,12 +263,31 @@ export const getProjectMilestonesOverviewApi = async (
     );
     return result;
   } catch (error) {
-    console.error(`Error fetching project milestones overview for project ID ${projectId}:`, error);
+    console.error(
+      `Error fetching project milestones overview for project ID ${projectId}:`,
+      error
+    );
     const defaultSortInfo = { sorted: false, unsorted: true, empty: true };
-    const defaultPageable = { pageNumber: page, pageSize: size, offset: page * size, paged: true, unpaged: false, sort: defaultSortInfo };
+    const defaultPageable = {
+      pageNumber: page,
+      pageSize: size,
+      offset: page * size,
+      paged: true,
+      unpaged: false,
+      sort: defaultSortInfo,
+    };
     return {
-        content: [], pageable: defaultPageable, last: true, totalPages: 0, totalElements: 0,
-        size: size, number: page, sort: defaultSortInfo, first: true, numberOfElements: 0, empty: true
+      content: [],
+      pageable: defaultPageable,
+      last: true,
+      totalPages: 0,
+      totalElements: 0,
+      size: size,
+      number: page,
+      sort: defaultSortInfo,
+      first: true,
+      numberOfElements: 0,
+      empty: true,
     } as ApiPage<Milestone>;
   }
 };
@@ -244,9 +303,15 @@ export const getProjectTimeLogsListApi = async (
   sortConfig?: SortConfig | SortConfig[]
 ): Promise<ApiPage<ProjectContextTimeLog>> => {
   try {
-    const defaultSort: SortConfig[] = [{ property: 'taskDate', direction: 'desc' }];
-    const currentSortConfig = sortConfig ? (Array.isArray(sortConfig) ? sortConfig : [sortConfig]) : defaultSort;
-    
+    const defaultSort: SortConfig[] = [
+      { property: "taskDate", direction: "desc" },
+    ];
+    const currentSortConfig = sortConfig
+      ? Array.isArray(sortConfig)
+        ? sortConfig
+        : [sortConfig]
+      : defaultSort;
+
     const apiUrl = `/api/projects/${projectId}/timelogs-list`;
 
     const result = await fetchSpringPageData<ProjectContextTimeLog>(
@@ -257,12 +322,38 @@ export const getProjectTimeLogsListApi = async (
     );
     return result;
   } catch (error) {
-    console.error(`Error fetching project time logs list for project ID ${projectId}:`, error);
+    console.error(
+      `Error fetching project time logs list for project ID ${projectId}:`,
+      error
+    );
     const defaultSortInfo = { sorted: false, unsorted: true, empty: true };
-    const defaultPageable = { pageNumber: page, pageSize: size, offset: page * size, paged: true, unpaged: false, sort: defaultSortInfo };
+    const defaultPageable = {
+      pageNumber: page,
+      pageSize: size,
+      offset: page * size,
+      paged: true,
+      unpaged: false,
+      sort: defaultSortInfo,
+    };
     return {
-        content: [], pageable: defaultPageable, last: true, totalPages: 0, totalElements: 0,
-        size: size, number: page, sort: defaultSortInfo, first: true, numberOfElements: 0, empty: true
+      content: [],
+      pageable: defaultPageable,
+      last: true,
+      totalPages: 0,
+      totalElements: 0,
+      size: size,
+      number: page,
+      sort: defaultSortInfo,
+      first: true,
+      numberOfElements: 0,
+      empty: true,
     } as ApiPage<ProjectContextTimeLog>;
   }
+};
+
+export const getUsersByProjectId = async (
+  projectId: number
+): Promise<User[]> => {
+  const response = await axiosClient.get(`/api/projects/${projectId}/users`);
+  return response.data;
 };

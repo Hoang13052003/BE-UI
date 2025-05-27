@@ -18,6 +18,15 @@ export interface User {
   isActive: boolean;
 }
 
+export interface UserRegister {
+  email: string;
+  fullName: string;
+  password: string;
+  confirmPassword?: string;
+  role: UserRole;
+  note: string;
+}
+
 export interface UserManager {
   totalUsers: number;
   activeUsers: number;

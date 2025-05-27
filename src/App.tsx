@@ -75,6 +75,10 @@ function App() {
                       />
                       <Route path="notifications" element={<Notifications />} />
                       <Route path="settings" element={<SystemSettings />} />
+                      <Route
+                        path="projects/:projectId/details"
+                        element={<ProjectDetailPage />}
+                      />
                     </Route>
                     <Route
                       path="/admin/attachment-display/:projectId"
@@ -89,10 +93,6 @@ function App() {
                       element={<ProjectSnapshotViewer />}
                     />{" "}
                     {/* <<--- ROUTE CHO COMPONENT CLIENT */}
-                    <Route
-                      path="/admin/projects/:projectId/details"
-                      element={<ProjectDetailPage />}
-                    />
                   </Route>
                 </Route>
 
@@ -117,8 +117,8 @@ function App() {
                       />
                       <Route path="projects/messages" element={<Messages />} />
                       <Route
-                        path="projects/details/:id"
-                        element={<ProjectDetails />}
+                        path="projects/:projectId/details"
+                        element={<ProjectDetailPage />}
                       />
                     </Route>
                   </Route>

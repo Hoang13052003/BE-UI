@@ -24,7 +24,7 @@ import {
 } from "@ant-design/icons";
 import { Project } from "../../../types/project";
 import {
-  ProjectUpdateRequest,
+  ProjectUpdateRequestPayload,
   createProjectUpdateApi,
   getProjectStatusesApi,
 } from "../../../api/projectUpdateApi";
@@ -44,9 +44,6 @@ interface AddProjectUpdateModalProps {
   onSuccess: () => void;
   projects: Project[];
 }
-
-// Nếu muốn đổi tên cho rõ hơn
-type ProjectUpdateRequestPayload = ProjectUpdateRequest;
 
 const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
   visible,

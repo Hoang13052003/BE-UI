@@ -5,20 +5,21 @@ import { SortConfig, fetchSpringPageData } from "./apiUtils"; // << CHỈ CẦN 
 import { ApiPage } from "../types/project"; // << IMPORT ApiPage
 
 // Project Update Types
-export interface ProjectUpdate { // Kiểu này giữ nguyên, khớp với item trong 'content'
+export interface ProjectUpdate {
+  // Kiểu này giữ nguyên, khớp với item trong 'content'
   id: number;
   projectId: number;
   projectName: string;
   projectType: string;
-  userId: number; 
-  email: string;  
+  userId: number;
+  email: string;
   updateDate: string;
   summary: string | null;
   details: string | null;
-  statusAtUpdate: string; 
+  statusAtUpdate: string;
   completionPercentage: number | null;
   // createdByUserId?: number; // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
-  createdByName?: string;   // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
+  createdByName?: string; // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
 
   published: boolean;
   internalNotes: string | null;
@@ -39,7 +40,7 @@ export interface Attachment {
   updatedAt: string;
 }
 
-export interface ProjectUpdateRequest {
+export interface ProjectUpdateRequestPayload {
   projectId: number;
   updateDate: string;
   summary: string;
@@ -51,7 +52,7 @@ export interface ProjectUpdateRequest {
 }
 
 export interface ProjectUpdateEditRequest
-  extends Partial<ProjectUpdateRequest> {
+  extends Partial<ProjectUpdateRequestPayload> {
   id: number;
 }
 
@@ -82,37 +83,56 @@ export const getAllProjectUpdatesApi = async (
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[],
   filters?: Record<string, any>
-): Promise<ApiPage<ProjectUpdate>> => { // << THAY ĐỔI KIỂU TRẢ VỀ THÀNH ApiPage
+): Promise<ApiPage<ProjectUpdate>> => {
+  // << THAY ĐỔI KIỂU TRẢ VỀ THÀNH ApiPage
   try {
     // Gọi hàm fetchSpringPageData (mới)
-    const apiPageResult = await fetchSpringPageData<ProjectUpdate>( 
+    const apiPageResult = await fetchSpringPageData<ProjectUpdate>(
       "/api/private/admin/project-updates", // Endpoint của bạn
       page,
       size,
       sortConfig,
       filters
     );
-    
-    console.log("getAllProjectUpdatesApi - result from fetchSpringPageData:", JSON.stringify(apiPageResult, null, 2));
+
+    console.log(
+      "getAllProjectUpdatesApi - result from fetchSpringPageData:",
+      JSON.stringify(apiPageResult, null, 2)
+    );
     return apiPageResult; // Trả về trực tiếp kết quả từ fetchSpringPageData
 
-//     // Extract the actual array of updates
-//     const actualUpdatesArray = (result.items as any)?.content || [];
+    //     // Extract the actual array of updates
+    //     const actualUpdatesArray = (result.items as any)?.content || [];
 
-//     return {
-//       ...result, // Spread original result properties
-//       items: actualUpdatesArray, // Ensure the 'items' property also holds the correct array
-//       updates: actualUpdatesArray, // Ensure 'updates' holds the correct array
-//     };
-
+    //     return {
+    //       ...result, // Spread original result properties
+    //       items: actualUpdatesArray, // Ensure the 'items' property also holds the correct array
+    //       updates: actualUpdatesArray, // Ensure 'updates' holds the correct array
+    //     };
   } catch (error) {
     console.error("Error fetching all project updates:", error);
     // Trả về một ApiPage rỗng khi có lỗi
     const defaultSortInfo = { sorted: false, unsorted: true, empty: true };
-    const defaultPageable = { pageNumber: page, pageSize: size, offset: page * size, paged: true, unpaged: false, sort: defaultSortInfo };
+    const defaultPageable = {
+      pageNumber: page,
+      pageSize: size,
+      offset: page * size,
+      paged: true,
+      unpaged: false,
+      sort: defaultSortInfo,
+    };
     return {
-        content: [], pageable: defaultPageable, last: true, totalPages: 0, totalElements: 0,
-        size: size, number: page, sort: defaultSortInfo, first: true, numberOfElements: 0, empty: true
+      content: [],
+      pageable: defaultPageable,
+      last: true,
+      totalPages: 0,
+      totalElements: 0,
+      size: size,
+      number: page,
+      sort: defaultSortInfo,
+      first: true,
+      numberOfElements: 0,
+      empty: true,
     } as ApiPage<ProjectUpdate>;
   }
 };
@@ -134,7 +154,7 @@ export const getProjectUpdateByIdApi = async (
 
 // Create a new project update
 export const createProjectUpdateApi = async (
-  updateData: ProjectUpdateRequest
+  updateData: ProjectUpdateRequestPayload
 ): Promise<ProjectUpdate> => {
   try {
     console.log("data request: " + updateData);
@@ -153,7 +173,7 @@ export const createProjectUpdateApi = async (
 // Update an existing project update
 export const updateProjectUpdateApi = async (
   updateId: number,
-  updateData: Partial<ProjectUpdateRequest>
+  updateData: ProjectUpdateRequestPayload
 ): Promise<ProjectUpdate> => {
   try {
     const { data } = await axiosClient.patch(
