@@ -1,187 +1,390 @@
-import React from "react";
+// src/components/layout/Notifications.tsx
+import React, { useState, useEffect } from "react";
 import {
-  Card,
+  Badge,
+  Button,
   List,
-  Tag,
   Typography,
   Space,
-  Button,
-  Select,
-  Row,
-  Col,
+  Tooltip,
+  Empty,
+  Spin,
+  message,
 } from "antd";
 import {
-  CheckCircleOutlined,
-  SyncOutlined,
-  MessageOutlined,
-  ClockCircleOutlined,
-  GlobalOutlined,
-  SettingOutlined,
+  CheckOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
+import { useNotifications } from "../../contexts/NotificationContext";
+import styled from "styled-components";
+import { MessageType } from "../../types/Notification";
+import NotificationDetail from "../../components/Admin/Notification/NotificationDetail";
 
 const { Text, Title } = Typography;
 
-interface Notification {
-  key: string;
-  type: "milestone" | "update" | "comment" | "deadline";
-  title: string;
-  description: string;
-  project: string;
-  time: string;
-  priority: "High" | "Medium" | "Low";
-  read: boolean;
+// Styled Components
+interface NotificationItemProps {
+  $isRead: boolean;
 }
 
+const NotificationItem = styled(List.Item)<NotificationItemProps>`
+  padding: 12px 16px;
+  margin: 0px 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+
+  background-color: ${({ $isRead }) => ($isRead ? "white" : "#f0f7ff")};
+`;
+
+const NotificationContainer = styled.div`
+  overflow-y: auto;
+  height: 100%;
+  pading: 10px;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+    0 6px 16px 0 rgba(0, 0, 0, 0.08);
+  background-color: #fff;
+  border-radius: 8px;
+`;
+
+const NotificationHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+`;
+
+// const NotificationFooter = styled.div`
+//   display: flex;
+//   justify-content: space-between;
+//   padding: 8px 16px;
+//   border-top: 1px solid #f0f0f0;
+// `;
+
+const EmptyContainer = styled.div`
+  padding: 24px;
+  text-align: center;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+`;
+
+const FilterBar = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
+const FilterButton = styled(Button)<{ $active: boolean }>`
+  border-radius: 16px;
+  background-color: ${(props) => (props.$active ? "#1890ff" : "transparent")};
+  color: ${(props) => (props.$active ? "white" : "inherit")};
+
+  &:hover {
+    background-color: ${(props) => (props.$active ? "#1890ff" : "#f5f5f5")};
+    color: ${(props) => (props.$active ? "white" : "inherit")};
+  }
+`;
+
+// Format date for notifications
+const formatDate = (date: Date): string => {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+
+  // Less than a minute
+  if (diff < 60 * 1000) {
+    return "Just now";
+  }
+
+  // Less than an hour
+  if (diff < 60 * 60 * 1000) {
+    const minutes = Math.floor(diff / (60 * 1000));
+    return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+  }
+
+  // Less than a day
+  if (diff < 24 * 60 * 60 * 1000) {
+    const hours = Math.floor(diff / (60 * 60 * 1000));
+    return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  }
+
+  // Less than a week
+  if (diff < 7 * 24 * 60 * 60 * 1000) {
+    const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+    return `${days} day${days > 1 ? "s" : ""} ago`;
+  }
+
+  // Format as date
+  return date.toLocaleDateString();
+};
+
+// Get icon based on notification type
+const getNotificationIcon = (type?: MessageType) => {
+  switch (type) {
+    case MessageType.PROJECT_UPDATED:
+      return "🔄";
+    case MessageType.COMMENT_ADDED:
+      return "💬";
+    case MessageType.USER_UPDATE:
+      return "👤";
+    default:
+      return "📣";
+  }
+};
+
+// Get color based on notification priority
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case "HIGH":
+      return "#ff4d4f";
+    case "MEDIUM":
+      return "#faad14";
+    case "LOW":
+      return "#52c41a";
+    case "URGENT":
+      return "#ff0000";
+    default:
+      return "#1890ff";
+  }
+};
+
 const Notifications: React.FC = () => {
-  const notifications: Notification[] = [
-    {
-      key: "1",
-      type: "milestone",
-      title: "Project Milestone Completed",
-      description:
-        "Frontend development phase completed for E-commerce Platform",
-      project: "E-commerce Platform",
-      time: "2 minutes ago",
-      priority: "High",
-      read: false,
-    },
-    {
-      key: "2",
-      type: "update",
-      title: "New Project Update",
-      description: "Sarah added new progress update for Mobile App",
-      project: "Mobile App",
-      time: "1 hour ago",
-      priority: "Medium",
-      read: false,
-    },
-    {
-      key: "3",
-      type: "comment",
-      title: "New Comment",
-      description: "John commented on Website Redesign progress",
-      project: "Website Redesign",
-      time: "3 hours ago",
-      priority: "Low",
-      read: false,
-    },
-    {
-      key: "4",
-      type: "deadline",
-      title: "Deadline Approaching",
-      description: "Project milestone deadline in 2 days",
-      project: "CRM System",
-      time: "5 hours ago",
-      priority: "High",
-      read: false,
-    },
-  ];
+  const [currentFilter, setCurrentFilter] = useState<MessageType | "ALL">(
+    "ALL"
+  );
+  const {
+    notifications,
+    // unreadCount,
+    loading,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+    fetchNotifications,
+    deleteNotification,
+  } = useNotifications();
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedNotificationId, setSelectedNotificationId] = useState<
+    string | null
+  >(null);
+  const [detailVisible, setDetailVisible] = useState(false);
 
-  const getTypeIcon = (type: Notification["type"]) => {
-    switch (type) {
-      case "milestone":
-        return <CheckCircleOutlined style={{ color: "#1677ff" }} />;
-      case "update":
-        return <SyncOutlined style={{ color: "#1677ff" }} />;
-      case "comment":
-        return <MessageOutlined style={{ color: "#52c41a" }} />;
-      case "deadline":
-        return <ClockCircleOutlined style={{ color: "#ff4d4f" }} />;
-      default:
-        return null;
+  // Filter notifications based on selected type
+  const filteredNotifications = notifications.filter(
+    (notification) =>
+      currentFilter === "ALL" || notification.type === currentFilter
+  );
+
+  const handleNotificationClick = async (id: string) => {
+    await markAsRead(id);
+    handleViewDetail(id);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchNotifications();
+      message.success("Notifications refreshed");
+    } finally {
+      setRefreshing(false);
     }
   };
 
-  const getPriorityColor = (priority: Notification["priority"]) => {
-    switch (priority) {
-      case "High":
-        return "#ff4d4f";
-      case "Medium":
-        return "#1677ff";
-      case "Low":
-        return "#52c41a";
-      default:
-        return "#000000";
+  const handleMarkAllRead = async () => {
+    await markAllAsRead();
+    message.success("All notifications marked as read");
+  };
+
+  const handleDeleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the notification detail
+    try {
+      await deleteNotification(id);
+      message.success("Notification deleted");
+    } catch (error) {
+      message.error(
+        `Failed to delete notification: ${(error as Error).message}`
+      );
     }
   };
+
+  const handleViewDetail = (id: string) => {
+    setSelectedNotificationId(id);
+    setDetailVisible(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailVisible(false);
+    setSelectedNotificationId(null);
+    fetchNotifications();
+  };
+
+  // Load notifications when dropdown is opened
+  useEffect(() => {
+    fetchNotifications();
+  }, [open, fetchNotifications]);
 
   return (
-    <Card>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <Space direction="vertical" size={4}>
-            <Title level={5} style={{ margin: 0 }}>
-              All Notifications
-            </Title>
-            <Text type="secondary">
-              Stay updated with project activities and updates
-            </Text>
-          </Space>
-        </Col>
-        <Col>
+    <React.Fragment>
+      <NotificationContainer>
+        <NotificationHeader>
+          <Title level={5} style={{ margin: 0 }}>
+            Notifications
+          </Title>
           <Space>
-            <Button type="link">Mark all as read</Button>
-            <Select
-              defaultValue="all"
-              style={{ width: 150 }}
-              options={[
-                { value: "all", label: "All Notifications" },
-                { value: "unread", label: "Unread" },
-                { value: "high", label: "High Priority" },
-                { value: "medium", label: "Medium Priority" },
-                { value: "low", label: "Low Priority" },
-              ]}
-            />
-            <Button type="text" icon={<SettingOutlined />} />
-            <Button type="text" icon={<GlobalOutlined />} />
-          </Space>
-        </Col>
-      </Row>
-
-      <List
-        itemLayout="horizontal"
-        dataSource={notifications}
-        renderItem={(item) => (
-          <List.Item
-            style={{
-              padding: "16px",
-              background: item.read ? "transparent" : "#f0f5ff",
-              borderRadius: "8px",
-              marginBottom: "8px",
-            }}
-            extra={
-              <Button type="link" size="small">
-                Mark as read
+            <Tooltip>
+              <Button
+                type="text"
+                size="small"
+                icon={<CheckOutlined />}
+                onClick={handleMarkAllRead}
+              >
+                Mark all as read
               </Button>
-            }
+            </Tooltip>
+            <Tooltip>
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={clearAll}
+              >
+                Clear all
+              </Button>
+            </Tooltip>
+            <Tooltip title="Refresh">
+              <Button
+                type="text"
+                icon={<ReloadOutlined spin={refreshing} />}
+                onClick={handleRefresh}
+                size="small"
+              />
+            </Tooltip>
+          </Space>
+        </NotificationHeader>
+
+        <FilterBar>
+          <FilterButton
+            size="small"
+            $active={currentFilter === "ALL"}
+            onClick={() => setCurrentFilter("ALL")}
           >
-            <List.Item.Meta
-              avatar={getTypeIcon(item.type)}
-              title={
-                <Space>
-                  <Text strong>{item.title}</Text>
-                  <Tag
-                    color={getPriorityColor(item.priority)}
-                    style={{ marginLeft: 8 }}
-                  >
-                    {item.priority}
-                  </Tag>
-                </Space>
-              }
-              description={
-                <Space direction="vertical" size={4}>
-                  <Text>{item.description}</Text>
-                  <Space size={16}>
-                    <Text type="secondary">{item.project}</Text>
-                    <Text type="secondary">{item.time}</Text>
-                  </Space>
-                </Space>
-              }
+            All
+          </FilterButton>
+          <FilterButton
+            size="small"
+            $active={currentFilter === MessageType.PROJECT_UPDATED}
+            onClick={() => setCurrentFilter(MessageType.PROJECT_UPDATED)}
+          >
+            Projects
+          </FilterButton>
+          <FilterButton
+            size="small"
+            $active={currentFilter === MessageType.COMMENT_ADDED}
+            onClick={() => setCurrentFilter(MessageType.COMMENT_ADDED)}
+          >
+            Comments
+          </FilterButton>
+        </FilterBar>
+
+        {loading ? (
+          <LoadingContainer>
+            <Spin tip="Loading notifications..." />
+          </LoadingContainer>
+        ) : filteredNotifications.length > 0 ? (
+          <>
+            <List
+              dataSource={filteredNotifications}
+              renderItem={(notification) => (
+                <NotificationItem
+                  $isRead={notification.read}
+                  onClick={() => handleNotificationClick(notification.id)}
+                  actions={[
+                    <Tooltip title="Delete">
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        size="small"
+                        onClick={(e) =>
+                          handleDeleteNotification(notification.id, e)
+                        }
+                      />
+                    </Tooltip>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <div style={{ position: "relative" }}>
+                        <Text style={{ fontSize: "20px" }}>
+                          {getNotificationIcon(notification.type)}
+                        </Text>
+                        {notification.priority !== "MEDIUM" && (
+                          <Badge
+                            dot
+                            style={{
+                              position: "absolute",
+                              right: -5,
+                              top: -3,
+                              backgroundColor: getPriorityColor(
+                                notification.priority
+                              ),
+                            }}
+                          />
+                        )}
+                      </div>
+                    }
+                    title={
+                      <Space>
+                        <Text strong={!notification.read}>
+                          {notification.title}
+                        </Text>
+                        {!notification.read && (
+                          <Badge status="processing" color="#1890ff" />
+                        )}
+                      </Space>
+                    }
+                    description={
+                      <>
+                        <Text type="secondary">{notification.content}</Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          {formatDate(notification.timestamp)}
+                        </Text>
+                      </>
+                    }
+                  />
+                </NotificationItem>
+              )}
             />
-          </List.Item>
+          </>
+        ) : (
+          <EmptyContainer>
+            <Empty
+              description="No notifications"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          </EmptyContainer>
         )}
+      </NotificationContainer>
+      <NotificationDetail
+        notificationId={selectedNotificationId}
+        visible={detailVisible}
+        onClose={handleCloseDetail}
+        displayMode="drawer"
       />
-    </Card>
+    </React.Fragment>
   );
 };
 

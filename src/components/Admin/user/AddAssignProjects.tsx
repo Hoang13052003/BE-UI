@@ -19,6 +19,10 @@ import {
 } from "../../../api/userApi";
 import { Project } from "../../../types/project";
 import { DeleteOutlined } from "@ant-design/icons";
+import { createNotification } from "../../../api/apiNotification";
+import { MessageType, NotificationPriority } from "../../../types/Notification";
+import { useAlert } from "../../../contexts/AlertContext";
+
 const { Option } = Select;
 const { Title, Text } = Typography;
 
@@ -42,6 +46,7 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchedProjects, setSearchedProjects] = useState<Project[]>([]);
   const [assignedProjects, setAssignedProjects] = useState<Project[]>([]);
+  const { addAlert } = useAlert();
 
   useEffect(() => {
     const fetchAssignedProjects = async () => {
@@ -74,19 +79,22 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
       setLoading(true);
 
       await assignProjectToUser(userId, values.projectId);
-      message.success("Project assigned successfully");
+      addAlert("Project assigned successfully", "success");
+
+      await createNotification({
+        userId,
+        title: "Cập nhật dự án",
+        content: "Bạn mới vừa được thêm vào dự án!",
+        type: MessageType.PROJECT_ASSIGN,
+        priority: NotificationPriority.MEDIUM,
+        metadata: { projectId: values.projectId },
+      });
 
       form.resetFields();
       onSuccess();
-
-      onClose();
     } catch (error) {
-      if (error instanceof Error) {
-        message.error(`Failed to assign project: ${error.message}`);
-      } else {
-        message.error("Failed to assign project");
-      }
-      console.error("Error assigning project:", error);
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
+      addAlert(`Failed to assign project: ${errMsg}`, "error");
     } finally {
       setLoading(false);
     }
@@ -128,12 +136,15 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
     try {
       setLoading(true);
       await removeProjectFromUser(userId, projectId);
-      message.success("Project removed successfully");
+      addAlert("Project removed successfully", "success");
 
       onClose();
     } catch (error) {
-      console.error("Error removing project:", error);
-      message.error("Failed to remove project");
+      if (error instanceof Error) {
+        addAlert("Failed to remove project", "error", error.message);
+      } else {
+        addAlert("Failed to remove project", "error", String(error));
+      }
     } finally {
       setLoading(false);
     }

@@ -53,22 +53,6 @@ const ProjectList: React.FC = () => {
     CLOSED: "gray",
   };
 
-  // // Calculate progress based on status
-  // const calculateProgress = (status: string): number => {
-  //   switch (status) {
-  //     case "NEW":
-  //       return 0;
-  //     case "PENDING":
-  //       return 25;
-  //     case "PROGRESS":
-  //       return 75;
-  //     case "CLOSED":
-  //       return 100;
-  //     default:
-  //       return 0;
-  //   }
-  // };
-
   const columns: ColumnsType<Project> = [
     {
       title: "Project Name",

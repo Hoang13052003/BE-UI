@@ -10,12 +10,7 @@ const axiosClient: AxiosInstance = axios.create({
 // Request interceptor
 axiosClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  const isPublicApi =
-    config.url?.includes("/api/auth/login") ||
-    config.url?.includes("/api/auth/register") ||
-    config.url?.includes("/api/auth/reset-password") ||
-    config.url?.includes("/api/auth/refresh-token") ||
-    config.url?.includes("/api/auth/forgot-password");
+  const isPublicApi = config.url?.includes("/api/auth/");
 
   if (token && !isPublicApi) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -26,6 +21,7 @@ axiosClient.interceptors.request.use((config) => {
 // Hàm gọi refresh token
 const refreshAccessToken = async () => {
   const tokenRefresh = localStorage.getItem("tokenRefresh");
+
   if (!tokenRefresh) throw new Error("No refresh token available");
 
   const response = await axiosClient.get("/api/auth/refresh-token", {
@@ -62,11 +58,7 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes("/api/auth/refresh-token")
-    ) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -93,10 +85,9 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem("token");
-        localStorage.removeItem("tokenRefresh");
-        alert("Session expired. Please log in again.");
-        window.location.href = "/login";
+        localStorage.clear();
+        // alert("Session expired. Please log in again.");
+        // window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

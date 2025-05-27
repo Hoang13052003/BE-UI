@@ -12,6 +12,7 @@ import { Milestone } from "../types/milestone";
 import { ProjectRequest } from "../types/ProjectRequest";
 import { SortConfig, fetchPaginatedData, fetchSpringPageData, PaginatedResult } from "./apiUtils";
 
+
 // --- CÁC HÀM API CŨ DÙNG fetchPaginatedData - GIỮ NGUYÊN ---
 export interface FetchProjectsResult extends PaginatedResult<Project> {
   projects: Project[];
@@ -165,6 +166,7 @@ export const getProjectDetailsApi = async (projectId: number): Promise<ProjectDe
     console.error(`Error fetching project details for ID ${projectId}:`, error);
     throw error;
   }
+
 };
 
 /**

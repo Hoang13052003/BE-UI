@@ -19,6 +19,7 @@ export interface ProjectUpdate { // Kiểu này giữ nguyên, khớp với item
   completionPercentage: number | null;
   // createdByUserId?: number; // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
   createdByName?: string;   // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
+
   published: boolean;
   internalNotes: string | null;
   attachments?: Attachment[];
@@ -95,6 +96,15 @@ export const getAllProjectUpdatesApi = async (
     console.log("getAllProjectUpdatesApi - result from fetchSpringPageData:", JSON.stringify(apiPageResult, null, 2));
     return apiPageResult; // Trả về trực tiếp kết quả từ fetchSpringPageData
 
+//     // Extract the actual array of updates
+//     const actualUpdatesArray = (result.items as any)?.content || [];
+
+//     return {
+//       ...result, // Spread original result properties
+//       items: actualUpdatesArray, // Ensure the 'items' property also holds the correct array
+//       updates: actualUpdatesArray, // Ensure 'updates' holds the correct array
+//     };
+
   } catch (error) {
     console.error("Error fetching all project updates:", error);
     // Trả về một ApiPage rỗng khi có lỗi
@@ -113,7 +123,7 @@ export const getProjectUpdateByIdApi = async (
 ): Promise<ProjectUpdate> => {
   try {
     const { data } = await axiosClient.get(
-      `api/private/admin/project-updates/${updateId}`
+      `api/notifications/project-updates/${updateId}`
     );
     return data;
   } catch (error) {

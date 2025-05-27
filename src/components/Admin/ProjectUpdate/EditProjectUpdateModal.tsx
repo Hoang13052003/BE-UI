@@ -266,6 +266,7 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
                   75: "75%",
                   100: "100%",
                 }}
+                disabled={true}
               />
             </Form.Item>
           </Col>
