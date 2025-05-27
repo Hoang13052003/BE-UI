@@ -4,7 +4,7 @@ import { SortConfig, fetchPaginatedData, PaginatedResult } from './apiUtils';
 export interface TimeLogRequest {
   projectId: number;
   performerId: number;
-  taskDate: string;
+  taskDate: string; // YYYY-MM-DD
   taskDescription: string;
   hoursSpent: number;
 }
@@ -15,7 +15,7 @@ export interface TimeLogResponse {
   projectName: string;
   performerId: number;
   performerFullName: string;
-  taskDate: string;
+  taskDate: string; // YYYY-MM-DD
   taskDescription: string;
   hoursSpent: number;
   createdAt?: string;
@@ -27,11 +27,20 @@ export interface ExcelUploadResponseDTO {
   successfulImports: number;
   failedImports: number;
   error?: string;
-  errorsDetails?: string[]; // Đã định nghĩa là optional string array
+  errorsDetails?: string[];
 }
 
 export interface TimeLogFetchResult extends PaginatedResult<TimeLogResponse> {
-  timelogs: TimeLogResponse[]; // Tương thích với code cũ
+  timelogs: TimeLogResponse[];
+}
+
+// MỚI: Định nghĩa kiểu cho item trong batch update request (khớp với BatchUpdateTimeLogItemDTO ở backend)
+export interface BatchUpdateItem {
+  id: number;
+  performerId?: number;
+  taskDate?: string; // YYYY-MM-DD
+  taskDescription?: string;
+  hoursSpent?: number;
 }
 
 export const getTimeLogsByProjectIdApi = async (
@@ -42,12 +51,12 @@ export const getTimeLogsByProjectIdApi = async (
 ): Promise<TimeLogFetchResult> => {
   try {
     const result = await fetchPaginatedData<TimeLogResponse>(
-      `/api/timelogs/project/${projectId}`, 
-      page, 
-      size, 
+      `/api/timelogs/project/${projectId}`,
+      page,
+      size,
       sortConfig
     );
-    
+
     return {
       ...result,
       timelogs: result.items
@@ -68,12 +77,12 @@ export const getTimeLogByIdApi = async (timelogId: number): Promise<TimeLogRespo
   return data;
 };
 
-export const updateTimeLogApi = async (
+// Cập nhật: Đổi tên thành patchUpdateTimeLogApi cho rõ ràng và sử dụng PATCH
+export const patchUpdateTimeLogApi = async (
   timelogId: number,
-  payload: Partial<TimeLogRequest>
-): Promise<TimeLogResponse> => {
-  const { data } = await axiosClient.patch(`/api/timelogs/${timelogId}`, payload);
-  return data;
+  payload: Partial<BatchUpdateItem> // Có thể dùng BatchUpdateItem vì nó chỉ có id và các trường optional
+): Promise<void> => { // Thường PATCH update một item không trả về body hoặc trả về item đã update
+  await axiosClient.patch(`/api/timelogs/${timelogId}`, payload);
 };
 
 export const deleteTimeLogApi = async (timelogId: number): Promise<void> => {
@@ -82,6 +91,23 @@ export const deleteTimeLogApi = async (timelogId: number): Promise<void> => {
   } catch (error) {
     console.error(`[timelogApi.ts] Failed to delete time log with ID: ${timelogId}`, error);
     throw error;
+  }
+};
+
+// MỚI: API function for batch updating time logs
+export const batchUpdateTimeLogsApi = async (updates: BatchUpdateItem[]): Promise<void> => {
+  try {
+    // Sử dụng PATCH như đã thống nhất cho backend
+    await axiosClient.patch('/api/timelogs/batch-update', updates);
+    // Nếu backend trả về một response body (ví dụ: danh sách các item đã update, hoặc 1 message)
+    // thì bạn có thể return response.data;
+  } catch (error: any) {
+    console.error("[timelogApi.ts] Failed to batch update time logs:", error);
+    // Xử lý lỗi chi tiết hơn nếu cần, ví dụ:
+    // if (error.response && error.response.data && error.response.data.message) {
+    //   throw new Error(error.response.data.message);
+    // }
+    throw error; // Ném lỗi để component có thể bắt và hiển thị thông báo
   }
 };
 
@@ -100,10 +126,13 @@ export const getTimeLogsByDateRangeApi = async (
   return data;
 };
 
+// Giữ lại putUpdateTimeLogApi nếu bạn vẫn dùng nó ở đâu đó, 
+// nhưng endpoint PATCH /{id} thường được ưa chuộng hơn cho partial update.
+// Endpoint PUT /{id} của bạn ở backend hiện đang nhận TimeLogRequestDTO (tất cả các trường là bắt buộc)
 export const putUpdateTimeLogApi = async (
   timelogId: number,
-  payload: TimeLogRequest
-): Promise<void> => {
+  payload: TimeLogRequest // TimeLogRequest yêu cầu tất cả các trường
+): Promise<void> => { // Backend của bạn trả về 204 No Content
   await axiosClient.put(`/api/timelogs/${timelogId}`, payload);
 };
 
@@ -130,7 +159,7 @@ export const uploadTimelogsExcelApi = async (
 
     console.log('[timelogApi.ts] Sending FormData to API for projectId:', projectId);
 
-    const { data } = await axiosClient.post( // Giả sử axiosClient được cấu hình đúng
+    const { data } = await axiosClient.post( 
       `/api/timelogs/upload-excel`, 
       formData,
       {

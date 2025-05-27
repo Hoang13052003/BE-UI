@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Layout, Dropdown, Avatar, Tooltip, Select, Menu } from "antd";
+import { Button, Layout, Dropdown, Avatar, Tooltip, Select } from "antd";
 import {
   CloseCircleOutlined,
   QuestionCircleOutlined,
@@ -82,73 +82,6 @@ const LayoutShare: React.FC = () => {
     setCurrentLang(language);
   }, [language]);
 
-  const MobileMenu: React.FC = () => {
-    return (
-      <Menu>
-        <Menu.Item key="1">
-          <Select
-            style={{ width: "100%" }}
-            value={currentLang}
-            onChange={handleLanguageChange}
-            dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
-            suffixIcon={<GlobalOutlined />}
-          >
-            {languages.map((lang) => (
-              <Select.Option key={lang.code} value={lang.code}>
-                <img
-                  src={lang.flagUrl}
-                  alt={`${lang.name} flag`}
-                  style={{
-                    width: "20px",
-                    marginRight: "10px",
-                    verticalAlign: "middle",
-                  }}
-                />
-                {lang.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Menu.Item>
-
-        <Menu.Item key="2">
-          <Button
-            type="text"
-            icon={theme === "light" ? <SunOutlined /> : <MoonOutlined />}
-            onClick={toggleTheme}
-          />
-        </Menu.Item>
-
-        {isAuthenticated ? (
-          <>
-            <Menu.Item key="3">
-              <Button type="text" icon={<BellFilled />} />
-            </Menu.Item>
-
-            <Menu.Item key="4">
-              <Avatar className="user-avatar">JT</Avatar>
-              <div className="user-info">
-                <div className="user-name">{userDetails?.fullName}</div>
-              </div>
-            </Menu.Item>
-          </>
-        ) : (
-          <Menu.Item key="5">
-            <Tooltip title="Login">
-              <Button
-                type="text"
-                icon={<LoginOutlined />}
-                onClick={() => {
-                  navigate("/login");
-                }}
-              >
-                {t("common.getStarted")}
-              </Button>
-            </Tooltip>
-          </Menu.Item>
-        )}
-      </Menu>
-    );
-  };
 
   return (
     <Layout className="app-layout">
@@ -233,7 +166,79 @@ const LayoutShare: React.FC = () => {
 
           {/* Dropdown for mobile view */}
           <Dropdown
-            overlay={<MobileMenu />}
+            menu={{ items: [
+              {
+                key: "1",
+                label: (
+                  <Select
+                    style={{ width: "100%" }}
+                    value={currentLang}
+                    onChange={handleLanguageChange}
+                    dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
+                    suffixIcon={<GlobalOutlined />}
+                  >
+                    {languages.map((lang) => (
+                      <Select.Option key={lang.code} value={lang.code}>
+                        <img
+                          src={lang.flagUrl}
+                          alt={`${lang.name} flag`}
+                          style={{
+                            width: "20px",
+                            marginRight: "10px",
+                            verticalAlign: "middle",
+                          }}
+                        />
+                        {lang.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                )
+              },
+              {
+                key: "2",
+                label: (
+                  <Button
+                    type="text"
+                    icon={theme === "light" ? <SunOutlined /> : <MoonOutlined />}
+                    onClick={toggleTheme}
+                  />
+                )
+              },
+              ...(isAuthenticated ? [
+                {
+                  key: "3",
+                  label: <Button type="text" icon={<BellFilled />} />
+                },
+                {
+                  key: "4",
+                  label: (
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <Avatar className="user-avatar">JT</Avatar>
+                      <div className="user-info">
+                        <div className="user-name">{userDetails?.fullName}</div>
+                      </div>
+                    </div>
+                  )
+                }
+              ] : [
+                {
+                  key: "5",
+                  label: (
+                    <Tooltip title="Login">
+                      <Button
+                        type="text"
+                        icon={<LoginOutlined />}
+                        onClick={() => {
+                          navigate("/login");
+                        }}
+                      >
+                        {t("common.getStarted")}
+                      </Button>
+                    </Tooltip>
+                  )
+                }
+              ])
+            ]}}
             trigger={["click"]}
             className="mobile-dropdown"
           >

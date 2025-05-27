@@ -368,7 +368,7 @@ const NotificationBell: React.FC = () => {
 
   return (
     <Dropdown
-      overlay={content}
+      dropdownRender={() => content}
       trigger={["click"]}
       open={open}
       onOpenChange={setOpen}

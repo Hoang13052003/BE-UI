@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { List, Typography, Spin, Alert, Space, Row, Col, Button, Popconfirm, message, Pagination, Card, Tag, Statistic, Empty } from 'antd';
+import { Table, Input, InputNumber, DatePicker, Select, Typography, Spin, Alert, Space, Row, Col, Button, Popconfirm, message, Pagination, Card, Tag, Statistic, Empty, Checkbox } from 'antd';
 import {
   CalendarOutlined,
   ClockCircleOutlined,
@@ -10,38 +10,55 @@ import {
   UploadOutlined,
   BarChartOutlined,
   TeamOutlined,
+  SaveOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { getTimeLogsByProjectIdApi, TimeLogResponse, deleteTimeLogApi } from '../../api/timelogApi';
+import { getTimeLogsByProjectIdApi, TimeLogResponse, deleteTimeLogApi, batchUpdateTimeLogsApi, BatchUpdateItem } from '../../api/timelogApi';
 import AddTimeLogModal from './AddTimeLogModal';
-import EditTimeLogModal from './EditTimeLogModal';
 import FileDropUpload from '../../components/Admin/FileDropUpload/FileDropUpload';
 
+// Import hook và type mới
+import { useUserSearch } from '../../hooks/useUserSearch';
+import { UserIdAndEmailResponse } from '../../types/User'; // Type này giờ chỉ có id và email
+
 const { Text, Title } = Typography;
+const { Option } = Select;
 
 interface TimelogDetailsDisplayProps {
   projectId: number;
-  onEditTimeLog?: (timelogId: number) => void;
-  users: { id: number; name: string }[];
   theme?: string;
+}
+
+interface EditableTimeLogData extends TimeLogResponse {
+  _isEditing?: boolean;
+  _originalData?: Partial<TimeLogResponse>;
 }
 
 const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   projectId,
-  users = [],
   theme = 'light'
 }) => {
-  const [timelogs, setTimelogs] = useState<TimeLogResponse[]>([]);
+  const [timelogs, setTimelogs] = useState<EditableTimeLogData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editingTimelog, setEditingTimelog] = useState<TimeLogResponse | null>(null);
   const [showUploadArea, setShowUploadArea] = useState(false);
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [totalItems, setTotalItems] = useState<number>(0);
+
+  // State cho Batch Editing
+  const [isBatchEditingMode, setIsBatchEditingMode] = useState<boolean>(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [editedData, setEditedData] = useState<Record<number, Partial<BatchUpdateItem>>>({});
+
+  // Sử dụng hook useUserSearch
+  const { searchedUsers, searchLoading, handleUserSearch, resetSearch } = useUserSearch();
+
+  // State để lưu thông tin performer hiện tại của timelog đang được focus/edit
+  const [currentEditingPerformer, setCurrentEditingPerformer] = useState<UserIdAndEmailResponse & { fullName?: string } | null>(null);
 
   const fetchTimelogs = useCallback(async () => {
     try {
@@ -51,7 +68,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         currentPage,
         pageSize
       );
-      setTimelogs(timelogData);
+      setTimelogs(timelogData.map(tl => ({ ...tl })));
       setTotalItems(newTotalItems);
       setError(null);
     } catch (err) {
@@ -66,13 +83,10 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     fetchTimelogs();
   }, [fetchTimelogs]);
 
-  // Xử lý sự kiện thành công khi upload
   const handleUploadComplete = useCallback(() => {
-    // Refresh danh sách timelogs sau khi upload thành công
     fetchTimelogs();
-    // Hiển thị toast thành công (nếu muốn thêm)
-    message.success('Time logs updated successfully');
-  }, []);
+    message.success('Time logs uploaded successfully');
+  }, [fetchTimelogs]);
 
   // Calculate statistics
   const calculateStats = () => {
@@ -96,9 +110,9 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   };
 
   const getTimeColor = (hours: number) => {
-    if (hours >= 8) return '#52c41a'; // Green
-    if (hours >= 4) return '#faad14'; // Orange
-    return '#1890ff'; // Blue
+    if (hours >= 8) return '#52c41a';
+    if (hours >= 4) return '#faad14';
+    return '#1890ff';
   };
 
   const handleDeleteTimeLog = async (timelogId: number) => {
@@ -112,11 +126,86 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     }
   };
 
-  const handleEditTimeLog = (timelogId: number) => {
-    const timelog = timelogs.find(t => t.id === timelogId);
-    if (timelog) {
-      setEditingTimelog(timelog);
-      setIsEditModalVisible(true);
+  // Xử lý khi người dùng thay đổi giá trị trong input ở chế độ batch edit
+  const handleBatchInputChange = (timelogId: number, field: keyof BatchUpdateItem | 'performerFullName', value: any) => {
+    const currentChanges = editedData[timelogId] || { id: timelogId };
+    let newTimelogStateChanges: Partial<EditableTimeLogData> = { [field as keyof EditableTimeLogData]: value };
+
+    if (field === 'performerId') {
+      const selectedUserFromSearch = searchedUsers.find(u => u.id === value);
+      
+      if (selectedUserFromSearch) {
+        // Từ kết quả search, chúng ta chỉ có email
+        newTimelogStateChanges.performerFullName = selectedUserFromSearch.email;
+      } else if (currentEditingPerformer && currentEditingPerformer.id === value) {
+        // Nếu user được chọn là user đang edit (có thể có fullName từ record gốc)
+        newTimelogStateChanges.performerFullName = currentEditingPerformer.fullName || currentEditingPerformer.email;
+      } else {
+        // Fallback: cố gắng lấy từ record gốc nếu ID khớp
+        const originalLog = timelogs.find(tl => tl.id === timelogId);
+        if (originalLog && originalLog.performerId === value) {
+          newTimelogStateChanges.performerFullName = originalLog.performerFullName;
+        } else {
+          newTimelogStateChanges.performerFullName = 'User ID: ' + value; // Hoặc một placeholder khác
+        }
+      }
+      currentChanges.performerId = value as number;
+    } else if (field === 'taskDate') {
+      currentChanges.taskDate = value as string;
+    } else if (field === 'taskDescription') {
+      currentChanges.taskDescription = value as string;
+    } else if (field === 'hoursSpent') {
+      currentChanges.hoursSpent = value as number;
+    }
+
+    setEditedData(prev => ({
+      ...prev,
+      [timelogId]: currentChanges,
+    }));
+
+    setTimelogs(prevLogs =>
+      prevLogs.map(log =>
+        log.id === timelogId ? { ...log, ...newTimelogStateChanges } : log
+      )
+    );
+  };
+
+  const handleToggleBatchEditMode = () => {
+    if (isBatchEditingMode) {
+      setEditedData({});
+      fetchTimelogs();
+    }
+    setIsBatchEditingMode(!isBatchEditingMode);
+    if (isBatchEditingMode) {
+      setSelectedRowKeys([]);
+    }
+  };
+
+  const handleSaveBatchChanges = async () => {
+    const changesToSubmit: BatchUpdateItem[] = Object.values(editedData)
+      .filter((item): item is BatchUpdateItem => 
+        item.id !== undefined && Object.keys(item).length > 1
+      );
+
+    if (changesToSubmit.length === 0) {
+      message.info('No changes to save.');
+      setIsBatchEditingMode(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await batchUpdateTimeLogsApi(changesToSubmit);
+      message.success('Time logs updated successfully!');
+      setIsBatchEditingMode(false);
+      setEditedData({});
+      setSelectedRowKeys([]);
+      fetchTimelogs();
+    } catch (err) {
+      console.error('Error batch updating time logs:', err);
+      message.error('Failed to update time logs.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,6 +221,218 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   const handleUploadError = useCallback(() => {
     fetchTimelogs();
   }, [fetchTimelogs]);
+
+  // Cấu hình cột cho Table
+  const columns = [
+    {
+      title: 'Task Description',
+      dataIndex: 'taskDescription',
+      key: 'taskDescription',
+      width: '30%',
+      render: (text: string, record: EditableTimeLogData) => {
+        if (isBatchEditingMode && selectedRowKeys.includes(record.id)) {
+          return (
+            <Input
+              defaultValue={text}
+              onChange={(e) => handleBatchInputChange(record.id, 'taskDescription', e.target.value)}
+              onPressEnter={(e) => (e.target as HTMLInputElement).blur()}
+            />
+          );
+        }
+        return <Text strong style={{ fontSize: '16px' }}>{text}</Text>;
+      },
+    },
+    {
+      title: 'Hours',
+      dataIndex: 'hoursSpent',
+      key: 'hoursSpent',
+      align: 'center' as const,
+      width: '10%',
+      render: (hours: number, record: EditableTimeLogData) => {
+        if (isBatchEditingMode && selectedRowKeys.includes(record.id)) {
+          return (
+            <InputNumber
+              min={0.01}
+              precision={2}
+              defaultValue={hours}
+              style={{ width: '100%' }}
+              onChange={(value) => handleBatchInputChange(record.id, 'hoursSpent', value)}
+            />
+          );
+        }
+        return <Tag color={getTimeColor(hours)} style={{ borderRadius: '12px', fontWeight: 'bold', fontSize: '12px' }}>{hours}h</Tag>;
+      },
+    },
+    {
+      title: 'Performer',
+      dataIndex: 'performerFullName',
+      key: 'performer',
+      width: '20%',
+      render: (text: string, record: EditableTimeLogData) => {
+        if (isBatchEditingMode && selectedRowKeys.includes(record.id)) {
+          let selectOptions: (UserIdAndEmailResponse & { fullName?: string })[] = [...searchedUsers]; // searchedUsers chỉ có id, email
+          const performerInEdit = editedData[record.id]?.performerId ?? record.performerId;
+
+          // Đảm bảo performer hiện tại của record (có fullName) là một option
+          // và được ưu tiên nếu ID trùng với kết quả search
+          const currentRecordPerformerInfo = {
+            id: record.performerId,
+            email: (record as any).performerEmail || '', // Giả sử record có performerEmail
+            fullName: record.performerFullName
+          };
+
+          if (performerInEdit && !selectOptions.find(u => u.id === performerInEdit)) {
+            // Nếu performer đang edit (hoặc gốc) không có trong searchedUsers
+            if (currentEditingPerformer && currentEditingPerformer.id === performerInEdit) {
+              selectOptions = [currentEditingPerformer, ...selectOptions.filter(u => u.id !== performerInEdit)];
+            } else if (record.performerId === performerInEdit && record.performerFullName) {
+              const tempPerformer = { 
+                id: record.performerId, 
+                email: (record as any).performerEmail || `User ${record.performerId}`, 
+                fullName: record.performerFullName 
+              };
+              if (!selectOptions.find(u => u.id === tempPerformer.id)) {
+                selectOptions = [tempPerformer, ...selectOptions];
+              }
+            }
+          } else if (performerInEdit) {
+            // Nếu performer đang edit có trong searchedUsers, đảm bảo nó có fullName nếu có thể
+            selectOptions = selectOptions.map(opt => {
+              if (opt.id === performerInEdit && currentRecordPerformerInfo.id === performerInEdit) {
+                return { ...opt, fullName: currentRecordPerformerInfo.fullName || opt.email };
+              }
+              return opt;
+            });
+          }
+
+          return (
+            <Select
+              value={performerInEdit}
+              style={{ width: '100%' }}
+              showSearch
+              placeholder="Search performer by email"
+              defaultActiveFirstOption={false}
+              filterOption={false}
+              onSearch={handleUserSearch}
+              onChange={(selectedUserId) => {
+                let userToSetAsCurrent: UserIdAndEmailResponse & { fullName?: string } | null = null;
+                const foundInSearch = searchedUsers.find(u => u.id === selectedUserId);
+                if (foundInSearch) {
+                  userToSetAsCurrent = { ...foundInSearch, fullName: foundInSearch.email }; // Mặc định fullName là email từ search
+                } else if (record.performerId === selectedUserId) { // Nếu chọn lại user gốc
+                  userToSetAsCurrent = { 
+                    id: record.performerId, 
+                    email: (record as any).performerEmail || '', 
+                    fullName: record.performerFullName 
+                  };
+                }
+                
+                if (userToSetAsCurrent) setCurrentEditingPerformer(userToSetAsCurrent);
+                handleBatchInputChange(record.id, 'performerId', selectedUserId);
+              }}
+              onFocus={() => {
+                // Khi focus, set currentEditingPerformer là user hiện tại của record
+                // để đảm bảo thông tin (bao gồm cả fullName nếu có) được dùng
+                setCurrentEditingPerformer({
+                  id: record.performerId,
+                  email: (record as any).performerEmail || '', // Cần đảm bảo record có performerEmail nếu muốn hiển thị
+                  fullName: record.performerFullName
+                });
+                // Reset search hoặc search ban đầu nếu muốn
+                // if (record.performerEmail) { // Search bằng email hiện tại nếu có
+                //   handleUserSearch(record.performerEmail);
+                // } else if (record.performerFullName) {
+                //   handleUserSearch(record.performerFullName.split(' ')[0]);
+                // }
+              }}
+              // onBlur={resetSearch} // Có thể không cần reset ngay
+              loading={searchLoading}
+              notFoundContent={searchLoading ? <Spin size="small" /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No users found" />}
+            >
+              {selectOptions.map(user => (
+                <Select.Option key={user.id} value={user.id}>
+                  {user.fullName || user.email} {/* Hiển thị fullName nếu có (từ record gốc), nếu không thì email */}
+                </Select.Option>
+              ))}
+            </Select>
+          );
+        }
+        return (
+          <Space>
+            <UserOutlined style={{ color: '#1890ff' }} />
+            <Text type="secondary">{record.performerFullName}</Text> {/* record.performerFullName vẫn dùng để hiển thị khi không edit */}
+          </Space>
+        );
+      },
+    },
+    {
+      title: 'Task Date',
+      dataIndex: 'taskDate',
+      key: 'taskDate',
+      width: '20%',
+      render: (dateString: string, record: EditableTimeLogData) => {
+        if (isBatchEditingMode && selectedRowKeys.includes(record.id)) {
+          return (
+            <DatePicker
+              defaultValue={dayjs(dateString)}
+              format="YYYY-MM-DD"
+              style={{ width: '100%' }}
+              onChange={(date, dateStr) => handleBatchInputChange(record.id, 'taskDate', dateStr)}
+            />
+          );
+        }
+        return <Space><CalendarOutlined style={{ color: '#52c41a' }} /> <Text type="secondary">{formatDate(dateString)}</Text></Space>;
+      },
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      align: 'center' as const,
+      width: '15%',
+      render: (_: any, record: EditableTimeLogData) => {
+        if (isBatchEditingMode) {
+          return (
+            <Popconfirm
+              key={`delete-batch-${record.id}`}
+              title="Delete Time Log"
+              description="Are you sure you want to delete this time log entry?"
+              onConfirm={() => handleDeleteTimeLog(record.id)}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="text" icon={<DeleteOutlined />} danger size="small" />
+            </Popconfirm>
+          );
+        }
+        return (
+          <Space>
+            <Popconfirm
+              key={`delete-${record.id}`}
+              title="Delete Time Log"
+              description="Are you sure you want to delete this time log entry?"
+              onConfirm={() => handleDeleteTimeLog(record.id)}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="text" icon={<DeleteOutlined />} danger size="small">
+                Delete
+              </Button>
+            </Popconfirm>
+          </Space>
+        );
+      },
+    },
+  ];
+
+  // Cấu hình rowSelection
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (keys: React.Key[]) => {
+      setSelectedRowKeys(keys);
+    },
+  };
 
   if (loading && timelogs.length === 0) {
     return (
@@ -179,22 +480,52 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
           </Col>
           <Col>
             <Space>
-              <Button
-                type="default"
-                icon={<UploadOutlined />}
-                onClick={() => setShowUploadArea(!showUploadArea)}
-                style={{ borderRadius: '6px' }}
-              >
-                {showUploadArea ? 'Hide Upload' : 'Bulk Upload'}
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setIsAddModalVisible(true)}
-                style={{ borderRadius: '6px' }}
-              >
-                Add Time Log
-              </Button>
+              {isBatchEditingMode ? (
+                <>
+                  <Button
+                    type="primary"
+                    icon={<SaveOutlined />}
+                    onClick={handleSaveBatchChanges}
+                    disabled={Object.keys(editedData).length === 0 || loading}
+                    loading={loading && Object.keys(editedData).length > 0}
+                  >
+                    Save Changes
+                  </Button>
+                  <Button
+                    icon={<CloseCircleOutlined />}
+                    onClick={handleToggleBatchEditMode}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="default"
+                    onClick={handleToggleBatchEditMode}
+                    disabled={loading || timelogs.length === 0}
+                  >
+                    Batch Edit
+                  </Button>
+                  <Button
+                    type="default"
+                    icon={<UploadOutlined />}
+                    onClick={() => setShowUploadArea(!showUploadArea)}
+                    style={{ borderRadius: '6px' }}
+                  >
+                    {showUploadArea ? 'Hide Upload' : 'Bulk Upload'}
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setIsAddModalVisible(true)}
+                    style={{ borderRadius: '6px' }}
+                  >
+                    Add Time Log
+                  </Button>
+                </>
+              )}
             </Space>
           </Col>
         </Row>
@@ -280,7 +611,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         )}
       </Card>
 
-      {/* Time Logs List */}
+      {/* Time Logs Table */}
       {timelogs.length === 0 && !loading ? (
         <Card style={{ textAlign: 'center', padding: '40px', borderRadius: '12px' }}>
           <Empty
@@ -301,101 +632,15 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         </Card>
       ) : (
         <Card style={{ borderRadius: '12px' }} bodyStyle={{ padding: '0' }}>
-          <List
-            className="timelog-list"
-            itemLayout="horizontal"
+          <Table
+            rowKey="id"
             dataSource={timelogs}
+            columns={columns}
             loading={loading}
-            renderItem={(item) => (
-              <List.Item
-                key={item.id}
-                style={{
-                  padding: '20px',
-                  borderBottom: `1px solid ${theme === 'dark' ? '#303030' : '#f0f0f0'}`,
-                  transition: 'all 0.3s ease',
-                  cursor: 'pointer'
-                }}
-                className="timelog-item"
-                actions={[
-                  <Button
-                    key="edit"
-                    type="text"
-                    icon={<EditOutlined />}
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditTimeLog(item.id);
-                    }}
-                    style={{ borderRadius: '4px' }}
-                  >
-                    Edit
-                  </Button>,
-                  <Popconfirm
-                    key="delete"
-                    title="Delete Time Log"
-                    description="Are you sure you want to delete this time log entry?"
-                    onConfirm={(e) => {
-                      e?.stopPropagation();
-                      handleDeleteTimeLog(item.id);
-                    }}
-                    okText="Delete"
-                    cancelText="Cancel"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button 
-                      type="text" 
-                      icon={<DeleteOutlined />} 
-                      danger 
-                      size="small"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ borderRadius: '4px' }}
-                    >
-                      Delete
-                    </Button>
-                  </Popconfirm>,
-                ]}
-              >
-                <List.Item.Meta
-                  title={
-                    <Row justify="space-between" align="middle">
-                      <Col>
-                        <Text strong style={{ fontSize: '16px' }}>
-                          {item.taskDescription}
-                        </Text>
-                      </Col>
-                      <Col>
-                        <Tag 
-                          color={getTimeColor(item.hoursSpent)}
-                          style={{ 
-                            borderRadius: '12px',
-                            fontWeight: 'bold',
-                            fontSize: '12px'
-                          }}
-                        >
-                          {item.hoursSpent}h
-                        </Tag>
-                      </Col>
-                    </Row>
-                  }
-                  description={
-                    <Row gutter={[16, 8]} style={{ marginTop: '8px' }}>
-                      <Col xs={24} sm={12}>
-                        <Space>
-                          <UserOutlined style={{ color: '#1890ff' }} />
-                          <Text type="secondary">{item.performerFullName}</Text>
-                        </Space>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Space>
-                          <CalendarOutlined style={{ color: '#52c41a' }} />
-                          <Text type="secondary">{formatDate(item.taskDate)}</Text>
-                        </Space>
-                      </Col>
-                    </Row>
-                  }
-                />
-              </List.Item>
-            )}
+            pagination={false}
+            rowSelection={isBatchEditingMode ? rowSelection : undefined}
+            className="timelog-table"
+            size="middle"
           />
 
           {/* Pagination */}
@@ -431,19 +676,6 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         onClose={() => setIsAddModalVisible(false)}
         onSuccess={fetchTimelogs}
         projectId={projectId}
-        users={users}
-      />
-
-      <EditTimeLogModal
-        visible={isEditModalVisible}
-        onClose={() => setIsEditModalVisible(false)}
-        onSuccess={() => {
-          setIsEditModalVisible(false);
-          fetchTimelogs();
-        }}
-        initialValues={editingTimelog}
-        projectId={projectId}
-        users={users}
       />
     </div>
   );

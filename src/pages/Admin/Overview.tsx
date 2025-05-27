@@ -154,7 +154,7 @@ const Overview: React.FC = () => {
               borderRadius: "8px",
               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
             }}
-            bodyStyle={{ padding: "16px" }}
+            styles={{ body: { padding: "16px" } }}
             extra={
               <Button type="link" style={{ fontWeight: "bold" }}>
                 View All

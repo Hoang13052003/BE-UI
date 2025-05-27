@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, DatePicker, Select, Button, message, Alert, Spin, Slider } from 'antd';
+import { Modal, Form, Input, DatePicker, Select, Button, Alert, Spin, Slider } from 'antd';
 import {
   getMilestoneByIdApi,
   updateMilestoneApi,

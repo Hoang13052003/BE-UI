@@ -13,7 +13,6 @@ import UserManagement from "./pages/Admin/UserManagement";
 import ProjectManager from "./pages/Admin/ProjectManager";
 import Notifications from "./pages/Admin/Notifications";
 import SystemSettings from "./pages/Admin/SystemSettings";
-import ProjectDetails from "./pages/Client/ProjectDetails";
 import DocumentsPage from "./pages/Client/DocumentsPage";
 import Messages from "./pages/Client/Messages";
 import PageSettings from "./pages/Client/PageSettings";

@@ -6,7 +6,7 @@ import {
   PresignedUrlResponse,
   ProjectUpdateSummaryDto
 } from "../types/Attachment";
-
+export type { FolderFileItem };
 const API_ATTACHMENTS_BASE_PATH = "/api/attachments";
 // Base path cho các API liên quan đến Project/ProjectUpdate (nếu khác)
 // Dựa trên ProjectUpdateController của bạn, nó là /api/private/admin
