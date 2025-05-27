@@ -48,8 +48,12 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
 
       await props.handleLogin(await loginApi(email, password));
     } catch (error) {
-      setMessage("Incorrect email or password. Please try again!");
-      console.error("Login error:", error);
+      const errorMessage = error?.response?.data?.message;
+      if (errorMessage) {
+        setMessage(errorMessage);
+      } else {
+        setMessage("Incorrect email or password. Please try again!");
+      }
     } finally {
       setLoading(false);
     }
@@ -66,9 +70,7 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
 
       await forgotPasswordApi(email);
 
-      // setMessage()
-      // console.log("Forgot password for email:", data);
-      alert("Password reset link sent to your email.");
+      setMessage("Password reset link sent to your email.");
     } catch (error) {
       console.error("Error sending password reset link:", error);
     }

@@ -34,7 +34,7 @@ const DashboardClient: React.FC = () => {
             </Menu.Item>
             <div className="sidebar-section-title">ACCOUNT</div>
             <Menu.Item key="profile" icon={<UserOutlined />}>
-              <Link to="/client/profiles">{t("clientPages.profile")}</Link>
+              <Link to="/client/settings">{t("clientPages.profile")}</Link>
             </Menu.Item>
           </Menu>
         </div>

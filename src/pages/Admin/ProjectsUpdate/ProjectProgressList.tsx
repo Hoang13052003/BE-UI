@@ -475,7 +475,6 @@ const ProjectProgressList: React.FC = () => {
           fetchUpdates();
         }}
         projects={projects}
-        initialProjectId={selectedProject}
       />
 
       {/* Edit Update Modal */}

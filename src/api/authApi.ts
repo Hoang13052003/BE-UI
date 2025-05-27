@@ -18,6 +18,15 @@ export interface AuthResponse {
   message: string;
 }
 
+export interface EmailVerificationResponse {
+  message: string;
+  verified: boolean;
+}
+
+export interface ResendVerificationResponse {
+  message: string;
+}
+
 export interface ChangePasswordData {
   token?: string;
   newPassword?: string;
@@ -86,4 +95,45 @@ export const getUserInfoApi = async (token: string): Promise<UserInfo> => {
     params: { token },
   });
   return data;
+};
+
+// ============== EMAIL VERIFICATION APIs =============
+
+export const verifyEmailApi = async (
+  token: string
+): Promise<EmailVerificationResponse> => {
+  try {
+    const { data } = await axiosClient.get<EmailVerificationResponse>(
+      `/api/auth/verify-email`,
+      {
+        params: { token },
+      }
+    );
+    return data;
+  } catch (error: unknown) {
+    console.error("Email verification API Error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Resend email verification to user's email
+ * @param email - User's email address
+ * @returns Promise<ResendVerificationResponse>
+ */
+export const resendVerificationEmailApi = async (
+  email: string
+): Promise<ResendVerificationResponse> => {
+  try {
+    const { data } = await axiosClient.post<ResendVerificationResponse>(
+      "/api/auth/resend-verification",
+      {
+        email,
+      }
+    );
+    return data;
+  } catch (error: unknown) {
+    console.error("Resend verification API Error:", error);
+    throw error;
+  }
 };

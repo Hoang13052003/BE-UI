@@ -16,7 +16,7 @@ import SystemSettings from "./pages/Admin/SystemSettings";
 import ProjectDetails from "./pages/Client/ProjectDetails";
 import DocumentsPage from "./pages/Client/DocumentsPage";
 import Messages from "./pages/Client/Messages";
-import ProfileSettings from "./pages/Client/ProfileSettings";
+import PageSettings from "./pages/Client/PageSettings";
 import HomeIntroSection from "./pages/HomeIntroSection";
 import OverviewAdmin from "./pages/Admin/Overview";
 import Overview from "./pages/Client/Overview";
@@ -28,83 +28,100 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import AttachmentDisplay from "./pages/Admin/AttachmentManager/AttachmentDisplay"; // Component chứa ProjectFileExplorer (Component A)
 import ProjectUpdateHistory from "./pages/Admin/AttachmentManager/ProjectUpdateHistory"; // Component B (vừa tạo)
 import ProjectSnapshotViewer from "./pages/Admin/AttachmentManager/ProjectSnapshotViewer"; // Component C (sẽ tạo ở bước sau)
+import EmailVerification from "./pages/auth/EmailVerification";
+import Profile from "./pages/Client/Profile";
+import Settings from "./pages/Client/Settings";
+import ChatProvider from "./contexts/ChatContext";
 
 function App() {
   return (
     <AlertProvider>
       <AuthProvider>
-        <NotificationProvider>
-          <Router>
-            <Routes>
-              <Route element={<PublicRoute />}>
-                <Route path="/" element={<LayoutShare />}>
-                  <Route index element={<HomeIntroSection />} />
-                </Route>
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/register" element={<RegisterComponent />} />
-                <Route path="/login" element={<LoginComponent />} />
-              </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-                <Route path="/" element={<LayoutShare />}>
-                  <Route path="admin/" element={<DashboardAdmin />}>
-                    <Route path="overview" element={<OverviewAdmin />} />
-                    <Route path="users" element={<UserManagement />} />
-                    <Route path="updates" element={<ProjectUpdates />} />
+        <ChatProvider>
+          <NotificationProvider>
+            <Router>
+              <Routes>
+                <Route element={<PublicRoute />}>
+                  <Route path="/" element={<LayoutShare />}>
+                    <Route index element={<HomeIntroSection />} />
                     <Route
-                      path="project-progress"
-                      element={<ProjectProgressPage />}
+                      path="reset-password"
+                      element={<ResetPasswordPage />}
                     />
+                    <Route path="register" element={<RegisterComponent />} />
+                    <Route path="login" element={<LoginComponent />} />
                     <Route
-                      path="project-updates/:id"
-                      element={<ProjectUpdateDetailsPage />}
-                    />
-                    <Route path="notifications" element={<Notifications />} />
-                    <Route path="settings" element={<SystemSettings />} />
-                  </Route>
-                  <Route
-                    path="/admin/attachment-display/:projectId"
-                    element={<AttachmentDisplay />}
-                  />
-                  <Route
-                    path="projects/:projectId/history"
-                    element={<ProjectUpdateHistory />}
-                  />
-                  <Route
-                    path="projects/:projectId/updates/:projectUpdateId/snapshot"
-                    element={<ProjectSnapshotViewer />}
-                  />{" "}
-                  {/* <<--- ROUTE CHO COMPONENT C */}
-                </Route>
-              </Route>
-
-              {/* Route cho Client */}
-              <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
-                <Route path="/" element={<LayoutShare />}>
-                  <Route path="client/" element={<DashboardClient />}>
-                    <Route path="overview" element={<Overview />} />
-                    <Route path="profiles" element={<ProfileSettings />} />
-                    <Route
-                      path="projects/documents"
-                      element={<DocumentsPage />}
-                    />
-                    <Route path="notifications" element={<Notifications />} />
-                    <Route
-                      path="project-updates/:id"
-                      element={<ProjectUpdateDetailsPage />}
-                    />
-                    <Route path="projects/messages" element={<Messages />} />
-                    <Route
-                      path="projects/details/:id"
-                      element={<ProjectDetails />}
+                      path="verify-email"
+                      element={<EmailVerification />}
                     />
                   </Route>
                 </Route>
-              </Route>
-            </Routes>
-          </Router>
-          <AlertContainer /> {/* Đặt ở ngoài cùng, sau Router */}
-        </NotificationProvider>
+
+                <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+                  <Route path="/" element={<LayoutShare />}>
+                    <Route path="admin/" element={<DashboardAdmin />}>
+                      <Route path="overview" element={<OverviewAdmin />} />
+                      <Route path="users" element={<UserManagement />} />
+                      <Route path="updates" element={<ProjectUpdates />} />
+                      <Route
+                        path="project-progress"
+                        element={<ProjectProgressPage />}
+                      />
+                      <Route
+                        path="project-updates/:id"
+                        element={<ProjectUpdateDetailsPage />}
+                      />
+                      <Route path="notifications" element={<Notifications />} />
+                      <Route path="settings" element={<SystemSettings />} />
+                    </Route>
+                    <Route
+                      path="/admin/attachment-display/:projectId"
+                      element={<AttachmentDisplay />}
+                    />
+                    <Route
+                      path="projects/:projectId/history"
+                      element={<ProjectUpdateHistory />}
+                    />
+                    <Route
+                      path="projects/:projectId/updates/:projectUpdateId/snapshot"
+                      element={<ProjectSnapshotViewer />}
+                    />{" "}
+                    {/* <<--- ROUTE CHO COMPONENT CLIENT */}
+                  </Route>
+                </Route>
+
+                {/* Route cho Client */}
+                <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
+                  <Route path="/" element={<LayoutShare />}>
+                    <Route path="client/" element={<DashboardClient />}>
+                      <Route path="overview" element={<Overview />} />
+                      <Route path="settings" element={<PageSettings />}>
+                        <Route index element={<Settings />} />{" "}
+                        {/* Route mặc định ("/settings") */}
+                        <Route path="profile" element={<Profile />} />
+                      </Route>
+                      <Route
+                        path="projects/documents"
+                        element={<DocumentsPage />}
+                      />
+                      <Route path="notifications" element={<Notifications />} />
+                      <Route
+                        path="project-updates/:id"
+                        element={<ProjectUpdateDetailsPage />}
+                      />
+                      <Route path="projects/messages" element={<Messages />} />
+                      <Route
+                        path="projects/details/:id"
+                        element={<ProjectDetails />}
+                      />
+                    </Route>
+                  </Route>
+                </Route>
+              </Routes>
+            </Router>
+            <AlertContainer /> {/* Đặt ở ngoài cùng, sau Router */}
+          </NotificationProvider>
+        </ChatProvider>
       </AuthProvider>
     </AlertProvider>
   );

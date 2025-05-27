@@ -31,7 +31,7 @@ import {
 import dayjs from "dayjs";
 import { useAttachmentUpload } from "../../../hooks/useAttachmentUpload";
 import type { UploadFile } from "antd/es/upload/interface";
-import { FolderFileItem } from "../../../types/Attachment"; 
+import { FolderFileItem } from "../../../types/Attachment";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -43,7 +43,6 @@ interface AddProjectUpdateModalProps {
   onClose: () => void;
   onSuccess: () => void;
   projects: Project[];
-  initialProjectId: number | null;
 }
 
 // Nếu muốn đổi tên cho rõ hơn
@@ -54,7 +53,6 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
   onClose,
   onSuccess,
   projects,
-  initialProjectId,
 }) => {
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -77,29 +75,16 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           setStatusOptions(statuses);
         } catch (error) {
           console.error("Failed to fetch project statuses:", error);
-          setStatusOptions([
-            "NEW",
-            "PENDING",
-            "PROGRESS",
-            "AT_RISK",
-            "COMPLETED",
-            "CLOSED",
-          ]);
+          setStatusOptions(["NEW", "PENDING", "PROGRESS", "CLOSED"]);
         }
       };
 
       fetchStatuses();
-
-      if (initialProjectId) {
-        form.setFieldsValue({
-          projectId: initialProjectId,
-        });
-      }
     } else {
       form.resetFields();
       setFileList([]);
     }
-  }, [visible, form, initialProjectId]);
+  }, [visible, form]);
 
   // Hàm xử lý khi người dùng chọn thư mục bằng input webkitdirectory
   const handleNativeFolderSelection = async (
@@ -225,6 +210,15 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
     setFileList(newFileList);
   };
 
+  const handleSelectProject = (value: number) => {
+    const project = projects.find((p) => p.id === value);
+
+    form.setFieldsValue({
+      projectId: value,
+      completionPercentage: project?.progress || 0,
+    });
+  };
+
   return (
     <Modal
       title="Add Project Update"
@@ -252,7 +246,6 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
         initialValues={{
           updateDate: dayjs(),
           isPublished: true,
-          completionPercentage: 0,
         }}
       >
         <Title level={5}>Update Information</Title>
@@ -267,6 +260,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
                 placeholder="Select a project"
                 showSearch
                 optionFilterProp="children"
+                onChange={handleSelectProject}
                 filterOption={(input, option) =>
                   (option?.children as unknown as string)
                     .toLowerCase()
