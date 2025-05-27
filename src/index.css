@@ -70,3 +70,31 @@ button:focus-visible {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+/* Force override drag behavior */
+.react-grid-layout {
+  position: relative !important;
+}
+
+.react-grid-layout > .react-grid-item {
+  position: absolute !important;
+  transition: none !important;
+}
+
+.react-grid-layout > .react-grid-item.react-grid-item-dragging {
+  transform: none !important;
+  transition: none !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+/* Reset any layout interference */
+.app-layout .ant-layout-content {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Ensure grid container is properly positioned */
+.layout {
+  position: relative !important;
+  transform: none !important;
+}

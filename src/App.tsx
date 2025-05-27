@@ -10,7 +10,7 @@ import DashboardAdmin from "./pages/Admin/DashboardAdmin";
 // import HeroSection from './components/home/HeroSection';
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import UserManagement from "./pages/Admin/UserManagement";
-import ProjectUpdates from "./pages/Admin/ProjectUpdates";
+import ProjectManager from "./pages/Admin/ProjectManager";
 import Notifications from "./pages/Admin/Notifications";
 import SystemSettings from "./pages/Admin/SystemSettings";
 import ProjectDetails from "./pages/Client/ProjectDetails";
@@ -19,15 +19,17 @@ import Messages from "./pages/Client/Messages";
 import PageSettings from "./pages/Client/PageSettings";
 import HomeIntroSection from "./pages/HomeIntroSection";
 import OverviewAdmin from "./pages/Admin/Overview";
-import Overview from "./pages/Client/Overview";
+import Overview from "./pages/Client/overview";
 import { AlertProvider } from "./contexts/AlertContext";
-import AlertContainer from "./components/AlertContainer";
 import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
 import ProjectUpdateDetailsPage from "./pages/Admin/ProjectsUpdate/ProjectUpdateDetailsPage";
+
+import AttachmentDisplay from "./pages/Admin/AttachmentManager/AttachmentDisplay";
+import ProjectUpdateHistory from "./pages/Admin/AttachmentManager/ProjectUpdateHistory";
+import ProjectSnapshotViewer from "./pages/Admin/AttachmentManager/ProjectSnapshotViewer";
+import ProjectDetailPage from "./pages/Admin/ProjectDetailPage";
+
 import { NotificationProvider } from "./contexts/NotificationContext";
-import AttachmentDisplay from "./pages/Admin/AttachmentManager/AttachmentDisplay"; // Component chứa ProjectFileExplorer (Component A)
-import ProjectUpdateHistory from "./pages/Admin/AttachmentManager/ProjectUpdateHistory"; // Component B (vừa tạo)
-import ProjectSnapshotViewer from "./pages/Admin/AttachmentManager/ProjectSnapshotViewer"; // Component C (sẽ tạo ở bước sau)
 import EmailVerification from "./pages/auth/EmailVerification";
 import Profile from "./pages/Client/Profile";
 import Settings from "./pages/Client/Settings";
@@ -56,13 +58,13 @@ function App() {
                     />
                   </Route>
                 </Route>
-
+                {/* Route cho Admin */}
                 <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
                   <Route path="/" element={<LayoutShare />}>
                     <Route path="admin/" element={<DashboardAdmin />}>
                       <Route path="overview" element={<OverviewAdmin />} />
                       <Route path="users" element={<UserManagement />} />
-                      <Route path="updates" element={<ProjectUpdates />} />
+                      <Route path="updates" element={<ProjectManager />} />
                       <Route
                         path="project-progress"
                         element={<ProjectProgressPage />}
@@ -87,6 +89,10 @@ function App() {
                       element={<ProjectSnapshotViewer />}
                     />{" "}
                     {/* <<--- ROUTE CHO COMPONENT CLIENT */}
+                    <Route
+                      path="/admin/projects/:projectId/details"
+                      element={<ProjectDetailPage />}
+                    />
                   </Route>
                 </Route>
 
@@ -119,7 +125,6 @@ function App() {
                 </Route>
               </Routes>
             </Router>
-            <AlertContainer /> {/* Đặt ở ngoài cùng, sau Router */}
           </NotificationProvider>
         </ChatProvider>
       </AuthProvider>

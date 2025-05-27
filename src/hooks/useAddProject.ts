@@ -14,8 +14,8 @@ export const useAddProject = (onSuccess: () => void) => {
         description: values.description,
         type: values.type,
         status: values.status,
-        startDate: values.startDate?.format("YYYY-MM-DD"),
-        plannedEndDate: values.plannedEndDate?.format("YYYY-MM-DD"),
+        startDate: values.startDate, // Đã được format từ AddProjectModal
+        plannedEndDate: values.plannedEndDate, // Đã được format từ AddProjectModal
         totalBudget: values.totalBudget,
         totalEstimatedHours: values.totalEstimatedHours ?? null,
         userIds: values.userIds || [], // Lấy từ values do AddProjectModal cung cấp

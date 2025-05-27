@@ -1,0 +1,16 @@
+/* MilestoneItemActions.css */
+.action-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.edit-button:hover:not(:disabled) {
+  background-color: #f0f8ff !important;
+  color: #0056cc !important;
+  transform: translateY(-1px);
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #fff2f0 !important;
+  color: #cf1322 !important;
+  transform: translateY(-1px);
+}

@@ -1,33 +1,45 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  List,
-  Typography,
-  Button,
-  Row,
-  Spin,
-  Alert,
-  message,
-  Col,
-  Popconfirm,
-  Pagination
+import { 
+  Card, 
+  List, 
+  Button, 
+  Row, 
+  Col, 
+  Typography, 
+  message, 
+  Spin, 
+  Alert, 
+  Popconfirm, 
+  Pagination,
+  Select,
+  Input
 } from 'antd';
-import {
-  DeleteOutlined,
-  PlusOutlined
+import { 
+  DeleteOutlined, 
+  PlusOutlined, 
+  FilterOutlined, 
+  ClearOutlined,
+  EyeOutlined,
+  EditOutlined
 } from '@ant-design/icons';
-import { fetchProjects, deleteProjectApi } from '../../api/projectApi';
 import { Project } from '../../types/project';
+import { fetchProjects, deleteProjectApi, filterProjects } from '../../api/projectApi';
+import ProjectDetailsDisplay from '../../components/Admin/ProjectDetailsDisplay';
 import AddProjectModal from '../../components/Admin/AddProjectModal';
 import AddMilestoneModal from '../../components/Admin/AddMilestoneModal';
 import EditMilestoneModal from '../../components/Admin/EditMilestoneModal';
 import EditProjectModal from '../../components/Admin/EditProjectModal';
-import ProjectDetailsDisplay from '../../components/Admin/ProjectDetailsDisplay';
 import { useTheme } from '../../contexts/ThemeContext';
-const { Title } = Typography;
+import { useNavigate } from 'react-router-dom';
 
-const ProjectUpdates: React.FC = () => {
+const { Title } = Typography;
+const { Option } = Select;
+const { Search } = Input;
+
+const ProjectManager: React.FC = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,19 +50,20 @@ const ProjectUpdates: React.FC = () => {
   const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
   const [expandedTimelogProjectId, setExpandedTimelogProjectId] = useState<number | null>(null);
 
-  // Phân trang
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [totalItems, setTotalItems] = useState<number>(0);
 
-  // States cho EditMilestoneModal
+  const [filterCriteria, setFilterCriteria] = useState<{
+    name?: string;
+    status?: string;
+    type?: "FIXED_PRICE" | "LABOR";
+  }>({});
+
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
   const [isEditMilestoneModalVisible, setIsEditMilestoneModalVisible] = useState(false);
   const [editingMilestoneProjectId, setEditingMilestoneProjectId] = useState<number | null>(null);
-
   const [currentMilestoneRefreshCallback, setCurrentMilestoneRefreshCallback] = useState<(() => void) | null>(null);
-
-  // Thêm các states cho EditProjectModal
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] = useState<boolean>(false);
   const [selectedProjectForEdit, setSelectedProjectForEdit] = useState<number | null>(null);
 
@@ -58,23 +71,31 @@ const ProjectUpdates: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const { projects: projectData, totalItems: total } = await fetchProjects(currentPage, pageSize);
-      setProjects(projectData);
-      setTotalItems(total);
+      let result;
+      
+      if (Object.values(filterCriteria).some(value => value)) {
+        result = await filterProjects(filterCriteria, currentPage, pageSize);
+        setProjects(result.projects);
+        setTotalItems(result.totalCount);
+      } else {
+        result = await fetchProjects(currentPage, pageSize);
+        setProjects(result.projects);
+        setTotalItems(result.totalItems);
+      }
     } catch (err) {
       console.error("Failed to fetch projects:", err);
       setError("Failed to fetch projects. Please try again later.");
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, filterCriteria]);
 
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page - 1); // Chuyển từ 1-based sang 0-based index
+    setCurrentPage(page - 1);
   };
 
   const handleDelete = async (id: number) => {
@@ -82,27 +103,20 @@ const ProjectUpdates: React.FC = () => {
     try {
       await deleteProjectApi(id);
       message.success('Project deleted successfully!');
-      // Tải lại dữ liệu sau khi xóa thay vì lọc mảng hiện tại
       loadProjects();
       if (expandedProjectId === id) {
         setExpandedProjectId(null);
       }
     } catch (err) {
       setError("Failed to delete project. Please try again later.");
-      message.error("Failed to delete project: " + err);
+      message.error("Failed to delete project: " + (err as Error).message);
     } finally {
       setDeletingId(null);
     }
   };
 
-  const handleAddProjectModalOpen = () => {
-    setIsAddProjectModalVisible(true);
-  };
-
-  const handleAddProjectModalClose = () => {
-    setIsAddProjectModalVisible(false);
-  };
-
+  const handleAddProjectModalOpen = () => setIsAddProjectModalVisible(true);
+  const handleAddProjectModalClose = () => setIsAddProjectModalVisible(false);
   const handleAddProjectSuccess = () => {
     setIsAddProjectModalVisible(false);
     message.success('Project added successfully!');
@@ -111,9 +125,7 @@ const ProjectUpdates: React.FC = () => {
 
   const handleAddMilestoneClick = (projectId: number, refreshCallback?: () => void) => {
     setSelectedProjectIdForMilestone(projectId);
-    if (refreshCallback) {
-      setCurrentMilestoneRefreshCallback(() => refreshCallback);
-    }
+    if (refreshCallback) setCurrentMilestoneRefreshCallback(() => refreshCallback);
     setIsAddMilestoneModalVisible(true);
   };
 
@@ -136,9 +148,7 @@ const ProjectUpdates: React.FC = () => {
   const handleEditMilestone = (milestoneId: number, projectId: number, refreshCallback?: () => void) => {
     setSelectedMilestoneId(milestoneId);
     setEditingMilestoneProjectId(projectId);
-    if (refreshCallback) {
-      setCurrentMilestoneRefreshCallback(() => refreshCallback);
-    }
+    if (refreshCallback) setCurrentMilestoneRefreshCallback(() => refreshCallback);
     setIsEditMilestoneModalVisible(true);
   };
 
@@ -186,15 +196,38 @@ const ProjectUpdates: React.FC = () => {
   };
 
   const handleTimelogUploadError = useCallback(() => {
-    // You could show a notification at the page level
     message.error({
       content: 'There was an error uploading the timelog file.',
       duration: 5,
       style: { marginTop: '20px' },
     });
-
-    // Optionally: Refresh projects or related data
   }, []);
+
+  const handleNameSearch = (value: string) => {
+    setFilterCriteria(prev => ({ ...prev, name: value || undefined }));
+    setCurrentPage(0);
+  };
+
+  const handleTypeFilter = (value: "FIXED_PRICE" | "LABOR" | undefined) => {
+    setFilterCriteria(prev => ({ ...prev, type: value }));
+    setCurrentPage(0);
+  };
+
+  const handleStatusFilter = (value: string | undefined) => {
+    setFilterCriteria(prev => ({ ...prev, status: value }));
+    setCurrentPage(0);
+  };
+
+  const handleClearFilters = () => {
+    setFilterCriteria({});
+    setCurrentPage(0);
+  };
+
+  const hasActiveFilters = Object.values(filterCriteria).some(value => value);
+
+  const handleNavigateToFullDetails = (projectId: number) => {
+    navigate(`/admin/projects/${projectId}/details`);
+  };
 
   if (loading && projects.length === 0) {
     return (
@@ -208,6 +241,7 @@ const ProjectUpdates: React.FC = () => {
       </Card>
     );
   }
+
   if (error && projects.length === 0) {
     return (
       <Card>
@@ -241,28 +275,101 @@ const ProjectUpdates: React.FC = () => {
           </Row>
         }
       >
+        {/* Filter Bar */}
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col span={8}>
+            <Search
+              placeholder="Search by project name"
+              allowClear
+              onSearch={handleNameSearch}
+              style={{ width: '100%' }}
+            />
+          </Col>
+          <Col span={4}>
+            <Select
+              placeholder="Filter by type"
+              allowClear
+              style={{ width: '100%' }}
+              onChange={handleTypeFilter}
+              value={filterCriteria.type}
+            >
+              <Option value="FIXED_PRICE">Fixed Price</Option>
+              <Option value="LABOR">Labor</Option>
+            </Select>
+          </Col>
+          <Col span={4}>
+            <Select
+              placeholder="Filter by status"
+              allowClear
+              style={{ width: '100%' }}
+              onChange={handleStatusFilter}
+              value={filterCriteria.status}
+            >
+              <Option value="NEW">New</Option>
+              <Option value="PENDING">Pending</Option>
+              <Option value="PROGRESS">Progress</Option>
+              <Option value="CLOSED">Closed</Option>
+            </Select>
+          </Col>
+          <Col span={4}>
+            <Button 
+              icon={<ClearOutlined />}
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              style={{ width: '100%' }}
+            >
+              Clear Filters
+            </Button>
+          </Col>
+          <Col span={4}>
+            <div style={{ textAlign: 'right', lineHeight: '32px' }}>
+              {hasActiveFilters && (
+                <span style={{ 
+                  fontSize: '12px', 
+                  color: theme === 'dark' ? '#bfbfbf' : '#666',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end'
+                }}>
+                  <FilterOutlined style={{ marginRight: 4 }} />
+                  Filters active
+                </span>
+              )}
+            </div>
+          </Col>
+        </Row>
+
         {error && !loading && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+        
         <List
           loading={loading}
           itemLayout="vertical"
           dataSource={projects}
+          locale={{ emptyText: hasActiveFilters ? 'No projects found matching your filters' : 'No projects available' }}
           renderItem={(item: Project) => (
-            <ProjectDetailsDisplay
-              project={item}
-              milestoneCount={item.milestoneCount} // Truyền milestoneCount vào đây
-              isExpanded={expandedProjectId === item.id}
-              expandedTimelogProjectId={expandedTimelogProjectId}
-              deletingId={deletingId}
-              onEditProject={handleEditProject}
-              onDeleteProject={() => null}
-              onToggleMilestoneDetail={toggleMilestoneDetail}
-              onToggleTimelogDetail={toggleTimelogDetail}
-              onAddMilestone={handleAddMilestoneClick}
-              onEditMilestone={handleEditMilestone}
-              theme={theme}
-              onTimelogUploadError={handleTimelogUploadError}
-              deleteButton={(
+            <List.Item
+              key={item.id}
+              actions={[
+                <Button 
+                  key="full-details" 
+                  type="link"
+                  icon={<EyeOutlined />}
+                  onClick={() => handleNavigateToFullDetails(item.id)}
+                >
+                  View Full Details
+                </Button>,
+
+                <Button
+                  key="edit-project-action"
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() => handleEditProject(item.id)}
+                >
+                  Edit
+                </Button>,
+
                 <Popconfirm
+                  key="delete-project-action"
                   title="Bạn có chắc muốn xóa dự án này?"
                   onConfirm={() => handleDelete(item.id)}
                   okText="Có"
@@ -276,24 +383,38 @@ const ProjectUpdates: React.FC = () => {
                   >
                     Delete
                   </Button>
-                </Popconfirm>
-              )}
-            />
+                </Popconfirm>,
+              ]}
+            >
+              <ProjectDetailsDisplay
+                project={item}
+                theme={theme}
+                milestoneCount={item.milestoneCount}
+                newMilestoneCount={item.newMilestoneCount}
+                sentMilestoneCount={item.sentMilestoneCount}
+                reviewedMilestoneCount={item.reviewedMilestoneCount}
+                isExpanded={expandedProjectId === item.id}
+                expandedTimelogProjectId={expandedTimelogProjectId === item.id ? item.id : null}
+                onToggleMilestoneDetail={toggleMilestoneDetail}
+                onToggleTimelogDetail={toggleTimelogDetail}
+                onAddMilestone={handleAddMilestoneClick}
+                onEditMilestone={handleEditMilestone}
+              />
+            </List.Item>
           )}
         />
 
-        {/* Phân trang */}
         {totalItems > 0 && (
           <Row justify="end" style={{ marginTop: 16 }}>
             <Pagination
-              current={currentPage + 1} // Chuyển từ 0-based về 1-based index cho UI
+              current={currentPage + 1}
               pageSize={pageSize}
               total={totalItems}
               onChange={handlePageChange}
               showSizeChanger
               onShowSizeChange={(current, size) => {
                 setPageSize(size);
-                setCurrentPage(0); // Reset về trang đầu tiên khi thay đổi kích thước
+                setCurrentPage(0);
               }}
               pageSizeOptions={['5', '10', '20', '50']}
               showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
@@ -317,7 +438,6 @@ const ProjectUpdates: React.FC = () => {
         />
       )}
 
-      {/* Edit Milestone Modal */}
       {selectedMilestoneId !== null && editingMilestoneProjectId !== null && (
         <EditMilestoneModal
           visible={isEditMilestoneModalVisible}
@@ -341,4 +461,4 @@ const ProjectUpdates: React.FC = () => {
   );
 };
 
-export default ProjectUpdates;
+export default ProjectManager;

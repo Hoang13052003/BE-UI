@@ -30,14 +30,21 @@ import {
   getProjectUpdateByIdApi,
   deleteProjectUpdateApi,
 } from "../../../api/projectUpdateApi";
+
+
 import { getProjectById } from "../../../api/apiNotification";
+
 import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
 import AttachmentsTree from "../../../components/Admin/ProjectUpdate/AttachmentsTree";
 import dayjs from "dayjs";
 import { Project } from "../../../types/project";
+
+<!-- import { getProjectById } from "../../../api/dashboardAdminApi"; -->
+
 import SendReportProjectUpdateModal from "../../../components/Admin/ProjectUpdate/SendReportProjectUpdateModal";
 import { useAuth } from "../../../contexts/AuthContext";
 import SendFeedbackModal from "../../Client/SendFeedbackModal";
+
 
 const { Title, Paragraph } = Typography;
 
@@ -253,7 +260,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
               </Descriptions.Item>
               <Descriptions.Item label="Completion">
                 <Progress
-                  percent={update.completionPercentage}
+                  percent={update.completionPercentage ?? 0} 
                   size="small"
                   status={
                     update.completionPercentage === 100 ? "success" : "active"
