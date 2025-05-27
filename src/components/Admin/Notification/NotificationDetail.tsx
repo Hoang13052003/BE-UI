@@ -262,9 +262,9 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
                 type="primary"
                 onClick={() => {
                   if (userRole === "ADMIN") {
-                    navigate(`/admin/projects/${project.id}`);
+                    navigate(`/admin/projects/${project.id}/details`);
                   } else {
-                    navigate(`/client/projects/${project.id}`);
+                    navigate(`/client/projects/${project.id}/details`);
                   }
                 }}
               >

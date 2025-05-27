@@ -25,10 +25,10 @@ import {
 import { Project } from "../../../types/project";
 import {
   ProjectUpdate,
-  ProjectUpdateEditRequest,
   updateProjectUpdateApi,
   deleteAttachmentApi,
   getProjectStatusesApi,
+  ProjectUpdateRequestPayload,
 } from "../../../api/projectUpdateApi";
 import dayjs from "dayjs";
 
@@ -112,8 +112,7 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
       setLoading(true);
 
       // Prepare update data
-      const editData: ProjectUpdateEditRequest = {
-        id: updateData.id,
+      const editData: ProjectUpdateRequestPayload = {
         projectId: values.projectId,
         updateDate: values.updateDate.format("YYYY-MM-DD"),
         summary: values.summary,

@@ -1,4 +1,9 @@
-import { UpdateUserPayload, User, UserManager } from "../types/User";
+import {
+  UpdateUserPayload,
+  User,
+  UserManager,
+  UserRegister,
+} from "../types/User";
 import axiosClient from "./axiosClient";
 import { UserIdAndEmailResponse } from "../types/User";
 import { Project } from "../types/project";
@@ -62,7 +67,7 @@ export const getUser = async (id: number): Promise<User> => {
   return data;
 };
 
-export const createUser = (data: User): Promise<User> => {
+export const createUser = (data: UserRegister): Promise<UserRegister> => {
   return axiosClient.post("/api/private/admin/create-user", data);
 };
 
