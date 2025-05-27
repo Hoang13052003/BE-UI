@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Form, Input, Select, DatePicker, InputNumber, Button, Spin, Tag, message as antdMessage, Row, Col } from "antd";
 import { useAddProject } from "../../hooks/useAddProject";
 import { useProjectEnums } from "../../hooks/useProjectEnums";
@@ -17,7 +17,6 @@ dayjs.extend(isSameOrBefore);
 
 const { Option } = Select;
 const HOURS_PER_WORK_DAY = 8;
-const MIN_HOURS_PER_DAY_IF_ANY_HOURS = 1;
 const MAX_HOURS_PER_DAY_ALLOWED = 24;
 const MAX_ESTIMATED_HOURS_LIMIT = 10000; // Giới hạn tối đa số giờ có thể tính toán
 const MAX_WORKING_DAYS_LIMIT = 365; // Giới hạn tối đa số ngày làm việc (1 năm)
@@ -118,7 +117,6 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onS
         if (workDaysRequired > 0) {
           // Tối ưu hóa: Tính toán nhanh dựa trên tuần thay vì từng ngày
           const fullWeeks = Math.floor(workDaysRequired / 5);
-          let remainingWorkDays = workDaysRequired % 5;
           
           // Cộng số tuần đầy đủ (5 ngày làm việc = 7 ngày lịch)
           finalEndDate = formStartDate.clone().add(fullWeeks * 7, 'day');
@@ -218,9 +216,6 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onS
     antdMessage.success(`Đã thêm người dùng: ${user.email}`);
   };
 
-  const handleRemoveParticipant = (id: number) => {
-    setParticipants(prev => prev.filter(p => p.id !== id));
-  };
 
   return (
     <Modal

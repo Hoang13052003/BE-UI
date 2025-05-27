@@ -95,27 +95,61 @@ export const useAttachmentUpload = (props?: UseAttachmentUploadProps) => {
     message.info(`Uploading folder contents (${itemsToUpload.length} file(s)) as a single batch...`, 2);
 
     try {
-      const responses = await uploadFolderAttachments(itemsToUpload, projectUpdateId);
+      const response = await uploadFolderAttachments(itemsToUpload, projectUpdateId);
 
-      const successfulUploads: AttachmentResponseDto[] = responses;
-      const failedUploads: { itemName: string; reason: string }[] = [];
+      // Trích xuất successfulUploads và uploadErrors từ response
+      const successfulUploads: AttachmentResponseDto[] = response.successfulUploads;
+      const failedUploads: { itemName: string; reason: string }[] = response.uploadErrors.map(error => ({
+        itemName: error.logicalName || error.originalFilename || error.fileKey || 'Unknown file',
+        reason: error.error
+      }));
 
       if (failedUploads.length > 0) {
         message.error(`${failedUploads.length} file(s) from folder failed to upload.`, 5);
         failedUploads.forEach(fail => console.error(`Folder upload failed for ${fail.itemName}: ${fail.reason}`));
       }
-      if (successfulUploads.length > 0) {
+      if (successfulUploads.length > 0 && failedUploads.length === 0) {
         message.success(`${successfulUploads.length} file(s) from folder uploaded successfully.`, 3);
+      } else if (successfulUploads.length > 0 && failedUploads.length > 0) {
+        message.warning(`Partially successful: ${successfulUploads.length} uploaded, ${failedUploads.length} failed.`, 4);
       }
+
+      // Gọi callback cho từng file thành công
+      successfulUploads.forEach(attachment => {
+        const correspondingItem = itemsToUpload.find(item => 
+          item.relativePath === attachment.logicalName || 
+          item.file.name === attachment.fileName
+        );
+        if (correspondingItem) {
+          props?.onUploadSuccess?.(correspondingItem, attachment);
+        }
+      });
+
+      // Gọi callback cho từng file thất bại
+      response.uploadErrors.forEach(error => {
+        const correspondingItem = itemsToUpload.find(item => 
+          item.relativePath === error.logicalName || 
+          item.file.name === error.originalFilename
+        );
+        if (correspondingItem) {
+          props?.onUploadError?.(correspondingItem, new Error(error.error));
+        }
+      });
 
       setIsUploading(false);
       return { successfulUploads, failedUploads };
 
-    } catch (error: any) { // Lỗi chung không mong muốn khi gọi uploadFolderAttachments
+    } catch (error: any) {
       const errorMsg = error?.response?.data?.message || error.message || "Failed to upload folder contents.";
       message.error(errorMsg);
       setIsUploading(false);
-      return { successfulUploads: [], failedUploads: itemsToUpload.map(it => ({ itemName: it.relativePath, reason: "Processing error" })) };
+      return { 
+        successfulUploads: [], 
+        failedUploads: itemsToUpload.map(item => ({ 
+          itemName: item.relativePath, 
+          reason: "Processing error" 
+        })) 
+      };
     }
   };
 
