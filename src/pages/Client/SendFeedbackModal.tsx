@@ -55,7 +55,11 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
         content: values.message.trim(),
       };
 
-      await createFeedback(feedbackData);
+      const feedbackResponse = await createFeedback(feedbackData);
+
+      if (!feedbackResponse) {
+        throw new Error("Failed to create feedback");
+      }
 
       await createNotification({
         userId: updateData.userId || 0,
@@ -66,6 +70,7 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
         metadata: {
           updateId: updateData.id,
           projectId: updateData.projectId,
+          feedbackId: feedbackResponse.id,
         },
       });
 

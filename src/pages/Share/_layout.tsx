@@ -154,7 +154,7 @@ const LayoutShare: React.FC = () => {
     <Layout className="app-layout">
       <Header className="app-header">
         <div className="header-left">
-          <div className="logo">
+          <div className="logo" onClick={() => navigate("/")}>
             <span className="logo-icon">Progress</span>
             <span className="logo-text">Hub</span>
           </div>

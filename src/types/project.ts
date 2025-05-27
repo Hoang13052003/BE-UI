@@ -14,13 +14,16 @@ export interface Project {
   plannedEndDate: string; // Format: "YYYY-MM-DD"
   actualEndDate: string | null; // Format: "YYYY-MM-DD" (can be null)
   totalBudget: number;
+  totalActualHours: number;
   totalEstimatedHours: number | null; // Updated to allow null based on sample data
   progress: number;
   users: ProjectUser[]; // List of users assigned to the project
+  totalMilestoneCompleted: number;
   milestoneCount: number;
-  newMilestoneCount: number;      
-  sentMilestoneCount: number;     
-  reviewedMilestoneCount: number; 
+  newMilestoneCount: number;
+  sentMilestoneCount: number;
+  reviewedMilestoneCount: number;
+  updatedAt: Date; // Format: "YYYY-MM-DD HH:mm:ss"
 }
 
 export interface UserSummary {

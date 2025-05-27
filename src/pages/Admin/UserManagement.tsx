@@ -280,7 +280,7 @@ const UserManagement: React.FC = () => {
         </Col>
         <Col span={6}>
           <Statistic
-            title="User Lock"
+            title="User unpredictable"
             value={managers.lockedUsers}
             valueStyle={{ color: "#1677ff" }}
           />

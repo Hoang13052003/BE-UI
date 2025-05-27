@@ -1,6 +1,7 @@
 import { UpdateUserPayload, User, UserManager } from "../types/User";
 import axiosClient from "./axiosClient";
 import { UserIdAndEmailResponse } from "../types/User";
+import { Project } from "../types/project";
 
 export interface UserSearchParams {
   "searchTerm.contains"?: string;
@@ -141,4 +142,13 @@ export const searchUsersByEmailOrUsernameApi = async (
     );
     throw error;
   }
+};
+
+// api public
+
+export const getProjectByUserIdApi = async (
+  userId: number
+): Promise<Project> => {
+  const { data } = await axiosClient.get<Project>(`/api/users/${userId}`);
+  return data;
 };

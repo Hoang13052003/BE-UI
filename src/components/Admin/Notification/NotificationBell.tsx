@@ -320,7 +320,11 @@ const NotificationBell: React.FC = () => {
                   }
                   description={
                     <>
-                      <Text type="secondary">{notification.content}</Text>
+                      <Text type="secondary">
+                        {notification.content.length > 100
+                          ? `${notification.content.substring(0, 80)}...`
+                          : notification.content}
+                      </Text>
                       <br />
                       <Text type="secondary" style={{ fontSize: "12px" }}>
                         {formatDate(notification.timestamp)}

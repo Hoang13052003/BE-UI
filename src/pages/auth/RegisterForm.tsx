@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, use } from "react";
 import { Input, Button, Form, message } from "antd";
 import { useFormik } from "formik";
 import * as yup from "yup";
@@ -6,6 +6,7 @@ import image from "../../assets/Image-login-page.svg";
 import { signupApi } from "../../api/authApi";
 import { useTranslation } from "react-i18next";
 import ReCAPTCHA from "react-google-recaptcha";
+import { useAlert } from "../../contexts/AlertContext";
 
 const RECAPTCHA_SITE_KEY = "6LfEdjwrAAAAANti8kFcBEmQC0fTl1Qss0ur6hmj"; // Sử dụng site key của bạn
 
@@ -41,6 +42,7 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
   const [loading, setLoading] = useState(false);
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const { addAlert } = useAlert();
 
   const handleCaptchaChange = (value: string | null) => {
     setCaptchaValue(value);
@@ -53,7 +55,6 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
         return;
       }
 
-      alert(captchaValue);
       setLoading(true);
       const { email, password, fullName } = values;
 
@@ -70,7 +71,8 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
       // Reset captcha khi có lỗi
       recaptchaRef.current?.reset();
       setCaptchaValue(null);
-      message.error(t("auth.register.error"));
+      const errorMessage = err?.response?.data?.message;
+      addAlert(errorMessage, "warning");
     } finally {
       setLoading(false);
     }

@@ -162,7 +162,7 @@
   .app-sidebar {
     background-color: var(--sidebar-bg);
     box-shadow: 8px 8px 8px rgba(0, 0, 0, 0.05);
-    
+     min-height: calc(100vh - 64px);
     .sidebar-section {
       padding: 8px 0;
       padding-right: 5px;
