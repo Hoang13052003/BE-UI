@@ -5,22 +5,26 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
   UploadOutlined,
   BarChartOutlined,
   TeamOutlined,
   SaveOutlined,
   CloseCircleOutlined,
+  DeleteFilled,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { getTimeLogsByProjectIdApi, TimeLogResponse, deleteTimeLogApi, batchUpdateTimeLogsApi, BatchUpdateItem } from '../../api/timelogApi';
+import {
+  getTimeLogsByProjectIdApi,
+  TimeLogResponse,
+  batchUpdateTimeLogsApi,
+  BatchUpdateItem,
+  batchDeleteTimeLogsApi
+} from '../../api/timelogApi';
 import AddTimeLogModal from './AddTimeLogModal';
 import FileDropUpload from '../../components/Admin/FileDropUpload/FileDropUpload';
 
-// Import hook và type mới
 import { useUserSearch } from '../../hooks/useUserSearch';
-import { UserIdAndEmailResponse } from '../../types/User'; // Type này giờ chỉ có id và email
+import { UserIdAndEmailResponse } from '../../types/User';
 
 const { Text, Title } = Typography;
 const { Option } = Select;
@@ -49,20 +53,18 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   const [pageSize, setPageSize] = useState<number>(10);
   const [totalItems, setTotalItems] = useState<number>(0);
 
-  // State cho Batch Editing
   const [isBatchEditingMode, setIsBatchEditingMode] = useState<boolean>(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [editedData, setEditedData] = useState<Record<number, Partial<BatchUpdateItem>>>({});
 
-  // Sử dụng hook useUserSearch
   const { searchedUsers, searchLoading, handleUserSearch, resetSearch } = useUserSearch();
-
-  // State để lưu thông tin performer hiện tại của timelog đang được focus/edit
   const [currentEditingPerformer, setCurrentEditingPerformer] = useState<UserIdAndEmailResponse & { fullName?: string } | null>(null);
 
+  const [batchDeleting, setBatchDeleting] = useState<boolean>(false);
+
   const fetchTimelogs = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const { timelogs: timelogData, totalItems: newTotalItems } = await getTimeLogsByProjectIdApi(
         projectId,
         currentPage,
@@ -80,8 +82,10 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   }, [projectId, currentPage, pageSize]);
 
   useEffect(() => {
-    fetchTimelogs();
-  }, [fetchTimelogs]);
+    if (projectId) {
+      fetchTimelogs();
+    }
+  }, [fetchTimelogs, projectId]);
 
   const handleUploadComplete = useCallback(() => {
     fetchTimelogs();
@@ -113,17 +117,6 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     if (hours >= 8) return '#52c41a';
     if (hours >= 4) return '#faad14';
     return '#1890ff';
-  };
-
-  const handleDeleteTimeLog = async (timelogId: number) => {
-    try {
-      await deleteTimeLogApi(timelogId);
-      message.success('Xóa bản ghi thành công');
-      fetchTimelogs();
-    } catch (err) {
-      console.error('Error deleting time log:', err);
-      message.error('Xóa bản ghi thất bại');
-    }
   };
 
   // Xử lý khi người dùng thay đổi giá trị trong input ở chế độ batch edit
@@ -173,7 +166,6 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   const handleToggleBatchEditMode = () => {
     if (isBatchEditingMode) {
       setEditedData({});
-      fetchTimelogs();
     }
     setIsBatchEditingMode(!isBatchEditingMode);
     if (isBatchEditingMode) {
@@ -209,6 +201,37 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     }
   };
 
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.info('Please select time logs to delete.');
+      return;
+    }
+
+    const idsToDelete = selectedRowKeys.map(key => Number(key));
+
+    setBatchDeleting(true);
+    try {
+      await batchDeleteTimeLogsApi(idsToDelete);
+      message.success(`${selectedRowKeys.length} time log(s) deleted successfully!`);
+      setSelectedRowKeys([]);
+      setEditedData(prevData => {
+        const newData = { ...prevData };
+        idsToDelete.forEach(id => delete newData[id]);
+        return newData;
+      });
+      fetchTimelogs();
+    } catch (err) {
+      console.error('Error batch deleting time logs:', err);
+      if (err instanceof Error && err.message) {
+        message.error(err.message);
+      } else {
+        message.error('Failed to delete selected time logs.');
+      }
+    } finally {
+      setBatchDeleting(false);
+    }
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page - 1);
   };
@@ -222,18 +245,18 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     fetchTimelogs();
   }, [fetchTimelogs]);
 
-  // Cấu hình cột cho Table
+  // Cấu hình cột cho Table (đã xóa cột Actions)
   const columns = [
     {
       title: 'Task Description',
       dataIndex: 'taskDescription',
       key: 'taskDescription',
-      width: '30%',
+      width: '40%',
       render: (text: string, record: EditableTimeLogData) => {
         if (isBatchEditingMode && selectedRowKeys.includes(record.id)) {
           return (
             <Input
-              defaultValue={text}
+              value={editedData[record.id]?.taskDescription ?? record.taskDescription}
               onChange={(e) => handleBatchInputChange(record.id, 'taskDescription', e.target.value)}
               onPressEnter={(e) => (e.target as HTMLInputElement).blur()}
             />
@@ -247,14 +270,14 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
       dataIndex: 'hoursSpent',
       key: 'hoursSpent',
       align: 'center' as const,
-      width: '10%',
+      width: '15%',
       render: (hours: number, record: EditableTimeLogData) => {
         if (isBatchEditingMode && selectedRowKeys.includes(record.id)) {
           return (
             <InputNumber
               min={0.01}
               precision={2}
-              defaultValue={hours}
+              value={editedData[record.id]?.hoursSpent ?? record.hoursSpent}
               style={{ width: '100%' }}
               onChange={(value) => handleBatchInputChange(record.id, 'hoursSpent', value)}
             />
@@ -267,42 +290,33 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
       title: 'Performer',
       dataIndex: 'performerFullName',
       key: 'performer',
-      width: '20%',
+      width: '25%',
       render: (text: string, record: EditableTimeLogData) => {
         if (isBatchEditingMode && selectedRowKeys.includes(record.id)) {
-          let selectOptions: (UserIdAndEmailResponse & { fullName?: string })[] = [...searchedUsers]; // searchedUsers chỉ có id, email
+          let selectOptions: (UserIdAndEmailResponse & { fullName?: string })[] = [...searchedUsers];
           const performerInEdit = editedData[record.id]?.performerId ?? record.performerId;
 
-          // Đảm bảo performer hiện tại của record (có fullName) là một option
-          // và được ưu tiên nếu ID trùng với kết quả search
           const currentRecordPerformerInfo = {
             id: record.performerId,
-            email: (record as any).performerEmail || '', // Giả sử record có performerEmail
+            email: (record as any).performerEmail || '',
             fullName: record.performerFullName
           };
 
-          if (performerInEdit && !selectOptions.find(u => u.id === performerInEdit)) {
-            // Nếu performer đang edit (hoặc gốc) không có trong searchedUsers
-            if (currentEditingPerformer && currentEditingPerformer.id === performerInEdit) {
-              selectOptions = [currentEditingPerformer, ...selectOptions.filter(u => u.id !== performerInEdit)];
-            } else if (record.performerId === performerInEdit && record.performerFullName) {
-              const tempPerformer = { 
-                id: record.performerId, 
-                email: (record as any).performerEmail || `User ${record.performerId}`, 
-                fullName: record.performerFullName 
-              };
-              if (!selectOptions.find(u => u.id === tempPerformer.id)) {
-                selectOptions = [tempPerformer, ...selectOptions];
+          if (performerInEdit) {
+            const existingOption = selectOptions.find(u => u.id === performerInEdit);
+            if (!existingOption) {
+              let userToAdd = currentEditingPerformer && currentEditingPerformer.id === performerInEdit ?
+                currentEditingPerformer :
+                (currentRecordPerformerInfo.id === performerInEdit ? currentRecordPerformerInfo : null);
+
+              if (userToAdd) {
+                selectOptions = [userToAdd, ...selectOptions.filter(u => u.id !== userToAdd!.id)];
               }
+            } else {
+              selectOptions = selectOptions.map(opt =>
+                opt.id === performerInEdit ? { ...opt, fullName: currentRecordPerformerInfo.fullName || opt.email } : opt
+              );
             }
-          } else if (performerInEdit) {
-            // Nếu performer đang edit có trong searchedUsers, đảm bảo nó có fullName nếu có thể
-            selectOptions = selectOptions.map(opt => {
-              if (opt.id === performerInEdit && currentRecordPerformerInfo.id === performerInEdit) {
-                return { ...opt, fullName: currentRecordPerformerInfo.fullName || opt.email };
-              }
-              return opt;
-            });
           }
 
           return (
@@ -310,7 +324,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
               value={performerInEdit}
               style={{ width: '100%' }}
               showSearch
-              placeholder="Search performer by email"
+              placeholder="Search performer"
               defaultActiveFirstOption={false}
               filterOption={false}
               onSearch={handleUserSearch}
@@ -318,51 +332,32 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
                 let userToSetAsCurrent: UserIdAndEmailResponse & { fullName?: string } | null = null;
                 const foundInSearch = searchedUsers.find(u => u.id === selectedUserId);
                 if (foundInSearch) {
-                  userToSetAsCurrent = { ...foundInSearch, fullName: foundInSearch.email }; // Mặc định fullName là email từ search
-                } else if (record.performerId === selectedUserId) { // Nếu chọn lại user gốc
-                  userToSetAsCurrent = { 
-                    id: record.performerId, 
-                    email: (record as any).performerEmail || '', 
-                    fullName: record.performerFullName 
-                  };
+                  userToSetAsCurrent = { ...foundInSearch, fullName: (foundInSearch as any).fullName || foundInSearch.email };
+                } else if (record.performerId === selectedUserId) {
+                  userToSetAsCurrent = { id: record.performerId, email: (record as any).performerEmail || '', fullName: record.performerFullName };
                 }
-                
                 if (userToSetAsCurrent) setCurrentEditingPerformer(userToSetAsCurrent);
                 handleBatchInputChange(record.id, 'performerId', selectedUserId);
               }}
               onFocus={() => {
-                // Khi focus, set currentEditingPerformer là user hiện tại của record
-                // để đảm bảo thông tin (bao gồm cả fullName nếu có) được dùng
                 setCurrentEditingPerformer({
                   id: record.performerId,
-                  email: (record as any).performerEmail || '', // Cần đảm bảo record có performerEmail nếu muốn hiển thị
+                  email: (record as any).performerEmail || '',
                   fullName: record.performerFullName
                 });
-                // Reset search hoặc search ban đầu nếu muốn
-                // if (record.performerEmail) { // Search bằng email hiện tại nếu có
-                //   handleUserSearch(record.performerEmail);
-                // } else if (record.performerFullName) {
-                //   handleUserSearch(record.performerFullName.split(' ')[0]);
-                // }
               }}
-              // onBlur={resetSearch} // Có thể không cần reset ngay
               loading={searchLoading}
               notFoundContent={searchLoading ? <Spin size="small" /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No users found" />}
             >
               {selectOptions.map(user => (
                 <Select.Option key={user.id} value={user.id}>
-                  {user.fullName || user.email} {/* Hiển thị fullName nếu có (từ record gốc), nếu không thì email */}
+                  {user.fullName || user.email}
                 </Select.Option>
               ))}
             </Select>
           );
         }
-        return (
-          <Space>
-            <UserOutlined style={{ color: '#1890ff' }} />
-            <Text type="secondary">{record.performerFullName}</Text> {/* record.performerFullName vẫn dùng để hiển thị khi không edit */}
-          </Space>
-        );
+        return <Space><UserOutlined style={{ color: '#1890ff' }} /> <Text type="secondary">{record.performerFullName}</Text></Space>;
       },
     },
     {
@@ -374,7 +369,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         if (isBatchEditingMode && selectedRowKeys.includes(record.id)) {
           return (
             <DatePicker
-              defaultValue={dayjs(dateString)}
+              value={dayjs(editedData[record.id]?.taskDate ?? record.taskDate)}
               format="YYYY-MM-DD"
               style={{ width: '100%' }}
               onChange={(date, dateStr) => handleBatchInputChange(record.id, 'taskDate', dateStr)}
@@ -382,46 +377,6 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
           );
         }
         return <Space><CalendarOutlined style={{ color: '#52c41a' }} /> <Text type="secondary">{formatDate(dateString)}</Text></Space>;
-      },
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      align: 'center' as const,
-      width: '15%',
-      render: (_: any, record: EditableTimeLogData) => {
-        if (isBatchEditingMode) {
-          return (
-            <Popconfirm
-              key={`delete-batch-${record.id}`}
-              title="Delete Time Log"
-              description="Are you sure you want to delete this time log entry?"
-              onConfirm={() => handleDeleteTimeLog(record.id)}
-              okText="Delete"
-              cancelText="Cancel"
-              okButtonProps={{ danger: true }}
-            >
-              <Button type="text" icon={<DeleteOutlined />} danger size="small" />
-            </Popconfirm>
-          );
-        }
-        return (
-          <Space>
-            <Popconfirm
-              key={`delete-${record.id}`}
-              title="Delete Time Log"
-              description="Are you sure you want to delete this time log entry?"
-              onConfirm={() => handleDeleteTimeLog(record.id)}
-              okText="Delete"
-              cancelText="Cancel"
-              okButtonProps={{ danger: true }}
-            >
-              <Button type="text" icon={<DeleteOutlined />} danger size="small">
-                Delete
-              </Button>
-            </Popconfirm>
-          </Space>
-        );
       },
     },
   ];
@@ -434,7 +389,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     },
   };
 
-  if (loading && timelogs.length === 0) {
+  if (loading && timelogs.length === 0 && !isBatchEditingMode) {
     return (
       <Card style={{ textAlign: 'center', padding: '40px' }}>
         <Spin size="large" />
@@ -482,19 +437,38 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
             <Space>
               {isBatchEditingMode ? (
                 <>
+                  <Popconfirm
+                    title={`Delete ${selectedRowKeys.length} selected item(s)?`}
+                    description="This action cannot be undone."
+                    onConfirm={handleBatchDelete}
+                    okText="Yes, Delete"
+                    cancelText="No"
+                    disabled={selectedRowKeys.length === 0 || batchDeleting || loading}
+                    okButtonProps={{ danger: true, loading: batchDeleting }}
+                  >
+                    <Button
+                      danger
+                      icon={<DeleteFilled />}
+                      disabled={selectedRowKeys.length === 0 || batchDeleting || loading}
+                      loading={batchDeleting}
+                    >
+                      Delete Selected ({selectedRowKeys.length})
+                    </Button>
+                  </Popconfirm>
+
                   <Button
                     type="primary"
                     icon={<SaveOutlined />}
                     onClick={handleSaveBatchChanges}
-                    disabled={Object.keys(editedData).length === 0 || loading}
-                    loading={loading && Object.keys(editedData).length > 0}
+                    disabled={Object.keys(editedData).length === 0 || loading || batchDeleting}
+                    loading={loading && Object.keys(editedData).length > 0 && !batchDeleting}
                   >
                     Save Changes
                   </Button>
                   <Button
                     icon={<CloseCircleOutlined />}
                     onClick={handleToggleBatchEditMode}
-                    disabled={loading}
+                    disabled={loading || batchDeleting}
                   >
                     Cancel
                   </Button>
@@ -506,7 +480,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
                     onClick={handleToggleBatchEditMode}
                     disabled={loading || timelogs.length === 0}
                   >
-                    Batch Edit
+                    Batch Edit/Delete
                   </Button>
                   <Button
                     type="default"
@@ -612,7 +586,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
       </Card>
 
       {/* Time Logs Table */}
-      {timelogs.length === 0 && !loading ? (
+      {timelogs.length === 0 && !loading && !isBatchEditingMode ? (
         <Card style={{ textAlign: 'center', padding: '40px', borderRadius: '12px' }}>
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -636,7 +610,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
             rowKey="id"
             dataSource={timelogs}
             columns={columns}
-            loading={loading}
+            loading={loading || batchDeleting}
             pagination={false}
             rowSelection={isBatchEditingMode ? rowSelection : undefined}
             className="timelog-table"
