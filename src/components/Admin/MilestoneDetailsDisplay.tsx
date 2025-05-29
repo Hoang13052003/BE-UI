@@ -26,7 +26,7 @@ const { Text, Title } = Typography;
 interface MilestoneDetailsDisplayProps {
   projectId: number;
   onAddMilestone: (onSuccessRefresh?: () => void) => void;
-  onEditMilestone: (milestoneId: number, projectId: number, onSuccessRefresh?: () => void) => void;
+  onEditMilestone?: (milestoneId: number, projectId: number, onSuccessRefresh?: () => void) => void; // Làm optional
   milestoneCount?: number;
   theme?: string;
 }
@@ -34,7 +34,7 @@ interface MilestoneDetailsDisplayProps {
 const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   projectId,
   onAddMilestone,
-  onEditMilestone,
+  onEditMilestone, // Nhận prop (giờ là optional)
   theme = 'light'
 }) => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -156,7 +156,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
       borderRadius: '12px',
       transition: 'all 0.3s ease',
       cursor: 'pointer',
-      width: '100%', // Đảm bảo card chiếm toàn bộ chiều rộng của List.Item
+      width: '100%',
     };
 
     if (item.completed) {
@@ -408,15 +408,18 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                             </Col>
                             <Col>
                               <Space size="small">
-                                <Button
-                                  type="text"
-                                  icon={<EditOutlined />}
-                                  onClick={() => onEditMilestone(item.id, projectId, fetchMilestones)}
-                                  style={{ borderRadius: '4px' }}
-                                  size="small"
-                                >
-                                  Edit
-                                </Button>
+                                {/* Chỉ hiển thị nút Edit nếu onEditMilestone được truyền vào */}
+                                {onEditMilestone && (
+                                  <Button
+                                    type="text"
+                                    icon={<EditOutlined />}
+                                    onClick={() => onEditMilestone(item.id, projectId, fetchMilestones)}
+                                    style={{ borderRadius: '4px' }}
+                                    size="small"
+                                  >
+                                    Edit
+                                  </Button>
+                                )}
                                 <Popconfirm
                                   title="Delete Milestone"
                                   description="Are you sure you want to delete this milestone?"
