@@ -173,8 +173,6 @@ export const deleteNotification = async (
 export const deleteMultipleNotifications = async (
   notificationIds: string[]
 ): Promise<void> => {
-  // Lưu ý: Backend cần phải có API endpoint này
-  // Giả sử backend có endpoint này, nếu không thì phải gọi delete từng cái một
   await Promise.all(notificationIds.map((id) => deleteNotification(id)));
 };
 

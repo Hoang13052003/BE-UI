@@ -51,6 +51,12 @@ export interface ProjectUpdateRequestPayload {
   internalNotes?: string;
 }
 
+export enum UpdateStatusEnum {
+  NEW = "NEW",
+  SENT = "SENT",
+  FEEDBACK = "FEEDBACK",
+}
+
 export interface ProjectUpdateEditRequest
   extends Partial<ProjectUpdateRequestPayload> {
   id: number;
@@ -95,10 +101,10 @@ export const getAllProjectUpdatesApi = async (
       filters
     );
 
-    console.log(
-      "getAllProjectUpdatesApi - result from fetchSpringPageData:",
-      JSON.stringify(apiPageResult, null, 2)
-    );
+    // console.log(
+    //   "getAllProjectUpdatesApi - result from fetchSpringPageData:",
+    //   JSON.stringify(apiPageResult, null, 2)
+    // );
     return apiPageResult; // Trả về trực tiếp kết quả từ fetchSpringPageData
 
     //     // Extract the actual array of updates
@@ -195,6 +201,29 @@ export const deleteProjectUpdateApi = async (
     await axiosClient.delete(`api/private/admin/project-updates/${updateId}`);
   } catch (error) {
     console.error(`Error deleting project update with ID ${updateId}:`, error);
+    throw error;
+  }
+};
+
+export const updateProjectUpdateStatusApi = async (
+  updateId: number,
+  status: string
+): Promise<void> => {
+  try {
+    await axiosClient.patch(
+      `api/private/admin/project-updates/${updateId}/status`,
+      null,
+      {
+        params: {
+          status: status,
+        },
+      }
+    );
+  } catch (error) {
+    console.error(
+      `Error updating project update status with ID ${updateId}:`,
+      error
+    );
     throw error;
   }
 };

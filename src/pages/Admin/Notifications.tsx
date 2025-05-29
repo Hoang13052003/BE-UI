@@ -382,7 +382,7 @@ const Notifications: React.FC = () => {
         notificationId={selectedNotificationId}
         visible={detailVisible}
         onClose={handleCloseDetail}
-        displayMode="drawer"
+        displayMode="modal"
       />
     </React.Fragment>
   );

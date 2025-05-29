@@ -7,7 +7,9 @@ import React, {
   useCallback,
 } from "react";
 import notificationService from "../services/NotificationService";
-import apiNotification from "../api/apiNotification";
+import apiNotification, {
+  deleteMultipleNotifications,
+} from "../api/apiNotification";
 import { useAuth } from "./AuthContext";
 import {
   MessageType,
@@ -257,9 +259,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Clear all notifications (local only, doesn't delete from API)
-  const clearAll = () => {
+  const clearAll = async () => {
     setNotifications([]);
     setUnreadCount(0);
+
+    const allIds = notifications.map((n) => n.id);
+    try {
+      await deleteMultipleNotifications(allIds);
+      // Sau đó cập nhật lại UI
+      setNotifications([]); // hoặc gọi API fetch lại
+    } catch (error) {
+      console.error("Xóa tất cả thất bại", error);
+    }
   };
 
   // Update the unread count based on notifications array

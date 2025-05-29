@@ -1,16 +1,28 @@
 // src/components/Admin/ProjectProgress/SendFeedbackModal.tsx
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, Typography, Space } from "antd";
-import { MessageOutlined } from "@ant-design/icons";
+import {
+  Modal,
+  Form,
+  Input,
+  Button,
+  Typography,
+  Space,
+  Upload,
+  Divider,
+} from "antd";
+import { MessageOutlined, InboxOutlined } from "@ant-design/icons";
 import { createFeedback, CreateFeedbackRequest } from "../../api/feedbackApi";
 import { ProjectUpdate } from "../../api/projectUpdateApi";
 import { useAuth } from "../../contexts/AuthContext";
 import { createNotification } from "../../api/apiNotification";
 import { MessageType, NotificationPriority } from "../../types/Notification";
 import { useAlert } from "../../contexts/AlertContext";
+import { useAttachmentUpload } from "../../hooks/useAttachmentUpload";
+import type { UploadFile, UploadChangeParam } from "antd/es/upload/interface";
 
 const { TextArea } = Input;
 const { Text } = Typography;
+const { Dragger } = Upload;
 
 interface SendFeedbackModalProps {
   visible: boolean;
@@ -27,8 +39,10 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const { userDetails } = useAuth();
   const { addAlert } = useAlert();
+  const { isUploading, uploadFilesIndividually } = useAttachmentUpload();
 
   // Initialize form when modal opens
   useEffect(() => {
@@ -40,8 +54,24 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
     } else {
       // Reset form when modal closes
       form.resetFields();
+      setFileList([]); // Clear file list when modal closes
     }
   }, [visible, form, updateData]);
+
+  const handleFileChange = (info: UploadChangeParam) => {
+    let newFileList = [...info.fileList];
+    newFileList = newFileList.filter((file) => {
+      if (file.status === "removed") {
+        return false;
+      }
+      return (
+        !!file.originFileObj ||
+        file.status === "done" ||
+        file.status === "uploading"
+      );
+    });
+    setFileList(newFileList);
+  };
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -50,6 +80,7 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
       setLoading(true);
 
       const feedbackData: CreateFeedbackRequest = {
+        updateId: updateData.id,
         userId: userDetails?.id || 0,
         projectId: updateData.projectId,
         content: values.message.trim(),
@@ -59,6 +90,21 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
 
       if (!feedbackResponse) {
         throw new Error("Failed to create feedback");
+      }
+
+      // Upload attachments if any
+      if (fileList.length > 0) {
+        const uploadResult = await uploadFilesIndividually(
+          Number(feedbackResponse.updateId),
+          feedbackResponse.id,
+          fileList
+        );
+        if (uploadResult.failedUploads.length > 0) {
+          console.warn(
+            "Some attachments failed to upload:",
+            uploadResult.failedUploads
+          );
+        }
       }
 
       await createNotification({
@@ -76,6 +122,7 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
 
       addAlert("Feedback sent successfully!", "success");
       form.resetFields();
+      setFileList([]); // Clear file list after success
       onSuccess();
     } catch (error) {
       console.error("Failed to send feedback:", error);
@@ -103,13 +150,13 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
       onCancel={handleCancel}
       width={600}
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
+        <Button key="cancel" onClick={handleCancel} disabled={isUploading}>
           Cancel
         </Button>,
         <Button
           key="submit"
           type="primary"
-          loading={loading}
+          loading={loading || isUploading}
           onClick={handleSubmit}
           icon={<MessageOutlined />}
         >
@@ -165,6 +212,29 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
             showCount
             maxLength={1000}
           />
+        </Form.Item>
+
+        {/* File Attachments */}
+        <Divider />
+        <Form.Item label="Attachments (Optional)">
+          <Dragger
+            multiple
+            beforeUpload={() => false}
+            onChange={handleFileChange}
+            fileList={fileList}
+            disabled={isUploading}
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">
+              Click or drag files to attach to your feedback
+            </p>
+            <p className="ant-upload-hint">
+              Support for single or bulk upload. You can attach documents,
+              images, or other relevant files.
+            </p>
+          </Dragger>
         </Form.Item>
       </Form>
 

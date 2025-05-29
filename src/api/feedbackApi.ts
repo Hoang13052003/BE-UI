@@ -2,14 +2,26 @@ import axiosClient from "./axiosClient";
 
 export interface Feedback {
   id: string;
+  updateId: number;
   projectId: number;
   userId: number;
   content: string;
+  attachments?: FeedbackAttachment[];
   createdAt: string;
   read: boolean;
 }
 
+export interface FeedbackAttachment {
+  fileName: string;
+  s3Key: string;
+  fileType: string;
+  fileSize: number;
+  url: string;
+  uploadedAt: string;
+}
+
 export interface CreateFeedbackRequest {
+  updateId?: number;
   projectId: number;
   userId: number;
   content: string;

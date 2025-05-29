@@ -5,6 +5,7 @@ import {
   UserOutlined,
   MessageOutlined,
   BellOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -33,8 +34,8 @@ const DashboardClient: React.FC = () => {
               </Link>
             </Menu.Item>
             <div className="sidebar-section-title">ACCOUNT</div>
-            <Menu.Item key="profile" icon={<UserOutlined />}>
-              <Link to="/client/settings">{t("clientPages.profile")}</Link>
+            <Menu.Item key="profile" icon={<SettingOutlined />}>
+              <Link to="/client/settings">{t("clientPages.settings")}</Link>
             </Menu.Item>
           </Menu>
         </div>

@@ -44,20 +44,7 @@ const PageSettings: React.FC = () => {
   ];
 
   return (
-    <Card title="Profile Settings" style={{ height: "100%" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 24,
-        }}
-      >
-        <Title level={4}>Profile Settings</Title>
-        <Button type="primary" icon={<EditOutlined />}>
-          Edit Profile
-        </Button>
-      </div>
-
+    <Card style={{ height: "100%", padding: "20px" }}>
       <Row gutter={24}>
         {/* Left Sidebar */}
         <Col span={6}>

@@ -1,11 +1,19 @@
 // src/components/Admin/ProjectProgress/SendReportProjectUpdateModal.tsx
 import React, { useState, useEffect } from "react";
-import { Modal, Button, message, Table, Space, Avatar } from "antd";
+import { Modal, Button, message, Table, Space, Avatar, Checkbox } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { ProjectUpdate } from "../../../api/projectUpdateApi";
+import {
+  ProjectUpdate,
+  updateProjectUpdateStatusApi,
+  UpdateStatusEnum,
+} from "../../../api/projectUpdateApi";
 import { getUsersByProjectId } from "../../../api/projectApi";
 import { User } from "../../../types/User";
-import { MessageType, NotificationPriority } from "../../../types/Notification";
+import {
+  CreateNotificationRequestDto,
+  MessageType,
+  NotificationPriority,
+} from "../../../types/Notification";
 import { createNotification } from "../../../api/apiNotification";
 import { SendOutlined, UserOutlined } from "@ant-design/icons";
 import { useAlert } from "../../../contexts/AlertContext";
@@ -21,6 +29,7 @@ const SendReportProjectUpdateModal: React.FC<
 > = ({ visible, onClose, updateData }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
   const { addAlert } = useAlert();
 
   useEffect(() => {
@@ -40,33 +49,74 @@ const SendReportProjectUpdateModal: React.FC<
     }
   }, [visible, updateData?.projectId]);
 
-  const handleSendReport = async (userId: number) => {
+  const handleSelectUser = (userId: number, checked: boolean) => {
+    setSelectedUserIds((prev) =>
+      checked ? [...prev, userId] : prev.filter((id) => id !== userId)
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectedUserIds(checked ? users.map((user) => user.id) : []);
+  };
+
+  const handleSendToSelected = async () => {
+    if (selectedUserIds.length === 0) {
+      addAlert("Please select at least one user", "warning");
+      return;
+    }
+
+    setLoading(true);
     try {
-      setLoading(true);
+      await Promise.all(
+        selectedUserIds.map((userId) =>
+          createNotification({
+            userId,
+            title: "Project Update Report",
+            content: updateData.summary,
+            type: MessageType.PROJECT_UPDATED,
+            priority: NotificationPriority.HIGH,
+            metadata: {
+              updateId: updateData.id,
+              projectId: updateData.projectId,
+            },
+          } as CreateNotificationRequestDto)
+        )
+      );
 
-      await createNotification({
-        userId: userId,
-        title: "Project Update Report",
-        content: updateData.summary,
-        type: MessageType.PROJECT_UPDATED,
-        priority: NotificationPriority.HIGH,
-        metadata: {
-          updateId: updateData.id,
-          projectId: updateData.projectId,
-        },
-      });
+      await updateProjectUpdateStatusApi(updateData.id, UpdateStatusEnum.SENT);
 
-      addAlert(`Report sent to user successfully`, "success");
-
+      addAlert(
+        `Report sent to ${selectedUserIds.length} users successfully`,
+        "success"
+      );
       onClose();
     } catch (error) {
-      addAlert("Failed to send report", "error", (error as Error).message);
+      addAlert("Failed to send reports", "error", (error as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
   const columns: ColumnsType<User> = [
+    {
+      title: (
+        <Checkbox
+          indeterminate={
+            selectedUserIds.length > 0 && selectedUserIds.length < users.length
+          }
+          checked={selectedUserIds.length === users.length}
+          onChange={(e) => handleSelectAll(e.target.checked)}
+        />
+      ),
+      key: "select",
+      width: "50px",
+      render: (_, record) => (
+        <Checkbox
+          checked={selectedUserIds.includes(record.id)}
+          onChange={(e) => handleSelectUser(record.id, e.target.checked)}
+        />
+      ),
+    },
     {
       title: "User",
       key: "user",
@@ -88,22 +138,6 @@ const SendReportProjectUpdateModal: React.FC<
       title: "Email",
       dataIndex: "email",
       key: "email",
-    },
-    {
-      title: "Action",
-      key: "action",
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="primary"
-            onClick={() => handleSendReport(record.id)}
-            loading={loading}
-            icon={<SendOutlined />}
-          >
-            Send
-          </Button>
-        </Space>
-      ),
     },
   ];
 
@@ -139,13 +173,23 @@ const SendReportProjectUpdateModal: React.FC<
 
   return (
     <Modal
-      title="Edit Project Update"
+      title="Send Project Update"
       open={visible}
       onCancel={onClose}
       width={800}
       footer={[
         <Button key="cancel" onClick={onClose}>
           Cancel
+        </Button>,
+        <Button
+          key="send"
+          type="primary"
+          icon={<SendOutlined />}
+          onClick={handleSendToSelected}
+          loading={loading}
+          disabled={selectedUserIds.length === 0}
+        >
+          Send to Selected ({selectedUserIds.length})
         </Button>,
       ]}
       destroyOnClose
