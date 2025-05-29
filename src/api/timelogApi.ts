@@ -1,6 +1,9 @@
 import axiosClient from "./axiosClient";
 import { SortConfig, fetchPaginatedData, PaginatedResult } from './apiUtils';
 
+// Các kiểu trạng thái có thể có (khớp với TimelogStatusEnum ở backend)
+export type TimelogStatusType = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED';
+
 export interface TimeLogRequest {
   projectId: number;
   performerId: number;
@@ -9,17 +12,26 @@ export interface TimeLogRequest {
   hoursSpent: number;
 }
 
+// =======================================================
+// THAY ĐỔI CHÍNH Ở ĐÂY: TimeLogResponse Interface
+// =======================================================
 export interface TimeLogResponse {
   id: number;
-  projectId: number;
-  projectName: string;
-  performerId: number;
-  performerFullName: string;
+
+  performer: {
+    id: number;
+    fullName: string;
+    email: string;
+  };
+
   taskDate: string; // YYYY-MM-DD
   taskDescription: string;
   hoursSpent: number;
-  createdAt?: string;
+  createdAt?: string; // Hoặc Instant nếu bạn đồng bộ kiểu với backend DTO
+  actualTimelogStatus?: TimelogStatusType; 
+  computedTimelogStatus?: string; // Giữ nguyên vì đây là computed value
 }
+// =======================================================
 
 export interface ExcelUploadResponseDTO {
   message?: string;
@@ -37,11 +49,13 @@ export interface TimeLogFetchResult extends PaginatedResult<TimeLogResponse> {
 export interface BatchUpdateItem {
   id: number;
   performerId?: number;
-  taskDate?: string; // YYYY-MM-DD
+  taskDate?: string;
   taskDescription?: string;
   hoursSpent?: number;
+  actualTimelogStatus?: TimelogStatusType; 
 }
 
+// Hàm getTimeLogsByProjectIdApi sẽ tự động dùng TimeLogResponse mới khi fetchPaginatedData được generic hóa
 export const getTimeLogsByProjectIdApi = async (
   projectId: number,
   page: number = 0,
@@ -49,13 +63,12 @@ export const getTimeLogsByProjectIdApi = async (
   sortConfig?: SortConfig | SortConfig[]
 ): Promise<TimeLogFetchResult> => {
   try {
-    const result = await fetchPaginatedData<TimeLogResponse>(
-      `/api/timelogs/project/${projectId}`,
+    const result = await fetchPaginatedData<TimeLogResponse>( // Sử dụng TimeLogResponse đã cập nhật
+      `/api/timelogs/project/${projectId}/details`,
       page,
       size,
       sortConfig
     );
-
     return {
       ...result,
       timelogs: result.items
@@ -66,16 +79,19 @@ export const getTimeLogsByProjectIdApi = async (
   }
 };
 
+// createTimeLogApi: Payload vẫn dùng performerId, nhưng response sẽ có performer object
 export const createTimeLogApi = async (payload: TimeLogRequest): Promise<TimeLogResponse> => {
-  const { data } = await axiosClient.post('/api/timelogs', payload);
+  const { data } = await axiosClient.post<TimeLogResponse>('/api/timelogs', payload);
   return data;
 };
 
+// getTimeLogByIdApi: Response sẽ có performer object
 export const getTimeLogByIdApi = async (timelogId: number): Promise<TimeLogResponse> => {
-  const { data } = await axiosClient.get(`/api/timelogs/${timelogId}`);
+  const { data } = await axiosClient.get<TimeLogResponse>(`/api/timelogs/${timelogId}`);
   return data;
 };
 
+// patchUpdateTimeLogApi: Payload vẫn dùng performerId
 export const patchUpdateTimeLogApi = async (
   timelogId: number,
   payload: Partial<BatchUpdateItem>
@@ -83,6 +99,7 @@ export const patchUpdateTimeLogApi = async (
   await axiosClient.patch(`/api/timelogs/${timelogId}`, payload);
 };
 
+// deleteTimeLogApi: không thay đổi
 export const deleteTimeLogApi = async (timelogId: number): Promise<void> => {
   try {
     await axiosClient.delete(`/api/timelogs/${timelogId}`);
@@ -92,15 +109,18 @@ export const deleteTimeLogApi = async (timelogId: number): Promise<void> => {
   }
 };
 
+// batchUpdateTimeLogsApi: Payload BatchUpdateItem vẫn dùng performerId
 export const batchUpdateTimeLogsApi = async (updates: BatchUpdateItem[]): Promise<void> => {
   try {
-    await axiosClient.patch('/api/timelogs/batch-update', updates);
+    const response = await axiosClient.patch('/api/timelogs/batch-update', updates);
+    return response.data;
   } catch (error: any) {
     console.error("[timelogApi.ts] Failed to batch update time logs:", error);
     throw error;
   }
 };
 
+// batchDeleteTimeLogsApi: không thay đổi
 export const batchDeleteTimeLogsApi = async (ids: number[]): Promise<void> => {
   try {
     if (!ids || ids.length === 0) {
@@ -118,21 +138,24 @@ export const batchDeleteTimeLogsApi = async (ids: number[]): Promise<void> => {
   }
 };
 
+// getTimeLogsByUserIdApi: Response cần được kiểm tra lại
 export const getTimeLogsByUserIdApi = async (userId: number): Promise<TimeLogResponse[]> => {
-  const { data } = await axiosClient.get(`/api/timelogs/user/${userId}`);
+  const { data } = await axiosClient.get<TimeLogResponse[]>(`/api/timelogs/user/${userId}`);
   return data;
 };
 
+// getTimeLogsByDateRangeApi: Response cần được kiểm tra lại
 export const getTimeLogsByDateRangeApi = async (
   startDate: string,
   endDate: string
 ): Promise<TimeLogResponse[]> => {
-  const { data } = await axiosClient.get(`/api/timelogs/range`, {
+  const { data } = await axiosClient.get<TimeLogResponse[]>(`/api/timelogs/range`, {
     params: { startDate, endDate }
   });
   return data;
 };
 
+// putUpdateTimeLogApi: Payload TimeLogRequest vẫn dùng performerId
 export const putUpdateTimeLogApi = async (
   timelogId: number,
   payload: TimeLogRequest
@@ -140,6 +163,7 @@ export const putUpdateTimeLogApi = async (
   await axiosClient.put(`/api/timelogs/${timelogId}`, payload);
 };
 
+// uploadTimelogsExcelApi: không thay đổi
 export const uploadTimelogsExcelApi = async (
   projectId: number,
   file: File
