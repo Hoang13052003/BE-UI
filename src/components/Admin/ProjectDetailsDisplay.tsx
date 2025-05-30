@@ -20,9 +20,8 @@ const { Title, Text, Paragraph } = Typography;
 interface ProjectDetailsDisplayProps {
   project: Project | ProjectDetail;
   theme?: string;
-  onEditProject?: (id: number) => void;
+  onEditProject?: (project: Project | ProjectDetail) => void; // Sửa để nhận cả project object
 
-  // Props cho logic mở rộng tại chỗ
   isExpanded?: boolean;
   expandedTimelogProjectId?: number | null;
   onToggleMilestoneDetail?: (id: number) => void;
@@ -36,6 +35,7 @@ interface ProjectDetailsDisplayProps {
   sentMilestoneCount?: number;
   reviewedMilestoneCount?: number;
 
+  currentUserIsAdmin?: boolean; // Thêm prop để nhận từ ProjectManager
 }
 
 const getStatusColor = (status: Project['status'] | ProjectDetail['status']) => {
@@ -67,6 +67,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   newMilestoneCount,
   sentMilestoneCount,
   reviewedMilestoneCount,
+  currentUserIsAdmin = false,
 }) => {
   const projectData = project;
 
@@ -252,18 +253,19 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                   {projectData.type}
                 </Tag>
               </Space>
-              {onEditProject && (
+              {/* Chỉ hiển thị nút Edit Project nếu onEditProject được truyền và là admin */}
+              {currentUserIsAdmin && onEditProject && (
                 <Button
                   type="text"
                   icon={<EditOutlined />}
-                  onClick={() => onEditProject(projectData.id)}
+                  onClick={() => onEditProject(projectData)} // Truyền cả projectData
                   style={{ 
                     borderRadius: '6px',
                     color: theme === 'dark' ? '#1890ff' : '#1890ff'
                   }}
                   size="small"
                 >
-                  Edit
+                  Edit Project
                 </Button>
               )}
             </Row>
@@ -386,8 +388,8 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
         }}>
           <MilestoneDetailsDisplayInternal
             projectId={projectData.id}
-            onAddMilestone={(refreshCallback) => onAddMilestone(projectData.id, refreshCallback)}
-            onEditMilestone={onEditMilestone}
+            onAddMilestone={(refreshCallback) => currentUserIsAdmin && onAddMilestone(projectData.id, refreshCallback)} // Chỉ cho admin
+            onEditMilestone={currentUserIsAdmin ? onEditMilestone : undefined} // Chỉ cho admin
           />
         </div>
       )}
@@ -402,10 +404,8 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
         }}>
           <TimelogDetailsDisplayInternal
             projectId={projectData.id}
-            users={(projectData.users || []).map(user => ({
-              id: user.id,
-              name: isProjectDetail(projectData) ? (user as UserSummary).fullName : (user as ProjectUser).email
-            }))}
+            theme={theme}
+            isAdmin={currentUserIsAdmin}
           />
         </div>
       )}

@@ -42,6 +42,7 @@ const ProjectManager: React.FC = () => {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isAddProjectModalVisible, setIsAddProjectModalVisible] = useState<boolean>(false);
@@ -51,7 +52,7 @@ const ProjectManager: React.FC = () => {
   const [expandedTimelogProjectId, setExpandedTimelogProjectId] = useState<number | null>(null);
 
   const [currentPage, setCurrentPage] = useState<number>(0);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageSize, setPageSize] = useState<number>(5);
   const [totalItems, setTotalItems] = useState<number>(0);
 
   const [filterCriteria, setFilterCriteria] = useState<{
@@ -65,10 +66,27 @@ const ProjectManager: React.FC = () => {
   const [editingMilestoneProjectId, setEditingMilestoneProjectId] = useState<number | null>(null);
   const [currentMilestoneRefreshCallback, setCurrentMilestoneRefreshCallback] = useState<(() => void) | null>(null);
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] = useState<boolean>(false);
-  const [selectedProjectForEdit, setSelectedProjectForEdit] = useState<number | null>(null);
+  const [selectedProjectForEdit, setSelectedProjectForEdit] = useState<Project | null>(null);
 
-  const loadProjects = useCallback(async () => {
-    setLoading(true);
+  // Admin status check
+  const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState<boolean>(false);
+  
+  useEffect(() => {
+    const checkAdminStatus = () => {
+      // TODO: Replace with actual admin check logic
+      // const userRole = localStorage.getItem('userRole');
+      // setCurrentUserIsAdmin(userRole === 'ADMIN');
+      
+      // For testing, set to true
+      console.log('ProjectManager: useEffect setting isAdmin to true');
+      setCurrentUserIsAdmin(true);
+      
+    };
+    checkAdminStatus();
+  }, []);
+
+  const loadProjects = useCallback(async (showSpinner = true) => {
+    if (showSpinner && !initialLoadComplete) setLoading(true);
     setError(null);
     try {
       let result;
@@ -82,20 +100,22 @@ const ProjectManager: React.FC = () => {
         setProjects(result.projects);
         setTotalItems(result.totalItems);
       }
+      if (!initialLoadComplete) setInitialLoadComplete(true);
     } catch (err) {
       console.error("Failed to fetch projects:", err);
       setError("Failed to fetch projects. Please try again later.");
     } finally {
-      setLoading(false);
+      if (showSpinner && !initialLoadComplete) setLoading(false);
     }
-  }, [currentPage, pageSize, filterCriteria]);
+  }, [currentPage, pageSize, filterCriteria, initialLoadComplete]);
 
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = (page: number, newPageSize?: number) => {
     setCurrentPage(page - 1);
+    if (newPageSize) setPageSize(newPageSize);
   };
 
   const handleDelete = async (id: number) => {
@@ -103,10 +123,9 @@ const ProjectManager: React.FC = () => {
     try {
       await deleteProjectApi(id);
       message.success('Project deleted successfully!');
-      loadProjects();
-      if (expandedProjectId === id) {
-        setExpandedProjectId(null);
-      }
+      loadProjects(false);
+      if (expandedProjectId === id) setExpandedProjectId(null);
+      if (expandedTimelogProjectId === id) setExpandedTimelogProjectId(null);
     } catch (err) {
       setError("Failed to delete project. Please try again later.");
       message.error("Failed to delete project: " + (err as Error).message);
@@ -120,7 +139,7 @@ const ProjectManager: React.FC = () => {
   const handleAddProjectSuccess = () => {
     setIsAddProjectModalVisible(false);
     message.success('Project added successfully!');
-    loadProjects();
+    loadProjects(false);
   };
 
   const handleAddMilestoneClick = (projectId: number, refreshCallback?: () => void) => {
@@ -172,14 +191,16 @@ const ProjectManager: React.FC = () => {
 
   const toggleMilestoneDetail = (projectId: number) => {
     setExpandedProjectId(prevId => (prevId === projectId ? null : projectId));
+    if (expandedTimelogProjectId === projectId) setExpandedTimelogProjectId(null);
   };
 
   const toggleTimelogDetail = (projectId: number) => {
     setExpandedTimelogProjectId(prevId => (prevId === projectId ? null : projectId));
+    if (expandedProjectId === projectId) setExpandedProjectId(null);
   };
 
-  const handleEditProject = (projectId: number) => {
-    setSelectedProjectForEdit(projectId);
+  const handleEditProject = (project: Project) => {
+    setSelectedProjectForEdit(project);
     setIsEditProjectModalVisible(true);
   };
 
@@ -192,16 +213,8 @@ const ProjectManager: React.FC = () => {
     setIsEditProjectModalVisible(false);
     setSelectedProjectForEdit(null);
     message.success('Project updated successfully!');
-    loadProjects();
+    loadProjects(false);
   };
-
-  const handleTimelogUploadError = useCallback(() => {
-    message.error({
-      content: 'There was an error uploading the timelog file.',
-      duration: 5,
-      style: { marginTop: '20px' },
-    });
-  }, []);
 
   const handleNameSearch = (value: string) => {
     setFilterCriteria(prev => ({ ...prev, name: value || undefined }));
@@ -229,7 +242,7 @@ const ProjectManager: React.FC = () => {
     navigate(`/admin/projects/${projectId}/details`);
   };
 
-  if (loading && projects.length === 0) {
+  if (!initialLoadComplete && loading) {
     return (
       <Card>
         <Row justify="space-between" align="middle">
@@ -242,7 +255,7 @@ const ProjectManager: React.FC = () => {
     );
   }
 
-  if (error && projects.length === 0) {
+  if (error && projects.length === 0 && !initialLoadComplete) {
     return (
       <Card>
         <Row justify="space-between" align="middle">
@@ -264,13 +277,15 @@ const ProjectManager: React.FC = () => {
           <Row justify="space-between" align="middle" style={{ width: '100%' }}>
             <Col><Title level={5} style={{ margin: 0, color: theme === 'dark' ? '#fff' : undefined }}>Project Updates</Title></Col>
             <Col>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleAddProjectModalOpen}
-              >
-                Add Project
-              </Button>
+              {currentUserIsAdmin && (
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddProjectModalOpen}
+                >
+                  Add Project
+                </Button>
+              )}
             </Col>
           </Row>
         }
@@ -342,14 +357,14 @@ const ProjectManager: React.FC = () => {
         {error && !loading && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
         
         <List
-          loading={loading}
+          loading={loading && initialLoadComplete}
           itemLayout="vertical"
           dataSource={projects}
           locale={{ emptyText: hasActiveFilters ? 'No projects found matching your filters' : 'No projects available' }}
           renderItem={(item: Project) => (
             <List.Item
               key={item.id}
-              actions={[
+              actions={currentUserIsAdmin ? [
                 <Button 
                   key="full-details" 
                   type="link"
@@ -358,22 +373,20 @@ const ProjectManager: React.FC = () => {
                 >
                   View Full Details
                 </Button>,
-
                 <Button
                   key="edit-project-action"
                   type="text"
                   icon={<EditOutlined />}
-                  onClick={() => handleEditProject(item.id)}
+                  onClick={() => handleEditProject(item)}
                 >
                   Edit
                 </Button>,
-
                 <Popconfirm
                   key="delete-project-action"
-                  title="Bạn có chắc muốn xóa dự án này?"
+                  title="Delete this project?"
                   onConfirm={() => handleDelete(item.id)}
-                  okText="Có"
-                  cancelText="Không"
+                  okText="Yes"
+                  cancelText="No"
                 >
                   <Button
                     type="text"
@@ -384,6 +397,15 @@ const ProjectManager: React.FC = () => {
                     Delete
                   </Button>
                 </Popconfirm>,
+              ] : [
+                <Button 
+                  key="full-details" 
+                  type="link"
+                  icon={<EyeOutlined />}
+                  onClick={() => handleNavigateToFullDetails(item.id)}
+                >
+                  View Full Details
+                </Button>,
               ]}
             >
               <ProjectDetailsDisplay
@@ -397,8 +419,10 @@ const ProjectManager: React.FC = () => {
                 expandedTimelogProjectId={expandedTimelogProjectId === item.id ? item.id : null}
                 onToggleMilestoneDetail={toggleMilestoneDetail}
                 onToggleTimelogDetail={toggleTimelogDetail}
-                onAddMilestone={handleAddMilestoneClick}
-                onEditMilestone={handleEditMilestone}
+                onAddMilestone={currentUserIsAdmin ? handleAddMilestoneClick : undefined}
+                onEditMilestone={currentUserIsAdmin ? handleEditMilestone : undefined}
+                onEditProject={currentUserIsAdmin ? () => handleEditProject(item) : undefined}
+                currentUserIsAdmin={currentUserIsAdmin}
               />
             </List.Item>
           )}
@@ -412,10 +436,7 @@ const ProjectManager: React.FC = () => {
               total={totalItems}
               onChange={handlePageChange}
               showSizeChanger
-              onShowSizeChange={(current, size) => {
-                setPageSize(size);
-                setCurrentPage(0);
-              }}
+              onShowSizeChange={(_current, size) => handlePageChange(1, size)}
               pageSizeOptions={['5', '10', '20', '50']}
               showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
             />
@@ -423,13 +444,15 @@ const ProjectManager: React.FC = () => {
         )}
       </Card>
 
-      <AddProjectModal
-        visible={isAddProjectModalVisible}
-        onClose={handleAddProjectModalClose}
-        onSuccess={handleAddProjectSuccess}
-      />
+      {currentUserIsAdmin && (
+        <AddProjectModal
+          visible={isAddProjectModalVisible}
+          onClose={handleAddProjectModalClose}
+          onSuccess={handleAddProjectSuccess}
+        />
+      )}
 
-      {selectedProjectIdForMilestone && (
+      {selectedProjectIdForMilestone && currentUserIsAdmin && (
         <AddMilestoneModal
           visible={isAddMilestoneModalVisible}
           projectId={selectedProjectIdForMilestone}
@@ -438,7 +461,7 @@ const ProjectManager: React.FC = () => {
         />
       )}
 
-      {selectedMilestoneId !== null && editingMilestoneProjectId !== null && (
+      {selectedMilestoneId !== null && editingMilestoneProjectId !== null && currentUserIsAdmin && (
         <EditMilestoneModal
           visible={isEditMilestoneModalVisible}
           milestoneId={selectedMilestoneId}
@@ -448,11 +471,11 @@ const ProjectManager: React.FC = () => {
         />
       )}
 
-      {isEditProjectModalVisible && selectedProjectForEdit && (
+      {isEditProjectModalVisible && selectedProjectForEdit && currentUserIsAdmin && (
         <EditProjectModal
           visible={isEditProjectModalVisible}
-          projectId={selectedProjectForEdit}
-          projectData={projects.find(p => p.id === selectedProjectForEdit)}
+          projectId={selectedProjectForEdit.id}
+          projectData={selectedProjectForEdit}
           onClose={handleEditProjectModalClose}
           onSuccess={handleEditProjectSuccess}
         />
