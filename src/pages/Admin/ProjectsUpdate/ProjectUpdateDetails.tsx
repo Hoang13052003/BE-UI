@@ -49,12 +49,9 @@ const { Title, Paragraph } = Typography;
 // Helper function to get status color
 const getStatusColor = (status: string): string => {
   const statusMap: Record<string, string> = {
-    NEW: "blue",
-    PENDING: "orange",
-    PROGRESS: "cyan",
-    AT_RISK: "volcano",
-    COMPLETED: "green",
-    CLOSED: "purple",
+    NEW: "cyan",
+    SENT: "volcano",
+    FEEDBACK: "green",
   };
   return statusMap[status] || "default";
 };
@@ -172,13 +169,23 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
       <Card>
         <div style={{ textAlign: "center", padding: "30px" }}>
           <Title level={4}>Update not found</Title>
-          <Button
-            type="primary"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/admin/project-progress")}
-          >
-            Back to Project Progress
-          </Button>
+          {userRole === "ADMIN" ? (
+            <Button
+              type="primary"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate("/admin/project-progress")}
+            >
+              Back to Project Progress
+            </Button>
+          ) : (
+            <Button
+              type="primary"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+            >
+              Back to the previous page
+            </Button>
+          )}
         </div>
       </Card>
     );

@@ -32,6 +32,7 @@ import dayjs from "dayjs";
 import { useAttachmentUpload } from "../../../hooks/useAttachmentUpload";
 import type { UploadFile } from "antd/es/upload/interface";
 import { FolderFileItem } from "../../../types/Attachment";
+import { isNull } from "lodash";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -166,6 +167,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
       } else if (fileList.length > 0) {
         const individualUploadResult = await uploadFilesIndividually(
           projectUpdateId,
+          "",
           fileList
         );
         if (individualUploadResult.failedUploads.length > 0) {
