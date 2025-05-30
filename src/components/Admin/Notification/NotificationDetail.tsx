@@ -63,7 +63,7 @@ interface NotificationDetailProps {
   notificationId: string | null;
   visible: boolean;
   onClose: () => void;
-  displayMode?: "drawer" | "modal";
+  displayMode?: "modal";
 }
 
 const NotificationDetail: React.FC<NotificationDetailProps> = ({
