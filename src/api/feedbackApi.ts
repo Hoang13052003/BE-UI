@@ -1,3 +1,14 @@
+// Mark feedback as read
+export const markFeedbackAsRead = async (id: number | string): Promise<void> => {
+  await axiosClient.patch(`/api/feedbacks/${id}/read`);
+};
+// Get recent feedbacks (limit by count)
+export const getRecentFeedback = async (limit: number = 5): Promise<Feedback[]> => {
+  const params: any = { page: 0, size: limit, sort: 'createdAt,desc' };
+  const { data } = await axiosClient.get("/api/feedbacks", { params });
+  // If your API returns paginated data, extract the content array
+  return data.content || [];
+};
 import axiosClient from "./axiosClient";
 
 export interface Feedback {

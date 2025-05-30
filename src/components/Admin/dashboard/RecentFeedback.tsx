@@ -46,44 +46,40 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
   // Mock data - In a real application, this would come from an API
   const mockFeedback: Feedback[] = [
     {
-      id: 1,
+      id: '1',
+      updateId: 1,
       projectId: 101,
-      projectName: 'Project A',
-      message: 'Great progress!',
+      userId: 1,
+      content: 'Great progress!',
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-      createdBy: 1,
-      createdByName: 'John Doe',
-      isRead: false
+      read: false
     },
     {
-      id: 2,
+      id: '2',
+      updateId: 2,
       projectId: 102,
-      projectName: 'Project B',
-      message: 'Needs attention',
+      userId: 2,
+      content: 'Needs attention',
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-      createdBy: 2,
-      createdByName: 'Jane Smith',
-      isRead: false
+      read: false
     },
     {
-      id: 3,
+      id: '3',
+      updateId: 3,
       projectId: 103,
-      projectName: 'Project C',
-      message: 'Milestone completed ahead of schedule. Great job team!',
+      userId: 1,
+      content: 'Milestone completed ahead of schedule. Great job team!',
       createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-      createdBy: 1,
-      createdByName: 'John Doe',
-      isRead: true
+      read: true
     },
     {
-      id: 4,
+      id: '4',
+      updateId: 4,
       projectId: 104,
-      projectName: 'Project D',
-      message: 'Client requested changes to the design',
+      userId: 3,
+      content: 'Client requested changes to the design',
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-      createdBy: 3,
-      createdByName: 'Alice Johnson',
-      isRead: true
+      read: true
     }
   ];
 
@@ -118,19 +114,18 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
   }, [limit, useMockData]);
 
   // Handle clicking on a feedback item (mark as read)
-  const handleFeedbackClick = async (id: number) => {
+  const handleFeedbackClick = async (id: string) => {
     // Only mark as unread items
     const feedbackItem = feedback.find(item => item.id === id);
-    if (feedbackItem && !feedbackItem.isRead) {
+    if (feedbackItem && !feedbackItem.read) {
       try {
         if (!useMockData) {
           await markFeedbackAsRead(id);
         }
-        
         // Update local state
         setFeedback(prevFeedback => 
           prevFeedback.map(item => 
-            item.id === id ? { ...item, isRead: true } : item
+            item.id === id ? { ...item, read: true } : item
           )
         );
       } catch (err) {
@@ -171,11 +166,11 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
                 onClick={() => handleFeedbackClick(item.id)}
               >
                 <Link to={`/admin/projects/${item.projectId}`}>
-                  <Title level={5} className={item.isRead ? 'project-title read' : 'project-title'}>
-                    {item.projectName}
+                  <Title level={5} className={item.read ? 'project-title read' : 'project-title'}>
+                    Project #{item.projectId}
                   </Title>
                 </Link>
-                <Text className="feedback-message">{item.message}</Text>
+                <Text className="feedback-message">{item.content}</Text>
                 <div className="feedback-meta">
                   <Text type="secondary" className="time-ago">
                     {getRelativeTime(item.createdAt)}

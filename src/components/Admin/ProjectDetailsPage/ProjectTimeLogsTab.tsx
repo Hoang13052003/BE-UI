@@ -1,26 +1,31 @@
 // File: src/components/Admin/ProjectDetailsPage/ProjectTimeLogsTab.tsx
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  List, 
-  Spin, 
-  Empty, 
-  Pagination, 
-  Typography, 
-  message, 
-  Row, 
-  Col, 
-  Tag, 
-  Space, 
+import {
+  List,
+  Spin,
+  Empty,
+  Pagination,
+  Typography,
+  message,
+  Row,
+  Col,
+  Tag,
+  Space,
   Avatar,
   Card,
-  Input
+  Input,
+  DatePicker,
+  Button,
+  Tooltip
 } from 'antd';
 import { 
   UserOutlined, 
   CalendarOutlined, 
   ClockCircleOutlined,
-  SearchOutlined} from '@ant-design/icons';
+  SearchOutlined,
+  ClearOutlined
+} from '@ant-design/icons';
 import { ProjectContextTimeLog, ApiPage } from '../../../types/project';
 import { getProjectTimeLogsListApi } from '../../../api/projectApi';
 import dayjs from 'dayjs';
@@ -30,6 +35,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 const { Text, Paragraph, Title } = Typography;
 const { Search } = Input;
+const { RangePicker } = DatePicker;
 
 interface ProjectTimeLogsTabProps {
   projectId: number;
@@ -39,6 +45,8 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({ projectId }) =>
   const [timeLogsPage, setTimeLogsPage] = useState<ApiPage<ProjectContextTimeLog> | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [startDate, setStartDate] = useState<string | undefined>(undefined);
+  const [endDate, setEndDate] = useState<string | undefined>(undefined);
   const [uiPagination, setUiPagination] = useState({ current: 1, pageSize: 10 });
 
   const fetchTimeLogs = useCallback(async (pageToFetch: number, currentSize: number) => {
@@ -50,10 +58,12 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({ projectId }) =>
     setLoading(true);
     try {
       const data = await getProjectTimeLogsListApi(
-        projectId, 
+        projectId,
         pageToFetch,
-        currentSize, 
-        [{ property: 'taskDate', direction: 'desc' }]
+        currentSize,
+        [{ property: 'taskDate', direction: 'desc' }],
+        startDate,
+        endDate
       );
       console.log("ProjectTimeLogsTab - API Response Data:", JSON.stringify(data, null, 2));
       setTimeLogsPage(data);
@@ -68,13 +78,13 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({ projectId }) =>
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, startDate, endDate]);
 
   useEffect(() => {
     if (projectId && projectId > 0) {
-        fetchTimeLogs(uiPagination.current - 1, uiPagination.pageSize);
+      fetchTimeLogs(uiPagination.current - 1, uiPagination.pageSize);
     }
-  }, [projectId, uiPagination.current, uiPagination.pageSize, fetchTimeLogs]);
+  }, [projectId, uiPagination.current, uiPagination.pageSize, startDate, endDate, fetchTimeLogs]);
 
   const handlePageChange = (page: number, newPageSize?: number) => {
     setUiPagination(prev => ({
@@ -101,6 +111,9 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({ projectId }) =>
     }
   };
 
+  // Calculate total hours from filtered data
+  const totalHours = filteredTimeLogs?.reduce((sum, timelog) => sum + timelog.hoursSpent, 0) || 0;
+
   if (loading && !timeLogsPage) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 0' }}>
@@ -114,26 +127,71 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({ projectId }) =>
       {/* Header Section */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
-          <Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-            <ClockCircleOutlined style={{ marginRight: 8 }} />
-            Time Logs
+          <Space direction="vertical" size="small">
+            <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
+              <ClockCircleOutlined style={{ marginRight: 8 }} />
+              Time Logs
+            </Title>
             {timeLogsPage && (
-              <Text type="secondary" style={{ fontSize: '14px', fontWeight: 'normal', marginLeft: 8 }}>
-                ({timeLogsPage.totalElements} entries)
-              </Text>
+              <Space size="middle">
+                <Tag color="blue" style={{ borderRadius: 16, fontSize: '14px', padding: '5px 15px' }}>
+                  <Text strong style={{ color: '#1890ff' }}>
+                    {timeLogsPage.totalElements} entries
+                  </Text>
+                </Tag>
+                <Tag color="green" style={{ borderRadius: 16, fontSize: '14px', padding: '5px 15px' }}>
+                  <ClockCircleOutlined style={{ marginRight: 4 }} />
+                  <Text strong style={{ color: '#52c41a' }}>
+                    {formatDuration(totalHours)} total
+                  </Text>
+                </Tag>
+              </Space>
             )}
-          </Title>
+          </Space>
         </Col>
-        <Col>
-          <Space>
+        <Col style={{ marginTop: '16px', textAlign: 'right' }}>
+          <Space size="middle" wrap>
             <Search
               placeholder="Search by name or description"
               allowClear
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 250 }}
+              style={{ width: 280 }}
               prefix={<SearchOutlined />}
+            />  
+            <RangePicker
+              allowClear
+              onChange={(_, dateStrings) => {
+                setStartDate(dateStrings[0] || undefined);
+                setEndDate(dateStrings[1] || undefined);
+                setUiPagination(prev => ({ ...prev, current: 1 }));
+              }}
+              style={{ width: 300 }}
+              value={startDate && endDate ? [dayjs(startDate), dayjs(endDate)] : undefined}
+              placeholder={['Start date', 'End date']}
             />
+            <Tooltip title="Clear all filters">
+              <Button
+                type="text"
+                icon={<ClearOutlined />}
+                onClick={() => {
+                  setStartDate(undefined);
+                  setEndDate(undefined);
+                  setSearchText('');
+                  setUiPagination(prev => ({ ...prev, current: 1 }));
+                }}
+                disabled={!searchText && !startDate && !endDate}
+                style={{
+                  color: '#ff4d4f',
+                  borderColor: '#ff4d4f',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '32px',
+                  width: '32px'
+                }}
+              />
+            </Tooltip>
             {/* Uncomment if you have add functionality */}
             {/* 
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAddTimeLog}>
@@ -178,7 +236,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({ projectId }) =>
                 <List.Item style={{ border: 'none', padding: 0 }}>
                   <Row gutter={[16, 16]} align="top">
                     {/* User Info Column */}
-                    <Col xs={24} sm={6} md={5}>
+                    <Col xs={24} sm={6} md={6}>
                       <Space direction="vertical" size="small" style={{ width: '100%' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <Avatar
@@ -206,10 +264,10 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({ projectId }) =>
                             }
                           </Avatar>
                           <div>
-                            <Text strong style={{ display: 'block', fontSize: '14px' }}>
+                            <Text strong style={{ display: 'block', fontSize: '15px' }}>
                               {timelog.performer.fullName}
                             </Text>
-                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                            <Text type="secondary" style={{ fontSize: '13px' }}>
                               {timelog.performer.email}
                             </Text>
                           </div>
@@ -242,7 +300,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({ projectId }) =>
                     </Col>
 
                     {/* Actions Column */}
-                    <Col xs={24} sm={6} md={5}>
+                    <Col xs={24} sm={6} md={4}>
                       <div style={{ textAlign: 'right' }}>
                         <Space direction="vertical" size="small">
                           <Text type="secondary" style={{ fontSize: '12px' }}>

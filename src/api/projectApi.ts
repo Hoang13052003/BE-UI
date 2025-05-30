@@ -294,13 +294,16 @@ export const getProjectMilestonesOverviewApi = async (
 
 /**
  * Fetches a list of time logs for a specific project (uses ProjectService logic).
+ * Supports optional filtering by date range (startDate, endDate).
  * Returns ApiPage<ProjectContextTimeLog>.
  */
 export const getProjectTimeLogsListApi = async (
   projectId: number,
   page: number = 0,
   size: number = 10,
-  sortConfig?: SortConfig | SortConfig[]
+  sortConfig?: SortConfig | SortConfig[],
+  startDate?: string,
+  endDate?: string
 ): Promise<ApiPage<ProjectContextTimeLog>> => {
   try {
     const defaultSort: SortConfig[] = [
@@ -314,11 +317,16 @@ export const getProjectTimeLogsListApi = async (
 
     const apiUrl = `/api/projects/${projectId}/timelogs-list`;
 
+    // Prepare additional query params for date filtering
+    const additionalParams: Record<string, any> = {};
+    if (startDate) additionalParams.startDate = startDate;
+    if (endDate) additionalParams.endDate = endDate;
     const result = await fetchSpringPageData<ProjectContextTimeLog>(
       apiUrl,
       page,
       size,
-      currentSortConfig
+      currentSortConfig,
+      additionalParams
     );
     return result;
   } catch (error) {
