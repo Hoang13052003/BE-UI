@@ -184,6 +184,25 @@ const ProjectDetailPage: React.FC = () => {
     );
   }
 
+  if (!project) {
+    return (
+      <Card>
+        <div style={{ textAlign: "center", padding: "30px" }}>
+          <Title level={4}>Project not found</Title>
+          {userRole === "USER" && (
+            <Button
+              type="primary"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+            >
+              Back to the previous page
+            </Button>
+          )}
+        </div>
+      </Card>
+    );
+  }
+
   if (error && userRole === "ADMIN") {
     return (
       <div style={{ padding: "20px" }}>

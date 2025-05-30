@@ -19,7 +19,7 @@ const Profile: React.FC = () => {
   ];
 
   return (
-    <Card title="Profile" style={{ height: "100%" }}>
+    <Card title="Profile Setting" style={{ height: "100%" }}>
       <div style={{ marginBottom: 32 }}>
         <Title level={5}>About</Title>
         <Text>

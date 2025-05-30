@@ -51,10 +51,9 @@ const { Option } = Select;
 // Helper function to get status color
 const getStatusColor = (status: string): string => {
   const statusMap: Record<string, string> = {
-    ON_TRACK: "cyan",
-    SLIGHT_DELAY: "volcano",
-    SIGNIFICANT_DELAY: "volcano",
-    COMPLETED: "green",
+    NEW: "cyan",
+    SENT: "volcano",
+    FEEDBACK: "green",
   };
   return statusMap[status] || "default";
 };
@@ -86,7 +85,9 @@ const getTypeColor = (type: string): string => {
 
 const ProjectProgressList: React.FC = () => {
   const navigate = useNavigate();
-  const [updatesPage, setUpdatesPage] = useState<ApiPage<ProjectUpdate> | null>(null);
+  const [updatesPage, setUpdatesPage] = useState<ApiPage<ProjectUpdate> | null>(
+    null
+  );
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -100,7 +101,7 @@ const ProjectProgressList: React.FC = () => {
   const [currentUpdate, setCurrentUpdate] = useState<ProjectUpdate | null>(
     null
   );
-  
+
   const [tablePagination, setTablePagination] = useState({
     current: 1,
     pageSize: 10,
@@ -133,17 +134,18 @@ const ProjectProgressList: React.FC = () => {
         filters
       );
 
-      console.log("ProjectProgressList - Received ApiPage:", JSON.stringify(resultPage, null, 2));
+      // console.log(
+      //   "ProjectProgressList - Received ApiPage:",
+      //   JSON.stringify(resultPage, null, 2)
+      // );
       setUpdatesPage(resultPage);
 
-      setTablePagination(prev => ({
+      setTablePagination((prev) => ({
         ...prev,
         total: resultPage.totalElements,
         current: resultPage.number + 1,
         pageSize: resultPage.size,
       }));
-
-
     } catch (error) {
       console.error("Failed to fetch project updates:", error);
       message.error("Failed to load project updates");
@@ -181,7 +183,7 @@ const ProjectProgressList: React.FC = () => {
 
   // Handle table pagination change
   const handleTableChange = (paginationConfig: any) => {
-    setTablePagination(prev => ({
+    setTablePagination((prev) => ({
       ...prev,
       current: paginationConfig.current,
       pageSize: paginationConfig.pageSize,
@@ -357,7 +359,7 @@ const ProjectProgressList: React.FC = () => {
     setDateRange(null);
     setSearchText("");
     setStatusFilter(null);
-    setTablePagination(prev => ({ ...prev, current: 1 }));
+    setTablePagination((prev) => ({ ...prev, current: 1 }));
   };
 
   return (
@@ -441,11 +443,8 @@ const ProjectProgressList: React.FC = () => {
               onChange={(value) => setStatusFilter(value)}
             >
               <Option value="NEW">New</Option>
-              <Option value="PENDING">Pending</Option>
-              <Option value="PROGRESS">In Progress</Option>
-              <Option value="AT_RISK">At Risk</Option>
-              <Option value="COMPLETED">Completed</Option>
-              <Option value="CLOSED">Closed</Option>
+              <Option value="SENT">Sent</Option>
+              <Option value="FEEDBACK">Feedback</Option>
             </Select>
             <Tooltip title="Reset Filters">
               <Button icon={<FilterOutlined />} onClick={handleResetFilters}>
@@ -468,7 +467,7 @@ const ProjectProgressList: React.FC = () => {
           total: tablePagination.total,
           showSizeChanger: true,
           showTotal: (total) => `Total ${total} updates`,
-          pageSizeOptions: ['5', '10', '20', '50'],
+          pageSizeOptions: ["5", "10", "20", "50"],
         }}
         onChange={handleTableChange}
       />
