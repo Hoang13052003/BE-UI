@@ -26,6 +26,8 @@ export const uploadSingleAttachment = async (
   formData.append("file", file);
   if (feedbackId) {
     formData.append("feedbackId", feedbackId);
+  } else {
+    formData.append("feedbackId", "");
   }
   formData.append("projectUpdateId", projectUpdateId.toString());
   if (logicalName) {
