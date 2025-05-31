@@ -32,7 +32,7 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import EmailVerification from "./pages/auth/EmailVerification";
 import Profile from "./pages/Client/Profile";
 import Settings from "./pages/Client/Settings";
-import ChatProvider from "./contexts/ChatContext";
+import { ChatProvider } from "./contexts/ChatContext";
 
 function App() {
   return (
