@@ -43,9 +43,61 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   
   // Phân trang
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
+  const [pageSize, setPageSize] = useState(10);  const [totalItems, setTotalItems] = useState(0);  // Helper function to check if milestone is completed
+  const isMilestoneCompleted = (milestone: Milestone): boolean => {
+    return milestone.completionDate !== null && 
+           milestone.completionDate !== undefined && 
+           milestone.completionDate !== '';
+  };
 
+  // Helper function to check if milestone is overdue
+  const isOverdueMilestone = (milestone: Milestone): boolean => {
+    if (!milestone.deadlineDate) return false;
+    
+    const deadlineDate = new Date(milestone.deadlineDate);
+    
+    // Determine if milestone is completed based on completionDate existence
+    // Handle both null and undefined cases
+    const isCompleted = isMilestoneCompleted(milestone);
+    
+    if (isCompleted) {
+      // For completed milestones, only check if they completed after deadline
+      const completionDate = new Date(milestone.completionDate!);
+      const deadlineEndOfDay = new Date(deadlineDate);
+      deadlineEndOfDay.setHours(23, 59, 59, 999);
+      
+      return completionDate > deadlineEndOfDay;
+    } else {
+      // For uncompleted milestones, check if current date is past deadline
+      const currentDate = new Date();
+      const deadlineEndOfDay = new Date(deadlineDate);
+      deadlineEndOfDay.setHours(23, 59, 59, 999);
+      
+      return currentDate > deadlineEndOfDay;
+    }
+  };
+  // Helper function to calculate days overdue
+  const getOverdueDays = (milestone: Milestone): number => {
+    if (!milestone.deadlineDate || !isOverdueMilestone(milestone)) return 0;
+    
+    const deadlineDate = new Date(milestone.deadlineDate);
+    let comparisonDate: Date;
+    
+    if (isMilestoneCompleted(milestone)) {
+      comparisonDate = new Date(milestone.completionDate!);
+    } else {
+      comparisonDate = new Date();
+    }
+    
+    // Reset times to start of day for accurate day calculation
+    const deadlineDay = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate());
+    const comparisonDay = new Date(comparisonDate.getFullYear(), comparisonDate.getMonth(), comparisonDate.getDate());
+    
+    const diffTime = comparisonDay.getTime() - deadlineDay.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
   const fetchMilestones = useCallback(async () => {
     if (!projectId) {
       setLoading(false);
@@ -61,6 +113,12 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
         currentPage,
         pageSize
       );
+      console.log('Milestone pagination data:', { 
+        milestoneData: milestoneData?.length || 0, 
+        totalItems, 
+        currentPage, 
+        pageSize 
+      });
       setMilestones(Array.isArray(milestoneData) ? milestoneData : []);
       setTotalItems(totalItems);
     } catch (err: any) {
@@ -74,17 +132,15 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
 
   useEffect(() => {
     fetchMilestones();
-  }, [fetchMilestones]);
-
-  // Calculate statistics
+  }, [fetchMilestones]);  // Calculate statistics
   const calculateStats = () => {
     const total = milestones.length;
-    const completed = milestones.filter(m => m.completed).length;
-    const inProgress = milestones.filter(m => !m.completed && m.status === 'SENT').length;
-    const pending = milestones.filter(m => !m.completed && m.status === 'NEW').length;
-    const overdue = milestones.filter(m => 
-      !m.completed && m.deadlineDate && new Date(m.deadlineDate) < new Date()
-    ).length;
+    // Use helper function to determine if milestone is completed
+    const completed = milestones.filter(m => isMilestoneCompleted(m)).length;
+    const inProgress = milestones.filter(m => !isMilestoneCompleted(m) && m.status === 'SENT').length;
+    const pending = milestones.filter(m => !isMilestoneCompleted(m) && m.status === 'NEW').length;
+      // Fixed overdue logic: check both completed late and not completed but past deadline
+    const overdue = milestones.filter(m => isOverdueMilestone(m)).length;
     
     return { total, completed, inProgress, pending, overdue };
   };
@@ -149,7 +205,6 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
       default: return null;
     }
   };
-
   const getMilestoneCardStyle = (item: Milestone): React.CSSProperties => {
     const baseStyle: React.CSSProperties = {
       marginBottom: '16px',
@@ -157,9 +212,8 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
       transition: 'all 0.3s ease',
       cursor: 'pointer',
       width: '100%',
-    };
-
-    if (item.completed) {
+    };    if (isMilestoneCompleted(item) && !isOverdueMilestone(item)) {
+      // Completed on time - green
       return {
         ...baseStyle,
         background: theme === 'dark' ? '#162312' : '#f6ffed',
@@ -170,16 +224,30 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
       };
     }
 
-    const isOverdue = item.deadlineDate && new Date(item.deadlineDate) < new Date() && !item.completed;
+    const isOverdue = isOverdueMilestone(item);
+
     if (isOverdue) {
-      return {
-        ...baseStyle,
-        background: theme === 'dark' ? '#1f1f1f' : '#ffffff', 
-        border: `2px solid ${theme === 'dark' ? '#cf1322' : '#ff7875'}`, 
-        boxShadow: theme === 'dark' 
-          ? '0 2px 8px rgba(255, 77, 79, 0.15)' 
-          : '0 2px 8px rgba(255, 77, 79, 0.1)',
-      };
+      if (isMilestoneCompleted(item)) {
+        // Completed late - orange/yellow
+        return {
+          ...baseStyle,
+          background: theme === 'dark' ? '#1d1a0f' : '#fffbe6',
+          border: `2px solid ${theme === 'dark' ? '#d48806' : '#faad14'}`,
+          boxShadow: theme === 'dark' 
+            ? '0 2px 8px rgba(250, 173, 20, 0.15)' 
+            : '0 2px 8px rgba(250, 173, 20, 0.1)',
+        };
+      } else {
+        // Not completed and overdue - red
+        return {
+          ...baseStyle,
+          background: theme === 'dark' ? '#1f1f1f' : '#ffffff', 
+          border: `2px solid ${theme === 'dark' ? '#cf1322' : '#ff7875'}`, 
+          boxShadow: theme === 'dark' 
+            ? '0 2px 8px rgba(255, 77, 79, 0.15)' 
+            : '0 2px 8px rgba(255, 77, 79, 0.1)',
+        };
+      }
     }
 
     return {
@@ -365,10 +433,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
             className="milestone-list"
             itemLayout="horizontal"
             dataSource={milestones}
-            loading={loading && milestones.length > 0}
-            renderItem={(item) => {
-              const isOverdue = item.deadlineDate && new Date(item.deadlineDate) < new Date() && !item.completed;
-              
+            loading={loading && milestones.length > 0}            renderItem={(item) => {              
               return (
                 <List.Item style={{ padding: 0, border: 'none' }}>
                   <Card
@@ -391,17 +456,20 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                                     fontWeight: 'bold',
                                     border: 'none'
                                   }}
-                                >
-                                  {item.status ? String(item.status).replace('_', ' ') : 'Not set'}
-                                </Tag>
-                                {item.completed && (
+                                >                                  {item.status ? String(item.status).replace('_', ' ') : 'Not set'}
+                                </Tag>                                {isMilestoneCompleted(item) && !isOverdueMilestone(item) && (
                                   <Tag color="green" style={{ borderRadius: '12px', border: 'none' }}>
                                     <CheckCircleOutlined /> Completed
                                   </Tag>
                                 )}
-                                {isOverdue && (
-                                  <Tag color="red" style={{ borderRadius: '12px', border: 'none' }}>
-                                    <ExclamationCircleOutlined /> Overdue
+                                {isOverdueMilestone(item) && (
+                                  <Tag 
+                                    color={isMilestoneCompleted(item) ? "orange" : "red"} 
+                                    style={{ borderRadius: '12px', border: 'none' }}
+                                  >
+                                    <ExclamationCircleOutlined /> 
+                                    {isMilestoneCompleted(item) ? 'Completed Late' : 'Overdue'}
+                                    {getOverdueDays(item) > 0 && ` (${getOverdueDays(item)} day${getOverdueDays(item) > 1 ? 's' : ''})`}
                                   </Tag>
                                 )}
                               </Space>
@@ -442,12 +510,11 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                             </Col>
                           </Row>
 
-                          {/* Milestone Info */}
-                          <MilestoneInfo
+                          {/* Milestone Info */}                          <MilestoneInfo
                             name={item.name || ''}
                             description={item.description}
                             notes={item.notes}
-                            completed={item.completed}
+                            completed={isMilestoneCompleted(item)}
                             completionPercentage={item.completionPercentage}
                           />
 
@@ -459,19 +526,26 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                                 <Text type="secondary" style={{ fontSize: '12px' }}>Start:</Text>
                                 <Text style={{ fontSize: '12px' }}>{formatDate(item.startDate)}</Text>
                               </Space>
-                            </Col>
-                            <Col xs={24} sm={8}>
+                            </Col>                            <Col xs={24} sm={8}>
                               <Space size={4}>
-                                <CalendarOutlined style={{ color: isOverdue ? '#ff4d4f' : '#faad14' }} />
+                                <CalendarOutlined style={{ 
+                                  color: isOverdueMilestone(item) 
+                                    ? (isMilestoneCompleted(item) ? '#faad14' : '#ff4d4f') 
+                                    : '#faad14' 
+                                }} />
                                 <Text type="secondary" style={{ fontSize: '12px' }}>Due:</Text>
-                                <Text style={{ fontSize: '12px', color: isOverdue ? '#ff4d4f' : undefined }}>
+                                <Text style={{ 
+                                  fontSize: '12px', 
+                                  color: isOverdueMilestone(item) 
+                                    ? (isMilestoneCompleted(item) ? '#faad14' : '#ff4d4f') 
+                                    : undefined 
+                                }}>
                                   {formatDate(item.deadlineDate)}
                                 </Text>
                               </Space>
                             </Col>
-                            <Col xs={24} sm={8}>
-                              <Space size={4}>
-                                {item.completionDate ? (
+                            <Col xs={24} sm={8}>                              <Space size={4}>
+                                {isMilestoneCompleted(item) ? (
                                   <>
                                     <CheckCircleOutlined style={{ color: '#52c41a' }} />
                                     <Text type="secondary" style={{ fontSize: '12px' }}>Completed:</Text>
@@ -493,27 +567,41 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                 </List.Item>
               );
             }}
-          />
-
-          {/* Pagination */}
-          {totalItems > pageSize && (
-            <Card style={{ borderRadius: '12px', marginTop: '16px' }} bodyStyle={{ padding: '16px' }}>
-              <Row justify="end">
-                <Pagination
-                  current={currentPage + 1}
-                  pageSize={pageSize}
-                  total={totalItems}
-                  onChange={handlePageChange}
-                  showSizeChanger
-                  onShowSizeChange={handlePageSizeChange}
-                  pageSizeOptions={['5', '10', '20', '50']}
-                  showTotal={(total, range) => 
-                    <Text type="secondary">{range[0]}-{range[1]} of {total} milestones</Text>
-                  }
-                />
-              </Row>
-            </Card>
-          )}
+          />          {/* Pagination and Summary */}
+          <Card style={{ borderRadius: '12px', marginTop: '16px' }} bodyStyle={{ padding: '16px' }}>
+            <Row justify="space-between" align="middle">
+              <Col>
+                <Space direction="vertical" size={4}>
+                  <Text type="secondary" style={{ fontSize: '13px' }}>
+                    Showing {Math.min((currentPage * pageSize) + 1, totalItems)}-{Math.min((currentPage + 1) * pageSize, totalItems)} of {totalItems} milestones
+                  </Text>
+                  {totalItems > pageSize && (
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      Page {currentPage + 1} of {Math.ceil(totalItems / pageSize)}
+                    </Text>
+                  )}
+                </Space>
+              </Col>
+              <Col>
+                {totalItems > pageSize && (
+                  <Pagination
+                    current={currentPage + 1}
+                    pageSize={pageSize}
+                    total={totalItems}
+                    onChange={handlePageChange}
+                    showSizeChanger
+                    onShowSizeChange={handlePageSizeChange}
+                    pageSizeOptions={['5', '10', '20', '50']}
+                    showQuickJumper
+                    size="small"
+                    showTotal={(total, range) => 
+                      `${range[0]}-${range[1]} of ${total}`
+                    }
+                  />
+                )}
+              </Col>
+            </Row>
+          </Card>
         </>
       )}
     </div>

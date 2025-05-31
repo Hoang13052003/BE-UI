@@ -51,7 +51,7 @@ const getUpdateStatusStyle = (status: string | null | undefined, theme?: string)
   }
 };
 
-const renderUser = (user: UserSummary | null | undefined, _theme?: string) => {
+const renderUser = (user: UserSummary | null | undefined, theme?: string) => {
     if (!user) return <Tag icon={<UserOutlined />} style={{cursor: 'default'}}>Unknown User</Tag>;
     const userInitial = user.fullName ? user.fullName.charAt(0).toUpperCase() : <UserOutlined />;
     return (
@@ -65,13 +65,35 @@ const renderUser = (user: UserSummary | null | undefined, _theme?: string) => {
         title={<Text strong>Updated by</Text>}
         trigger="hover"
       >
-        <Tag 
-            icon={<Avatar size="small" style={{ backgroundColor: '#1677ff', marginRight: 4 }}>{userInitial}</Avatar>}
-            style={{ padding: '2px 8px 2px 4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
-            color="blue"
-        >
-            <Text style={{color: '#fff', fontSize: '0.9em'}}>{user.fullName}</Text>
-        </Tag>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          padding: '4px 8px',
+          borderRadius: '6px',
+          background: theme === 'dark' ? 'rgba(24, 144, 255, 0.15)' : 'rgba(24, 144, 255, 0.1)',
+          border: `1px solid ${theme === 'dark' ? 'rgba(24, 144, 255, 0.3)' : 'rgba(24, 144, 255, 0.2)'}`,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}>
+          <Avatar 
+            size="small" 
+            style={{ 
+              backgroundColor: '#1677ff', 
+              marginRight: 6,
+              fontSize: '12px',
+              fontWeight: 600
+            }}
+          >
+            {userInitial}
+          </Avatar>
+          <Text style={{
+            color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)',
+            fontSize: '13px',
+            fontWeight: 500
+          }}>
+            {user.fullName}
+          </Text>
+        </div>
       </Popover>
     );
 };
@@ -188,118 +210,197 @@ const ProjectUpdatesTab: React.FC<ProjectUpdatesTabProps> = ({ projectId, theme 
   }
 
   return (
-    <div style={{ padding: '24px 8px' }}>
+    <div style={{ padding: '16px' }}>
       {sortedDates.map(dateStr => (
-        <div key={dateStr} style={{ marginBottom: '24px' }}>
+        <div key={dateStr} style={{ marginBottom: '32px' }}>
+          {/* Date Header */}
           <div style={{ 
-            paddingBottom: '8px', 
-            marginBottom: '16px', 
-            borderBottom: `1px solid ${theme === 'dark' ? '#303030' : '#d9d9d9'}` 
+            padding: '12px 16px',
+            marginBottom: '20px',
+            background: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+            borderRadius: '8px',
+            border: `1px solid ${theme === 'dark' ? '#303030' : '#f0f0f0'}`
           }}>
-            <Space align="center">
-              <CalendarOutlined style={{ color: theme === 'dark' ? '#8c8c8c' : '#595959' }} />
-              <Title level={5} style={{ margin: 0, color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : undefined }}>
-                Updates on {dayjs(dateStr).format('MMMM D, YYYY')}
+            <Space align="center" size="middle">
+              <CalendarOutlined style={{ 
+                color: theme === 'dark' ? '#1677ff' : '#1677ff', 
+                fontSize: '16px' 
+              }} />
+              <Title level={4} style={{ 
+                margin: 0, 
+                color: theme === 'dark' ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.88)',
+                fontWeight: 600
+              }}>
+                {dayjs(dateStr).format('MMMM D, YYYY')}
               </Title>
+              <Tag color="blue" style={{ fontSize: '11px', fontWeight: 500 }}>
+                {groupedUpdates[dateStr].length} update{groupedUpdates[dateStr].length > 1 ? 's' : ''}
+              </Tag>
             </Space>
           </div>
 
-          {groupedUpdates[dateStr].map(update => (
-            <div 
-              key={update.id} 
-              style={{
-                border: `1px solid ${theme === 'dark' ? '#303030' : '#e8e8e8'}`,
-                borderRadius: '6px',
-                padding: '16px',
-                marginBottom: '16px',
-                background: theme === 'dark' ? '#1e1e1e' : '#fff',
-              }}
-            >
-              {/* Hàng trên cùng: Summary và các actions/info phụ */}
-              <Row justify="space-between" align="top" style={{ marginBottom: '8px' }}>
-                <Col xs={24} md={18}>
-                  <Text strong style={{ fontSize: '1.05rem', color: theme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined, display: 'block' }}>
-                    {update.summary || "Project Update"}
-                  </Text>
-                </Col>
-                <Col xs={24} md={6} style={{ textAlign: 'right' }}>
-                  <Space direction={window.innerWidth < 768 ? "vertical" : "horizontal"} align="end" size="small" wrap>
-                    {/* Có thể thêm ID của update hoặc link xem chi tiết update nếu có */}
-                    {/* <Text type="secondary" style={{fontFamily: 'monospace', fontSize: '0.8em'}}>ID: {update.id}</Text> */}
-                     <Tag icon={update.published ? <EyeOutlined /> : <EyeInvisibleOutlined />} color={update.published ? "success" : "default"} style={{fontSize: '0.8em'}}>
-                        {update.published ? 'Published' : 'Internal'}
-                    </Tag>
-                  </Space>
-                </Col>
-              </Row>
-
-              {/* Hàng thông tin user và ngày */}
-              <Row align="middle" style={{ marginBottom: '12px' }}>
-                <Col>
-                  {renderUser(update.createdBy, theme)}
-                  <Text type="secondary" style={{ marginLeft: '8px', fontSize: '0.85em' }}>
-                     committed on {dayjs(update.updateDate).format('MMM D')}
-                  </Text>
-                </Col>
-              </Row>
-              
-              {/* Details */}
-              {update.details && (
-                <div style={{marginBottom: '12px', paddingLeft: '30px'}}> {/* Thụt lề cho details */}
-                  <Paragraph 
-                    ellipsis={{ rows: 3, expandable: true, symbol: <Text strong style={{color: '#1677ff', fontSize:'0.9em'}}>more</Text> }}
-                    style={{color: theme === 'dark' ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.75)', whiteSpace: 'pre-line', lineHeight: '1.6', fontSize: '0.9em'}}
-                  >
-                    {update.details}
-                  </Paragraph>
-                </div>
-              )}
-              
-              {/* Status và Progress */}
-              <Row gutter={16} align="middle" style={{paddingLeft: '30px'}}>
-                {update.statusAtUpdate && (
-                    <Col>
-                        <Text style={{...getUpdateStatusStyle(update.statusAtUpdate, theme)}}>
-                            <InfoCircleOutlined style={{marginRight: 3}}/> Status: {update.statusAtUpdate.replace(/_/g, " ")}
+          {/* Updates Cards */}
+          <div style={{ paddingLeft: '8px' }}>
+            {groupedUpdates[dateStr].map(update => (
+              <div 
+                key={update.id} 
+                style={{
+                  border: `1px solid ${theme === 'dark' ? '#303030' : '#e8e8e8'}`,
+                  borderRadius: '12px',
+                  padding: '20px',
+                  marginBottom: '16px',
+                  background: theme === 'dark' ? '#1a1a1a' : '#fff',
+                  boxShadow: theme === 'dark' 
+                    ? '0 2px 8px rgba(0,0,0,0.3)' 
+                    : '0 2px 8px rgba(0,0,0,0.06)',
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+              >
+                {/* Update Header */}
+                <Row justify="space-between" align="top" style={{ marginBottom: '16px' }}>
+                  <Col xs={24} lg={16}>
+                    <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                      <Text strong style={{ 
+                        fontSize: '16px', 
+                        color: theme === 'dark' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.88)',
+                        lineHeight: '1.4'
+                      }}>
+                        {update.summary || "Project Update"}
+                      </Text>
+                      <Space size="middle" wrap>
+                        {renderUser(update.createdBy, theme)}
+                        <Text type="secondary" style={{ fontSize: '13px' }}>
+                          {dayjs(update.updateDate).format('h:mm A')}
                         </Text>
-                    </Col>
-                )}
-                {update.completionPercentage !== null && update.completionPercentage !== undefined && (
-                  <Col>
-                    <Space align="center" size="small">
-                      <PercentageOutlined style={{color: theme === 'dark' ? '#8c8c8c' : '#595959', fontSize:'0.9em'}}/>
-                      <Text style={{color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : undefined, fontSize: '0.9em', marginRight: '4px'}}>Progress: </Text>
-                      <Progress 
-                        percent={update.completionPercentage} 
-                        size="small" 
-                        style={{width: '100px'}} 
-                        status={update.completionPercentage === 100 ? 'success' : (update.completionPercentage > 70 ? 'normal' : (update.completionPercentage < 30 ? 'exception' : 'active'))} 
-                      />
+                      </Space>
                     </Space>
                   </Col>
+                  <Col xs={24} lg={8} style={{ textAlign: window.innerWidth >= 992 ? 'right' : 'left' }}>
+                    <Space size="small" wrap style={{ marginTop: window.innerWidth < 992 ? '12px' : '0' }}>
+                      <Tag 
+                        icon={update.published ? <EyeOutlined /> : <EyeInvisibleOutlined />} 
+                        color={update.published ? "success" : "default"} 
+                        style={{ fontSize: '12px', fontWeight: 500 }}
+                      >
+                        {update.published ? 'Published' : 'Internal'}
+                      </Tag>
+                    </Space>
+                  </Col>
+                </Row>
+                
+                {/* Details */}
+                {update.details && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <Paragraph 
+                      ellipsis={{ 
+                        rows: 3, 
+                        expandable: true, 
+                        symbol: <Button type="link" size="small" style={{ padding: 0, height: 'auto', fontSize: '13px' }}>Show more</Button>
+                      }}
+                      style={{
+                        color: theme === 'dark' ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.75)', 
+                        whiteSpace: 'pre-line', 
+                        lineHeight: '1.6', 
+                        fontSize: '14px',
+                        margin: 0,
+                        padding: '12px 16px',
+                        background: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                        borderRadius: '8px',
+                        border: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#f5f5f5'}`
+                      }}
+                    >
+                      {update.details}
+                    </Paragraph>
+                  </div>
                 )}
-              </Row>
-              {/* Bạn có thể thêm nút "Browse files" ở đây nếu có chức năng snapshot */}
-              {/* <Button size="small" style={{marginTop: 10, marginLeft: 30}} onClick={() => handleBrowseSnapshot(update.id)}>Browse files at this update</Button> */}
-
-            </div>
-          ))}
+                
+                {/* Status and Progress Footer */}
+                {(update.statusAtUpdate || (update.completionPercentage !== null && update.completionPercentage !== undefined)) && (
+                  <div style={{
+                    padding: '12px 16px',
+                    background: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                    borderRadius: '8px',
+                    border: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#f5f5f5'}`
+                  }}>
+                    <Row gutter={[16, 8]} align="middle">
+                      {update.statusAtUpdate && (
+                        <Col xs={24} sm={12}>
+                          <Space align="center" size="small">
+                            <InfoCircleOutlined style={{ fontSize: '14px' }} />
+                            <Text strong style={{ fontSize: '13px' }}>Status:</Text>
+                            <Text style={{
+                              ...getUpdateStatusStyle(update.statusAtUpdate, theme),
+                              fontSize: '13px',
+                              fontWeight: 600
+                            }}>
+                              {update.statusAtUpdate.replace(/_/g, " ")}
+                            </Text>
+                          </Space>
+                        </Col>
+                      )}
+                      {update.completionPercentage !== null && update.completionPercentage !== undefined && (
+                        <Col xs={24} sm={12}>
+                          <Space align="center" size="small" style={{ width: '100%' }}>
+                            <PercentageOutlined style={{ fontSize: '14px' }} />
+                            <Text strong style={{ fontSize: '13px' }}>Progress:</Text>
+                            <div style={{ flex: 1, minWidth: '120px' }}>
+                              <Progress 
+                                percent={update.completionPercentage} 
+                                size="small"
+                                strokeColor={{
+                                  '0%': '#87d068',
+                                  '100%': '#108ee9',
+                                }}
+                                status={
+                                  update.completionPercentage === 100 ? 'success' : 
+                                  update.completionPercentage > 70 ? 'normal' : 
+                                  update.completionPercentage < 30 ? 'exception' : 'active'
+                                }
+                                format={(percent) => (
+                                  <Text style={{ fontSize: '12px', fontWeight: 600 }}>
+                                    {percent}%
+                                  </Text>
+                                )}
+                              />
+                            </div>
+                          </Space>
+                        </Col>
+                      )}
+                    </Row>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       ))}
 
-      {/* Nút Load More và text "All updates loaded" */}
-      {!allUpdatesLoaded && !loading && updatesPage && updatesPage.content.length > 0 && (
-        <Row justify="center" style={{ marginTop: 20 }}>
-          <Button onClick={handleLoadMore} disabled={loading || allUpdatesLoaded}>
+      {/* Load More Section */}
+      <div style={{ textAlign: 'center', marginTop: '32px' }}>
+        {!allUpdatesLoaded && !loading && updatesPage && updatesPage.content.length > 0 && (
+          <Button 
+            type="primary" 
+            size="large"
+            onClick={handleLoadMore} 
+            disabled={loading || allUpdatesLoaded}
+            style={{ 
+              borderRadius: '8px',
+              height: '40px',
+              paddingLeft: '24px',
+              paddingRight: '24px',
+              fontWeight: 500
+            }}
+          >
             Load More Updates
           </Button>
-        </Row>
-      )}
-       {!loading && allUpdatesLoaded && updatesPage && updatesPage.content.length > 0 && (
-        <Row justify="center" style={{ marginTop: 20 }}>
-            <Text type="secondary">All updates loaded.</Text>
-        </Row>
-      )}
+        )}
+        {!loading && allUpdatesLoaded && updatesPage && updatesPage.content.length > 0 && (
+          <Text type="secondary" style={{ fontSize: '14px', fontStyle: 'italic' }}>
+            All updates have been loaded
+          </Text>
+        )}
+      </div>
     </div>
   );
 };
