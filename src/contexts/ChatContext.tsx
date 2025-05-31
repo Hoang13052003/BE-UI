@@ -105,11 +105,16 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
+    // ✅ Set callback to update connection status
+    chatService.setConnectionStatusCallback(setIsConnected);
+    
     chatService.connect(token);
     chatService.addListener("TEXT", handleMessage);
     chatService.addListener("FILE", handleMessage);
     chatService.addListener("all", handleMessage);
-    setIsConnected(chatService.isSocketConnected());
+    
+    // ✅ Remove this line as it will be handled by callback
+    // setIsConnected(chatService.isSocketConnected());
   }, [handleMessage]);
 
   const disconnectWebSocket = useCallback(() => {

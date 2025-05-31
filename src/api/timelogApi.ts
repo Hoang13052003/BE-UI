@@ -112,8 +112,7 @@ export const deleteTimeLogApi = async (timelogId: number): Promise<void> => {
 // batchUpdateTimeLogsApi: Payload BatchUpdateItem vẫn dùng performerId
 export const batchUpdateTimeLogsApi = async (updates: BatchUpdateItem[]): Promise<void> => {
   try {
-    const response = await axiosClient.patch('/api/timelogs/batch-update', updates);
-    return response.data;
+    await axiosClient.patch('/api/timelogs/batch-update', updates);
   } catch (error: any) {
     console.error("[timelogApi.ts] Failed to batch update time logs:", error);
     throw error;

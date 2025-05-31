@@ -167,12 +167,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   ]);
 
   const handleNotificationFromSocket = useCallback((socketMessage: any) => {
-    console.log("=== Socket Message Received ===");
-    console.log("Full message:", socketMessage);
-
     const data = socketMessage.payload as NotificationResponse;
-
-    console.log("Notification data:", data);
 
     // Validate required fields
     if (data && data.id && data.title && data.content) {
@@ -198,8 +193,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           return newCount;
         });
       }
-    } else {
-      console.warn("Invalid notification data - missing required fields:");
     }
   }, []);
 

@@ -17,6 +17,8 @@ export interface Project {
   totalActualHours: number;
   totalEstimatedHours: number | null; // Updated to allow null based on sample data
   progress: number;
+  overallProcess?: number; // Added
+  actualProcess?: number; // Added
   users: ProjectUser[]; // List of users assigned to the project
   totalMilestoneCompleted: number;
   milestoneCount: number;
@@ -43,6 +45,8 @@ export interface ProjectDetail { // ĐỔI TÊN TỪ Project thành ProjectDetai
   actualEndDate: string | null;
   totalBudget: number | null; // Cho phép null nếu có thể
   totalEstimatedHours: number | null;
+  overallProcess?: number; // Added
+  actualProcess?: number; // Added
   users: UserSummary[]; 
 
 }

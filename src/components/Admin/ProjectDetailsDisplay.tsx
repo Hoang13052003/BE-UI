@@ -138,76 +138,127 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   };
 
   const renderProgressSection = () => {
+    const commonProgressStyle = {
+      background: theme === 'dark' ? '#1f1f1f' : '#fafafa',
+      border: 'none',
+      borderRadius: '8px',
+      marginBottom: '16px'
+    };    const renderOverallActualProgress = () => {
+      if (projectData.overallProcess === undefined || projectData.actualProcess === undefined) {
+        return null;
+      }
+
+      return (
+        <Card size="small" style={commonProgressStyle}>
+          <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            <Text strong>Progress Overview</Text>
+            
+            {/* Overall Progress - Xanh nước biển */}
+            <div>
+              <Text type="secondary" style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>
+                Overall Progress: {projectData.overallProcess?.toFixed(2) || '0.00'}%
+              </Text>
+              <Progress
+                percent={Number(projectData.overallProcess)}
+                strokeColor="#1890ff" // Xanh nước biển
+                trailColor={theme === 'dark' ? '#424242' : '#f0f0f0'}
+                format={() => `${Number(projectData.overallProcess)?.toFixed(2) || '0.00'}%`}
+                size="small"
+              />
+            </div>
+
+            {/* Actual Progress - Xanh lá cây */}
+            <div>
+              <Text type="secondary" style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>
+                Actual Progress: {projectData.actualProcess?.toFixed(2) || '0.00'}%
+              </Text>
+              <Progress
+                percent={Number(projectData.actualProcess)}
+                strokeColor="#52c41a" // Xanh lá cây
+                trailColor={theme === 'dark' ? '#424242' : '#f0f0f0'}
+                format={() => `${Number(projectData.actualProcess)?.toFixed(2) || '0.00'}%`}
+                size="small"
+              />
+            </div>
+          </Space>
+        </Card>
+      );
+    };
+
     if (projectData.type === 'LABOR' && projectData.totalEstimatedHours) {
       const progress = calculateLaborProgress();
       return (
-        <Card 
-          size="small" 
-          style={{ 
-            background: theme === 'dark' ? '#1f1f1f' : '#fafafa',
-            border: 'none',
-            borderRadius: '8px'
-          }}
-        >
-          <Row align="middle" gutter={16}>
-            <Col>
-              <Progress
-                type="circle"
-                size={60}
-                percent={progress.percent}
-                format={() => `${progress.currentDay}/${progress.totalDays}`}
-                strokeColor={{
-                  '0%': '#108ee9',
-                  '100%': '#87d068',
-                }}
-                strokeWidth={6}
-              />
-            </Col>
-            <Col>
-              <Space direction="vertical" size={0}>
-                <Text strong>Labor Progress</Text>
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                  {progress.currentDay} of {progress.totalDays} days
-                </Text>
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                  {projectData.totalEstimatedHours}h estimated
-                </Text>
-              </Space>
-            </Col>
-          </Row>
-        </Card>
+        <>
+          {renderOverallActualProgress()}
+          <Card
+            size="small"
+            style={commonProgressStyle}
+          >
+            <Row align="middle" gutter={16}>
+              <Col>
+                <Progress
+                  type="circle"
+                  size={60}
+                  percent={progress.percent}
+                  format={() => `${progress.currentDay}/${progress.totalDays}`}
+                  strokeColor={{
+                    '0%': '#108ee9',
+                    '100%': '#87d068',
+                  }}
+                  strokeWidth={6}
+                />
+              </Col>
+              <Col>
+                <Space direction="vertical" size={0}>
+                  <Text strong>Labor Progress</Text>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {progress.currentDay} of {progress.totalDays} days
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {projectData.totalEstimatedHours}h estimated
+                  </Text>
+                </Space>
+              </Col>
+            </Row>
+          </Card>
+        </>
       );
     }
 
     if (!isProjectDetail(projectData) && projectData.type === 'FIXED_PRICE' && 
         typeof milestoneCount === 'number' && milestoneCount > 0) {
       return (
-        <Card 
-          size="small" 
-          style={{ 
-            background: theme === 'dark' ? '#1f1f1f' : '#fafafa',
-            border: 'none',
-            borderRadius: '8px'
-          }}
-        >
-          <Space direction="vertical" size={4}>
-            <Text strong>Milestone Progress</Text>
-            <Progress
-              steps={milestoneCount}
-              percent={100}
-              strokeColor={createMilestoneStatusColors()}
-              format={() => `${milestoneCount} milestones`}
-              strokeWidth={12}
-              size="small"
-            />
-            <Space size={8}>
-              <Tag color="blue" style={{ fontSize: '12px' }}>New: {newMilestoneCount}</Tag>
-              <Tag color="gold" style={{ fontSize: '12px' }}>Sent: {sentMilestoneCount}</Tag>
-              <Tag color="green" style={{ fontSize: '12px' }}>Reviewed: {reviewedMilestoneCount}</Tag>
+        <>
+          {renderOverallActualProgress()}
+          <Card
+            size="small"
+            style={commonProgressStyle}
+          >
+            <Space direction="vertical" size={4}>
+              <Text strong>Milestone Progress</Text>
+              <Progress
+                steps={milestoneCount}
+                percent={100}
+                strokeColor={createMilestoneStatusColors()}
+                format={() => `${milestoneCount} milestones`}
+                strokeWidth={12}
+                size="small"
+              />
+              <Space size={8}>
+                <Tag color="blue" style={{ fontSize: '12px' }}>New: {newMilestoneCount}</Tag>
+                <Tag color="gold" style={{ fontSize: '12px' }}>Sent: {sentMilestoneCount}</Tag>
+                <Tag color="green" style={{ fontSize: '12px' }}>Reviewed: {reviewedMilestoneCount}</Tag>
+              </Space>
             </Space>
-          </Space>
-        </Card>
+          </Card>
+        </>
       );
+    }
+
+    // Fallback for projects that don't fit LABOR or FIXED_PRICE with milestones,
+    // but still might have overall/actual progress.
+    if (projectData.overallProcess !== undefined && projectData.actualProcess !== undefined) {
+      return renderOverallActualProgress();
     }
 
     return null;

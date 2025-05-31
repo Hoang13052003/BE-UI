@@ -11,6 +11,11 @@ class ChatService {
   private reconnectInterval = 3000;
   private reconnectTimeoutId: NodeJS.Timeout | null = null;
   private listeners: Map<string, Array<(data: any) => void>> = new Map();
+  private connectionStatusCallback: ((isConnected: boolean) => void) | null = null;
+
+  setConnectionStatusCallback(callback: (isConnected: boolean) => void): void {
+    this.connectionStatusCallback = callback;
+  }
 
   connect(token: string): void {
     if (
@@ -32,6 +37,7 @@ class ChatService {
       console.log("Chat WebSocket connected");
       this.isConnected = true;
       this.reconnectAttempts = 0;
+      this.connectionStatusCallback?.(true);
     };
 
     this.socket.onmessage = (event) => {
@@ -47,6 +53,7 @@ class ChatService {
     this.socket.onclose = (event) => {
       this.isConnected = false;
       console.log("Chat WebSocket closed", event);
+      this.connectionStatusCallback?.(false);
       if (!event.wasClean && this.token) {
         this.attemptReconnect();
       }
@@ -55,6 +62,7 @@ class ChatService {
     this.socket.onerror = (err) => {
       console.error("Chat WebSocket error:", err);
       message.error("Mất kết nối chat. Đang thử kết nối lại...");
+      this.connectionStatusCallback?.(false);
       if (!this.isConnected && this.token) {
         this.attemptReconnect();
       }
@@ -89,6 +97,7 @@ class ChatService {
     }
     this.isConnected = false;
     this.token = null;
+    this.connectionStatusCallback?.(false);
   }
 
   sendMessage(msg: {

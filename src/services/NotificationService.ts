@@ -22,7 +22,6 @@ class NotificationService {
       (this.socket.readyState === WebSocket.OPEN ||
         this.socket.readyState === WebSocket.CONNECTING)
     ) {
-      console.log("WebSocket is already connected");
       return;
     }
 
@@ -34,7 +33,6 @@ class NotificationService {
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
-        console.log("WebSocket connection established");
         this.isConnected = true;
         this.reconnectAttempts = 0;
 
@@ -43,12 +41,8 @@ class NotificationService {
       };
 
       this.socket.onmessage = (event) => {
-        console.log("🔔 === WebSocket Message Received ===");
-        console.log("📨 Raw event data:", event);
-
         try {
           const data = JSON.parse(event.data);
-          console.log("Received notification:", data);
 
           const messageType = data.messageType;
 
@@ -60,17 +54,15 @@ class NotificationService {
 
           // Also notify 'all' listeners for any message
           if (this.listeners.has("all")) {
-            console.log("📢 Also notifying 'all' listeners...");
             this.listeners.get("all")?.forEach((callback) => callback(data));
           }
         } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
+          // Handle JSON parsing error
         }
       };
 
       this.socket.onclose = (event) => {
         this.isConnected = false;
-        console.log("WebSocket connection closed", event);
 
         // Attempt to reconnect if not closed intentionally
         if (!event.wasClean && this.token) {
@@ -79,7 +71,6 @@ class NotificationService {
       };
 
       this.socket.onerror = (error) => {
-        console.error("WebSocket error:", error);
         message.error("Connection error. Trying to reconnect...", 3);
 
         if (!this.isConnected && this.token) {
@@ -87,7 +78,6 @@ class NotificationService {
         }
       };
     } catch (error) {
-      console.error("Error setting up WebSocket:", error);
       message.error("Failed to connect to notification service");
     }
   }
@@ -98,9 +88,6 @@ class NotificationService {
   private attemptReconnect(token: string): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(
-        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-      );
 
       if (this.reconnectTimeoutId) {
         clearTimeout(this.reconnectTimeoutId);
@@ -110,7 +97,6 @@ class NotificationService {
         this.connect(token);
       }, this.reconnectInterval);
     } else {
-      console.log("Max reconnection attempts reached");
       message.error(
         "Could not connect to notification service. Please refresh the page."
       );
@@ -128,7 +114,6 @@ class NotificationService {
 
     if (this.socket) {
       if (this.socket.readyState === WebSocket.CONNECTING) {
-        console.warn("Cannot disconnect: WebSocket is still connecting.");
         return;
       }
 
@@ -140,7 +125,6 @@ class NotificationService {
       this.socket = null;
       this.isConnected = false;
       this.token = null;
-      console.log("WebSocket disconnected");
     }
   }
 
@@ -149,7 +133,6 @@ class NotificationService {
    */
   subscribeUser(token: string): void {
     if (!this.isConnected || !this.socket) {
-      console.error("Cannot subscribe: WebSocket is not connected");
       return;
     }
 
@@ -162,19 +145,14 @@ class NotificationService {
 
     if (this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(subscribeMessage));
-      console.log("User subscription request sent");
     } else if (this.socket.readyState === WebSocket.CONNECTING) {
-      console.warn("Socket not open. Waiting for connection...");
       this.socket.addEventListener(
         "open",
         () => {
           this.socket?.send(JSON.stringify(subscribeMessage));
-          console.log("User subscription request sent (delayed)");
         },
         { once: true }
       );
-    } else {
-      console.error("Cannot subscribe: WebSocket is not in a valid state");
     }
   }
 
@@ -198,7 +176,6 @@ class NotificationService {
     };
 
     this.socket.send(JSON.stringify(unsubscribeMessage));
-    console.log("User unsubscription request sent");
   }
 
   /**

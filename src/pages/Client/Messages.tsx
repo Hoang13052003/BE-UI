@@ -43,9 +43,10 @@ import { useChat } from "../../contexts/ChatContext";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   ChatRoomResponse,
-  ChatMessageType,
   createGroupChatRoom,
   getUserProjectChats,
+  ChatMessageRequest,
+  ChatMessageType,
   ChatRoomType,
 } from "../../api/chatApi";
 import { Project } from "../../types/project";
@@ -164,7 +165,7 @@ const Messages: React.FC = () => {
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeChatRoom) return;
     try {
-      const messageRequest = {
+      const messageRequest: ChatMessageRequest = {
         content: messageInput.trim(),
         messageType: ChatMessageType.TEXT,
       };

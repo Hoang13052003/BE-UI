@@ -1,12 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Spin, Alert, Typography, Button, Row, Col, message } from "antd";
-import {
-  ArrowLeftOutlined,
-  EditOutlined,
-  CompressOutlined,
-} from "@ant-design/icons";
-import { Responsive, WidthProvider, Layout } from "react-grid-layout";
+import { ArrowLeftOutlined, EditOutlined } from "@ant-design/icons";
+// removed react-grid-layout in favor of static Ant Design grid
 
 // --- Types ---
 import { Project, ProjectDetail } from "../../types/project";
@@ -25,30 +21,6 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
 
 const { Title } = Typography;
-const ResponsiveGridLayout = WidthProvider(Responsive);
-
-const DEFAULT_LAYOUTS = {
-  lg: [
-    { i: "overview", x: 0, y: 0, w: 6, h: 8, minW: 4, minH: 6 },
-    { i: "milestones", x: 6, y: 0, w: 6, h: 8, minW: 4, minH: 6 },
-    { i: "updates", x: 0, y: 8, w: 12, h: 6, minW: 8, minH: 4 },
-  ],
-  md: [
-    { i: "overview", x: 0, y: 0, w: 6, h: 8, minW: 4, minH: 6 },
-    { i: "milestones", x: 0, y: 8, w: 6, h: 8, minW: 4, minH: 6 },
-    { i: "updates", x: 0, y: 16, w: 6, h: 6, minW: 4, minH: 4 },
-  ],
-  sm: [
-    { i: "overview", x: 0, y: 0, w: 4, h: 8, minW: 4, minH: 6 },
-    { i: "milestones", x: 0, y: 8, w: 4, h: 8, minW: 4, minH: 6 },
-    { i: "updates", x: 0, y: 16, w: 4, h: 6, minW: 4, minH: 4 },
-  ],
-  xs: [
-    { i: "overview", x: 0, y: 0, w: 2, h: 8, minW: 2, minH: 6 },
-    { i: "milestones", x: 0, y: 8, w: 2, h: 8, minW: 2, minH: 6 },
-    { i: "updates", x: 0, y: 16, w: 2, h: 6, minW: 2, minH: 4 },
-  ],
-};
 
 const ProjectDetailPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -61,10 +33,6 @@ const ProjectDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] =
     useState<boolean>(false);
-
-  // Grid Layout state
-  const [isDragging, setIsDragging] = useState(false);
-  const [layouts, setLayouts] = useState(DEFAULT_LAYOUTS);
 
   const fetchProjectData = useCallback(async () => {
     if (!projectId) {
@@ -116,57 +84,6 @@ const ProjectDetailPage: React.FC = () => {
     fetchProjectData();
   };
 
-  // Grid Layout handlers
-  const onLayoutChange = (_layout: Layout[], layouts: any) => {
-    setLayouts(layouts);
-    // Save to localStorage
-    localStorage.setItem(
-      `project-layout-${projectId}`,
-      JSON.stringify(layouts)
-    );
-  };
-
-  const onDragStart = () => {
-    setIsDragging(true);
-  };
-
-  const onDragStop = () => {
-    setIsDragging(false);
-  };
-
-  const resetLayout = () => {
-    setLayouts(DEFAULT_LAYOUTS);
-    localStorage.removeItem(`project-layout-${projectId}`);
-    message.success("Layout reset to default");
-  };
-
-  // Load saved layout
-  useEffect(() => {
-    const savedLayouts = localStorage.getItem(`project-layout-${projectId}`);
-    if (savedLayouts) {
-      try {
-        setLayouts(JSON.parse(savedLayouts));
-      } catch (e) {
-        console.error("Failed to parse saved layout:", e);
-      }
-    }
-  }, [projectId]);
-
-  // Card style function
-  const getCardStyle = (isActive: boolean) => ({
-    background: theme === "dark" ? "#181818" : "#fff",
-    color: theme === "dark" ? "#fff" : undefined,
-    height: "100%",
-    transition: "all 0.3s ease",
-    boxShadow: isActive
-      ? "0 8px 24px rgba(24, 144, 255, 0.3)"
-      : theme === "dark"
-      ? "0 2px 8px rgba(255,255,255,0.1)"
-      : "0 2px 8px rgba(0,0,0,0.1)",
-    border: isActive ? "2px solid #1890ff" : "1px solid #d9d9d9",
-    borderRadius: "6px",
-    overflow: "hidden",
-  });
 
   if (loading) {
     return (
@@ -242,33 +159,16 @@ const ProjectDetailPage: React.FC = () => {
     <div style={{ padding: "20px" }}>
       {/* Header */}
       {userRole === "ADMIN" ? (
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: "20px" }}
-        >
+        <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
           <Col>
             <Button icon={<ArrowLeftOutlined />} onClick={handleBackToList}>
               Back to Projects
             </Button>
           </Col>
           <Col>
-            <Row gutter={8}>
-              <Col>
-                <Button icon={<CompressOutlined />} onClick={resetLayout}>
-                  Reset Layout
-                </Button>
-              </Col>
-              <Col>
-                <Button
-                  type="primary"
-                  icon={<EditOutlined />}
-                  onClick={handleOpenEditProjectModal}
-                >
-                  Edit Project
-                </Button>
-              </Col>
-            </Row>
+            <Button type="primary" icon={<EditOutlined />} onClick={handleOpenEditProjectModal}>
+              Edit Project
+            </Button>
           </Col>
         </Row>
       ) : (
@@ -291,78 +191,36 @@ const ProjectDetailPage: React.FC = () => {
         {project.name}
       </Title>
 
-      {/* Grid Layout */}
-      <ResponsiveGridLayout
-        className="layout"
-        layouts={layouts}
-        onLayoutChange={onLayoutChange}
-        onDragStart={onDragStart}
-        onDragStop={onDragStop}
-        onResizeStart={onDragStart}
-        onResizeStop={onDragStop}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
-        cols={{ lg: 12, md: 6, sm: 4, xs: 2 }}
-        rowHeight={60}
-        margin={[16, 16]}
-        containerPadding={[0, 0]}
-        isDraggable={true}
-        isResizable={true}
-        useCSSTransforms={false}
-        style={{ minHeight: "800px" }}
-      >
-        {/* Project Overview */}
-        <div key="overview" style={getCardStyle(isDragging)}>
-          <Card
-            title="Project Overview"
-            style={{ height: "100%", border: "none" }}
-            bodyStyle={{
-              height: "calc(100% - 57px)",
-              overflow: "auto",
-              padding: "16px",
-            }}
-          >
+      {/* Static Layout using Ant Design Grid */}
+      <Row gutter={[16, 16]}>  
+        {/* Overview: full width on xs, sm, md; half width on lg and xl */}
+        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
+          <Card title="Project Overview" style={{ border: 'none' }} bodyStyle={{ padding: 16 }}>
             <ProjectDetailsDisplay project={project} theme={theme} />
           </Card>
-        </div>
-
-        {/* Milestones/Time Logs */}
-        <div key="milestones" style={getCardStyle(isDragging)}>
+        </Col>
+        {/* Milestones/Time Logs: full width on xs, sm, md; half width on lg and xl */}
+        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
           <Card
-            title={
-              project.type === "FIXED_PRICE"
-                ? "Project Milestones"
-                : "Time Logs"
-            }
-            style={{ height: "100%", border: "none" }}
-            bodyStyle={{
-              height: "calc(100% - 57px)",
-              overflow: "auto",
-              padding: "16px",
-            }}
+            title={project.type === 'FIXED_PRICE' ? 'Project Milestones' : 'Time Logs'}
+            style={{ border: 'none' }}
+            bodyStyle={{ padding: 16 }}
           >
-            {project.type === "FIXED_PRICE" ? (
+            {project.type === 'FIXED_PRICE' ? (
               <ProjectMilestonesTab projectId={project.id} />
             ) : (
               <ProjectTimeLogsTab projectId={project.id} />
             )}
           </Card>
-        </div>
-
-        {/* Updates Timeline */}
-        <div key="updates" style={getCardStyle(isDragging)}>
-          <Card
-            title="Project Updates Timeline"
-            style={{ height: "100%", border: "none" }}
-            bodyStyle={{
-              height: "calc(100% - 57px)",
-              overflow: "auto",
-              padding: "16px",
-            }}
-          >
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col span={24}>
+          <Card title="Project Updates Timeline" style={{ border: 'none' }} bodyStyle={{ padding: 16 }}>
             <ProjectUpdatesTab projectId={project.id} theme={theme} />
           </Card>
-        </div>
-      </ResponsiveGridLayout>
+        </Col>
+      </Row>
 
       {/* Edit Project Modal */}
       {isEditProjectModalVisible && project && (
