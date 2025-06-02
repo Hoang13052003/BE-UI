@@ -291,12 +291,11 @@ const ProjectUpdatesTab: React.FC<ProjectUpdatesTabProps> = ({ projectId, theme 
                 
                 {/* Details */}
                 {update.details && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <Paragraph 
+                  <div style={{ marginBottom: '16px' }}>                    <Paragraph 
                       ellipsis={{ 
                         rows: 3, 
                         expandable: true, 
-                        symbol: <Button type="link" size="small" style={{ padding: 0, height: 'auto', fontSize: '13px' }}>Show more</Button>
+                        symbol: <span style={{ color: '#1890ff', fontSize: '13px', cursor: 'pointer' }}>Show more</span>
                       }}
                       style={{
                         color: theme === 'dark' ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.75)', 

@@ -73,25 +73,23 @@ function App() {
                         element={<ProjectUpdateDetailsPage />}
                       />
                       <Route path="notifications" element={<Notifications />} />
-                      <Route path="settings" element={<SystemSettings />} />
-                      <Route
+                      <Route path="settings" element={<SystemSettings />} />                      <Route
                         path="projects/:projectId/details"
                         element={<ProjectDetailPage />}
+                      />
+                      <Route
+                        path="projects/:projectId/history"
+                        element={<ProjectUpdateHistory />}
+                      />
+                      <Route
+                        path="projects/:projectId/updates/:projectUpdateId/snapshot"
+                        element={<ProjectSnapshotViewer />}
                       />
                     </Route>
                     <Route
                       path="/admin/attachment-display/:projectId"
                       element={<AttachmentDisplay />}
                     />
-                    <Route
-                      path="projects/:projectId/history"
-                      element={<ProjectUpdateHistory />}
-                    />
-                    <Route
-                      path="projects/:projectId/updates/:projectUpdateId/snapshot"
-                      element={<ProjectSnapshotViewer />}
-                    />{" "}
-                    {/* <<--- ROUTE CHO COMPONENT CLIENT */}
                   </Route>
                 </Route>
 

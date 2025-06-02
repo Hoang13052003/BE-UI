@@ -176,7 +176,7 @@ export const getProjectUpdateHistory = async (
   projectId: number
 ): Promise<ProjectUpdateSummaryDto[]> => {
   const response = await axiosClient.get<ProjectUpdateSummaryDto[]>(
-    // Sử dụng API_PROJECT_UPDATES_BASE_PATH nếu endpoint nằm trong ProjectUpdateController
+    // Sử dụng endpoint chính xác từ BE controller
     `${API_PROJECT_UPDATES_BASE_PATH}/projects/${projectId}/updates-history`
   );
   return response.data;
