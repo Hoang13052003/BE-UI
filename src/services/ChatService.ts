@@ -43,10 +43,26 @@ class ChatService {
     this.socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        
+        // Handle system responses
+        if (data.status) {
+          console.log(`System status: ${data.status} - ${data.value}`);
+          this.dispatchMessage({ type: 'system', ...data });
+          return;
+        }
+        
+        // Handle error responses
+        if (data.error) {
+          console.error("WebSocket error:", data.error);
+          message.error(`Chat error: ${data.error}`);
+          return;
+        }
+        
+        // Handle regular messages
         this.dispatchMessage(data);
       } catch (err) {
         console.error("Failed to parse chat message:", err);
-        message.error("Lỗi phân tích dữ liệu chat");
+        console.log("Raw message:", event.data);
       }
     };
 
@@ -88,7 +104,6 @@ class ChatService {
       }
     }, this.reconnectInterval);
   }
-
   disconnect(): void {
     if (this.reconnectTimeoutId) clearTimeout(this.reconnectTimeoutId);
     if (this.socket) {
@@ -111,6 +126,7 @@ class ChatService {
   }): void {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       console.error("Chat socket not connected");
+      message.error("Chưa kết nối chat. Đang thử kết nối lại...");
       return;
     }
 
@@ -118,14 +134,55 @@ class ChatService {
       ...msg,
       timestamp: new Date().toISOString(),
     };
+    
+    console.log('Sending message:', payload);
     this.socket.send(JSON.stringify(payload));
   }
 
+  // Subscribe to group chat topic
+  subscribeToTopic(topic: string): void {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.error("Chat socket not connected");
+      return;
+    }
+    
+    console.log(`Subscribing to topic: ${topic}`);
+    this.socket.send(`subscribe:${topic}`);
+  }
+
+  // Unsubscribe from group chat topic
+  unsubscribeFromTopic(topic: string): void {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.error("Chat socket not connected");
+      return;
+    }
+    
+    console.log(`Unsubscribing from topic: ${topic}`);
+    this.socket.send(`unsubscribe:${topic}`);  }
+
+  // Mark message as read
+  markMessageAsRead(messageId: string): void {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.error("Chat socket not connected");
+      return;
+    }
+    
+    console.log(`Marking message as read: ${messageId}`);
+    this.socket.send(`read:${messageId}`);
+  }
+
   private dispatchMessage(data: any): void {
+    // Dispatch to specific message type listeners
     if (data.messageType && this.listeners.has(data.messageType)) {
       this.listeners.get(data.messageType)?.forEach((cb) => cb(data));
     }
 
+    // Dispatch to system listeners
+    if (data.type === 'system' && this.listeners.has('system')) {
+      this.listeners.get('system')?.forEach((cb) => cb(data));
+    }
+
+    // Dispatch to all listeners
     if (this.listeners.has("all")) {
       this.listeners.get("all")?.forEach((cb) => cb(data));
     }
@@ -149,7 +206,25 @@ class ChatService {
   }
 
   isSocketConnected(): boolean {
-    return this.isConnected;
+    return this.isConnected && this.socket?.readyState === WebSocket.OPEN;
+  }
+
+  // Get connection state
+  getConnectionState(): string {
+    if (!this.socket) return 'DISCONNECTED';
+    
+    switch (this.socket.readyState) {
+      case WebSocket.CONNECTING:
+        return 'CONNECTING';
+      case WebSocket.OPEN:
+        return 'CONNECTED';
+      case WebSocket.CLOSING:
+        return 'CLOSING';
+      case WebSocket.CLOSED:
+        return 'CLOSED';
+      default:
+        return 'UNKNOWN';
+    }
   }
 }
 
