@@ -167,12 +167,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
     }
   };  const renderMessage = (message: any, index: number) => {
     const isOwnMessage = Number(message.senderId) === Number(userDetails?.id);
-    console.log('Message check:', {
-      messageSenderId: message.senderId,
-      userDetailsId: userDetails?.id,
-      isOwnMessage,
-      senderName: message.senderName
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Message check:', {
+        messageSenderId: message.senderId,
+        userDetailsId: userDetails?.id,
+        isOwnMessage,
+        senderName: message.senderName
+      });
+    }
     const showAvatar = index === 0 || messages[index - 1]?.senderId !== message.senderId;
 
     return (
