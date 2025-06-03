@@ -39,6 +39,12 @@ export interface TopicSubscriptionRequest {
   projectId?: number;
 }
 
+// This DTO matches ChatRoomParticipantRequestDto.java
+export interface ChatRoomParticipantRequest {
+  roomId: string; // Added to match backend DTO
+  userId: number;
+}
+
 // Response DTOs
 export interface ChatMessageResponse {
   id: string;
@@ -99,7 +105,7 @@ export interface ChatHistoryResponse extends PaginatedResult<ChatMessageResponse
 
 export interface TopicSubscriptionResponse {
   id: string;
-  userId: string;
+  userId: string; // Keeping as string as per original, though BE might use Long/number
   topic: string;
   projectId?: number;
   projectName?: string;
@@ -109,7 +115,7 @@ export interface TopicSubscriptionResponse {
 }
 
 export interface UserConnectionResponse {
-  userId: string;
+  userId: string; // Keeping as string as per original, though BE might use Long/number
   fullName: string;
   imageProfile?: string;
   isConnected: boolean;
@@ -268,8 +274,10 @@ export const updateChatRoom = async (
   return data;
 };
 
+// Updated to send a body matching ChatRoomParticipantRequestDto
 export const addUserToChatRoom = async (roomId: string, userId: number): Promise<void> => {
-  await axiosClient.post(`/api/chat/rooms/${roomId}/participants`, { userId });
+  const requestBody: ChatRoomParticipantRequest = { roomId, userId };
+  await axiosClient.post(`/api/chat/rooms/${roomId}/participants`, requestBody);
 };
 
 export const removeUserFromChatRoom = async (roomId: string, userId: number): Promise<void> => {
@@ -311,14 +319,8 @@ export const getTopicSubscribers = async (topic: string): Promise<TopicSubscript
 // ===============================
 // Project Chat APIs
 // ===============================
-
-export const joinProjectChat = async (projectId: number): Promise<void> => {
-  await axiosClient.post(`/api/chat/projects/${projectId}/join`);
-};
-
-export const leaveProjectChat = async (projectId: number): Promise<void> => {
-  await axiosClient.delete(`/api/chat/projects/${projectId}/leave`);
-};
+// Note: Users automatically have access to project chat based on project membership
+// No need to manually join/leave project chats
 
 export const getProjectChatParticipants = async (projectId: number): Promise<ChatParticipant[]> => {
   const { data } = await axiosClient.get(`/api/chat/projects/${projectId}/participants`);
@@ -339,7 +341,8 @@ export const getOnlineUsers = async (): Promise<OnlineUsersResponse> => {
   return data;
 };
 
-export const getUserConnectionStatus = async (userId: string): Promise<UserConnectionResponse> => {
+// Updated userId parameter type to number
+export const getUserConnectionStatus = async (userId: number): Promise<UserConnectionResponse> => {
   const { data } = await axiosClient.get(`/api/chat/users/${userId}/status`);
   return data;
 };
@@ -363,27 +366,28 @@ export const getUnreadMessages = async (
 };
 
 // ===============================
-// Notification APIs (Admin only)
+// Notification APIs (Admin/PM only)
 // ===============================
 
 export const notifyProjectMembers = async (
   projectId: number,
-  notification: ChatNotificationResponse
+  notification: ChatNotificationResponse // Assuming ChatNotificationResponse matches BE's ChatNotificationResponseDto
 ): Promise<void> => {
   await axiosClient.post(`/api/chat/notifications/project/${projectId}`, notification);
 };
 
 export const notifyTopicSubscribers = async (
   topic: string,
-  notification: ChatNotificationResponse
+  notification: ChatNotificationResponse // Assuming ChatNotificationResponse matches BE's ChatNotificationResponseDto
 ): Promise<void> => {
   await axiosClient.post(`/api/chat/notifications/topic/${topic}`, notification);
 };
 
 export const notifyUsers = async (
   userIds: number[],
-  notification: ChatNotificationResponse
+  notification: ChatNotificationResponse // Assuming ChatNotificationResponse matches BE's ChatNotificationResponseDto
 ): Promise<void> => {
-  const params = { userIds: userIds.join(',') };
-  await axiosClient.post('/api/chat/notifications/users', notification, { params });
+  await axiosClient.post('/api/chat/notifications/users', notification, { 
+    params: { userIds: userIds.join(',') }
+  });
 };

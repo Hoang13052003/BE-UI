@@ -1,4 +1,4 @@
-import { Input, InputNumber, DatePicker, Select, Tag, Typography, Space } from 'antd';
+import { Input, InputNumber, DatePicker, Select, Tag, Typography, Space, Progress } from 'antd';
 import { CalendarOutlined, UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { TimeLogResponse, BatchUpdateItem } from '../../api/timelogApi';
@@ -54,12 +54,11 @@ export const createInlineEditColumns = ({
     }
   };
 
-  return [
-    {
+  return [    {
       title: 'Task Description',
       dataIndex: 'taskDescription',
       key: 'taskDescription',
-      width: '35%',
+      width: '30%',
       render: (text: string, record: TimeLogResponse) => {
         if (isInBatchMode && isAdmin) {
           return (
@@ -96,12 +95,11 @@ export const createInlineEditColumns = ({
         }
         return <Tag color={getTimeColor(hours)} style={{ borderRadius: '12px', fontWeight: 'bold', fontSize: '12px' }}>{hours}h</Tag>;
       }
-    },
-    {
+    },    {
       title: 'Performer',
       dataIndex: 'performer',
       key: 'performer',
-      width: '25%',
+      width: '20%',
       render: (performerObject: { fullName: string; id: number; email: string } | undefined, record: TimeLogResponse) => {
         if (isInBatchMode && isAdmin) {
           const currentPerformerInfo = currentPerformersMap[record.id] || { 
@@ -147,12 +145,11 @@ export const createInlineEditColumns = ({
           </Space>
         );
       }
-    },
-    {
+    },    {
       title: 'Task Date',
       dataIndex: 'taskDate',
       key: 'taskDate',
-      width: '15%',
+      width: '13%',
       render: (dateString: string, record: TimeLogResponse) => {
         if (isInBatchMode && isAdmin) {
           return (
@@ -170,11 +167,43 @@ export const createInlineEditColumns = ({
       }
     },
     {
-      title: 'Status',
+      title: 'Completion %',
+      dataIndex: 'completionPercentage',
+      key: 'completionPercentage',
+      align: 'center' as const,
+      width: '12%',
+      render: (percentage: number | undefined, record: TimeLogResponse) => {
+        if (isInBatchMode && isAdmin) {
+          return (
+            <InputNumber
+              min={0}
+              max={100}
+              value={editedData[record.id]?.completionPercentage ?? record.completionPercentage ?? 0}
+              style={{ width: '100%' }}
+              onChange={(value) => onInlineEdit(record.id, 'completionPercentage', value)}
+              disabled={batchSaving || batchDeleting}
+              size="small"
+              formatter={(value) => `${value}%`}
+              parser={(value) => value?.replace('%', '') as any}
+            />
+          );
+        }
+        const displayPercentage = percentage ?? 0;
+        return (
+          <Progress 
+            percent={displayPercentage} 
+            size="small" 
+            status={displayPercentage === 100 ? "success" : "active"}
+            style={{ maxWidth: '80px' }}
+          />
+        );
+      }
+    },
+    {      title: 'Status',
       dataIndex: 'computedTimelogStatus',
       key: 'status',
       align: 'center' as const,
-      width: '15%',
+      width: '10%',
       render: (statusText: string | undefined, record: TimeLogResponse) => {
         if (isInBatchMode && isAdmin) {
           const currentDisplayStatus = record.computedTimelogStatus || 'PENDING';

@@ -16,11 +16,8 @@ import {
   Menu,
   Spin,
   message as antdMessage,
-  Upload,
   Modal,
-  Select,
-  Divider,
-  Tooltip,
+  Select,  Tooltip,
   Empty,
 } from "antd";
 import {
@@ -41,16 +38,16 @@ import {
 } from "@ant-design/icons";
 import { useChat } from "../../contexts/ChatContext";
 import { useAuth } from "../../contexts/AuthContext";
+import ChatDebugComponent from "../../components/ChatDebugComponent";
 import {
   ChatRoomResponse,
   createGroupChatRoom,
-  getUserProjectChats,
   ChatMessageRequest,
   ChatMessageType,
   ChatRoomType,
 } from "../../api/chatApi";
-import { Project } from "../../types/project";
-import { fetchProjects } from "../../api/projectApi";
+
+
 
 const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
@@ -66,11 +63,9 @@ interface ProjectNote {
 }
 
 const Messages: React.FC = () => {
-  const { userDetails } = useAuth();
-  const {
+  const { userDetails } = useAuth();  const {
     messages,
-    chatRooms,
-    activeChatRoom,
+    chatRooms,    activeChatRoom,
     unreadCount,
     onlineUsers,
     isConnected,
@@ -79,8 +74,6 @@ const Messages: React.FC = () => {
     selectChatRoom,
     markMessageRead,
     refreshChatRooms,
-    joinProjectChat,
-    subscribeToTopic,
   } = useChat();
 
   // Local state
@@ -89,11 +82,8 @@ const Messages: React.FC = () => {
   const [isCreateRoomModalVisible, setIsCreateRoomModalVisible] =
     useState(false);
   const [newRoomName, setNewRoomName] = useState("");
-  const [selectedParticipants, setSelectedParticipants] = useState<number[]>(
-    []
+  const [selectedParticipants, setSelectedParticipants] = useState<number[]>(    []
   );
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<number | undefined>();
   const [filteredChatRooms, setFilteredChatRooms] = useState<
     ChatRoomResponse[]
   >([]);
@@ -117,24 +107,9 @@ const Messages: React.FC = () => {
       title: "Design Guidelines",
       description: "Brand colors and typography specifications",
       tags: ["design", "reference"],
-      date: "2024-02-18",
-      author: "Sarah Johnson",
+      date: "2024-02-18",      author: "Sarah Johnson",
     },
   ]);
-
-  // Load projects on component mount
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const { projects: projectData } = await fetchProjects(0, 100);
-        setProjects(projectData);
-      } catch (error) {
-        console.error("Failed to load projects:", error);
-      }
-    };
-
-    loadProjects();
-  }, []);
 
   // Filter chat rooms based on search term
   useEffect(() => {
@@ -151,24 +126,42 @@ const Messages: React.FC = () => {
       setFilteredChatRooms(filtered);
     }
   }, [chatRooms, searchTerm]);
-
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Load chat rooms on component mount
+  useEffect(() => {
+    refreshChatRooms();
+  }, [refreshChatRooms]);
+
+  // Mark messages as read when they become visible
+  useEffect(() => {
+    if (activeChatRoom && messages.length > 0) {
+      const unreadMessages = messages.filter(
+        (msg) => !msg.isRead && msg.senderId !== userDetails?.id
+      );
+      
+      unreadMessages.forEach((msg) => {
+        markMessageRead(msg.id);
+      });
+    }
+  }, [messages, activeChatRoom, userDetails?.id, markMessageRead]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
   // Handle sending message
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeChatRoom) return;
+    
     try {
       const messageRequest: ChatMessageRequest = {
         content: messageInput.trim(),
         messageType: ChatMessageType.TEXT,
       };
+
       // Determine message target based on room type
       if (activeChatRoom.roomType === ChatRoomType.PRIVATE) {
         const otherParticipant = activeChatRoom.participants.find(
@@ -182,16 +175,25 @@ const Messages: React.FC = () => {
       } else {
         messageRequest.topic = activeChatRoom.roomName;
       }
+
       await sendChatMessage(messageRequest);
       setMessageInput("");
+      scrollToBottom();
     } catch (error) {
       console.error("Failed to send message:", error);
-      antdMessage.error("Failed to send message");
+      antdMessage.error("Gửi tin nhắn thất bại");
     }
   };
 
+  // Handle Enter key for sending message
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
   // Handle file upload
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = async (_file: File) => {
     // if (!activeChatRoom) return;
     // try {
     //   // You can implement file upload logic here
@@ -208,37 +210,20 @@ const Messages: React.FC = () => {
     if (!newRoomName.trim() || selectedParticipants.length === 0) {
       antdMessage.error("Please enter room name and select participants");
       return;
-    }
-
-    try {
+    }    try {
       await createGroupChatRoom({
         roomName: newRoomName,
         participantIds: selectedParticipants,
-        projectId: selectedProject,
       });
 
       setIsCreateRoomModalVisible(false);
       setNewRoomName("");
       setSelectedParticipants([]);
-      setSelectedProject(undefined);
       refreshChatRooms();
       antdMessage.success("Chat room created successfully");
     } catch (error) {
       console.error("Failed to create chat room:", error);
-      antdMessage.error("Failed to create chat room");
-    }
-  };
-
-  // Handle joining project chat
-  const handleJoinProject = async (projectId: number) => {
-    try {
-      await joinProjectChat(projectId);
-      refreshChatRooms();
-      antdMessage.success("Joined project chat successfully");
-    } catch (error) {
-      console.error("Failed to join project chat:", error);
-      antdMessage.error("Failed to join project chat");
-    }
+      antdMessage.error("Failed to create chat room");    }
   };
 
   // Get chat room icon based on type
@@ -254,11 +239,26 @@ const Messages: React.FC = () => {
         return <UserOutlined />;
     }
   };
-
-  // Get message time display
+  // Get message time display with better formatting
   const getMessageTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) {
+      return "Vừa xong";
+    } else if (diffMins < 60) {
+      return `${diffMins} phút trước`;
+    } else if (diffHours < 24) {
+      return `${diffHours} giờ trước`;
+    } else if (diffDays < 7) {
+      return `${diffDays} ngày trước`;
+    } else {
+      return date.toLocaleDateString('vi-VN');
+    }
   };
 
   // Get participant display name
@@ -282,9 +282,10 @@ const Messages: React.FC = () => {
       ]}
     />
   );
-
   return (
-    <Card style={{ padding: 24, minHeight: "100vh" }}>
+    <>
+      <ChatDebugComponent />
+      <Card style={{ padding: 24, minHeight: "100vh" }}>
       <Row gutter={24}>
         {/* Left Sidebar - Chat Rooms */}
         <Col span={6}>
@@ -295,9 +296,8 @@ const Messages: React.FC = () => {
               justifyContent: "space-between",
               alignItems: "center",
             }}
-          >
-            <Title level={5} style={{ margin: 0 }}>
-              Messages & Notes
+          >            <Title level={5} style={{ margin: 0 }}>
+              Messages
               {isConnected ? (
                 <Tooltip title="Connected">
                   <WifiOutlined style={{ color: "#52c41a", marginLeft: 8 }} />
@@ -383,32 +383,6 @@ const Messages: React.FC = () => {
               </List.Item>
             )}
           />
-
-          {/* Quick Join Project Chats */}
-          <Divider />
-          <Title level={5}>Projects</Title>
-          <List
-            size="small"
-            dataSource={projects.slice(0, 5)}
-            renderItem={(project) => (
-              <List.Item
-                actions={[
-                  <Button
-                    type="link"
-                    size="small"
-                    onClick={() => handleJoinProject(project.id)}
-                  >
-                    Join Chat
-                  </Button>,
-                ]}
-              >
-                <List.Item.Meta
-                  title={project.name}
-                  description={`${project.type} • ${project.status}`}
-                />
-              </List.Item>
-            )}
-          />
         </Col>
 
         {/* Chat Area */}
@@ -458,20 +432,18 @@ const Messages: React.FC = () => {
                   <>
                     {messages.map((message) => (
                       <div key={message.id} style={{ marginBottom: 24 }}>
-                        <Space align="start">
-                          <Avatar>
+                        <Space align="start">                          <Avatar>
                             {message.senderImageProfile ? (
                               <img
                                 src={message.senderImageProfile}
-                                alt={message.senderName}
+                                alt={message.senderName || 'User'}
                               />
                             ) : (
-                              message.senderName[0]
+                              (message.senderName && message.senderName[0]) || 'U'
                             )}
                           </Avatar>
-                          <div style={{ flex: 1 }}>
-                            <Space>
-                              <Text strong>{message.senderName}</Text>
+                          <div style={{ flex: 1 }}>                            <Space>
+                              <Text strong>{message.senderName || 'Unknown User'}</Text>
                               <Text type="secondary">
                                 {getMessageTime(message.timestamp)}
                               </Text>
@@ -523,27 +495,29 @@ const Messages: React.FC = () => {
                     <div ref={messagesEndRef} />
                   </>
                 )}
-              </div>
-
-              <div style={{ display: "flex", gap: 8 }}>
-                <Input
-                  placeholder="Type your message..."
+              </div>              <div style={{ display: "flex", gap: 8 }}>
+                <Input.TextArea
+                  placeholder="Nhập tin nhắn..."
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  onPressEnter={handleSendMessage}
+                  onKeyPress={handleKeyPress}
                   disabled={!isConnected}
+                  autoSize={{ minRows: 1, maxRows: 4 }}
+                  style={{ resize: 'none' }}
                 />
                 <Button
                   type="text"
                   icon={<PaperClipOutlined />}
                   onClick={() => fileInputRef.current?.click()}
                   disabled={!isConnected}
+                  title="Đính kèm file"
                 />
                 <Button
                   type="primary"
                   icon={<SendOutlined />}
                   onClick={handleSendMessage}
                   disabled={!messageInput.trim() || !isConnected}
+                  title="Gửi tin nhắn (Enter)"
                 />
                 <input
                   ref={fileInputRef}
@@ -621,12 +595,10 @@ const Messages: React.FC = () => {
       <Modal
         title="Create New Chat Room"
         open={isCreateRoomModalVisible}
-        onOk={handleCreateRoom}
-        onCancel={() => {
+        onOk={handleCreateRoom}        onCancel={() => {
           setIsCreateRoomModalVisible(false);
           setNewRoomName("");
           setSelectedParticipants([]);
-          setSelectedProject(undefined);
         }}
         okText="Create"
         cancelText="Cancel"
@@ -638,25 +610,7 @@ const Messages: React.FC = () => {
               placeholder="Enter room name"
               value={newRoomName}
               onChange={(e) => setNewRoomName(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <Text>Project (Optional)</Text>
-            <Select
-              placeholder="Select project"
-              style={{ width: "100%" }}
-              value={selectedProject}
-              onChange={setSelectedProject}
-              allowClear
-            >
-              {projects.map((project) => (
-                <Option key={project.id} value={project.id}>
-                  {project.name}
-                </Option>
-              ))}
-            </Select>
-          </div>
+            />          </div>
 
           <div>
             <Text>Participants</Text>
@@ -672,11 +626,11 @@ const Messages: React.FC = () => {
                   {user.fullName}
                 </Option>
               ))}
-            </Select>
-          </div>
+            </Select>          </div>
         </Space>
       </Modal>
     </Card>
+    </>
   );
 };
 

@@ -16,13 +16,12 @@ import {
   getUserChatRooms,
   getUnreadMessageCount,
   getOnlineUsers,
-  sendMessage,
   markMessageAsRead,
   ChatMessageRequest,
-  joinProjectChat as joinProjectChatApi,
+  ChatMessageType,
   subscribeToTopic as subscribeToTopicApi,
 } from "../api/chatApi";
-import chatService from "../services/ChatService";
+import chatServiceNew from "../services/ChatServiceNew";
 import { useAuth } from "./AuthContext";
 
 export interface ChatContextType {
@@ -45,7 +44,6 @@ export interface ChatContextType {
   refreshOnlineUsers: () => Promise<void>;
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
-  joinProjectChat: (projectId: number) => Promise<void>;
   subscribeToTopic: (topic: string, projectId?: number) => Promise<void>;
 }
 
@@ -65,6 +63,12 @@ interface ChatProviderProps {
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const { isAuthenticated, userDetails } = useAuth();
+  console.log(
+    "ChatProvider initialized, isAuthenticated:",
+    isAuthenticated,
+    "userDetails:",
+    userDetails
+  );
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
   const [chatRooms, setChatRooms] = useState<ChatRoomResponse[]>([]);
   const [activeChatRoom, setActiveChatRoom] = useState<ChatRoomResponse | null>(
@@ -77,137 +81,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   );
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const handleMessage = useCallback(
-    (message: any) => {
-      if (!message || !message.id) return;
-
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === message.id)) return prev;
-        return [...prev, message].sort(
-          (a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
-      });
-
-      if (message.senderId !== userDetails?.id) {
-        antdMessage.info(
-          `New message from ${message.senderName}: ${message.content}`
-        );
-      }
-
-      refreshUnreadCount();
-    },
-    [userDetails?.id]
-  );
-
-  const connectWebSocket = useCallback(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    // ✅ Set callback to update connection status
-    chatService.setConnectionStatusCallback(setIsConnected);
-    
-    chatService.connect(token);
-    chatService.addListener("TEXT", handleMessage);
-    chatService.addListener("FILE", handleMessage);
-    chatService.addListener("all", handleMessage);
-    
-    // ✅ Remove this line as it will be handled by callback
-    // setIsConnected(chatService.isSocketConnected());
-  }, [handleMessage]);
-
-  const disconnectWebSocket = useCallback(() => {
-    chatService.disconnect();
-    setIsConnected(false);
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      connectWebSocket();
-    } else {
-      disconnectWebSocket();
-    }
-  }, [isAuthenticated, connectWebSocket, disconnectWebSocket]);
-
-  const sendChatMessage = useCallback(async (msg: ChatMessageRequest) => {
-    try {
-      const response = await sendMessage(msg);
-      if (chatService.isSocketConnected()) {
-        chatService.sendMessage({ ...msg });
-      }
-      return response;
-    } catch (error) {
-      console.error("Send message error:", error);
-      antdMessage.error("Failed to send message");
-      throw error;
-    }
-  }, []);
-
-  const selectChatRoom = useCallback(
-    (roomId: string) => {
-      const room = chatRooms.find((r) => r.id === roomId);
-      setActiveChatRoom(room || null);
-      if (room) loadChatHistory(roomId);
-    },
-    [chatRooms]
-  );
-
-  const markMessageRead = useCallback(async (messageId: string) => {
-    try {
-      await markMessageAsRead(messageId);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? { ...m, isRead: true } : m))
-      );
-      refreshUnreadCount();
-    } catch (error) {
-      console.error("Mark read error:", error);
-      antdMessage.error("Failed to mark message as read");
-    }
-  }, []);
-
-  const loadChatHistory = useCallback(
-    async (roomId: string, page = 0) => {
-      if (!activeChatRoom) return;
-      try {
-        setLoading(true);
-        let history;
-        if (
-          activeChatRoom.roomType === "PRIVATE" &&
-          activeChatRoom.participants.length >= 2
-        ) {
-          const other = activeChatRoom.participants.find(
-            (p) => p.userId !== userDetails?.id
-          );
-          if (other) {
-            const { getPrivateChatHistory } = await import("../api/chatApi");
-            history = await getPrivateChatHistory(other.userId, page);
-          }
-        } else if (activeChatRoom.roomType === "PROJECT_CHAT") {
-          const { getProjectChatHistory } = await import("../api/chatApi");
-          history = await getProjectChatHistory(
-            activeChatRoom.projectId!,
-            page
-          );
-        } else if (activeChatRoom.roomType === "GROUP") {
-          const { getGroupChatHistory } = await import("../api/chatApi");
-          history = await getGroupChatHistory(activeChatRoom.roomName, page);
-        }
-
-        if (history) {
-          setMessages((prev) =>
-            page === 0 ? history.messages : [...history.messages, ...prev]
-          );
-        }
-      } catch (err) {
-        console.error("Load history error:", err);
-        antdMessage.error("Failed to load chat history");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [activeChatRoom, userDetails?.id]
-  );
 
   const refreshChatRooms = useCallback(async () => {
     try {
@@ -236,29 +109,292 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const joinProjectChat = useCallback(
-    async (projectId: number) => {
+  // Xử lý tin nhắn nhận được từ WebSocket
+  const handleWebSocketMessage = useCallback((receivedData: any) => {
+    // receivedData là object BE gửi về, đã được dispatchMessage của service xử lý
+    // và có dạng { type: "private_message", messageId: ..., senderId: ..., content: ..., chatMessageType: "TEXT", ... }
+
+    console.log("ChatContext received data for listener:", receivedData);
+
+    // Kiểm tra xem có phải tin nhắn chat không (BE đã thêm trường `type`)
+    if (["private_message", "group_message", "project_message"].includes(receivedData.type)) {
+        const newMessage: ChatMessageResponse = {
+            id: receivedData.messageId || receivedData.id,
+            senderId: receivedData.senderId,
+            senderName: receivedData.senderName || "Unknown User",
+            senderImageProfile: receivedData.senderImageProfile,
+            receiverId: receivedData.receiverId,
+            topic: receivedData.topic,
+            projectId: receivedData.projectId,
+            projectName: receivedData.projectName,
+            content: receivedData.content,
+            timestamp: receivedData.timestamp,
+            isRead: receivedData.isRead || (receivedData.senderId === userDetails?.id),
+            isDelivered: true,
+            messageType: receivedData.chatMessageType as ChatMessageType,
+            fileUrl: receivedData.fileUrl,
+            fileName: receivedData.fileName,
+            createdAt: receivedData.timestamp || receivedData.createdAt,
+        };
+
+        setMessages((prev) => {
+            // Tránh thêm tin nhắn trùng lặp (dựa trên ID)
+            if (prev.some(m => m.id === newMessage.id)) return prev;
+            return [...prev, newMessage].sort(
+              (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            );
+        });
+
+        // Thông báo nếu không phải tin của mình
+        if (newMessage.senderId !== userDetails?.id) {
+            antdMessage.success(`Tin nhắn mới từ ${newMessage.senderName}`);
+        }
+        
+        refreshUnreadCount();
+        refreshChatRooms();
+    }
+  }, [userDetails, refreshUnreadCount, refreshChatRooms]);
+
+  // Xử lý xác nhận tin nhắn đã gửi từ server
+  const handleMessageSentConfirmation = useCallback((confirmationData: any) => {
+    console.log("Message sent confirmation in Context:", confirmationData);
+    setMessages(prevMessages => 
+        prevMessages.map(msg => {
+            // Nếu BE trả về tempId mà FE đã gửi
+            if (confirmationData.tempId && msg.id === confirmationData.tempId) {
+                return {
+                    ...msg,
+                    id: confirmationData.messageId,
+                    isDelivered: confirmationData.delivered || true,
+                    timestamp: confirmationData.timestamp || msg.timestamp,
+                };
+            }
+            // Nếu không có tempId, dựa vào messageId
+            if (msg.senderId === userDetails?.id && msg.id === confirmationData.messageId) {
+                 return { 
+                   ...msg, 
+                   isDelivered: confirmationData.delivered || true, 
+                   timestamp: confirmationData.timestamp || msg.timestamp 
+                 };
+            }
+            return msg;
+        }).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    );
+  }, [userDetails]);
+
+  const connectWebSocket = useCallback(() => {
+    const token = localStorage.getItem("token");
+    console.log("Attempting to connect WebSocket, token:", token ? "exists" : "missing");
+    if (!token) return;
+
+    // Disconnect and clean up any existing connection first
+    chatServiceNew.disconnect();
+
+    // Set callback to update connection status
+    chatServiceNew.setConnectionStatusCallback(setIsConnected);
+    
+    chatServiceNew.connect(token);
+    
+    // Clear existing listeners first to avoid duplicates
+    chatServiceNew.removeAllListeners();
+    
+    // Add listeners
+    chatServiceNew.addListener(ChatMessageType.TEXT, handleWebSocketMessage);
+    chatServiceNew.addListener(ChatMessageType.FILE, handleWebSocketMessage);
+    chatServiceNew.addListener(ChatMessageType.IMAGE, handleWebSocketMessage);
+    chatServiceNew.addListener(ChatMessageType.VIDEO, handleWebSocketMessage);
+    chatServiceNew.addListener(ChatMessageType.AUDIO, handleWebSocketMessage);
+    chatServiceNew.addListener(ChatMessageType.SYSTEM_NOTIFICATION, handleWebSocketMessage);
+    chatServiceNew.addListener("message_sent_confirmation", handleMessageSentConfirmation);
+  }, [handleWebSocketMessage, handleMessageSentConfirmation]);
+
+  const disconnectWebSocket = useCallback(() => {
+    chatServiceNew.disconnect();
+    setIsConnected(false);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      connectWebSocket();
+    } else {
+      disconnectWebSocket();
+    }
+  }, [isAuthenticated, connectWebSocket, disconnectWebSocket]);
+
+  const sendChatMessage = useCallback(async (msgRequest: ChatMessageRequest) => {
+    // msgRequest là từ FE, có các trường như receiverId, topic, content, messageType
+    if (!isAuthenticated || !userDetails) {
+        antdMessage.error("Bạn cần đăng nhập để gửi tin nhắn.");
+        throw new Error("User not authenticated");
+    }
+
+    try {
+      // Chuẩn bị message cho chatService.sendMessage
+      const serviceMessagePayload = {
+        receiverId: msgRequest.receiverId,
+        topic: msgRequest.topic,
+        projectId: msgRequest.projectId,
+        content: msgRequest.content,
+        chatMessageType: msgRequest.messageType || ChatMessageType.TEXT, // Chuyển messageType thành chatMessageType
+        fileUrl: msgRequest.fileUrl,
+        fileName: msgRequest.fileName,
+      };
+
+      // Tạo một tempId để map với confirmation từ server
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      // Gửi qua WebSocket nếu kết nối
+      if (chatServiceNew.isSocketConnected()) {
+        // Gửi payload đã chuẩn bị
+        chatServiceNew.sendMessage({ ...serviceMessagePayload});
+
+        // Tạo mock response cho UI update ngay lập tức
+        const mockResponse: ChatMessageResponse = {
+          id: tempId, // Sử dụng tempId
+          senderId: userDetails.id,
+          senderName: userDetails.fullName || "You",
+          senderImageProfile: userDetails.image || undefined,
+          receiverId: msgRequest.receiverId,
+          topic: msgRequest.topic,
+          projectId: msgRequest.projectId,
+          content: msgRequest.content,
+          timestamp: new Date().toISOString(),
+          isRead: true, // Tin nhắn của mình tự đọc
+          isDelivered: false, // Sẽ được cập nhật khi có confirmation từ server
+          messageType: msgRequest.messageType || ChatMessageType.TEXT,
+          fileUrl: msgRequest.fileUrl,
+          fileName: msgRequest.fileName,
+          createdAt: new Date().toISOString(),
+        };
+        
+        // Thêm tin nhắn tạm thời này vào messages state
+        setMessages((prevMessages) => [...prevMessages, mockResponse].sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        ));
+
+        return mockResponse; // Trả về mock response
+      } else {
+        // Fallback: Gửi qua API (nếu muốn)
+        antdMessage.warning("Không có kết nối WebSocket, đang thử gửi qua API...");
+        throw new Error("WebSocket not connected, API fallback not implemented for sendChatMessage in context.");
+      }
+    } catch (error) {
+      console.error("Error sending chat message in context:", error);
+      antdMessage.error("Gửi tin nhắn thất bại.");
+      throw error;
+    }  }, [isAuthenticated, userDetails]);  const loadChatHistory = useCallback(
+    async (roomId: string, page = 0) => {
+      // Tìm room từ roomId thay vì dựa vào activeChatRoom state
+      const room = chatRooms.find(r => r.id === roomId);
+      if (!room) {
+        console.log("LoadChatHistory: No room found with ID:", roomId);
+        return;
+      }
+      console.log("LoadChatHistory: Loading for room", room);
       try {
-        await joinProjectChatApi(projectId);
-        await refreshChatRooms();
+        setLoading(true);
+        let history;
+        if (
+          room.roomType === "PRIVATE" &&
+          room.participants.length >= 2
+        ) {
+          const other = room.participants.find(
+            (p) => p.userId !== userDetails?.id
+          );
+          if (other) {
+            console.log("Loading private chat history for user:", other.userId);
+            const { getPrivateChatHistory } = await import("../api/chatApi");
+            history = await getPrivateChatHistory(other.userId, page);
+          }
+        } else if (room.roomType === "PROJECT_CHAT") {
+          console.log("Loading project chat history for project:", room.projectId);
+          const { getProjectChatHistory } = await import("../api/chatApi");
+          history = await getProjectChatHistory(
+            room.projectId!,
+            page
+          );
+        } else if (room.roomType === "GROUP") {
+          console.log("Loading group chat history for topic:", room.roomName);
+          const { getGroupChatHistory } = await import("../api/chatApi");
+          history = await getGroupChatHistory(room.roomName, page);
+        }
+
+        if (history) {
+          console.log("LoadChatHistory: Got history with", history.messages?.length, "messages");
+          setMessages((prev) =>
+            page === 0 ? history.messages : [...history.messages, ...prev]
+          );
+        } else {
+          console.log("LoadChatHistory: No history received");
+        }
       } catch (err) {
-        console.error("Join project chat error:", err);
-        antdMessage.error("Failed to join project chat");
+        console.error("Load history error:", err);
+        antdMessage.error("Failed to load chat history");
+      } finally {
+        setLoading(false);
+      }    },
+    [chatRooms, userDetails?.id]
+  );
+  const selectChatRoom = useCallback(
+    (roomId: string) => {
+      console.log("SelectChatRoom: Selecting room with ID:", roomId);
+      const room = chatRooms.find((r) => r.id === roomId);
+      console.log("SelectChatRoom: Found room:", room);
+      setActiveChatRoom(room || null);
+      if (room) {
+        console.log("SelectChatRoom: Calling loadChatHistory for room:", room.id);
+        loadChatHistory(roomId);
+      } else {
+        console.log("SelectChatRoom: No room found with ID:", roomId);
       }
     },
-    [refreshChatRooms]
+    [chatRooms, loadChatHistory]
   );
+
+  const markMessageReadInContext = useCallback(async (messageId: string) => {
+    try {
+      // Gọi qua WebSocket nếu kết nối
+      if (chatServiceNew.isSocketConnected()) {
+        chatServiceNew.markMessageAsRead(messageId);
+      } else {
+        // Fallback API
+        await markMessageAsRead(messageId);
+      }
+      
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, isRead: true } : m))
+      );
+      refreshUnreadCount();
+    } catch (error) {
+      console.error("Mark read error in context:", error);
+      antdMessage.error("Failed to mark message as read");
+    }  }, [refreshUnreadCount]);
 
   const subscribeToTopic = useCallback(
     async (topic: string, projectId?: number) => {
+      if (!isAuthenticated) {
+        antdMessage.error("User not authenticated");
+        return Promise.reject("User not authenticated");
+      }
+      
       try {
-        await subscribeToTopicApi({ topic, projectId });
+        if (chatServiceNew.isSocketConnected()) {
+          // projectId hiện tại không được dùng trong chatServiceNew.subscribeToTopic
+          // Nếu BE cần projectId cho subscribe, cần cập nhật cả BE và FE service
+          chatServiceNew.subscribeToTopic(topic); 
+          await subscribeToTopicApi({ topic, projectId }); // Vẫn gọi API để BE lưu trữ
+          antdMessage.success(`Đã đăng ký nhận tin từ ${topic}`);
+        } else {
+          antdMessage.error("Chưa kết nối chat, không thể đăng ký topic.");
+          throw new Error("WebSocket not connected for topic subscription");
+        }
       } catch (err) {
         console.error("Subscribe topic error:", err);
-        antdMessage.error("Failed to subscribe to topic");
+        antdMessage.error("Không thể đăng ký topic");
+        throw err;
       }
     },
-    []
+    [isAuthenticated]
   );
 
   const contextValue: ChatContextType = {
@@ -271,14 +407,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     loading,
     sendChatMessage,
     selectChatRoom,
-    markMessageRead,
+    markMessageRead: markMessageReadInContext,
     loadChatHistory,
     refreshChatRooms,
     refreshUnreadCount,
     refreshOnlineUsers,
     connectWebSocket,
     disconnectWebSocket,
-    joinProjectChat,
     subscribeToTopic,
   };
 

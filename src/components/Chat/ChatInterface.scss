@@ -1,0 +1,229 @@
+// ChatInterface.scss
+.chat-interface {
+  display: flex;
+  height: 100%;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  .chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &.embedded {
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  &.mobile {
+    border-radius: 0;
+    box-shadow: none;
+
+    .mobile-chat-header {
+      padding: 12px 16px;
+      background: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .ant-btn {
+        border: none;
+        box-shadow: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+// Embedded container
+.chat-embedded-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  
+  .chat-interface {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// Floating chat button
+.chat-floating-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+
+  .ant-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: none;
+    
+    &.connected {
+      background: #52c41a;
+      
+      &:hover {
+        background: #389e0d;
+      }
+    }
+    
+    &.disconnected {
+      background: #ff4d4f;
+      
+      &:hover {
+        background: #cf1322;
+      }
+    }
+
+    .anticon {
+      font-size: 24px;
+    }
+  }
+
+  .ant-badge {
+    .ant-badge-count {
+      right: -8px;
+      top: -8px;
+    }
+  }
+}
+
+// Dark theme support
+.dark {
+  .chat-interface {
+    background: #1f1f1f;
+
+    &.mobile {
+      .mobile-chat-header {
+        background: #2a2a2a;
+        border-bottom-color: #3a3a3a;
+        color: #fff;
+      }
+    }
+  }
+
+  .chat-floating-button {
+    .ant-btn {
+      &.connected {
+        background: #52c41a;
+      }
+      
+      &.disconnected {
+        background: #ff4d4f;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .chat-interface {
+    &.embedded {
+      border-radius: 0;
+      box-shadow: none;
+    }
+  }
+
+  .chat-floating-button {
+    bottom: 16px;
+    right: 16px;
+
+    .ant-btn {
+      width: 48px;
+      height: 48px;
+
+      .anticon {
+        font-size: 20px;
+      }
+    }
+  }
+}
+
+// Animation for chat interface
+.chat-interface {
+  animation: chatSlideIn 0.3s ease-out;
+}
+
+@keyframes chatSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Floating button animation
+.chat-floating-button {
+  animation: floatIn 0.4s ease-out;
+
+  .ant-btn {
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Connection status indicator
+.connection-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4d4f;
+  
+  &.connected {
+    background: #52c41a;
+  }
+  
+  &.connecting {
+    background: #faad14;
+    animation: pulse 1.5s infinite;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
