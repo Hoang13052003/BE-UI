@@ -290,12 +290,27 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
               style={{ flex: 1 }}
             >
               <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} />
-            </Form.Item>
-
-            <Form.Item
+            </Form.Item>            <Form.Item
               name="plannedEndDate"
               label={t('project.form.plannedEndDate')}
               style={{ flex: 1 }}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value) {
+                      return Promise.resolve();
+                    }
+                    const startDate = getFieldValue('startDate');
+                    if (!startDate) {
+                      return Promise.resolve();
+                    }
+                    if (value.isAfter(startDate)) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error(t('project.form.plannedEndDateMustBeAfterStartDate')));
+                  },
+                }),
+              ]}
             >
               <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} />
             </Form.Item>
