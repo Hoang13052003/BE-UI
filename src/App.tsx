@@ -32,8 +32,8 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import EmailVerification from "./pages/auth/EmailVerification";
 import Profile from "./pages/Client/Profile";
 import Settings from "./pages/Client/Settings";
-import ChatProvider from "./contexts/ChatContext";
 import Feedbacks from "./pages/Admin/Feedbacks";
+import { ChatProvider } from "./contexts/ChatContext";
 
 function App() {
   return (
@@ -74,26 +74,28 @@ function App() {
                         element={<ProjectUpdateDetailsPage />}
                       />
                       <Route path="notifications" element={<Notifications />} />
-                      <Route path="settings" element={<SystemSettings />} />
+                      <Route
+                        path="settings"
+                        element={<SystemSettings />}
+                      />{" "}
                       <Route
                         path="projects/:projectId/details"
                         element={<ProjectDetailPage />}
                       />
                       <Route path="feedbacks" element={<Feedbacks />} />
+                      <Route
+                        path="projects/:projectId/history"
+                        element={<ProjectUpdateHistory />}
+                      />
+                      <Route
+                        path="projects/:projectId/updates/:projectUpdateId/snapshot"
+                        element={<ProjectSnapshotViewer />}
+                      />
                     </Route>
                     <Route
                       path="/admin/attachment-display/:projectId"
                       element={<AttachmentDisplay />}
                     />
-                    <Route
-                      path="projects/:projectId/history"
-                      element={<ProjectUpdateHistory />}
-                    />
-                    <Route
-                      path="projects/:projectId/updates/:projectUpdateId/snapshot"
-                      element={<ProjectSnapshotViewer />}
-                    />{" "}
-                    {/* <<--- ROUTE CHO COMPONENT CLIENT */}
                   </Route>
                 </Route>
 

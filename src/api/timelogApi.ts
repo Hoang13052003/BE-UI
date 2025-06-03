@@ -21,8 +21,7 @@ export interface TimeLogResponse {
   performer: {
     id: number;
     fullName: string;
-    email: string;
-  };
+    email: string;  };
 
   taskDate: string; // YYYY-MM-DD
   taskDescription: string;
@@ -30,6 +29,7 @@ export interface TimeLogResponse {
   createdAt?: string; // Hoặc Instant nếu bạn đồng bộ kiểu với backend DTO
   actualTimelogStatus?: TimelogStatusType; 
   computedTimelogStatus?: string; // Giữ nguyên vì đây là computed value
+  completionPercentage?: number; // 0-100
 }
 // =======================================================
 
@@ -53,6 +53,7 @@ export interface BatchUpdateItem {
   taskDescription?: string;
   hoursSpent?: number;
   actualTimelogStatus?: TimelogStatusType; 
+  completionPercentage?: number;
 }
 
 // Hàm getTimeLogsByProjectIdApi sẽ tự động dùng TimeLogResponse mới khi fetchPaginatedData được generic hóa
