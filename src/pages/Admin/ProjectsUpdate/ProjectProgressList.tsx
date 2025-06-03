@@ -165,7 +165,7 @@ const ProjectProgressList: React.FC = () => {
   // Fetch projects for dropdown
   const fetchProjectsList = useCallback(async () => {
     try {
-      const { projects: projectList } = await fetchProjects(0, 10); // Get all projects
+      const { projects: projectList } = await fetchProjects(0, 1000); // Get all projects
       setProjects(projectList);
     } catch (error) {
       console.error("Failed to fetch projects:", error);

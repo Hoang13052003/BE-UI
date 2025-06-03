@@ -72,17 +72,17 @@ const ProjectList: React.FC = () => {
       render: (_, record) => <Tag color="blue">{record.type}</Tag>,
     },
     {
-      title: "Progress",
+      title: "Overall Process",
       key: "progress",
       render: (_, record) => (
         <div className="flex items-center">
           <div className="progress-bar-container">
             <div
               className="progress-bar-fill"
-              style={{ width: `${record.progress || 0}%` }}
+              style={{ width: `${record.overallProcess || 0}%` }}
             />
           </div>
-          <span className="ml-2">{record.progress || 0}%</span>
+          <span className="ml-2">{record.overallProcess || 0}%</span>
         </div>
       ),
     },
@@ -126,7 +126,7 @@ const ProjectList: React.FC = () => {
       key: "action",
       render: (_, record) => (
         <Link
-          to={`/admin/projects/${record.id}/details`} 
+          to={`/admin/projects/${record.id}/details`}
           className="text-blue-600 hover:text-blue-700"
         >
           View Details

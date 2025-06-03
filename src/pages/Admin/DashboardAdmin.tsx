@@ -30,12 +30,16 @@ const DashboardAdmin: React.FC = () => {
         {
           key: "manageUsers",
           icon: <UserOutlined />,
-          label: <Link to="/admin/users">{t("adminPages.userManagement")}</Link>,
+          label: (
+            <Link to="/admin/users">{t("adminPages.userManagement")}</Link>
+          ),
         },
         {
           key: "manageProjects",
           icon: <ProjectOutlined />,
-          label: <Link to="/admin/updates">{t("adminPages.projectManagement")}</Link>,
+          label: (
+            <Link to="/admin/updates">{t("adminPages.projectManagement")}</Link>
+          ),
         },
         {
           key: "manageProjectUpdates",
@@ -45,7 +49,16 @@ const DashboardAdmin: React.FC = () => {
         {
           key: "notifications",
           icon: <BellOutlined />,
-          label: <Link to="/admin/notifications">{t("adminPages.notifications")}</Link>,
+          label: (
+            <Link to="/admin/notifications">
+              {t("adminPages.notifications")}
+            </Link>
+          ),
+        },
+        {
+          key: "feedbacks",
+          icon: <BellOutlined />,
+          label: <Link to="/admin/feedbacks">Feedbacks</Link>,
         },
       ],
     },
@@ -56,7 +69,7 @@ const DashboardAdmin: React.FC = () => {
         {
           key: "settings",
           icon: <SettingOutlined />,
-          label: <Link to="/admin/settings">{t("adminPages.systemSettings")}</Link>,
+          label: <Link to="/admin/settings">{t("clientPages.settings")}</Link>,
         },
       ],
     },

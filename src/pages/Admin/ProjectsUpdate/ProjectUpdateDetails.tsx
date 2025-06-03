@@ -44,7 +44,14 @@ import SendReportProjectUpdateModal from "../../../components/Admin/ProjectUpdat
 import { useAuth } from "../../../contexts/AuthContext";
 import SendFeedbackModal from "../../Client/SendFeedbackModal";
 
-const { Title, Paragraph } = Typography;
+const { Title, Text, Paragraph } = Typography;
+
+const commonProgressStyle = {
+  // background: theme === "dark" ? "#1f1f1f" : "#fafafa",
+  border: "none",
+  borderRadius: "8px",
+  marginBottom: "16px",
+};
 
 // Helper function to get status color
 const getStatusColor = (status: string): string => {
@@ -263,15 +270,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                   {update.statusAtUpdate.replace(/_/g, " ")}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Completion">
-                <Progress
-                  percent={update.completionPercentage ?? 0}
-                  size="small"
-                  status={
-                    update.completionPercentage === 100 ? "success" : "active"
-                  }
-                />
-              </Descriptions.Item>
+
               <Descriptions.Item label="Created By">
                 {update.email}
               </Descriptions.Item>
@@ -287,6 +286,60 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                 {dayjs(update.updatedAt).format("YYYY-MM-DD HH:mm:ss")}
               </Descriptions.Item>
             </Descriptions>
+          </Card>
+
+          <Card size="small" style={commonProgressStyle}>
+            <Space direction="vertical" size={8} style={{ width: "100%" }}>
+              <Text strong>Progress Overview</Text>
+
+              {/* Overall Progress - Xanh nước biển */}
+              <div>
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: "12px",
+                    marginBottom: "4px",
+                    display: "block",
+                  }}
+                >
+                  Overall Progress:{" "}
+                  {project?.overallProcess?.toFixed(2) || "0.00"}%
+                </Text>
+                <Progress
+                  percent={Number(project?.overallProcess)}
+                  strokeColor="#1890ff" // Xanh nước biển
+                  // trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
+                  format={() =>
+                    `${Number(project?.overallProcess)?.toFixed(2) || "0.00"}%`
+                  }
+                  size="small"
+                />
+              </div>
+
+              {/* Actual Progress - Xanh lá cây */}
+              <div>
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: "12px",
+                    marginBottom: "4px",
+                    display: "block",
+                  }}
+                >
+                  Actual Progress Today:{" "}
+                  {project?.actualProcess?.toFixed(2) || "0.00"}%
+                </Text>
+                <Progress
+                  percent={Number(project?.actualProcess)}
+                  strokeColor="#52c41a" // Xanh lá cây
+                  // trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
+                  format={() =>
+                    `${Number(project?.actualProcess)?.toFixed(2) || "0.00"}%`
+                  }
+                  size="small"
+                />
+              </div>
+            </Space>
           </Card>
 
           <Card

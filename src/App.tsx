@@ -32,6 +32,7 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import EmailVerification from "./pages/auth/EmailVerification";
 import Profile from "./pages/Client/Profile";
 import Settings from "./pages/Client/Settings";
+import Feedbacks from "./pages/Admin/Feedbacks";
 import { ChatProvider } from "./contexts/ChatContext";
 
 function App() {
@@ -73,10 +74,18 @@ function App() {
                         element={<ProjectUpdateDetailsPage />}
                       />
                       <Route path="notifications" element={<Notifications />} />
-                      <Route path="settings" element={<SystemSettings />} />                      <Route
+
+                      <Route path="settings" element={<PageSettings />}>
+                        <Route index element={<Settings />} />{" "}
+                        {/* Route mặc định ("/settings") */}
+                        <Route path="profile" element={<Profile />} />
+                      </Route>
+
+                      <Route
                         path="projects/:projectId/details"
                         element={<ProjectDetailPage />}
                       />
+                      <Route path="feedbacks" element={<Feedbacks />} />
                       <Route
                         path="projects/:projectId/history"
                         element={<ProjectUpdateHistory />}
