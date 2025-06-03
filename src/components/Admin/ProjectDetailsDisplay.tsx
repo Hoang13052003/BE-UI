@@ -223,30 +223,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                   display: "block",
                 }}
               >
-                Overall Progress: {projectData.progress?.toFixed(2) || "0.00"}%
-              </Text>
-              <Progress
-                percent={Number(projectData.progress)}
-                strokeColor="#1890ff" // Xanh nước biển
-                trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
-                format={() =>
-                  `${Number(projectData.progress)?.toFixed(2) || "0.00"}%`
-                }
-                size="small"
-              />
-            </div>
-
-            {/* Overall Progress - Xanh nước biển */}
-            <div>
-              <Text
-                type="secondary"
-                style={{
-                  fontSize: "12px",
-                  marginBottom: "4px",
-                  display: "block",
-                }}
-              >
-                Overall Progress Today:{" "}
+                Overall Progress:{" "}
                 {projectData.overallProcess?.toFixed(2) || "0.00"}%
               </Text>
               <Progress

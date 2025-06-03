@@ -74,10 +74,13 @@ function App() {
                         element={<ProjectUpdateDetailsPage />}
                       />
                       <Route path="notifications" element={<Notifications />} />
-                      <Route
-                        path="settings"
-                        element={<SystemSettings />}
-                      />{" "}
+
+                      <Route path="settings" element={<PageSettings />}>
+                        <Route index element={<Settings />} />{" "}
+                        {/* Route mặc định ("/settings") */}
+                        <Route path="profile" element={<Profile />} />
+                      </Route>
+
                       <Route
                         path="projects/:projectId/details"
                         element={<ProjectDetailPage />}

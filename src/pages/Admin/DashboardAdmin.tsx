@@ -69,9 +69,7 @@ const DashboardAdmin: React.FC = () => {
         {
           key: "settings",
           icon: <SettingOutlined />,
-          label: (
-            <Link to="/admin/settings">{t("adminPages.systemSettings")}</Link>
-          ),
+          label: <Link to="/admin/settings">{t("clientPages.settings")}</Link>,
         },
       ],
     },
