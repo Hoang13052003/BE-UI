@@ -29,7 +29,11 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import styled from "styled-components";
-import { FeedbackResponse, getFeedbackById } from "../../api/feedbackApi";
+import {
+  FeedbackResponse,
+  getFeedbackById,
+  markFeedbackAsRead,
+} from "../../api/feedbackApi";
 
 const { Text, Paragraph } = Typography;
 
@@ -113,6 +117,8 @@ const FeedbackDetailModal: React.FC<FeedbackDetailModalProps> = ({
       try {
         const data = await getFeedbackById(feedbackId);
         setFeedback(data);
+
+        await markFeedbackAsRead(feedbackId);
       } catch (error) {
         console.error("Error fetching feedback details:", error);
         // Handle error display if needed
