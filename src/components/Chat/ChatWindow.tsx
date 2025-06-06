@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   Layout,
   Input,
@@ -14,7 +14,7 @@ import {
   Empty,
   Spin,
   message as antdMessage,
-} from 'antd';
+} from "antd";
 import {
   SendOutlined,
   PaperClipOutlined,
@@ -26,13 +26,13 @@ import {
   MoreOutlined,
   CheckOutlined,
   DoubleRightOutlined,
-} from '@ant-design/icons';
-import { useChat } from '../../contexts/ChatContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { ChatMessageType, ChatMessageRequest } from '../../api/chatApi';
-import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import './ChatWindow.scss';
+} from "@ant-design/icons";
+import { useChat } from "../../contexts/ChatContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { ChatMessageType, ChatMessageRequest } from "../../api/chatApi";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import "./ChatWindow.scss";
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -52,7 +52,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
     isConnected,
     loading,
   } = useChat();
-  const [messageInput, setMessageInput] = useState('');
+  const [messageInput, setMessageInput] = useState("");
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<any>(null);
@@ -74,14 +74,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
     const unreadMessages = messages.filter(
       (msg) => !msg.isRead && msg.senderId !== userDetails?.id
     );
-    
+
     unreadMessages.forEach((msg) => {
       markMessageRead(msg.id);
     });
   }, [messages, userDetails?.id, markMessageRead]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSendMessage = async () => {
@@ -93,30 +93,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
     };
 
     // Add recipient based on chat room type
-    if (activeChatRoom.roomType === 'PRIVATE') {
+    if (activeChatRoom.roomType === "PRIVATE") {
       const recipient = activeChatRoom.participants.find(
         (p) => p.userId !== userDetails?.id
       );
       if (recipient) {
         messageRequest.receiverId = recipient.userId;
       }
-    } else if (activeChatRoom.roomType === 'PROJECT_CHAT') {
+    } else if (activeChatRoom.roomType === "PROJECT_CHAT") {
       messageRequest.projectId = activeChatRoom.projectId;
-    } else if (activeChatRoom.roomType === 'GROUP') {
+    } else if (activeChatRoom.roomType === "GROUP") {
       messageRequest.topic = activeChatRoom.roomName;
     }
 
     try {
       await sendChatMessage(messageRequest);
-      setMessageInput('');
+      setMessageInput("");
     } catch (error) {
-      console.error('Failed to send message:', error);
-      antdMessage.error('Gửi tin nhắn thất bại');
+      console.error("Failed to send message:", error);
+      antdMessage.error("Gửi tin nhắn thất bại");
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -134,9 +134,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
       case ChatMessageType.FILE:
         return (
           <div className="file-message">
-            <FileOutlined style={{ fontSize: '16px', marginRight: '8px' }} />
+            <FileOutlined style={{ fontSize: "16px", marginRight: "8px" }} />
             <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
-              {message.fileName || 'Tải file'}
+              {message.fileName || "Tải file"}
             </a>
           </div>
         );
@@ -146,41 +146,55 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             <img
               src={message.fileUrl}
               alt={message.fileName}
-              style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px' }}
+              style={{
+                maxWidth: "200px",
+                maxHeight: "200px",
+                borderRadius: "8px",
+              }}
             />
-            {message.content && <div className="image-caption">{message.content}</div>}
+            {message.content && (
+              <div className="image-caption">{message.content}</div>
+            )}
           </div>
         );
       case ChatMessageType.VIDEO:
         return (
           <div className="video-message">
-            <video  
+            <video
               src={message.fileUrl}
               controls
-              style={{ maxWidth: '300px', maxHeight: '200px', borderRadius: '8px' }}
+              style={{
+                maxWidth: "300px",
+                maxHeight: "200px",
+                borderRadius: "8px",
+              }}
             />
-            {message.content && <div className="video-caption">{message.content}</div>}
+            {message.content && (
+              <div className="video-caption">{message.content}</div>
+            )}
           </div>
         );
       default:
         return <div className="text-message">{message.content}</div>;
     }
-  };  const renderMessage = (message: any, index: number) => {
+  };
+  const renderMessage = (message: any, index: number) => {
     const isOwnMessage = Number(message.senderId) === Number(userDetails?.id);
-    if (process.env.NODE_ENV === 'development') {
-      console.debug('Message check:', {
+    if (process.env.NODE_ENV === "development") {
+      console.debug("Message check:", {
         messageSenderId: message.senderId,
         userDetailsId: userDetails?.id,
         isOwnMessage,
-        senderName: message.senderName
+        senderName: message.senderName,
       });
     }
-    const showAvatar = index === 0 || messages[index - 1]?.senderId !== message.senderId;
+    const showAvatar =
+      index === 0 || messages[index - 1]?.senderId !== message.senderId;
 
     return (
       <div
         key={message.id}
-        className={`message ${isOwnMessage ? 'message-own' : 'message-other'}`}
+        className={`message ${isOwnMessage ? "message-own" : "message-other"}`}
       >
         {showAvatar && !isOwnMessage && (
           <Avatar
@@ -191,26 +205,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             {message.senderName?.charAt(0)?.toUpperCase()}
           </Avatar>
         )}
-        
+
         <div className="message-content">
           {showAvatar && (
-            <Text className={`message-sender ${isOwnMessage ? 'own-sender' : ''}`}>
-              {isOwnMessage ? (userDetails?.fullName || 'You') : message.senderName}
+            <Text
+              className={`message-sender ${isOwnMessage ? "own-sender" : ""}`}
+            >
+              {isOwnMessage
+                ? userDetails?.fullName || "You"
+                : message.senderName || `User ${message.senderId}`}
             </Text>
           )}
-          
+
           <div className="message-bubble">
             {renderMessageContent(message)}
-            
+
             <div className="message-meta">
               <Text className="message-time">
                 {formatMessageTime(message.timestamp)}
               </Text>
-              
+
               {isOwnMessage && (
                 <span className="message-status">
                   {message.isRead ? (
-                    <DoubleRightOutlined style={{ color: '#1890ff' }} />
+                    <DoubleRightOutlined style={{ color: "#1890ff" }} />
                   ) : message.isDelivered ? (
                     <CheckOutlined />
                   ) : (
@@ -247,7 +265,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
           >
             {activeChatRoom.roomName?.charAt(0)?.toUpperCase()}
           </Avatar>
-          
+
           <div className="chat-header-text">
             <Text strong>{activeChatRoom.roomName}</Text>
             <Text type="secondary" className="chat-header-status">
@@ -292,14 +310,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
 
       {/* Message Input */}
       <div className="chat-input">
-        <Space.Compact style={{ width: '100%' }}>
+        <Space.Compact style={{ width: "100%" }}>
           <Tooltip title="Đính kém file">
             <Button
               icon={<PaperClipOutlined />}
               onClick={() => setUploadModalVisible(true)}
             />
           </Tooltip>
-          
+
           <TextArea
             ref={inputRef}
             value={messageInput}
@@ -309,11 +327,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             autoSize={{ minRows: 1, maxRows: 4 }}
             disabled={!isConnected}
           />
-          
+
           <Tooltip title="Emoji">
             <Button icon={<SmileOutlined />} />
           </Tooltip>
-          
+
           <Button
             type="primary"
             icon={<SendOutlined />}
@@ -336,14 +354,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             multiple={false}
             action="/api/upload"
             headers={{
-              authorization: `Bearer ${localStorage.getItem('token')}`,
+              authorization: `Bearer ${localStorage.getItem("token")}`,
             }}
             onChange={(info) => {
-              if (info.file.status === 'done') {
+              if (info.file.status === "done") {
                 // Handle successful upload
                 antdMessage.success(`${info.file.name} tải lên thành công`);
                 setUploadModalVisible(false);
-              } else if (info.file.status === 'error') {
+              } else if (info.file.status === "error") {
                 antdMessage.error(`${info.file.name} tải lên thất bại`);
               }
             }}
@@ -361,7 +379,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
 
           <Divider>hoặc</Divider>
 
-          <Space direction="vertical" style={{ width: '100%' }}>            <Button
+          <Space direction="vertical" style={{ width: "100%" }}>
+            {" "}
+            <Button
               block
               icon={<PictureOutlined />}
               onClick={() => {
@@ -370,7 +390,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             >
               Chọn hình ảnh
             </Button>
-            
             <Button
               block
               icon={<VideoCameraOutlined />}
@@ -380,7 +399,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             >
               Chọn video
             </Button>
-            
             <Button
               block
               icon={<AudioOutlined />}
