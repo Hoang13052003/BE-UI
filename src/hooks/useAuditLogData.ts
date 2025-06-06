@@ -1,16 +1,17 @@
 // src/hooks/useAuditLogData.ts
-import { useState, useEffect, useCallback } from 'react';
-import { useStompContext } from '../contexts/StompContext'; // Hook để lấy trạng thái kết nối
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useStompContext } from '../contexts/StompContext';
 import {
   auditLogStompService,
   AuditLogRealtimeDto,
   AuditLogRequest,
-  // Bạn cần export PageResponse từ service hoặc định nghĩa lại ở đây/file types
-  // Giả sử bạn đã export từ service hoặc có file types chung:
 } from '../services/stompService';
+import { auditLogApi } from '../api/auditLogApi';
+
+// Re-export AuditLogRealtimeDto để các component khác có thể import
+export type { AuditLogRealtimeDto };
 
 // Định nghĩa lại PageResponse nếu chưa export từ service hoặc file types chung
-// (Tốt nhất là nên có một file types chung)
 export interface PageResponse<T> {
   content: T[];
   totalPages: number;
@@ -25,23 +26,41 @@ export interface PageResponse<T> {
 
 const LIVE_AUDIT_LOGS_TOPIC = '/topic/audit-logs';
 const PAGED_AUDIT_LOGS_RESPONSE_TOPIC = '/topic/audit-logs/response';
-// const INITIAL_SUBSCRIBE_CONFIRMATION_TOPIC = '/app/audit-logs'; // Cho @SubscribeMapping
 
 interface UseAuditLogDataReturn {
   liveAuditLogs: AuditLogRealtimeDto[];
   pagedAuditLogData: PageResponse<AuditLogRealtimeDto> | null;
-  isLoadingPagedLogs: boolean; // Để biết khi nào đang tải dữ liệu phân trang
+  isLoadingPagedLogs: boolean;
   fetchAuditLogs: (request: AuditLogRequest) => Promise<void>;
-  // Có thể thêm các state khác như lỗi khi fetch, v.v.
+  reconnectionStatus: {
+    attempts: number;
+    maxAttempts: number;
+    shouldReconnect: boolean;
+    canReconnect: boolean;
+  };
+  resetReconnection: () => void;
+  error: string | null;
+  clearError: () => void;
 }
 
 export const useAuditLogData = (): UseAuditLogDataReturn => {
-  const { isConnected } = useStompContext(); // Lấy trạng thái kết nối
-
+  const { isConnected } = useStompContext();
   const [liveAuditLogs, setLiveAuditLogs] = useState<AuditLogRealtimeDto[]>([]);
   const [pagedAuditLogData, setPagedAuditLogData] = useState<PageResponse<AuditLogRealtimeDto> | null>(null);
-  const [isLoadingPagedLogs, setIsLoadingPagedLogs] = useState<boolean>(false);
-  // const [initialSubscriptionMessage, setInitialSubscriptionMessage] = useState<string | null>(null);
+  const [isLoadingPagedLogs, setIsLoadingPagedLogs] = useState<boolean>(false);  const [reconnectionStatus, setReconnectionStatus] = useState(auditLogStompService.getReconnectionStatus());
+  const [error, setError] = useState<string | null>(null);
+  // Use useRef to store timeouts to avoid dependency issues
+  const pendingTimeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+  // Track which page is currently requested to avoid stale timeouts firing fallback
+  const lastRequestedPageRef = useRef<number | null>(null);
+  // Track WS response arrival to prevent fallback after response
+  const hasPagedResponseRef = useRef<boolean>(false);
+
+  // Clear error function
+  const clearError = useCallback(() => {
+    console.log('useAuditLogData: Clearing error state');
+    setError(null);
+  }, []);
 
 
   // Callback khi nhận được live audit log mới
@@ -50,29 +69,27 @@ export const useAuditLogData = (): UseAuditLogDataReturn => {
     setLiveAuditLogs(prevLogs =>
       [newLog, ...prevLogs].slice(0, 50) // Giữ lại 50 logs mới nhất
     );
-  }, []);
-
-  // Callback khi nhận được phản hồi dữ liệu audit log phân trang
+  }, []);  // Callback khi nhận được phản hồi dữ liệu audit log phân trang
   const handlePagedLogsResponse = useCallback((response: PageResponse<AuditLogRealtimeDto>) => {
     console.log('useAuditLogData: Received paged audit logs response:', response);
     setPagedAuditLogData(response);
     setIsLoadingPagedLogs(false);
+    setError(null);
+
+    // Mark that we got a response, so timeout fallback should not fire
+    hasPagedResponseRef.current = true;
+
+    // Clear any pending timeouts since we got the response
+    pendingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    pendingTimeoutsRef.current.clear();
+
+    // Reset the last requested page so no stale fallback fires
+    lastRequestedPageRef.current = null;
   }, []);
-
-  // Callback cho message từ @SubscribeMapping (nếu bạn muốn xử lý)
-  // const handleInitialSubscription = useCallback((data: AuditLogRealtimeDto | string) => {
-  //   if (typeof data === 'string') {
-  //     console.log('useAuditLogData: Initial subscription message:', data);
-  //     setInitialSubscriptionMessage(data);
-  //   } else {
-  //     // Xử lý nếu @SubscribeMapping trả về AuditLogRealtimeDto
-  //     console.log('useAuditLogData: Unexpected object from initial subscription:', data);
-  //   }
-  // }, []);
-
-
   // Effect để quản lý subscriptions
   useEffect(() => {
+    setReconnectionStatus(auditLogStompService.getReconnectionStatus());
+    
     if (isConnected) {
       console.log('useAuditLogData: STOMP connected, setting up subscriptions for audit logs.');
 
@@ -82,51 +99,134 @@ export const useAuditLogData = (): UseAuditLogDataReturn => {
       // Subscribe vào response của paged data
       auditLogStompService.subscribeToAuditLogResponses(handlePagedLogsResponse);
 
-      // (Tùy chọn) Subscribe vào kênh xác nhận ban đầu từ @SubscribeMapping
-      // auditLogStompService.subscribeToAuditLogs(handleInitialSubscription);
+      // Clear any connection errors
+      setError(null);
 
-      // Cleanup function: unsubscribe khi hook unmount hoặc isConnected thay đổi thành false
+      // Cleanup function
       return () => {
-        console.log('useAuditLogData: Cleaning up audit log subscriptions.');
-        auditLogStompService.unsubscribe(LIVE_AUDIT_LOGS_TOPIC);
+        console.log('useAuditLogData: Cleaning up audit log subscriptions.');        auditLogStompService.unsubscribe(LIVE_AUDIT_LOGS_TOPIC);
         auditLogStompService.unsubscribe(PAGED_AUDIT_LOGS_RESPONSE_TOPIC);
-        // auditLogStompService.unsubscribe(INITIAL_SUBSCRIBE_CONFIRMATION_TOPIC);
+        
+        // Clear any pending timeouts
+        pendingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+        pendingTimeoutsRef.current.clear();
       };
-    } else {
-      // Nếu không kết nối, đảm bảo dọn dẹp state (nếu cần)
+    } else {      // Nếu không kết nối, đảm bảo dọn dẹp state và reset loading
       setLiveAuditLogs([]);
-      setPagedAuditLogData(null);
-      // setInitialSubscriptionMessage(null);
       setIsLoadingPagedLogs(false);
-      // Không cần gọi unsubscribe ở đây vì effect trên sẽ xử lý khi isConnected thay đổi
+      
+      // Clear any pending timeouts
+      pendingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      pendingTimeoutsRef.current.clear();
     }
-  }, [isConnected, handleNewLiveLog, handlePagedLogsResponse /*, handleInitialSubscription */]);
-
-
+  }, [isConnected, handleNewLiveLog, handlePagedLogsResponse]);
   // Hàm để component gọi để yêu cầu dữ liệu audit log phân trang
   const fetchAuditLogs = useCallback(async (request: AuditLogRequest) => {
-    if (!isConnected) {
-      console.warn('useAuditLogData: Cannot fetch audit logs, STOMP not connected.');
-      // Có thể throw error hoặc set state lỗi để component hiển thị
-      return;
-    }
-    console.log('useAuditLogData: Requesting paged audit logs:', request);
+    const pageNum = request.page || 0;
+    // before sending, reset response flag
+    hasPagedResponseRef.current = false;
+    lastRequestedPageRef.current = pageNum;
     setIsLoadingPagedLogs(true);
+    setError(null);
+
     try {
-      await auditLogStompService.requestAuditLogs(request);
-      // Dữ liệu sẽ được nhận qua handlePagedLogsResponse và cập nhật state
+      if (isConnected) {
+        console.log('useAuditLogData: Requesting paged audit logs via WebSocket:', request);
+        await auditLogStompService.requestAuditLogs(request);
+
+        // Set a timeout to prevent infinite loading if WebSocket fails
+        const timeoutId = setTimeout(() => {
+          // skip fallback if response has arrived or page changed
+          if (hasPagedResponseRef.current || lastRequestedPageRef.current !== pageNum) {
+            return;
+          }
+          console.warn('useAuditLogData: WebSocket response timeout, falling back to REST API');
+          pendingTimeoutsRef.current.delete(timeoutId);
+
+          // Fallback to REST API
+          auditLogApi.getRecentAuditLogs(pageNum, request.size || 50)
+            .then(response => {
+              setPagedAuditLogData(response);
+              setIsLoadingPagedLogs(false);
+            })
+            .catch(err => {
+              console.error('useAuditLogData: REST API fallback failed:', err);
+              setError('Failed to fetch audit logs. Please try again.');
+              setIsLoadingPagedLogs(false);
+            });
+        }, 10000); // 10 second timeout
+
+        pendingTimeoutsRef.current.add(timeoutId);
+      } else {
+        // Fallback to REST API
+        console.log('useAuditLogData: WebSocket not connected, using REST API fallback:', request);
+        const response = await auditLogApi.getRecentAuditLogs(
+          request.page || 0, 
+          request.size || 50
+        );
+        setPagedAuditLogData(response);
+        setIsLoadingPagedLogs(false);
+      }
     } catch (error) {
       console.error('useAuditLogData: Error requesting paged audit logs:', error);
+      setError('Failed to fetch audit logs. Please try again.');
       setIsLoadingPagedLogs(false);
-      // Xử lý lỗi, ví dụ set một state lỗi
     }
-  }, [isConnected]); // Phụ thuộc isConnected
+  }, [isConnected]);
+  // Hàm để reset reconnection từ component
+  const resetReconnection = useCallback(() => {
+    auditLogStompService.resetReconnection();
+    setReconnectionStatus(auditLogStompService.getReconnectionStatus());
+    setError(null);
+    // Also reset loading state to prevent stuck loading
+    setIsLoadingPagedLogs(false);    // Clear any pending timeouts
+    pendingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    pendingTimeoutsRef.current.clear();
+  }, []);
+
+  // Auto-fetch initial data when component mounts
+  useEffect(() => {
+    const initialFetch = async () => {
+      try {
+        await fetchAuditLogs({ page: 0, size: 50 });
+      } catch (error) {
+        console.error('useAuditLogData: Failed to fetch initial audit logs:', error);
+      }
+    };
+    
+    initialFetch();
+  }, [fetchAuditLogs]);
+
+  // Effect để cleanup timeouts khi component unmount
+  useEffect(() => {
+    return () => {
+      console.log(`useAuditLogData: Component unmounting, clearing timeouts...`);
+      pendingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      pendingTimeoutsRef.current.clear();
+    };
+  }, []); // Remove pendingTimeouts from dependency array to prevent infinite loop
+
+  // Effect để tự động reset loading state nếu bị stuck quá lâu
+  useEffect(() => {
+    if (isLoadingPagedLogs) {
+      const maxLoadingTime = setTimeout(() => {
+        console.warn('useAuditLogData: Loading state stuck, auto-resetting...');
+        setIsLoadingPagedLogs(false);
+        setError('Request timeout. Please try refreshing.');
+      }, 10000); // 10 seconds max loading time
+
+      return () => clearTimeout(maxLoadingTime);
+    }
+  }, [isLoadingPagedLogs]);
 
   return {
     liveAuditLogs,
     pagedAuditLogData,
     isLoadingPagedLogs,
     fetchAuditLogs,
-    // initialSubscriptionMessage, // Nếu bạn dùng
+    reconnectionStatus,
+    resetReconnection,
+    error,
+    clearError,
   };
 };

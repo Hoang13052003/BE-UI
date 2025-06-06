@@ -8,6 +8,7 @@ import {
   // ProjectOutlined,
   EditOutlined,
   ProjectOutlined,
+  FileSearchOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -46,6 +47,11 @@ const DashboardAdmin: React.FC = () => {
           key: "notifications",
           icon: <BellOutlined />,
           label: <Link to="/admin/notifications">{t("adminPages.notifications")}</Link>,
+        },
+        {
+          key: "auditLogs",
+          icon: <FileSearchOutlined />,
+          label: <Link to="/admin/audit-logs">Audit Logs</Link>,
         },
       ],
     },

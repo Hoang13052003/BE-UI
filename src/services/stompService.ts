@@ -1,10 +1,32 @@
 // src/services/auditLogStompService.ts
-import SockJS from 'sockjs-client';
 import { Client, IMessage, StompSubscription, Frame } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
 const VITE_API_URL_HTTP = import.meta.env.VITE_API_URL;
-const STOMP_URL_SOCKJS = `${VITE_API_URL_HTTP}/ws/audit-logs`;
-const STOMP_URL_DIRECT = `${VITE_API_URL_HTTP}/ws/audit-logs-direct`;
+
+// Helper function to create WebSocket URL safely
+const createWebSocketUrl = (baseUrl: string, path: string): string => {
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, ''); // Remove trailing slashes
+  const cleanPath = path.replace(/^\/+/, ''); // Remove leading slashes
+  const wsUrl = cleanBaseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+  return `${wsUrl}/${cleanPath}`;
+};
+
+// Helper function to create SockJS URL
+const createSockJSUrl = (baseUrl: string, path: string): string => {
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, ''); // Remove trailing slashes
+  const cleanPath = path.replace(/^\/+/, ''); // Remove leading slashes
+  return `${cleanBaseUrl}/${cleanPath}`;
+};
+
+// SockJS endpoint URL (for SockJS connection)
+const STOMP_URL_SOCKJS = createSockJSUrl(VITE_API_URL_HTTP || 'http://localhost:8080', 'ws/audit-logs');
+
+// Direct WebSocket URL (for native WebSocket)
+const STOMP_URL_WEBSOCKET = createWebSocketUrl(VITE_API_URL_HTTP || 'http://localhost:8080', 'ws/audit-logs-direct');
+
+console.log('STOMP_SERVICE: SockJS URL:', STOMP_URL_SOCKJS);
+console.log('STOMP_SERVICE: WebSocket URL:', STOMP_URL_WEBSOCKET);
 
 // === Types ===
 export interface AuditLogRealtimeDto {
@@ -54,6 +76,11 @@ const notifyStatusChange = () => {
 let stompClient: Client | null = null;
 let connectionAttemptPromise: Promise<Client> | null = null; // Để tránh gọi connect nhiều lần đồng thời
 
+// Reconnection management
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 1;
+let shouldReconnect = true;
+
 // Lưu trữ các callbacks cho từng destination
 const activeCallbacks = new Map<string, (message: IMessage) => void>();
 // Lưu trữ các subscriptions đang hoạt động
@@ -67,34 +94,45 @@ const connect = (useSockJS: boolean = true): Promise<Client> => {
     return connectionAttemptPromise;
   }
 
+  // Check if we should stop reconnecting
+  if (!shouldReconnect || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    console.error(`STOMP_SERVICE: Maximum reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Stopping reconnection.`);
+    return Promise.reject(new Error('Maximum reconnection attempts reached'));
+  }
+
   connectionAttemptPromise = new Promise((resolve, reject) => {
-    console.log("STOMP_SERVICE: Attempting to connect...");
+    reconnectAttempts++;    console.log(`STOMP_SERVICE: Attempting to connect using ${useSockJS ? 'SockJS' : 'WebSocket'}... (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
     const token = localStorage.getItem('token');
-    const socketUrl = useSockJS ? STOMP_URL_SOCKJS : STOMP_URL_DIRECT;
-    let socket: any;
-
-    if (useSockJS) {
-        socket = new SockJS(socketUrl);
-    } else {
-        const protocol = socketUrl.startsWith('https:') ? 'wss:' : 'ws:';
-        const urlWithoutProtocol = socketUrl.substring(socketUrl.indexOf('//') + 2);
-        const wsUrl = `${protocol}//${urlWithoutProtocol}`;
-        socket = new WebSocket(wsUrl);
-    }
-
+    
+    // Create client with SockJS or native WebSocket
     const client = new Client({
-      webSocketFactory: () => socket,
+      // Use SockJS or native WebSocket based on parameter
+      ...(useSockJS 
+        ? { 
+            webSocketFactory: () => new SockJS(STOMP_URL_SOCKJS),
+            debug: (str) => console.log('STOMP_DEBUG (SockJS): ' + str)
+          }
+        : { 
+            brokerURL: STOMP_URL_WEBSOCKET,
+            debug: (str) => console.log('STOMP_DEBUG (WebSocket): ' + str)
+          }
+      ),
       connectHeaders: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-      debug: (str) => console.log('STOMP_DEBUG: ' + str),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
+      // Disable automatic reconnection - we'll handle it manually
       onConnect: (frame: Frame) => {
         stompClient = client;
         connectionAttemptPromise = null;
-        console.log('STOMP_SERVICE: Connected: ' + frame.headers.server);
+        // Reset reconnection counter on successful connection
+        reconnectAttempts = 0;
+        shouldReconnect = true;
+        console.log(`STOMP_SERVICE: Connected using ${useSockJS ? 'SockJS' : 'WebSocket'}: ` + frame.headers.server);
         notifyStatusChange();
-        activeCallbacks.forEach((callback, destination) => {
+        
+        // Re-subscribe to existing destinations
+        activeCallbacks.forEach((_, destination) => {
           if (!activeSubscriptions.has(destination)) {
             console.log(`STOMP_SERVICE: Re-subscribing to ${destination} after connection.`);
             const subscription = client.subscribe(destination, (message: IMessage) => {
@@ -107,23 +145,39 @@ const connect = (useSockJS: boolean = true): Promise<Client> => {
       },
       onStompError: (frame: Frame) => {
         connectionAttemptPromise = null;
-        console.error('STOMP_SERVICE: Broker error: ' + frame.headers['message'], frame.body);
+        console.error(`STOMP_SERVICE: Broker error (${useSockJS ? 'SockJS' : 'WebSocket'}): ` + frame.headers['message'], frame.body);
+        console.error(`STOMP_SERVICE: Connection failed (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
         notifyStatusChange();
         reject(frame);
       },
       onWebSocketError: (event: Event) => {
         connectionAttemptPromise = null;
-        console.error("STOMP_SERVICE: WebSocket error:", event);
+        console.error(`STOMP_SERVICE: WebSocket error (${useSockJS ? 'SockJS' : 'WebSocket'}):`, event);
+        console.error(`STOMP_SERVICE: Connection failed (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
         notifyStatusChange();
         reject(event);
       },
       onWebSocketClose: (event: CloseEvent) => {
-        console.log("STOMP_SERVICE: WebSocket closed.", `Reason: ${event.reason}`, `Code: ${event.code}`, `Was clean: ${event.wasClean}`);
+        console.log(`STOMP_SERVICE: WebSocket closed (${useSockJS ? 'SockJS' : 'WebSocket'}).`, `Reason: ${event.reason}`, `Code: ${event.code}`, `Was clean: ${event.wasClean}`);
         activeSubscriptions.clear();
         if (!client.active) {
-            stompClient = null; // Đảm bảo là null nếu không tự reconnect nữa
+            stompClient = null;
         }
         notifyStatusChange();
+        
+        // Check if we should attempt reconnection
+        if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS && !event.wasClean) {          console.log(`STOMP_SERVICE: Connection lost. Will attempt to reconnect using ${useSockJS ? 'SockJS' : 'WebSocket'} (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+          setTimeout(() => {
+            if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+              connect(useSockJS).catch(error => {
+                console.error(`STOMP_SERVICE: Auto-reconnection failed (${useSockJS ? 'SockJS' : 'WebSocket'}):`, error);
+              });
+            }
+          }, 5000); // Wait 5 seconds before reconnecting
+        } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+          console.error(`STOMP_SERVICE: Maximum reconnection attempts reached. Auto-reconnection disabled.`);
+          shouldReconnect = false;
+        }
       }
     });
     client.activate();
@@ -133,6 +187,9 @@ const connect = (useSockJS: boolean = true): Promise<Client> => {
 
 const disconnect = async (): Promise<void> => {
   connectionAttemptPromise = null; // Hủy bỏ mọi nỗ lực kết nối đang chờ
+  shouldReconnect = false; // Stop auto-reconnection
+  reconnectAttempts = 0; // Reset counter
+  
   if (stompClient?.active) {
     try {
       activeSubscriptions.forEach(sub => sub.unsubscribe());
@@ -153,7 +210,7 @@ const subscribe = async (destination: string, callback: (message: IMessage) => v
   if (!client || !client.active) {
     console.warn(`STOMP_SERVICE: Client not active. Attempting to connect before subscribing to ${destination}.`);
     try {
-      client = await connect();
+      client = await connect(true); // Use SockJS by default
     } catch (error) {
       console.error(`STOMP_SERVICE: Failed to connect for subscription to ${destination}.`, error);
       return;
@@ -186,15 +243,20 @@ const publish = async (destination: string, body?: string, headers?: { [key: str
   if (!client || !client.active) {
     console.warn(`STOMP_SERVICE: Client not active. Attempting to connect before publishing to ${destination}.`);
     try {
-      client = await connect();
+      client = await connect(true); // Use SockJS by default
     } catch (error) {
       console.error(`STOMP_SERVICE: Failed to connect for publishing to ${destination}.`, error);
       throw new Error("Failed to connect before publishing.");
     }
   }
   if (client?.active) {
+    // Add detailed logging for debugging WebSocket messages
+    console.log(`STOMP_SERVICE: Publishing to ${destination}`);
+    console.log(`STOMP_SERVICE: Message body:`, body);
+    console.log(`STOMP_SERVICE: Message headers:`, headers);
+    
     client.publish({ destination, body, headers });
-    console.log(`STOMP_SERVICE: Published to ${destination}`);
+    console.log(`STOMP_SERVICE: Successfully published to ${destination}`);
   } else {
     console.error(`STOMP_SERVICE: Cannot publish. Client not active after connection attempt for ${destination}.`);
     throw new Error("Client not active after connection attempt, cannot publish.");
@@ -202,6 +264,19 @@ const publish = async (destination: string, body?: string, headers?: { [key: str
 };
 
 const isActive = (): boolean => !!stompClient && stompClient.active;
+
+const resetReconnection = (): void => {
+  reconnectAttempts = 0;
+  shouldReconnect = true;
+  console.log("STOMP_SERVICE: Reconnection reset. Auto-reconnection enabled.");
+};
+
+const getReconnectionStatus = () => ({
+  attempts: reconnectAttempts,
+  maxAttempts: MAX_RECONNECT_ATTEMPTS,
+  shouldReconnect,
+  canReconnect: reconnectAttempts < MAX_RECONNECT_ATTEMPTS
+});
 
 // --- AUDIT LOG SPECIFIC METHODS ---
 const subscribeToAuditLogs = async (callback: (data: AuditLogRealtimeDto | string) => void): Promise<void> => {
@@ -254,8 +329,21 @@ const subscribeToAdminAlerts = async (callback: (auditLog: AuditLogRealtimeDto) 
 };
 
 const requestAuditLogs = async (request: AuditLogRequest = {}): Promise<void> => {
-  // Đảm bảo backend AuditLogRealtimeController.handleAuditLogRequest dùng @Payload
-  const bodyPayload = JSON.stringify(request);
+  // Server expects AuditLogRequestDto as JSON payload, not empty body
+  // Build proper JSON object to match backend AuditLogRequestDto structure
+  const requestData = {
+    page: request.page || 0,
+    size: request.size || 20,
+    // Include other optional fields if provided
+    ...(request.category && { category: request.category }),
+    ...(request.severity && { severity: request.severity }),
+    ...(request.startTime && { startTime: request.startTime }),
+    ...(request.endTime && { endTime: request.endTime })
+  };
+  
+  // Send JSON payload to match server @Payload AuditLogRequestDto expectation
+  const bodyPayload = JSON.stringify(requestData);
+  console.log("STOMP_SERVICE: Sending audit log request:", bodyPayload);
   await publish('/app/audit-logs/request', bodyPayload);
 };
 
@@ -275,6 +363,8 @@ export const auditLogStompService = {
   connect,
   disconnect,
   isActive,
+  resetReconnection,
+  getReconnectionStatus,
   // Các hàm nghiệp vụ cho Audit Log
   subscribeToAuditLogs, // Cho @SubscribeMapping
   subscribeToRealtimeStream,
@@ -282,10 +372,7 @@ export const auditLogStompService = {
   subscribeToAdminAlerts,
   requestAuditLogs,
   subscribeToAuditLogResponses,
-  // Hàm chung nếu cần (ít dùng hơn khi có hàm nghiệp vụ)
-  // subscribeGeneric: subscribe,
-  // unsubscribeGeneric: unsubscribe,
-  // publishGeneric: publish,
+  unsubscribe: unsubscribe,
   addConnectionStatusListener: (listener: () => void) => statusListeners.add(listener),
   removeConnectionStatusListener: (listener: () => void) => statusListeners.delete(listener),
 };

@@ -25,11 +25,10 @@ class NotificationService {
       return;
     }
 
-    this.token = token;
-
-    try {
-      // Replace with your backend WebSocket URL
-      const wsUrl = `ws://localhost:8080/ws/notifications`;
+    this.token = token;    try {
+      // Use environment variable for WebSocket URL
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const wsUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://').replace(/\/+$/, '') + '/ws/notifications';
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
