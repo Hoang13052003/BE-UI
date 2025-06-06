@@ -1,183 +1,291 @@
-// src/services/stompService.ts
+// src/services/auditLogStompService.ts
 import SockJS from 'sockjs-client';
-import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
+import { Client, IMessage, StompSubscription, Frame } from '@stomp/stompjs';
 
-const VITE_API_URL_HTTP = import.meta.env.VITE_API_URL; // Ví dụ: http://localhost:8080
-// Chuyển đổi sang URL cho WebSocket (nếu VITE_API_URL là http)
-// Nếu VITE_API_URL đã là ws:// hoặc wss:// thì không cần
-const STOMP_URL_SOCKJS = `${VITE_API_URL_HTTP}/ws/audit-logs`; // Endpoint cho SockJS
+const VITE_API_URL_HTTP = import.meta.env.VITE_API_URL;
+const STOMP_URL_SOCKJS = `${VITE_API_URL_HTTP}/ws/audit-logs`;
+const STOMP_URL_DIRECT = `${VITE_API_URL_HTTP}/ws/audit-logs-direct`;
+
+// === Types ===
+export interface AuditLogRealtimeDto {
+  id: string;
+  timestamp: string;
+  username: string | null; // Sửa lại vì backend AuditLogRealtimeDto có thể null
+  ipAddress: string | null; // Sửa lại
+  actionType: string;
+  category: string;
+  severity: string;
+  targetEntity: string | null; // Sửa lại
+  targetEntityId: string | null; // Sửa lại
+  details: string | null; // Sửa lại
+  success: boolean;
+}
+
+export interface AuditLogStats {
+  totalLogs24h: number;
+  totalLogsWeek: number;
+  criticalLogs24h: number;
+  errorLogs24h: number;
+  warningLogs24h: number;
+}
+
+export interface UserActivitySummary {
+  username: string;
+  activityCount: number;
+}
+
+export interface AuditLogRequest {
+  page?: number;
+  size?: number;
+  category?: string;
+  severity?: string;
+  startTime?: string; // Nên là ISO string nếu gửi cho backend
+  endTime?: string;   // Nên là ISO string
+}
+
+// === End Types ===
+
+const statusListeners = new Set<() => void>();
+const notifyStatusChange = () => {
+  console.log("STOMP_SERVICE: Notifying status change. Client active:", stompClient?.active ?? false);
+  statusListeners.forEach(listener => listener());
+};
 
 let stompClient: Client | null = null;
-let isConnecting = false;
-const connectionPromiseQueue: Array<{ resolve: (client: Client) => void; reject: (reason?: any) => void }> = [];
+let connectionAttemptPromise: Promise<Client> | null = null; // Để tránh gọi connect nhiều lần đồng thời
 
-interface SubscriptionCallbacks {
-  [destination: string]: ((message: IMessage) => void) | undefined;
-}
-const activeSubscriptions: Map<string, StompSubscription> = new Map();
-const subscriptionCallbacks: SubscriptionCallbacks = {};
+// Lưu trữ các callbacks cho từng destination
+const activeCallbacks = new Map<string, (message: IMessage) => void>();
+// Lưu trữ các subscriptions đang hoạt động
+const activeSubscriptions = new Map<string, StompSubscription>();
 
-const connect = (): Promise<Client> => {
-  return new Promise((resolve, reject) => {
-    if (stompClient && stompClient.active) {
-      console.log("STOMP: Already connected.");
-      resolve(stompClient);
-      return;
+const connect = (useSockJS: boolean = true): Promise<Client> => {
+  if (stompClient && stompClient.active) {
+    return Promise.resolve(stompClient);
+  }
+  if (connectionAttemptPromise) {
+    return connectionAttemptPromise;
+  }
+
+  connectionAttemptPromise = new Promise((resolve, reject) => {
+    console.log("STOMP_SERVICE: Attempting to connect...");
+    const token = localStorage.getItem('token');
+    const socketUrl = useSockJS ? STOMP_URL_SOCKJS : STOMP_URL_DIRECT;
+    let socket: any;
+
+    if (useSockJS) {
+        socket = new SockJS(socketUrl);
+    } else {
+        const protocol = socketUrl.startsWith('https:') ? 'wss:' : 'ws:';
+        const urlWithoutProtocol = socketUrl.substring(socketUrl.indexOf('//') + 2);
+        const wsUrl = `${protocol}//${urlWithoutProtocol}`;
+        socket = new WebSocket(wsUrl);
     }
 
-    if (isConnecting) {
-      console.log("STOMP: Connection in progress, adding to queue.");
-      connectionPromiseQueue.push({ resolve, reject });
-      return;
-    }
-
-    isConnecting = true;
-    console.log("STOMP: Attempting to connect...");
-
-    const token = localStorage.getItem('token'); // Lấy token từ localStorage
-
-    const socket = new SockJS(STOMP_URL_SOCKJS);
     const client = new Client({
       webSocketFactory: () => socket,
-      connectHeaders: {
-        // Gửi token qua STOMP headers nếu interceptor backend của bạn cho STOMP endpoint kiểm tra nó.
-        // Hiện tại, cấu hình backend của bạn không có interceptor xác thực riêng cho STOMP endpoint.
-        // Nếu bạn thêm, đây là nơi để gửi token:
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      },
-      debug: (str) => {
-        console.log('STOMP (Global): ' + str);
-      },
+      connectHeaders: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+      debug: (str) => console.log('STOMP_DEBUG: ' + str),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      onConnect: (frame) => {
-        isConnecting = false;
+      onConnect: (frame: Frame) => {
         stompClient = client;
-        console.log('STOMP: Connected: ' + frame);
-        resolve(client);
-        // Xử lý queue nếu có
-        connectionPromiseQueue.forEach(p => p.resolve(client));
-        connectionPromiseQueue.length = 0; // Clear queue
-
-        // Tự động subscribe lại vào các kênh đã đăng ký trước đó nếu có
-        Object.keys(subscriptionCallbacks).forEach(dest => {
-            if (subscriptionCallbacks[dest]) {
-                subscribe(dest, subscriptionCallbacks[dest]!);
-            }
+        connectionAttemptPromise = null;
+        console.log('STOMP_SERVICE: Connected: ' + frame.headers.server);
+        notifyStatusChange();
+        activeCallbacks.forEach((callback, destination) => {
+          if (!activeSubscriptions.has(destination)) {
+            console.log(`STOMP_SERVICE: Re-subscribing to ${destination} after connection.`);
+            const subscription = client.subscribe(destination, (message: IMessage) => {
+              activeCallbacks.get(destination)?.(message);
+            });
+            activeSubscriptions.set(destination, subscription);
+          }
         });
+        resolve(client);
       },
-      onStompError: (frame) => {
-        isConnecting = false;
-        console.error('STOMP: Broker reported error: ' + frame.headers['message']);
-        console.error('STOMP: Additional details: ' + frame.body);
+      onStompError: (frame: Frame) => {
+        connectionAttemptPromise = null;
+        console.error('STOMP_SERVICE: Broker error: ' + frame.headers['message'], frame.body);
+        notifyStatusChange();
         reject(frame);
-        connectionPromiseQueue.forEach(p => p.reject(frame));
-        connectionPromiseQueue.length = 0;
-        // Có thể emit một event hoặc gọi callback để UI biết kết nối lỗi
       },
-      onWebSocketError: (errorEvent) => {
-        isConnecting = false;
-        console.error("STOMP: WebSocket Error:", errorEvent);
-        reject(errorEvent);
-        connectionPromiseQueue.forEach(p => p.reject(errorEvent));
-        connectionPromiseQueue.length = 0;
+      onWebSocketError: (event: Event) => {
+        connectionAttemptPromise = null;
+        console.error("STOMP_SERVICE: WebSocket error:", event);
+        notifyStatusChange();
+        reject(event);
       },
-      onWebSocketClose: (closeEvent) => {
-        console.log("STOMP: WebSocket connection closed:", closeEvent);
-        // isConnecting và stompClient.active sẽ tự động được cập nhật bởi thư viện
-        // Khi reconnectDelay > 0, thư viện sẽ tự động thử kết nối lại.
-        // Nếu bạn muốn xử lý thêm, có thể thêm ở đây.
-        // Ví dụ: clear activeSubscriptions để nó được tạo lại khi onConnect
+      onWebSocketClose: (event: CloseEvent) => {
+        console.log("STOMP_SERVICE: WebSocket closed.", `Reason: ${event.reason}`, `Code: ${event.code}`, `Was clean: ${event.wasClean}`);
         activeSubscriptions.clear();
+        if (!client.active) {
+            stompClient = null; // Đảm bảo là null nếu không tự reconnect nữa
+        }
+        notifyStatusChange();
       }
     });
-
     client.activate();
   });
+  return connectionAttemptPromise;
 };
 
-const disconnect = async () => {
-  if (stompClient && stompClient.active) {
+const disconnect = async (): Promise<void> => {
+  connectionAttemptPromise = null; // Hủy bỏ mọi nỗ lực kết nối đang chờ
+  if (stompClient?.active) {
     try {
+      activeSubscriptions.forEach(sub => sub.unsubscribe());
+      activeSubscriptions.clear();
       await stompClient.deactivate();
-      console.log("STOMP: Deactivated successfully.");
+      console.log("STOMP_SERVICE: Deactivated successfully.");
     } catch (error) {
-      console.error("STOMP: Error during deactivation:", error);
+      console.error("STOMP_SERVICE: Error during deactivation:", error);
     }
-  } else {
-    console.log("STOMP: Client not active or already disconnected.");
   }
   stompClient = null;
-  isConnecting = false;
-  activeSubscriptions.clear(); // Xóa các subscription đang hoạt động
-  // Không xóa subscriptionCallbacks để có thể subscribe lại khi kết nối lại
+  notifyStatusChange();
 };
 
-const subscribe = (destination: string, callback: (message: IMessage) => void): StompSubscription | undefined => {
-  subscriptionCallbacks[destination] = callback; // Lưu callback để có thể re-subscribe
-
-  if (stompClient && stompClient.active) {
-    if (activeSubscriptions.has(destination)) {
-        console.warn(`STOMP: Already subscribed to ${destination}. Re-using existing subscription or check logic.`);
-        // Có thể bạn muốn unsubscribe trước rồi subscribe lại, hoặc chỉ trả về subscription cũ
-        // return activeSubscriptions.get(destination);
-        // Hoặc, để đơn giản, nếu đã có thì không làm gì, chỉ cần callback đã được cập nhật
+const subscribe = async (destination: string, callback: (message: IMessage) => void): Promise<void> => {
+  activeCallbacks.set(destination, callback);
+  let client = stompClient;
+  if (!client || !client.active) {
+    console.warn(`STOMP_SERVICE: Client not active. Attempting to connect before subscribing to ${destination}.`);
+    try {
+      client = await connect();
+    } catch (error) {
+      console.error(`STOMP_SERVICE: Failed to connect for subscription to ${destination}.`, error);
+      return;
     }
-    console.log(`STOMP: Subscribing to ${destination}`);
-    const subscription = stompClient.subscribe(destination, (message: IMessage) => {
-      // Gọi callback đã lưu trữ, đảm bảo là callback mới nhất từ component
-      if (subscriptionCallbacks[destination]) {
-        subscriptionCallbacks[destination]!(message);
-      }
+  }
+
+  if (client?.active && !activeSubscriptions.has(destination)) {
+    console.log(`STOMP_SERVICE: Subscribing to new destination ${destination} after connect.`);
+    const subscription = client.subscribe(destination, (message: IMessage) => {
+        activeCallbacks.get(destination)?.(message);
     });
     activeSubscriptions.set(destination, subscription);
-    return subscription;
-  } else {
-    console.warn(`STOMP: Client not connected. Subscription to ${destination} will be attempted upon connection.`);
-    // Không cần làm gì thêm, onConnect sẽ tự động subscribe lại
-    return undefined;
+  } else if (client?.active && activeSubscriptions.has(destination)) {
+      console.log(`STOMP_SERVICE: Already subscribed to ${destination}, callback updated.`);
   }
 };
 
-const unsubscribe = (destination: string) => {
+const unsubscribe = (destination: string): void => {
   const subscription = activeSubscriptions.get(destination);
   if (subscription) {
     subscription.unsubscribe();
     activeSubscriptions.delete(destination);
-    console.log(`STOMP: Unsubscribed from ${destination}`);
+    console.log(`STOMP_SERVICE: Unsubscribed from ${destination}`);
   }
-  delete subscriptionCallbacks[destination]; // Xóa callback đã lưu
+  activeCallbacks.delete(destination); // Xóa callback để không re-subscribe vô ích
 };
 
-const publish = (destination: string, body?: string, headers?: { [key: string]: any }) => {
-  if (stompClient && stompClient.active) {
-    stompClient.publish({ destination, body, headers });
+const publish = async (destination: string, body?: string, headers?: { [key: string]: any }): Promise<void> => {
+  let client = stompClient;
+  if (!client || !client.active) {
+    console.warn(`STOMP_SERVICE: Client not active. Attempting to connect before publishing to ${destination}.`);
+    try {
+      client = await connect();
+    } catch (error) {
+      console.error(`STOMP_SERVICE: Failed to connect for publishing to ${destination}.`, error);
+      throw new Error("Failed to connect before publishing.");
+    }
+  }
+  if (client?.active) {
+    client.publish({ destination, body, headers });
+    console.log(`STOMP_SERVICE: Published to ${destination}`);
   } else {
-    console.error(`STOMP: Cannot publish to ${destination}. Client not connected.`);
-    // Có thể thêm logic retry hoặc thông báo lỗi
-    // Hoặc kết nối rồi mới publish
-    // connect().then(() => {
-    //     stompClient?.publish({ destination, body, headers });
-    // }).catch(err => console.error("Failed to connect for publishing", err));
+    console.error(`STOMP_SERVICE: Cannot publish. Client not active after connection attempt for ${destination}.`);
+    throw new Error("Client not active after connection attempt, cannot publish.");
   }
 };
 
-const getClient = (): Client | null => {
-    return stompClient;
+const isActive = (): boolean => !!stompClient && stompClient.active;
+
+// --- AUDIT LOG SPECIFIC METHODS ---
+const subscribeToAuditLogs = async (callback: (data: AuditLogRealtimeDto | string) => void): Promise<void> => {
+  await subscribe('/app/audit-logs', (message: IMessage) => { // Sửa thành /app/audit-logs cho @SubscribeMapping
+    try {
+      if (message.body.includes("Subscribed to audit logs")) { // Check for confirmation string
+        callback(message.body); // Gửi chuỗi xác nhận
+      } else {
+        const auditLog: AuditLogRealtimeDto = JSON.parse(message.body); // Nếu là object
+        callback(auditLog);
+      }
+    } catch (error) {
+      console.error('STOMP_SERVICE: Error parsing @SubscribeMapping/audit-logs message:', error);
+      // callback(message.body); // Or send raw body on error
+    }
+  });
 };
 
-const isActive = (): boolean => {
-    return !!stompClient && stompClient.active;
+const subscribeToRealtimeStream = async (callback: (auditLog: AuditLogRealtimeDto) => void): Promise<void> => {
+  await subscribe('/topic/audit-logs', (message: IMessage) => {
+    try {
+      const auditLog: AuditLogRealtimeDto = JSON.parse(message.body);
+      callback(auditLog);
+    } catch (error) {
+      console.error('STOMP_SERVICE: Error parsing /topic/audit-logs message:', error);
+    }
+  });
 };
 
+const subscribeToSeverityLevel = async (severity: 'critical' | 'error' | 'warning' | 'info', callback: (auditLog: AuditLogRealtimeDto) => void): Promise<void> => {
+  await subscribe(`/topic/audit-logs/${severity.toLowerCase()}`, (message: IMessage) => {
+    try {
+      const auditLog: AuditLogRealtimeDto = JSON.parse(message.body);
+      callback(auditLog);
+    } catch (error) {
+      console.error(`STOMP_SERVICE: Error parsing /topic/audit-logs/${severity} message:`, error);
+    }
+  });
+};
 
-export const stompService = {
+const subscribeToAdminAlerts = async (callback: (auditLog: AuditLogRealtimeDto) => void): Promise<void> => {
+  await subscribe('/topic/admin-alerts', (message: IMessage) => {
+     try {
+      const auditLog: AuditLogRealtimeDto = JSON.parse(message.body);
+      callback(auditLog);
+    } catch (error) {
+      console.error('STOMP_SERVICE: Error parsing /topic/admin-alerts message:', error);
+    }
+  });
+};
+
+const requestAuditLogs = async (request: AuditLogRequest = {}): Promise<void> => {
+  // Đảm bảo backend AuditLogRealtimeController.handleAuditLogRequest dùng @Payload
+  const bodyPayload = JSON.stringify(request);
+  await publish('/app/audit-logs/request', bodyPayload);
+};
+
+const subscribeToAuditLogResponses = async (callback: (response: any) => void): Promise<void> => { // 'any' vì Page<AuditLogRealtimeDto>
+  await subscribe('/topic/audit-logs/response', (message: IMessage) => {
+    try {
+      const response = JSON.parse(message.body);
+      callback(response);
+    } catch (error) {
+      console.error('STOMP_SERVICE: Error parsing /topic/audit-logs/response message:', error);
+    }
+  });
+};
+// --- END AUDIT LOG SPECIFIC METHODS ---
+
+export const auditLogStompService = {
   connect,
   disconnect,
-  subscribe,
-  unsubscribe,
-  publish,
-  getClient,
   isActive,
+  // Các hàm nghiệp vụ cho Audit Log
+  subscribeToAuditLogs, // Cho @SubscribeMapping
+  subscribeToRealtimeStream,
+  subscribeToSeverityLevel,
+  subscribeToAdminAlerts,
+  requestAuditLogs,
+  subscribeToAuditLogResponses,
+  // Hàm chung nếu cần (ít dùng hơn khi có hàm nghiệp vụ)
+  // subscribeGeneric: subscribe,
+  // unsubscribeGeneric: unsubscribe,
+  // publishGeneric: publish,
+  addConnectionStatusListener: (listener: () => void) => statusListeners.add(listener),
+  removeConnectionStatusListener: (listener: () => void) => statusListeners.delete(listener),
 };
