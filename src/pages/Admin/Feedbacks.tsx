@@ -129,6 +129,7 @@ const Feedbacks: React.FC = () => {
   const handleCloseDetailModal = () => {
     setIsDetailModalVisible(false);
     setSelectedFeedbackId(null);
+    fetchFeedbacks(0, pagination.pageSize, criteria);
   };
 
   const derivedProjectOptions = useMemo(() => {
@@ -221,7 +222,7 @@ const Feedbacks: React.FC = () => {
   };
 
   return (
-    <Card>
+    <Card style={{ height: "100%" }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
           <Title level={4}>Feedback Management</Title>
@@ -234,7 +235,7 @@ const Feedbacks: React.FC = () => {
       {/* Statistics */}
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card style={{ boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.24)" }}>
             <Statistic
               title="Total Feedback"
               value={stats.totalFeedback}
@@ -248,7 +249,7 @@ const Feedbacks: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card style={{ boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.24)" }}>
             <Statistic
               title="Pending Reviews"
               value={stats.pendingReviews}
@@ -258,7 +259,7 @@ const Feedbacks: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card style={{ boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.24)" }}>
             <Statistic
               title="Response Rate"
               value={stats.responseRate}

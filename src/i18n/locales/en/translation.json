@@ -353,12 +353,15 @@
     }
   },
   "adminPages": {
-    "dashboard": "Data Overview",
-    "userManagement": "User Management",
-    "projectManagement": "Project Management",
+    "dashboard": "Data overview",
+    "userManagement": "User management",
+    "projectManagement": "Project management",
     "notifications": "Notifications",
     "systemSettings": "System Settings",
     "analytics": "Analytics",
+    "projectReport":"Project report management",
+    "feedbacksManagement": "Feedbacks management",
+    "logsManagement":"Logs management",
     "logs": "Logs",
     "backups": "Backups",
     "maintenance": "Maintenance"

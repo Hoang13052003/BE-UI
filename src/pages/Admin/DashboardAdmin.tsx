@@ -8,6 +8,9 @@ import {
   // ProjectOutlined,
   EditOutlined,
   ProjectOutlined,
+  WechatOutlined,
+  CloudUploadOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -44,7 +47,11 @@ const DashboardAdmin: React.FC = () => {
         {
           key: "manageProjectUpdates",
           icon: <EditOutlined />,
-          label: <Link to="/admin/project-progress">Projects Update</Link>,
+          label: (
+            <Link to="/admin/project-progress">
+              {t("adminPages.projectReport")}
+            </Link>
+          ),
         },
         {
           key: "notifications",
@@ -57,8 +64,22 @@ const DashboardAdmin: React.FC = () => {
         },
         {
           key: "feedbacks",
-          icon: <BellOutlined />,
-          label: <Link to="/admin/feedbacks">Feedbacks</Link>,
+          icon: <WechatOutlined />,
+          label: (
+            <Link to="/admin/feedbacks">
+              {t("adminPages.feedbacksManagement")}
+            </Link>
+          ),
+        },
+        {
+          key: "logs",
+          icon: <CloudUploadOutlined />,
+          label: <Link to="/admin/logs">{t("adminPages.logsManagement")}</Link>,
+        },
+        {
+          key: "messages",
+          icon: <MessageOutlined />,
+          label: <Link to="/admin/messages">{t("clientPages.messages")}</Link>,
         },
       ],
     },

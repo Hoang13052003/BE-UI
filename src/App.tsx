@@ -34,6 +34,7 @@ import Profile from "./pages/Client/Profile";
 import Settings from "./pages/Client/Settings";
 import Feedbacks from "./pages/Admin/Feedbacks";
 import { ChatProvider } from "./contexts/ChatContext";
+import LogManagerPage from "./pages/Admin/LogsManager";
 
 function App() {
   return (
@@ -75,6 +76,8 @@ function App() {
                       />
                       <Route path="notifications" element={<Notifications />} />
 
+                      <Route path="messages" element={<Messages />} />
+
                       <Route path="settings" element={<PageSettings />}>
                         <Route index element={<Settings />} />{" "}
                         {/* Route mặc định ("/settings") */}
@@ -86,6 +89,7 @@ function App() {
                         element={<ProjectDetailPage />}
                       />
                       <Route path="feedbacks" element={<Feedbacks />} />
+                      <Route path="logs" element={<LogManagerPage />} />
                       <Route
                         path="projects/:projectId/history"
                         element={<ProjectUpdateHistory />}
@@ -94,11 +98,11 @@ function App() {
                         path="projects/:projectId/updates/:projectUpdateId/snapshot"
                         element={<ProjectSnapshotViewer />}
                       />
+                      <Route
+                        path="attachment-display/:projectId"
+                        element={<AttachmentDisplay />}
+                      />
                     </Route>
-                    <Route
-                      path="/admin/attachment-display/:projectId"
-                      element={<AttachmentDisplay />}
-                    />
                   </Route>
                 </Route>
 
@@ -121,7 +125,7 @@ function App() {
                         path="project-updates/:id"
                         element={<ProjectUpdateDetailsPage />}
                       />
-                      <Route path="projects/messages" element={<Messages />} />
+                      <Route path="messages" element={<Messages />} />
                       <Route
                         path="projects/:projectId/details"
                         element={<ProjectDetailPage />}
