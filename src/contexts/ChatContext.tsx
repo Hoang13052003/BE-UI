@@ -71,12 +71,6 @@ interface ChatProviderProps {
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const { isAuthenticated, userDetails } = useAuth();
-  console.log(
-    "ChatProvider initialized, isAuthenticated:",
-    isAuthenticated,
-    "userDetails:",
-    userDetails
-  );
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
   const [chatRooms, setChatRooms] = useState<ChatRoomResponse[]>([]);
   const [activeChatRoom, setActiveChatRoom] = useState<ChatRoomResponse | null>(
@@ -120,54 +114,29 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       console.error("Refresh online error:", err);
     }
   }, []);
-
   const sendTypingActivity = useCallback(() => {
     if (
       !activeChatRoom ||
       !userDetails ||
       !chatServiceNew.isSocketConnected()
     ) {
-      console.log("[ChatContext.tsx] sendTypingActivity: Conditions not met", {
-        activeChatRoom,
-        userDetails,
-        connected: chatServiceNew.isSocketConnected(),
-      });
       return;
     }
-    console.log(
-      "[ChatContext.tsx] sendTypingActivity: Sending event for room:",
-      activeChatRoom.id,
-      "type:",
-      activeChatRoom.roomType
-    );
     chatServiceNew.sendGenericTypingEvent(
       activeChatRoom.id,
       activeChatRoom.roomType
     );
   }, [activeChatRoom, userDetails]);
-
   const handleUserTypingEvent = useCallback(
     (data: any) => {
-      console.log("[ChatContext.tsx] handleUserTypingEvent received:", data);
       // Server gửi: { type: "user_typing", userId, userName, userAvatar, roomId, roomType }
       if (
         data.roomId !== activeChatRoom?.id ||
         data.userId === userDetails?.id
       ) {
-        console.log("[ChatContext.tsx] handleUserTypingEvent: Event ignored", {
-          currentRoomId: activeChatRoom?.id,
-          eventRoomId: data.roomId,
-          eventUserId: data.userId,
-          currentUserId: userDetails?.id,
-        });
         // Bỏ qua nếu không phải cho phòng chat hiện tại hoặc là sự kiện từ chính mình
         return;
       }
-
-      console.log(
-        "[ChatContext.tsx] handleUserTypingEvent: Processing for user:",
-        data.userId
-      );
       setTypingUsers((prev) => {
         const existingUser = prev.find(
           (u) => u.userId === (data.userId ?? data.senderId)
@@ -206,11 +175,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   // Xử lý tin nhắn nhận được từ WebSocket
   const handleWebSocketMessage = useCallback(
-    (receivedData: any) => {
-      // receivedData là object BE gửi về, đã được dispatchMessage của service xử lý
+    (receivedData: any) => {      // receivedData là object BE gửi về, đã được dispatchMessage của service xử lý
       // và có dạng { type: "private_message", messageId: ..., senderId: ..., content: ..., chatMessageType: "TEXT", ... }
 
-      console.log("ChatContext received data for listener:", receivedData); // Kiểm tra xem có phải tin nhắn chat không (BE đã thêm trường `type`)
+      // Kiểm tra xem có phải tin nhắn chat không (BE đã thêm trường `type`)
       if (
         ["private_message", "group_message", "project_message"].includes(
           receivedData.type
@@ -334,11 +302,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       typingTimers,
     ] // Add typingTimers
   );
-
   // Xử lý xác nhận tin nhắn đã gửi từ server
   const handleMessageSentConfirmation = useCallback(
     (confirmationData: any) => {
-      console.log("Message sent confirmation in Context:", confirmationData);
       setMessages((prevMessages) =>
         prevMessages
           .map((msg) => {
@@ -372,13 +338,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     },
     [userDetails]
   );
-
   const connectWebSocket = useCallback(() => {
     const token = localStorage.getItem("token");
-    console.log(
-      "Attempting to connect WebSocket, token:",
-      token ? "exists" : "missing"
-    );
     if (!token) return;
 
     // Disconnect and clean up any existing connection first
@@ -579,50 +540,33 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     [isAuthenticated, userDetails]
   );
   const loadChatHistory = useCallback(
-    async (roomId: string, page = 0) => {
-      // Tìm room từ roomId thay vì dựa vào activeChatRoom state
+    async (roomId: string, page = 0) => {      // Tìm room từ roomId thay vì dựa vào activeChatRoom state
       const room = chatRooms.find((r) => r.id === roomId);
       if (!room) {
-        console.log("LoadChatHistory: No room found with ID:", roomId);
         return;
       }
-      console.log("LoadChatHistory: Loading for room", room);
       try {
         setLoading(true);
         let history;
-        if (room.roomType === "PRIVATE" && room.participants.length >= 2) {
-          const other = room.participants.find(
+        if (room.roomType === "PRIVATE" && room.participants.length >= 2) {          const other = room.participants.find(
             (p) => p.userId !== userDetails?.id
           );
           if (other) {
-            console.log("Loading private chat history for user:", other.userId);
             const { getPrivateChatHistory } = await import("../api/chatApi");
             history = await getPrivateChatHistory(other.userId, page);
           }
         } else if (room.roomType === "PROJECT_CHAT") {
-          console.log(
-            "Loading project chat history for project:",
-            room.projectId
-          );
           const { getProjectChatHistory } = await import("../api/chatApi");
           history = await getProjectChatHistory(room.projectId!, page);
         } else if (room.roomType === "GROUP") {
-          console.log("Loading group chat history for topic:", room.roomName);
           const { getGroupChatHistory } = await import("../api/chatApi");
           history = await getGroupChatHistory(room.roomName, page);
         }
 
         if (history) {
-          console.log(
-            "LoadChatHistory: Got history with",
-            history.messages?.length,
-            "messages"
-          );
           setMessages((prev) =>
             page === 0 ? history.messages : [...history.messages, ...prev]
           );
-        } else {
-          console.log("LoadChatHistory: No history received");
         }
       } catch (err) {
         console.error("Load history error:", err);
@@ -632,21 +576,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
     },
     [chatRooms, userDetails?.id]
-  );
-  const selectChatRoom = useCallback(
+  );  const selectChatRoom = useCallback(
     (roomId: string) => {
-      console.log("SelectChatRoom: Selecting room with ID:", roomId);
       const room = chatRooms.find((r) => r.id === roomId);
-      console.log("SelectChatRoom: Found room:", room);
       setActiveChatRoom(room || null);
       if (room) {
-        console.log(
-          "SelectChatRoom: Calling loadChatHistory for room:",
-          room.id
-        );
         loadChatHistory(roomId);
-      } else {
-        console.log("SelectChatRoom: No room found with ID:", roomId);
       }
     },
     [chatRooms, loadChatHistory]

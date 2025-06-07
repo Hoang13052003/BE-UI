@@ -39,15 +39,12 @@ const Overview: React.FC = () => {
 
   // Fetch dashboard data
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
+    const fetchDashboardData = async () => {      try {
         setLoading(true);
         const data = await getAdminDashboardSummary();
-        console.log("Dashboard Data:", data.projectStatus);
         setDashboardData(data);
         setError(null);
       } catch (err) {
-        console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data");
       } finally {
         setLoading(false);

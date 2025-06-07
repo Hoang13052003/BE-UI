@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext"; // Removed useAuth
+import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { AuthProvider } from "./contexts/AuthContext";
 import { AlertProvider } from "./contexts/AlertContext";
 import LayoutShare from "./pages/Share/_layout";
 import DashboardAdmin from "./pages/Admin/DashboardAdmin";
@@ -39,7 +40,27 @@ import Feedbacks from "./pages/Admin/Feedbacks";
 import { ChatProvider } from "./contexts/ChatContext";
 import LogManagerPage from "./pages/Admin/LogsManager";
 import DashboardClient from "./pages/Client/DashboardClient";
-import AuditLogDashboard from "./pages/Admin/AuditLogDashboard";
+import AuditLogDashboard from "./pages/Admin/AuditLogDashboard/AuditLogDashboard";
+
+// Component to handle auth logout events
+const AuthEventHandler: React.FC = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const handleAuthLogout = () => {
+      console.warn('Auth logout event received, redirecting to login');
+      navigate('/login');
+    };
+
+    window.addEventListener('auth:logout', handleAuthLogout);
+    
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+    };
+  }, [navigate]);
+
+  return null; // This component doesn't render anything
+};
 
 function App() {
   return (
@@ -48,6 +69,7 @@ function App() {
         <ChatProvider>
           <NotificationProvider>
             <Router>
+              <AuthEventHandler />
               <Routes>
                 {/* Public Routes */}
                 <Route element={<PublicRoute />}>
@@ -81,9 +103,9 @@ function App() {
                       <Route
                         path="projects/:projectId/details"
                         element={<ProjectDetailPage />}
-                      />
-                      <Route path="feedbacks" element={<Feedbacks />} />
+                      />                      <Route path="feedbacks" element={<Feedbacks />} />
                       <Route path="logs" element={<LogManagerPage />} />
+                      <Route path="audit-logs" element={<AuditLogDashboard />} />
                       <Route
                         path="projects/:projectId/history"
                         element={<ProjectUpdateHistory />}

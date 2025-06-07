@@ -24,7 +24,6 @@ class ChatServiceNew {
       (this.socket.readyState === WebSocket.OPEN ||
         this.socket.readyState === WebSocket.CONNECTING)
     ) {
-      console.log("Chat WebSocket already connected or connecting");
       return;
     }
 
@@ -33,26 +32,19 @@ class ChatServiceNew {
       import.meta.env.VITE_WS_URL || "ws://localhost:8080"
     }/ws/chat?token=${token}`;
 
-    console.log("Connecting to WebSocket:", wsUrl);
     this.socket = new WebSocket(wsUrl);
     this.socket.onopen = () => {
-      console.log("Chat WebSocket connected successfully");
       this.isConnected = true;
       this.reconnectAttempts = 0;
       this.connectionStatusCallback?.(true);
       antdMessage.success("Đã kết nối chat");
     };
+
     this.socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data as string); // Đảm bảo event.data là string
-        console.log("Received WebSocket message:", data);
         this.dispatchMessage(data);
       } catch (err) {
-        console.error(
-          "Error parsing WebSocket message or non-JSON message:",
-          event.data,
-          err
-        );
         // Xử lý các thông báo dạng chuỗi đơn giản từ server nếu cần
         if (typeof event.data === "string") {
           if (
@@ -67,9 +59,9 @@ class ChatServiceNew {
         }
       }
     };
+
     this.socket.onclose = (event) => {
       this.isConnected = false;
-      console.log("Chat WebSocket closed", event);
       this.connectionStatusCallback?.(false);
 
       if (!event.wasClean && this.token) {
@@ -78,12 +70,12 @@ class ChatServiceNew {
       }
     };
 
-    this.socket.onerror = (err) => {
-      console.error("Chat WebSocket error:", err);
+    this.socket.onerror = () => {
       this.connectionStatusCallback?.(false);
       // Không cần gọi attemptReconnect ở đây nữa vì onclose sẽ xử lý nếu kết nối không thành công
     };
   }
+
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       antdMessage.error("Không thể kết nối lại chat. Vui lòng thử lại sau.");
@@ -92,9 +84,6 @@ class ChatServiceNew {
     }
 
     this.reconnectAttempts++;
-    console.log(
-      `Reconnecting chat (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-    );
 
     if (this.reconnectTimeoutId) clearTimeout(this.reconnectTimeoutId);
 
@@ -105,6 +94,7 @@ class ChatServiceNew {
       }
     }, this.reconnectInterval * this.reconnectAttempts); // Tăng thời gian chờ sau mỗi lần thử
   }
+
   disconnect(): void {
     if (this.reconnectTimeoutId) {
       clearTimeout(this.reconnectTimeoutId);
@@ -118,8 +108,8 @@ class ChatServiceNew {
     this.isConnected = false;
     this.token = null; // Nên xóa token khi disconnect
     this.connectionStatusCallback?.(false);
-    console.log("Chat WebSocket disconnected by client.");
   }
+
   // SỬA LẠI sendMessage
   sendMessage(msg: {
     receiverId?: number;
@@ -131,7 +121,6 @@ class ChatServiceNew {
     fileName?: string;
   }): void {
     if (!this.isSocketConnected()) {
-      console.error("Chat socket not connected, cannot send message.");
       antdMessage.error("Chưa kết nối chat. Tin nhắn chưa được gửi.");
       // Cân nhắc việc lưu tin nhắn vào queue và gửi lại khi kết nối hoặc thông báo lỗi rõ ràng hơn
       return;
@@ -157,9 +146,6 @@ class ChatServiceNew {
       type = "project_message";
       messageData.projectId = msg.projectId;
     } else {
-      console.error(
-        "Invalid message target: Missing receiverId, topic, or projectId."
-      );
       antdMessage.error(
         "Không thể gửi tin nhắn: Thiếu thông tin người nhận/nhóm/dự án."
       );
@@ -171,15 +157,11 @@ class ChatServiceNew {
       ...messageData, // Các trường dữ liệu của tin nhắn
     };
 
-    console.log("FE Sending WebSocket message:", payload);
     this.socket!.send(JSON.stringify(payload));
   }
 
   sendGenericTypingEvent(roomId: string, roomType: string): void {
     if (!this.isSocketConnected()) {
-      console.error(
-        "[ChatServiceNew.ts] Chat socket not connected, cannot send typing event."
-      );
       return;
     }
     const payload = {
@@ -189,54 +171,42 @@ class ChatServiceNew {
       // Server sẽ tự thêm thông tin người gửi (senderId, senderName, senderAvatar)
       // và phát đi sự kiện "user_typing" cho các client khác.
     };
-    console.log("[ChatServiceNew.ts] FE Sending typing start event:", payload);
     this.socket!.send(JSON.stringify(payload));
   }
 
   // SỬA LẠI subscribeToTopic
   subscribeToTopic(topic: string): void {
     if (!this.isSocketConnected()) {
-      console.error("Chat socket not connected, cannot subscribe to topic.");
       return;
     }
     const payload = {
       type: "subscribe", // Đúng với BE mong đợi
       topic: topic,
     };
-    console.log(`FE Subscribing to topic: ${topic} with payload:`, payload);
     this.socket!.send(JSON.stringify(payload));
   }
 
   // SỬA LẠI unsubscribeFromTopic
   unsubscribeFromTopic(topic: string): void {
     if (!this.isSocketConnected()) {
-      console.error(
-        "Chat socket not connected, cannot unsubscribe from topic."
-      );
       return;
     }
     const payload = {
       type: "unsubscribe", // Đúng với BE mong đợi
       topic: topic,
     };
-    console.log(`FE Unsubscribing from topic: ${topic} with payload:`, payload);
     this.socket!.send(JSON.stringify(payload));
   }
 
   // SỬA LẠI markMessageAsRead
   markMessageAsRead(messageId: string): void {
     if (!this.isSocketConnected()) {
-      console.error("Chat socket not connected, cannot mark message as read.");
       return;
     }
     const payload = {
       type: "mark_read", // Đúng với BE mong đợi
       messageId: messageId,
     };
-    console.log(
-      `FE Marking message as read: ${messageId} with payload:`,
-      payload
-    );
     this.socket!.send(JSON.stringify(payload));
   }
 
@@ -247,14 +217,12 @@ class ChatServiceNew {
 
     if (data.error) {
       // Xử lý lỗi từ BE trước
-      console.error("WebSocket error from server:", data.error);
       antdMessage.error(`Lỗi từ server chat: ${data.error}`);
       return;
     }
 
     if (data.status) {
       // Xử lý các thông báo trạng thái từ BE (nếu có)
-      console.log("WebSocket status from server:", data.status, data.value);
       // Ví dụ: có thể dispatch một event riêng cho status
       if (this.listeners.has("server_status")) {
         this.listeners.get("server_status")?.forEach((cb) => cb(data));
@@ -284,17 +252,9 @@ class ChatServiceNew {
       } else if (this.listeners.has("all_chat_messages")) {
         // Listener chung cho mọi tin nhắn chat
         this.listeners.get("all_chat_messages")?.forEach((cb) => cb(data));
-      } else {
-        console.warn(
-          "No specific listener for chatContentMessageType:",
-          chatContentMessageType,
-          "in chat packet:",
-          data
-        );
       }
     } else if (webSocketPacketType === "message_sent") {
       // Xử lý xác nhận tin nhắn đã gửi (nếu ChatContext cần)
-      console.log("Message sent confirmation received:", data);
       if (this.listeners.has("message_sent_confirmation")) {
         this.listeners
           .get("message_sent_confirmation")
@@ -326,24 +286,18 @@ class ChatServiceNew {
         this.listeners.get(webSocketPacketType)?.forEach((cb) => cb(data));
       }
     } else {
-      console.log(
-        "Received unhandled WebSocket packet type from server:",
-        webSocketPacketType,
-        "Data:",
-        data
-      );
       // Có thể có một listener "generic" hoặc "unknown_type" ở đây nếu muốn
       if (this.listeners.has("all")) {
         this.listeners.get("all")?.forEach((cb) => cb(data));
       }
     }
   }
+
   addListener(messageType: string, callback: (data: any) => void): void {
     if (!this.listeners.has(messageType)) {
       this.listeners.set(messageType, []);
     }
     this.listeners.get(messageType)?.push(callback);
-    console.log(`Listener added for type: ${messageType}`);
   }
 
   removeListener(messageType: string, callback: (data: any) => void): void {
@@ -353,13 +307,11 @@ class ChatServiceNew {
     const index = callbacks.indexOf(callback);
     if (index !== -1) {
       callbacks.splice(index, 1);
-      console.log(`Listener removed for type: ${messageType}`);
     }
   }
 
   removeAllListeners(): void {
     this.listeners.clear();
-    console.log("All listeners removed.");
   }
 
   isSocketConnected(): boolean {
