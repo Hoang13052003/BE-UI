@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Breadcrumb } from "antd";
+import { Typography, Breadcrumb, Card } from "antd";
 import {
   HomeOutlined,
   BarChartOutlined,
@@ -16,7 +16,7 @@ const ProjectUpdateDetailsPage: React.FC = () => {
   const { userRole } = useAuth();
 
   return (
-    <div className="project-update-details-page">
+    <Card className="project-update-details-page">
       {userRole === "ADMIN" ? (
         <Breadcrumb style={{ marginBottom: 16 }}>
           <Breadcrumb.Item>
@@ -51,7 +51,7 @@ const ProjectUpdateDetailsPage: React.FC = () => {
       </Title>
 
       <ProjectUpdateDetails id={id ? parseInt(id) : undefined} />
-    </div>
+    </Card>
   );
 };
 

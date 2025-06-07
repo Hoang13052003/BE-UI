@@ -1,24 +1,25 @@
 // src/api/chatApi.ts
 import axiosClient from "./axiosClient";
-import { SortConfig, PaginatedResult } from './apiUtils';
+import { SortConfig, PaginatedResult } from "./apiUtils";
 
 export enum ChatMessageType {
-  TEXT = 'TEXT',
-  FILE = 'FILE',
-  IMAGE = 'IMAGE',
-  VIDEO = 'VIDEO',
-  AUDIO = 'AUDIO',
-  SYSTEM_NOTIFICATION = 'SYSTEM_NOTIFICATION'
+  TEXT = "TEXT",
+  FILE = "FILE",
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO",
+  AUDIO = "AUDIO",
+  SYSTEM_NOTIFICATION = "SYSTEM_NOTIFICATION",
 }
 
 export enum ChatRoomType {
-  PRIVATE = 'PRIVATE',
-  GROUP = 'GROUP',
-  PROJECT_CHAT = 'PROJECT_CHAT'
+  PRIVATE = "PRIVATE",
+  GROUP = "GROUP",
+  PROJECT_CHAT = "PROJECT_CHAT",
 }
 
 // Request DTOs
 export interface ChatMessageRequest {
+  senderName?: string;
   receiverId?: number;
   topic?: string;
   projectId?: number;
@@ -93,7 +94,8 @@ export interface ChatRoomResponse {
   updatedAt?: string;
 }
 
-export interface ChatHistoryResponse extends PaginatedResult<ChatMessageResponse> {
+export interface ChatHistoryResponse
+  extends PaginatedResult<ChatMessageResponse> {
   messages: ChatMessageResponse[];
   currentPage: number;
   totalPages: number;
@@ -154,13 +156,17 @@ export interface ChatNotificationResponse {
 // Message APIs
 // ===============================
 
-export const sendMessage = async (request: ChatMessageRequest): Promise<ChatMessageResponse> => {
-  const { data } = await axiosClient.post('/api/chat/messages', request);
+export const sendMessage = async (
+  request: ChatMessageRequest
+): Promise<ChatMessageResponse> => {
+  const { data } = await axiosClient.post("/api/chat/messages", request);
   return data;
 };
 
-export const sendMessageWithFile = async (request: ChatMessageRequest): Promise<ChatMessageResponse> => {
-  const { data } = await axiosClient.post('/api/chat/messages/file', request);
+export const sendMessageWithFile = async (
+  request: ChatMessageRequest
+): Promise<ChatMessageResponse> => {
+  const { data } = await axiosClient.post("/api/chat/messages/file", request);
   return data;
 };
 
@@ -173,11 +179,14 @@ export const getPrivateChatHistory = async (
   const params = {
     page,
     size,
-    sortBy: sortConfig?.property || 'timestamp',
-    sortDir: sortConfig?.direction || 'desc'
+    sortBy: sortConfig?.property || "timestamp",
+    sortDir: sortConfig?.direction || "asc",
   };
-  
-  const { data } = await axiosClient.get(`/api/chat/messages/private/${userId}`, { params });
+
+  const { data } = await axiosClient.get(
+    `/api/chat/messages/private/${userId}`,
+    { params }
+  );
   return data;
 };
 
@@ -190,32 +199,39 @@ export const getGroupChatHistory = async (
   const params = {
     page,
     size,
-    sortBy: sortConfig?.property || 'timestamp',
-    sortDir: sortConfig?.direction || 'desc'
+    sortBy: sortConfig?.property || "timestamp",
+    sortDir: sortConfig?.direction || "asc",
   };
-  
-  const { data } = await axiosClient.get(`/api/chat/messages/group/${topic}`, { params });
+
+  const { data } = await axiosClient.get(`/api/chat/messages/group/${topic}`, {
+    params,
+  });
   return data;
 };
 
 export const getProjectChatHistory = async (
   projectId: number,
   page: number = 0,
-  size: number = 20,
+  size: number = 100,
   sortConfig?: SortConfig
 ): Promise<ChatHistoryResponse> => {
   const params = {
     page,
     size,
-    sortBy: sortConfig?.property || 'timestamp',
-    sortDir: sortConfig?.direction || 'desc'
+    sortBy: sortConfig?.property || "timestamp",
+    sortDir: sortConfig?.direction || "asc",
   };
-  
-  const { data } = await axiosClient.get(`/api/chat/messages/project/${projectId}`, { params });
+
+  const { data } = await axiosClient.get(
+    `/api/chat/messages/project/${projectId}`,
+    { params }
+  );
   return data;
 };
 
-export const getMessageById = async (messageId: string): Promise<ChatMessageResponse> => {
+export const getMessageById = async (
+  messageId: string
+): Promise<ChatMessageResponse> => {
   const { data } = await axiosClient.get(`/api/chat/messages/${messageId}`);
   return data;
 };
@@ -224,8 +240,10 @@ export const markMessageAsRead = async (messageId: string): Promise<void> => {
   await axiosClient.put(`/api/chat/messages/${messageId}/read`);
 };
 
-export const markMultipleMessagesAsRead = async (messageIds: string[]): Promise<void> => {
-  await axiosClient.put('/api/chat/messages/read', messageIds);
+export const markMultipleMessagesAsRead = async (
+  messageIds: string[]
+): Promise<void> => {
+  await axiosClient.put("/api/chat/messages/read", messageIds);
 };
 
 export const searchMessages = async (
@@ -234,7 +252,9 @@ export const searchMessages = async (
   size: number = 20
 ): Promise<ChatHistoryResponse> => {
   const params = { query, page, size };
-  const { data } = await axiosClient.get('/api/chat/messages/search', { params });
+  const { data } = await axiosClient.get("/api/chat/messages/search", {
+    params,
+  });
   return data;
 };
 
@@ -243,7 +263,9 @@ export const getFileHistory = async (
   size: number = 20
 ): Promise<ChatHistoryResponse> => {
   const params = { page, size };
-  const { data } = await axiosClient.get('/api/chat/messages/files', { params });
+  const { data } = await axiosClient.get("/api/chat/messages/files", {
+    params,
+  });
   return data;
 };
 
@@ -252,16 +274,20 @@ export const getFileHistory = async (
 // ===============================
 
 export const getUserChatRooms = async (): Promise<ChatRoomResponse[]> => {
-  const { data } = await axiosClient.get('/api/chat/rooms');
+  const { data } = await axiosClient.get("/api/chat/rooms");
   return data;
 };
 
-export const createGroupChatRoom = async (request: CreateChatRoomRequest): Promise<ChatRoomResponse> => {
-  const { data } = await axiosClient.post('/api/chat/rooms', request);
+export const createGroupChatRoom = async (
+  request: CreateChatRoomRequest
+): Promise<ChatRoomResponse> => {
+  const { data } = await axiosClient.post("/api/chat/rooms", request);
   return data;
 };
 
-export const getChatRoomById = async (roomId: string): Promise<ChatRoomResponse> => {
+export const getChatRoomById = async (
+  roomId: string
+): Promise<ChatRoomResponse> => {
   const { data } = await axiosClient.get(`/api/chat/rooms/${roomId}`);
   return data;
 };
@@ -275,12 +301,18 @@ export const updateChatRoom = async (
 };
 
 // Updated to send a body matching ChatRoomParticipantRequestDto
-export const addUserToChatRoom = async (roomId: string, userId: number): Promise<void> => {
+export const addUserToChatRoom = async (
+  roomId: string,
+  userId: number
+): Promise<void> => {
   const requestBody: ChatRoomParticipantRequest = { roomId, userId };
   await axiosClient.post(`/api/chat/rooms/${roomId}/participants`, requestBody);
 };
 
-export const removeUserFromChatRoom = async (roomId: string, userId: number): Promise<void> => {
+export const removeUserFromChatRoom = async (
+  roomId: string,
+  userId: number
+): Promise<void> => {
   await axiosClient.delete(`/api/chat/rooms/${roomId}/participants/${userId}`);
 };
 
@@ -288,9 +320,11 @@ export const leaveChatRoom = async (roomId: string): Promise<void> => {
   await axiosClient.delete(`/api/chat/rooms/${roomId}/leave`);
 };
 
-export const searchChatRooms = async (query: string): Promise<ChatRoomResponse[]> => {
+export const searchChatRooms = async (
+  query: string
+): Promise<ChatRoomResponse[]> => {
   const params = { query };
-  const { data } = await axiosClient.get('/api/chat/rooms/search', { params });
+  const { data } = await axiosClient.get("/api/chat/rooms/search", { params });
   return data;
 };
 
@@ -298,21 +332,29 @@ export const searchChatRooms = async (query: string): Promise<ChatRoomResponse[]
 // Topic Subscription APIs
 // ===============================
 
-export const subscribeToTopic = async (request: TopicSubscriptionRequest): Promise<void> => {
-  await axiosClient.post('/api/chat/topics/subscribe', request);
+export const subscribeToTopic = async (
+  request: TopicSubscriptionRequest
+): Promise<void> => {
+  await axiosClient.post("/api/chat/topics/subscribe", request);
 };
 
 export const unsubscribeFromTopic = async (topic: string): Promise<void> => {
   await axiosClient.delete(`/api/chat/topics/${topic}/unsubscribe`);
 };
 
-export const getUserSubscriptions = async (): Promise<TopicSubscriptionResponse[]> => {
-  const { data } = await axiosClient.get('/api/chat/topics/subscriptions');
+export const getUserSubscriptions = async (): Promise<
+  TopicSubscriptionResponse[]
+> => {
+  const { data } = await axiosClient.get("/api/chat/topics/subscriptions");
   return data;
 };
 
-export const getTopicSubscribers = async (topic: string): Promise<TopicSubscriptionResponse[]> => {
-  const { data } = await axiosClient.get(`/api/chat/topics/${topic}/subscribers`);
+export const getTopicSubscribers = async (
+  topic: string
+): Promise<TopicSubscriptionResponse[]> => {
+  const { data } = await axiosClient.get(
+    `/api/chat/topics/${topic}/subscribers`
+  );
   return data;
 };
 
@@ -322,13 +364,17 @@ export const getTopicSubscribers = async (topic: string): Promise<TopicSubscript
 // Note: Users automatically have access to project chat based on project membership
 // No need to manually join/leave project chats
 
-export const getProjectChatParticipants = async (projectId: number): Promise<ChatParticipant[]> => {
-  const { data } = await axiosClient.get(`/api/chat/projects/${projectId}/participants`);
+export const getProjectChatParticipants = async (
+  projectId: number
+): Promise<ChatParticipant[]> => {
+  const { data } = await axiosClient.get(
+    `/api/chat/projects/${projectId}/participants`
+  );
   return data;
 };
 
 export const getUserProjectChats = async (): Promise<ChatRoomResponse[]> => {
-  const { data } = await axiosClient.get('/api/chat/projects');
+  const { data } = await axiosClient.get("/api/chat/projects");
   return data;
 };
 
@@ -337,12 +383,14 @@ export const getUserProjectChats = async (): Promise<ChatRoomResponse[]> => {
 // ===============================
 
 export const getOnlineUsers = async (): Promise<OnlineUsersResponse> => {
-  const { data } = await axiosClient.get('/api/chat/users/online');
+  const { data } = await axiosClient.get("/api/chat/users/online");
   return data;
 };
 
 // Updated userId parameter type to number
-export const getUserConnectionStatus = async (userId: number): Promise<UserConnectionResponse> => {
+export const getUserConnectionStatus = async (
+  userId: number
+): Promise<UserConnectionResponse> => {
   const { data } = await axiosClient.get(`/api/chat/users/${userId}/status`);
   return data;
 };
@@ -351,17 +399,20 @@ export const getUserConnectionStatus = async (userId: number): Promise<UserConne
 // Unread Message APIs
 // ===============================
 
-export const getUnreadMessageCount = async (): Promise<UnreadMessageCountResponse> => {
-  const { data } = await axiosClient.get('/api/chat/unread/count');
-  return data;
-};
+export const getUnreadMessageCount =
+  async (): Promise<UnreadMessageCountResponse> => {
+    const { data } = await axiosClient.get("/api/chat/unread/count");
+    return data;
+  };
 
 export const getUnreadMessages = async (
   page: number = 0,
   size: number = 20
 ): Promise<ChatHistoryResponse> => {
   const params = { page, size };
-  const { data } = await axiosClient.get('/api/chat/unread/messages', { params });
+  const { data } = await axiosClient.get("/api/chat/unread/messages", {
+    params,
+  });
   return data;
 };
 
@@ -373,21 +424,27 @@ export const notifyProjectMembers = async (
   projectId: number,
   notification: ChatNotificationResponse // Assuming ChatNotificationResponse matches BE's ChatNotificationResponseDto
 ): Promise<void> => {
-  await axiosClient.post(`/api/chat/notifications/project/${projectId}`, notification);
+  await axiosClient.post(
+    `/api/chat/notifications/project/${projectId}`,
+    notification
+  );
 };
 
 export const notifyTopicSubscribers = async (
   topic: string,
   notification: ChatNotificationResponse // Assuming ChatNotificationResponse matches BE's ChatNotificationResponseDto
 ): Promise<void> => {
-  await axiosClient.post(`/api/chat/notifications/topic/${topic}`, notification);
+  await axiosClient.post(
+    `/api/chat/notifications/topic/${topic}`,
+    notification
+  );
 };
 
 export const notifyUsers = async (
   userIds: number[],
   notification: ChatNotificationResponse // Assuming ChatNotificationResponse matches BE's ChatNotificationResponseDto
 ): Promise<void> => {
-  await axiosClient.post('/api/chat/notifications/users', notification, { 
-    params: { userIds: userIds.join(',') }
+  await axiosClient.post("/api/chat/notifications/users", notification, {
+    params: { userIds: userIds.join(",") },
   });
 };

@@ -32,7 +32,6 @@ import dayjs from "dayjs";
 import { useAttachmentUpload } from "../../../hooks/useAttachmentUpload";
 import type { UploadFile } from "antd/es/upload/interface";
 import { FolderFileItem } from "../../../types/Attachment";
-import { isNull } from "lodash";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -214,7 +213,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
 
     form.setFieldsValue({
       projectId: value,
-      completionPercentage: project?.progress || 0,
+      completionPercentage: project?.overallProcess || 0,
     });
   };
 

@@ -8,7 +8,9 @@ import {
   // ProjectOutlined,
   EditOutlined,
   ProjectOutlined,
-  FileSearchOutlined,
+  WechatOutlined,
+  CloudUploadOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -31,22 +33,58 @@ const DashboardAdmin: React.FC = () => {
         {
           key: "manageUsers",
           icon: <UserOutlined />,
-          label: <Link to="/admin/users">{t("adminPages.userManagement")}</Link>,
+          label: (
+            <Link to="/admin/users">{t("adminPages.userManagement")}</Link>
+          ),
         },
         {
           key: "manageProjects",
           icon: <ProjectOutlined />,
-          label: <Link to="/admin/updates">{t("adminPages.projectManagement")}</Link>,
+          label: (
+            <Link to="/admin/updates">{t("adminPages.projectManagement")}</Link>
+          ),
         },
         {
           key: "manageProjectUpdates",
           icon: <EditOutlined />,
-          label: <Link to="/admin/project-progress">Projects Update</Link>,
+          label: (
+            <Link to="/admin/project-progress">
+              {t("adminPages.projectReport")}
+            </Link>
+          ),
         },
         {
           key: "notifications",
           icon: <BellOutlined />,
-          label: <Link to="/admin/notifications">{t("adminPages.notifications")}</Link>,
+          label: (
+            <Link to="/admin/notifications">
+              {t("adminPages.notifications")}
+            </Link>
+          ),
+        },
+        {
+          key: "feedbacks",
+          icon: <WechatOutlined />,
+          label: (
+            <Link to="/admin/feedbacks">
+              {t("adminPages.feedbacksManagement")}
+            </Link>
+          ),
+        },
+        {
+          key: "logs",
+          icon: <CloudUploadOutlined />,
+          label: <Link to="/admin/logs">{t("adminPages.logsManagement")}</Link>,
+        },
+        {
+          key: "messages",
+          icon: <MessageOutlined />,
+          label: <Link to="/admin/messages">{t("clientPages.messages")}</Link>,
+        },
+        {
+          key: "auditLogs",
+          icon: <FileSearchOutlined />,
+          label: <Link to="/admin/audit-logs">Audit Logs</Link>,
         },
         {
           key: "auditLogs",
@@ -62,7 +100,7 @@ const DashboardAdmin: React.FC = () => {
         {
           key: "settings",
           icon: <SettingOutlined />,
-          label: <Link to="/admin/settings">{t("adminPages.systemSettings")}</Link>,
+          label: <Link to="/admin/settings">{t("clientPages.settings")}</Link>,
         },
       ],
     },

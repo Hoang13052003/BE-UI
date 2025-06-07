@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Breadcrumb } from "antd";
+import { Typography, Breadcrumb, Card } from "antd";
 import { HomeOutlined, BarChartOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import ProjectProgressList from "./ProjectProgressList";
@@ -8,7 +8,7 @@ const { Title } = Typography;
 
 const ProjectProgressPage: React.FC = () => {
   return (
-    <div className="project-progress-page">
+    <Card style={{ height: "100%" }}>
       <Breadcrumb style={{ marginBottom: 16 }}>
         <Breadcrumb.Item>
           <Link to="/admin/overview">
@@ -27,7 +27,7 @@ const ProjectProgressPage: React.FC = () => {
       </Title>
 
       <ProjectProgressList />
-    </div>
+    </Card>
   );
 };
 
