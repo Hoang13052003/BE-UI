@@ -1,90 +1,113 @@
 // src/components/AuditLogTable.tsx
 
 import React, { useState } from 'react';
-import { AuditLog } from '../../types/auditLog.types';
-import AuditLogDetailModal from './AuditLogDetailModal'; // Import modal
-
-import './AuditLogTable.css'; // File CSS cho table
+import { Table, Tag, Tooltip } from 'antd';
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+import { FilterValue } from 'antd/es/table/interface';
+import { AuditLog, AuditLogSeverity } from '../../types/auditLog.types';
+import AuditLogDetailModal from './AuditLogDetailModal';
+import { getSeverityTagColor } from '../../utils/styleUtils';
 
 interface AuditLogTableProps {
   logs: AuditLog[];
-  isLoading: boolean;
+  loading: boolean;
+  pagination: TablePaginationConfig; // Sử dụng kiểu của Antd
+  handleTableChange: (
+    pagination: TablePaginationConfig, 
+    filters: Record<string, FilterValue | null>
+  ) => void;
 }
 
 /**
- * Component hiển thị bảng dữ liệu Audit Log với skeleton loading và modal chi tiết.
+ * Component hiển thị bảng dữ liệu Audit Log sử dụng Ant Design Table.
  */
-const AuditLogTable: React.FC<AuditLogTableProps> = ({ logs, isLoading }) => {
-  // State để quản lý log nào đang được chọn để xem chi tiết
+const AuditLogTable: React.FC<AuditLogTableProps> = ({
+  logs,
+  loading,
+  pagination,
+  handleTableChange,
+}) => {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
-  const handleRowClick = (log: AuditLog) => {
-    setSelectedLog(log);
-  };
-
-  const handleCloseModal = () => {
-    setSelectedLog(null);
-  };
-
-  // Component cho một hàng skeleton
-  const SkeletonRow = () => (
-    <tr>
-      {Array.from({ length: 6 }).map((_, index) => (
-        <td key={index}><div className="skeleton-text"></div></td>
-      ))}
-    </tr>
-  );
+  const columns: ColumnsType<AuditLog> = [
+    {
+      title: 'Timestamp',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (text: string) => new Date(text).toLocaleString(),
+      sorter: true, // Bật sorter, logic sẽ được xử lý ở `handleTableChange`
+      width: 200,
+    },
+    {
+      title: 'Username',
+      dataIndex: 'username',
+      key: 'username',
+      render: (text) => text || 'N/A',
+      sorter: true,
+      width: 150,
+    },
+    {
+      title: 'Action',
+      dataIndex: 'actionType',
+      key: 'actionType',
+    },
+    {
+      title: 'Severity',
+      dataIndex: 'severity',
+      key: 'severity',
+      render: (severity: AuditLogSeverity) => (
+        <Tag color={getSeverityTagColor(severity)}>{severity}</Tag>
+      ),
+      filters: Object.values(AuditLogSeverity).map(s => ({ text: s, value: s })),
+      width: 120,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'success',
+      key: 'success',
+      render: (success: boolean) => (
+        success ? <Tag color="success">Success</Tag> : <Tag color="error">Failure</Tag>
+      ),
+      filters: [
+        { text: 'Success', value: true },
+        { text: 'Failure', value: false },
+      ],
+      width: 120,
+    },
+    {
+      title: 'Details',
+      dataIndex: 'details',
+      key: 'details',
+      ellipsis: { showTitle: false }, // Cắt bớt text dài
+      render: (details) => (
+        <Tooltip placement="topLeft" title={details}>
+          {details}
+        </Tooltip>
+      ),
+    },
+  ];
 
   return (
     <>
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Username</th>
-              <th>Action</th>
-              <th>Severity</th>
-              <th>Details</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              // Hiển thị 10 hàng skeleton khi đang tải
-              Array.from({ length: 10 }).map((_, index) => <SkeletonRow key={index} />)
-            ) : logs.length > 0 ? (
-              logs.map((log) => (
-                <tr key={log.id} onClick={() => handleRowClick(log)} className="clickable-row">
-                  <td>{new Date(log.timestamp).toLocaleString()}</td>
-                  <td>{log.username ?? 'N/A'}</td>
-                  <td>{log.actionType}</td>
-                  <td>
-                    <span className={`severity-badge severity-${log.severity?.toLowerCase()}`}>
-                      {log.severity}
-                    </span>
-                  </td>
-                  <td className="details-cell">{log.details}</td>
-                  <td>
-                    {log.success ? (
-                      <span className="status-badge status-success">Success</span>
-                    ) : (
-                      <span className="status-badge status-failure">Failure</span>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6}>No audit logs found.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Render modal. Nó chỉ hiển thị khi selectedLog không phải là null */}
-      <AuditLogDetailModal log={selectedLog} onClose={handleCloseModal} />
+      <Table<AuditLog> // Cung cấp kiểu dữ liệu cho Table
+        rowKey="id"
+        columns={columns}
+        dataSource={logs}
+        loading={loading}
+        pagination={pagination}
+        onChange={handleTableChange} // Hàm callback chính
+        onRow={(record) => ({
+          onClick: () => setSelectedLog(record),
+        })}
+        scroll={{ x: 'max-content' }} // Cho phép cuộn ngang nếu nội dung quá dài
+        rowClassName={() => 'clickable-row'}
+        style={{ cursor: 'pointer' }}
+      />
+      
+      <AuditLogDetailModal 
+        log={selectedLog} 
+        onClose={() => setSelectedLog(null)} 
+      />
     </>
   );
 };

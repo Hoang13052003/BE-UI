@@ -2,73 +2,81 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import auditLogService, { FilterParams } from '../services/auditLogService';
-import { AuditLog, AuditStats, Page, AuditLogSeverity } from '../types/auditLog.types';
+import { AuditLog, RealtimeStatistics, Page, FilterOptions } from '../types/auditLog.types';
 
-// Import các thư viện STOMP
+// Import các kiểu dữ liệu từ Ant Design để gõ kiểu cho callback
+import { TablePaginationConfig } from 'antd/es/table';
+import { SorterResult, FilterValue } from 'antd/es/table/interface';
+
+// Import WebSocket
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 /**
- * Custom Hook để quản lý toàn bộ state và logic của trang Audit Log,
- * bao gồm cả việc tải dữ liệu ban đầu và cập nhật real-time qua WebSocket.
+ * Custom Hook để quản lý toàn bộ state và logic của trang Audit Log.
+ * Hỗ trợ tải dữ liệu, phân trang, lọc, sắp xếp, và cập nhật real-time.
  */
 export const useAuditLogs = () => {
-  // === STATE CHO DỮ LIỆU ===
+  // State cho dữ liệu
   const [logsPage, setLogsPage] = useState<Page<AuditLog> | null>(null);
-  const [stats, setStats] = useState<AuditStats | null>(null);
+  const [stats, setStats] = useState<RealtimeStatistics | null>(null);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   
-  // === STATE CHO UI ===
+  // State cho UI
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState<boolean>(false); // State cho trạng thái kết nối WS
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
-  // useRef để giữ instance của stompClient không bị tạo lại mỗi lần render
-  const stompClientRef = useRef<Client | null>(null);
-  // === CÁC HÀM GỌI API (KHÔNG ĐỔI) ===
-  /**
-   * Tải dữ liệu ban đầu cho dashboard.
-   * Sử dụng useCallback để tránh việc hàm này được tạo lại một cách không cần thiết.
+  // State để lưu các tham số truy vấn hiện tại (bao gồm cả phân trang, lọc, sắp xếp)
+  const [queryParams, setQueryParams] = useState<FilterParams>({
+    page: 0,
+    size: 10,
+    sort: 'timestamp,desc', // Sắp xếp mặc định theo timestamp giảm dần
+  });
+
+  const stompClientRef = useRef<Client | null>(null);  /**
+   * Hàm fetch dữ liệu chính, được gọi mỗi khi queryParams thay đổi.
    */
-  const fetchInitialData = useCallback(async () => {
+  const fetchLogs = useCallback(async (params: FilterParams) => {
     setLoading(true);
     setError(null);
     try {
-      const { logs, stats } = await auditLogService.getDashboardInitialData();
-      setLogsPage(logs);
-      setStats(stats);
-    } catch (err: any) {
-      console.error("Failed to fetch initial data:", err);
-      setError(err.message || "Could not load dashboard data.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  /**
-   * Lấy dữ liệu log dựa trên các bộ lọc và phân trang.
-   */
-  const fetchFilteredLogs = useCallback(async (params: FilterParams) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await auditLogService.getFilteredLogs(params);
+      // Chúng ta sẽ dùng endpoint /filtered vì nó trả về Page<DTO> đơn giản hơn
+      const response = await auditLogService.getFilteredRealtimeLogs(params);
       setLogsPage(response.data);
     } catch (err: any) {
-      console.error("Failed to fetch filtered logs:", err);
-      setError(err.message || "Could not apply filters.");
+      console.error("Failed to fetch logs:", err);
+      setError(err.message || "Could not load audit log data.");
     } finally {
       setLoading(false);
     }
   }, []);
-  // === LOGIC TẢI DỮ LIỆU BAN ĐẦU (KHÔNG ĐỔI) ===
-  // useEffect để gọi hàm tải dữ liệu ban đầu một lần khi hook được sử dụng lần đầu.
-  useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
 
-  // ==========================================================
-  // MỚI: useEffect ĐỂ QUẢN LÝ VÒNG ĐỜI KẾT NỐI WEBSOCKET
-  // ==========================================================
+  /**
+   * useEffect chính để theo dõi sự thay đổi của queryParams và gọi lại API.
+   */
+  useEffect(() => {
+    fetchLogs(queryParams);
+  }, [queryParams, fetchLogs]);
+
+  /**
+   * Tải các dữ liệu không thay đổi (stats, filter options) một lần duy nhất.
+   */
+  useEffect(() => {
+    const fetchStaticData = async () => {
+      try {
+        const { stats: initialStats, filterOptions: initialOptions } = 
+          await auditLogService.getRealtimeDashboardInitialData();
+        setStats(initialStats);
+        setFilterOptions(initialOptions);
+      } catch (err: any) {
+        // Chỉ ghi log lỗi, không hiển thị lỗi lớn cho người dùng
+        console.error("Failed to load static dashboard data:", err);
+      }
+    };
+    fetchStaticData();
+  }, []);
+  // useEffect cho WebSocket (logic không đổi, chỉ cập nhật state cho đúng)
   useEffect(() => {
     // Chỉ thiết lập kết nối nếu chưa có
     if (!stompClientRef.current) {
@@ -126,18 +134,33 @@ export const useAuditLogs = () => {
             });
 
             // Cập nhật thống kê (cách đơn giản)
-            setStats(currentStats => {
+            setStats((currentStats: RealtimeStatistics | null) => {
                 if (!currentStats) return null;
-                const newTotal = (currentStats.totalLogs24h || 0) + 1;
-                let newCritical = currentStats.criticalLogs24h || 0;
-                let newError = currentStats.errorLogs24h || 0;
-                let newWarning = currentStats.warningLogs24h || 0;
-
-                if(newLog.severity === AuditLogSeverity.CRITICAL) newCritical++;
-                if(newLog.severity === AuditLogSeverity.ERROR) newError++;
-                if(newLog.severity === AuditLogSeverity.WARNING) newWarning++;
+                const newTotal = (currentStats.total_logs || 0) + 1;
+                const newSeverityBreakdown = { ...currentStats.severity_breakdown };
                 
-                return {...currentStats, totalLogs24h: newTotal, criticalLogs24h: newCritical, errorLogs24h: newError, warningLogs24h: newWarning };
+                // Cập nhật severity breakdown
+                if (newLog.severity) {
+                  const severityKey = newLog.severity.toUpperCase();
+                  newSeverityBreakdown[severityKey] = (newSeverityBreakdown[severityKey] || 0) + 1;
+                }
+                
+                // Cập nhật success/failure counts
+                const newSuccessful = newLog.success 
+                  ? (currentStats.successful_actions || 0) + 1 
+                  : currentStats.successful_actions || 0;
+                const newFailed = !newLog.success 
+                  ? (currentStats.failed_actions || 0) + 1 
+                  : currentStats.failed_actions || 0;
+                
+                return {
+                  ...currentStats, 
+                  total_logs: newTotal,
+                  successful_actions: newSuccessful,
+                  failed_actions: newFailed,
+                  success_rate: newTotal > 0 ? (newSuccessful / newTotal) * 100 : 0,
+                  severity_breakdown: newSeverityBreakdown
+                };
             });
 
           } catch (e) {
@@ -181,20 +204,56 @@ export const useAuditLogs = () => {
     };
   }, []); // [] đảm bảo effect này chỉ chạy một lần duy nhất trong vòng đời của hook
 
-  // Trả về tất cả state và các hàm cần thiết cho component UI.
+  /**
+   * Hàm callback chính được truyền cho prop `onChange` của Ant Design Table.
+   * Xử lý cả 3 sự kiện: phân trang, lọc, và sắp xếp.
+   */
+  const handleTableChange = (
+    pagination: TablePaginationConfig,
+    filters: Record<string, FilterValue | null>,
+    sorter: SorterResult<AuditLog> | SorterResult<AuditLog>[]
+  ) => {
+    // Xây dựng các tham số truy vấn mới
+    const newParams: FilterParams = {
+      page: (pagination.current ?? 1) - 1, // Antd page bắt đầu từ 1
+      size: pagination.pageSize ?? 10,
+    };
+
+    // Xử lý sắp xếp
+    const singleSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    if (singleSorter.field && singleSorter.order) {
+      const direction = singleSorter.order === 'ascend' ? 'asc' : 'desc';
+      newParams.sort = `${String(singleSorter.field)},${direction}`;
+    } else {
+      newParams.sort = 'timestamp,desc'; // Mặc định
+    }    // Xử lý lọc
+    Object.keys(filters).forEach(key => {
+      const filterValue = filters[key];
+      if (filterValue && filterValue.length > 0) {
+        // Antd trả về một mảng, chúng ta lấy phần tử đầu tiên
+        // API của bạn có thể cần xử lý mảng (ví dụ: /api?severity=INFO&severity=ERROR)
+        (newParams as any)[key] = String(filterValue[0]);
+      }
+    });
+    
+    // Cập nhật state queryParams, điều này sẽ trigger useEffect để gọi lại API
+    setQueryParams(newParams);
+  };
   return {
-    logs: logsPage?.content ?? [], // Luôn trả về một mảng để tránh lỗi
-    pagination: {
-      totalPages: logsPage?.totalPages ?? 0,
-      totalElements: logsPage?.totalElements ?? 0,
-      currentPage: logsPage?.number ?? 0,
-      size: logsPage?.size ?? 50,
+    logs: logsPage?.content ?? [],
+    // Cấu hình pagination cho Ant Design Table
+    paginationConfig: {
+      current: (logsPage?.number ?? 0) + 1,
+      pageSize: logsPage?.size ?? 10,
+      total: logsPage?.totalElements ?? 0,
+      showSizeChanger: true,
+      showTotal: (total: number, range: [number, number]) => `${range[0]}-${range[1]} of ${total} items`,
     },
     stats,
+    filterOptions,
     loading,
     error,
-    isConnected, // Trả về trạng thái kết nối để UI có thể hiển thị
-    fetchFilteredLogs, // Cung cấp hàm này để UI có thể gọi khi người dùng lọc
-    refetch: fetchInitialData, // Cung cấp hàm để tải lại toàn bộ dữ liệu
+    isConnected,
+    handleTableChange, // Trả về hàm callback này cho component
   };
 };

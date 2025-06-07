@@ -1,8 +1,8 @@
 // src/hooks/useAuditLogFilters.ts
 import { useState, useCallback, useEffect } from 'react';
-import { AuditLogFilter } from '../types/auditLog';
+import { AuditLogFilter } from '../types/auditLog.types';
 import { auditLogApi } from '../api/auditLogApi';
-import { AuditLogRealtimeDto, PageResponse } from './useAuditLogData';
+import { AuditLogRealtimeDto, PageResponse } from '../api/auditLogApi';
 
 interface UseAuditLogFiltersReturn {
   filter: AuditLogFilter;

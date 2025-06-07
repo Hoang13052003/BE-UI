@@ -1,83 +1,82 @@
 // src/components/DashboardStats.tsx
 
 import React from 'react';
-import { AuditStats } from '../../types/auditLog.types';
-
-// Một component nhỏ để hiển thị icon (bạn có thể dùng thư viện icon như react-icons)
-// npm install react-icons
-import { FiActivity, FiAlertTriangle, FiXCircle, FiAlertCircle } from 'react-icons/fi';
-
-// Import file CSS để làm cho các thẻ trông đẹp hơn
-import './DashboardStats.css';
+import { Card, Col, Row, Statistic, Skeleton } from 'antd';
+import {
+  LineChartOutlined,
+  ExclamationCircleOutlined,
+  CloseCircleOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
+// Sử dụng interface RealtimeStatistics chi tiết đã định nghĩa
+import { RealtimeStatistics } from '../../types/auditLog.types'; 
 
 interface DashboardStatsProps {
-  stats: AuditStats | null;
+  stats: RealtimeStatistics | null;
+  loading: boolean;
 }
 
 /**
- * Component hiển thị các thẻ thống kê tổng quan về audit log.
- * @param {DashboardStatsProps} props - Props chứa object stats.
+ * Component hiển thị các thẻ thống kê tổng quan về audit log, sử dụng Ant Design.
+ * @param {DashboardStatsProps} props - Props chứa object stats và trạng thái loading.
  */
-const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
-  // Một component con nội bộ để tránh lặp lại code cho mỗi thẻ
-  const StatCard = ({ title, value, icon, className = '' }: {
-    title: string;
-    value: number | string;
-    icon: React.ReactNode;
-    className?: string;
-  }) => (
-    <div className={`stat-card ${className}`}>
-      <div className="stat-icon">{icon}</div>
-      <div className="stat-info">
-        <h4>{title}</h4>
-        <span>{value}</span>
-      </div>
-    </div>
-  );
-
-  // Hiển thị skeleton loading trong khi chờ stats được tải
-  if (!stats) {
-    return (
-      <div className="stats-container">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="stat-card skeleton">
-            <div className="stat-info">
-              <h4> </h4>
-              <span> </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+const DashboardStats: React.FC<DashboardStatsProps> = ({ stats, loading }) => {
+  // Dữ liệu cho các thẻ thống kê, dễ dàng cấu hình và mở rộng.
+  // Chúng ta sẽ lấy dữ liệu từ `stats.severity_breakdown` và `stats.total_logs`
+  const statCards = [
+    {
+      title: 'Total Logs (24h)',
+      // Sử dụng toán tử ?? (Nullish Coalescing) để hiển thị 0 nếu giá trị là null/undefined
+      value: stats?.total_logs ?? 0, 
+      icon: <LineChartOutlined />,
+      color: '#1890ff',
+    },
+    {
+      title: 'Critical Events (24h)',
+      value: stats?.severity_breakdown?.['CRITICAL'] ?? 0,
+      icon: <ExclamationCircleOutlined />,
+      color: '#a8071a',
+    },
+    {
+      title: 'Error Events (24h)',
+      value: stats?.severity_breakdown?.['ERROR'] ?? 0,
+      icon: <CloseCircleOutlined />,
+      color: '#cf1322',
+    },
+    {
+      title: 'Warning Events (24h)',
+      value: stats?.severity_breakdown?.['WARNING'] ?? 0,
+      icon: <WarningOutlined />,
+      color: '#d48806',
+    },
+  ];
 
   return (
-    <div className="stats-container">
-      <StatCard
-        title="Total Logs (24h)"
-        value={stats.totalLogs24h ?? 0}
-        icon={<FiActivity size={24} />}
-        className="info"
-      />
-      <StatCard
-        title="Critical Events (24h)"
-        value={stats.criticalLogs24h ?? 0}
-        icon={<FiAlertTriangle size={24} />}
-        className="critical"
-      />
-      <StatCard
-        title="Error Events (24h)"
-        value={stats.errorLogs24h ?? 0}
-        icon={<FiXCircle size={24} />}
-        className="error"
-      />
-      <StatCard
-        title="Warning Events (24h)"
-        value={stats.warningLogs24h ?? 0}
-        icon={<FiAlertCircle size={24} />}
-        className="warning"
-      />
-    </div>
+    // Sử dụng Row và Col của Ant Design để tạo layout responsive
+    <Row gutter={[16, 16]}>
+      {statCards.map((card, index) => (
+        <Col xs={24} sm={12} md={12} lg={6} key={index}>
+          <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.09)' }}>
+            {/* 
+              Sử dụng Skeleton của Ant Design cho hiệu ứng loading.
+              Nó sẽ hiển thị khi `loading` là true.
+            */}
+            <Skeleton loading={loading} avatar active paragraph={{ rows: 1 }}>
+              <Statistic
+                title={card.title}
+                value={card.value}
+                valueStyle={{ color: card.color, fontSize: '2rem' }}
+                prefix={
+                  <span style={{ color: card.color, marginRight: '8px' }}>
+                    {card.icon}
+                  </span>
+                }
+              />
+            </Skeleton>
+          </Card>
+        </Col>
+      ))}
+    </Row>
   );
 };
 

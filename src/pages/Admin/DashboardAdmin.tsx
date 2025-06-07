@@ -11,6 +11,7 @@ import {
   WechatOutlined,
   CloudUploadOutlined,
   MessageOutlined,
+  FileSearchOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -80,11 +81,6 @@ const DashboardAdmin: React.FC = () => {
           key: "messages",
           icon: <MessageOutlined />,
           label: <Link to="/admin/messages">{t("clientPages.messages")}</Link>,
-        },
-        {
-          key: "auditLogs",
-          icon: <FileSearchOutlined />,
-          label: <Link to="/admin/audit-logs">Audit Logs</Link>,
         },
         {
           key: "auditLogs",
