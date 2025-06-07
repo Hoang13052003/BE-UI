@@ -976,10 +976,10 @@ const Messages: React.FC = () => {
                                 style={{ marginRight: 8 }}
                                 src={u.userAvatar}
                               >
-                                {u.userName ? u.userName[0] : "U"}
+                                {u.senderName ? u.senderName[0] : "U"}
                               </Avatar>
                               <span>
-                                <b>{u.userName || "Người dùng"}</b> đang nhập
+                                <b>{u.senderName || "User"}</b>
                               </span>
                               <TypingDots />
                             </div>

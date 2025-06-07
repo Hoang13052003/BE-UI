@@ -238,7 +238,9 @@ class ChatServiceNew {
       payload
     );
     this.socket!.send(JSON.stringify(payload));
-  } // SỬA LẠI dispatchMessage để xử lý đúng type từ BE
+  }
+
+  // SỬA LẠI dispatchMessage để xử lý đúng type từ BE
   private dispatchMessage(data: any): void {
     // data.type là type của gói tin WebSocket BE gửi (e.g., "private_message", "group_message", "message_sent")
     // data.chatMessageType là type của nội dung chat (e.g., "TEXT", "FILE") MÀ BE CẦN GỬI THÊM
@@ -298,15 +300,19 @@ class ChatServiceNew {
           .get("message_sent_confirmation")
           ?.forEach((cb) => cb(data));
       }
-    } else if (webSocketPacketType === "user_typing") {
-      // Xử lý typing indicator từ server
-      // Server sẽ gửi: { type: "user_typing", userId, userName, userAvatar, roomId, roomType }
+    } else if (webSocketPacketType === "user_typing_event") {
+      // Map lại dữ liệu cho đúng FE mong muốn
+      const typingData = {
+        type: "user_typing",
+        userId: data.senderId,
+        userName: "", // FE có thể tự lấy từ context nếu cần
+        userAvatar: "",
+        roomId: data.roomId,
+        roomType: data.roomType,
+        isTyping: data.isTyping,
+      };
       if (this.listeners.has("user_typing")) {
-        console.log(
-          "[ChatServiceNew.ts] Dispatching user_typing event to listeners:",
-          data
-        );
-        this.listeners.get("user_typing")?.forEach((cb) => cb(data));
+        this.listeners.get("user_typing")?.forEach((cb) => cb(typingData));
       }
     }
     // Thêm các case xử lý cho các `type` khác từ BE nếu cần
