@@ -86,11 +86,14 @@ export const useAuditLogs = () => {
         console.error("No token found, WebSocket connection aborted.");
         return;
       }
-      
-      // Tạo một stomp client mới
+        // Tạo một stomp client mới
       const client = new Client({
-        // Dùng SockJS làm transport fallback
-        webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL}/ws`),
+        // Dùng SockJS làm transport fallback với token trong URL
+        webSocketFactory: () => {
+          const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+          const cleanBaseUrl = baseUrl.replace(/\/+$/, ''); // Remove trailing slashes
+          return new SockJS(`${cleanBaseUrl}/ws?token=${token}`);
+        },
         
         // Gửi token trong header để backend xác thực
         connectHeaders: {

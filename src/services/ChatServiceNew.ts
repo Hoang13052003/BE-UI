@@ -25,12 +25,10 @@ class ChatServiceNew {
         this.socket.readyState === WebSocket.CONNECTING)
     ) {
       return;
-    }
-
-    this.token = token;
-    const wsUrl = `${
-      import.meta.env.VITE_WS_URL || "ws://localhost:8080"
-    }/ws/chat?token=${token}`;
+    }    this.token = token;
+    const baseUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
+    const cleanBaseUrl = baseUrl.replace(/\/+$/, ''); // Remove trailing slashes
+    const wsUrl = `${cleanBaseUrl}/ws/chat?token=${token}`;
 
     this.socket = new WebSocket(wsUrl);
     this.socket.onopen = () => {

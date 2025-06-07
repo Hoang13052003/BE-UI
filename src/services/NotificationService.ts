@@ -26,8 +26,10 @@ class NotificationService {
     }    this.token = token;    try {
       // Use environment variable for WebSocket URL
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const wsUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://').replace(/\/+$/, '') + `/ws/notifications?token=${token}`;
-      this.socket = new WebSocket(wsUrl);      this.socket.onopen = () => {
+      const cleanBaseUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://').replace(/\/+$/, ''); // Remove trailing slashes
+      const wsUrl = `${cleanBaseUrl}/ws/notifications?token=${token}`;
+      
+      this.socket = new WebSocket(wsUrl);this.socket.onopen = () => {
         this.isConnected = true;
         this.reconnectAttempts = 0;
         message.success("Connected to notifications service");
