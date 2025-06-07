@@ -1,0 +1,93 @@
+/* src/components/AuditLogTable.css */
+.table-container {
+  width: 100%;
+  overflow-x: auto; /* Cho phép cuộn ngang trên màn hình nhỏ */
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+thead th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+tbody tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.clickable-row:hover {
+  background-color: #f1f3f5;
+  cursor: pointer;
+}
+
+/* Cắt bớt text dài trong ô details */
+.details-cell {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Severity Badges */
+.severity-badge {
+  padding: 0.25em 0.6em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+  color: #fff;
+}
+
+.severity-info { background-color: #17a2b8; }
+.severity-warning { background-color: #ffc107; color: #212529; }
+.severity-error { background-color: #dc3545; }
+.severity-critical { background-color: #8b0000; }
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.2em 0.4em;
+  font-size: 0.8em;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.status-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-failure {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Skeleton for Table */
+.skeleton-text {
+  width: 80%;
+  height: 20px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Animation được định nghĩa trong DashboardStats.css */

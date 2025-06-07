@@ -1,0 +1,82 @@
+/* src/components/DashboardStats.css */
+
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border-left: 5px solid #ccc;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  margin-right: 1rem;
+  padding: 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.stat-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.stat-info span {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #343a40;
+}
+
+/* Severity-specific styles */
+.stat-card.info { border-left-color: #17a2b8; }
+.stat-card.info .stat-icon { background-color: #17a2b8; }
+
+.stat-card.warning { border-left-color: #ffc107; }
+.stat-card.warning .stat-icon { background-color: #ffc107; }
+
+.stat-card.error { border-left-color: #dc3545; }
+.stat-card.error .stat-icon { background-color: #dc3545; }
+
+.stat-card.critical { border-left-color: #8b0000; }
+.stat-card.critical .stat-icon { background-color: #8b0000; }
+
+
+/* Skeleton Loading Effect */
+.stat-card.skeleton {
+  background-color: #f0f0f0;
+  border-left-color: #e0e0e0;
+}
+.stat-card.skeleton h4, .stat-card.skeleton span {
+  background-color: #e0e0e0;
+  color: transparent;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+.stat-card.skeleton h4 { width: 100px; height: 14px; }
+.stat-card.skeleton span { width: 50px; height: 32px; display: block; }
+
+@keyframes pulse {
+  0% { background-color: #e0e0e0; }
+  50% { background-color: #d4d4d4; }
+  100% { background-color: #e0e0e0; }
+}

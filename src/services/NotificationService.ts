@@ -23,20 +23,14 @@ class NotificationService {
         this.socket.readyState === WebSocket.CONNECTING)
     ) {
       return;
-    }
-
-    this.token = token;    try {
+    }    this.token = token;    try {
       // Use environment variable for WebSocket URL
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const wsUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://').replace(/\/+$/, '') + '/ws/notifications';
-      this.socket = new WebSocket(wsUrl);
-
-      this.socket.onopen = () => {
+      const wsUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://').replace(/\/+$/, '') + `/ws/notifications?token=${token}`;
+      this.socket = new WebSocket(wsUrl);      this.socket.onopen = () => {
         this.isConnected = true;
         this.reconnectAttempts = 0;
-
-        // Subscribe the user after connecting
-        this.subscribeUser(token);
+        message.success("Connected to notifications service");
       };
 
       this.socket.onmessage = (event) => {
@@ -67,9 +61,7 @@ class NotificationService {
         if (!event.wasClean && this.token) {
           this.attemptReconnect(this.token);
         }
-      };
-
-      this.socket.onerror = (error) => {
+      };      this.socket.onerror = () => {
         message.error("Connection error. Trying to reconnect...", 3);
 
         if (!this.isConnected && this.token) {
@@ -126,9 +118,10 @@ class NotificationService {
       this.token = null;
     }
   }
-
   /**
    * Subscribe to user notifications
+   * Note: This may not be needed anymore since token is now sent in URL
+   * and backend should automatically subscribe users upon connection
    */
   subscribeUser(token: string): void {
     if (!this.isConnected || !this.socket) {
