@@ -34,7 +34,11 @@ export interface ChatContextType {
   onlineUsers: OnlineUsersResponse | null;
   isConnected: boolean;
   loading: boolean;
-  typingUsers: Array<{ userId: number; userName: string; userAvatar?: string }>; // Danh sách người đang gõ trong phòng active
+  typingUsers: Array<{
+    userId: number;
+    senderName: string;
+    userAvatar?: string;
+  }>;
 
   sendChatMessage: (
     message: ChatMessageRequest
@@ -86,7 +90,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
   const [typingUsers, setTypingUsers] = useState<
-    Array<{ userId: number; userName: string; userAvatar?: string }>
+    Array<{ userId: number; senderName: string; userAvatar?: string }>
   >([]);
   const typingTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
@@ -165,13 +169,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         data.userId
       );
       setTypingUsers((prev) => {
-        const existingUser = prev.find((u) => u.userId === data.userId);
+        const existingUser = prev.find(
+          (u) => u.userId === (data.userId ?? data.senderId)
+        );
         if (existingUser) return prev; // Đã hiển thị rồi
+        // Lấy tên từ participants nếu có
+        let senderName = data.senderName;
+        if (!senderName && activeChatRoom) {
+          const participant = activeChatRoom.participants.find(
+            (p) => p.userId === (data.userId ?? data.senderId)
+          );
+          senderName =
+            participant?.fullName || `User ${data.userId ?? data.senderId}`;
+        }
         return [
           ...prev,
           {
-            userId: data.userId,
-            userName: data.userName,
+            userId: data.userId ?? data.senderId,
+            senderName: senderName,
             userAvatar: data.userAvatar,
           },
         ];
@@ -673,10 +688,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
       try {
         if (chatServiceNew.isSocketConnected()) {
-          // projectId hiện tại không được dùng trong chatServiceNew.subscribeToTopic
-          // Nếu BE cần projectId cho subscribe, cần cập nhật cả BE và FE service
           chatServiceNew.subscribeToTopic(topic);
-          await subscribeToTopicApi({ topic, projectId }); // Vẫn gọi API để BE lưu trữ
+          await subscribeToTopicApi({ topic, projectId });
           antdMessage.success(`Đã đăng ký nhận tin từ ${topic}`);
         } else {
           antdMessage.error("Chưa kết nối chat, không thể đăng ký topic.");
