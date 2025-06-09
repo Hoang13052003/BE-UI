@@ -1,82 +1,32 @@
 // src/services/auditLogService.ts
 
 import { AxiosResponse } from 'axios';
-import axiosClient from '../api/axiosClient';
-import { 
-  AuditLog, 
-  Page, 
-  RealtimeStatistics, 
-  FilterOptions, 
-  DashboardData 
-} from '../types/auditLog.types';
+import axiosClient from '../api/axiosClient'; // Giả sử bạn đã có file này
+import { AuditLog, AuthStats, Page } from '../types/auditLog.types';
 
-export interface FilterParams {
-  page?: number;
-  size?: number;
-  action?: string;
-  username?: string;
-  resource?: string;
-  startDate?: string;
-  endDate?: string;
-  sort?: string;
-}
-
-// === TIỀN TỐ API ĐÃ ĐƯỢC PHÂN TÁCH RÕ RÀNG ===
-const ANALYTICS_PREFIX = '/api/admin/audit-logs';
-const REALTIME_PREFIX = '/api/admin/audit-logs/realtime';
+const API_PREFIX = '/api/admin/audit-logs';
 
 const auditLogService = {
   /**
-   * Lấy dữ liệu tổng quan ban đầu cho Dashboard Real-time.
-   * Gọi các endpoint từ AuditLogRealtimeController.
+   * Lấy các log xác thực gần đây. BE trả về List<AuditLog>.
    */
-  getRealtimeDashboardInitialData: async (): Promise<{
-    logsPage: Page<AuditLog>;
-    stats: RealtimeStatistics;
-    filterOptions: FilterOptions;
-  }> => {
-    const [logsResponse, statsResponse, filterOptionsResponse] = await Promise.all([
-      // Gọi đến /realtime/recent
-      axiosClient.get<Page<AuditLog>>(`${REALTIME_PREFIX}/recent`, { params: { size: 50 } }),
-      // Gọi đến /realtime/stats
-      axiosClient.get<RealtimeStatistics>(`${REALTIME_PREFIX}/stats`),
-      // Gọi đến /realtime/filter-options
-      axiosClient.get<FilterOptions>(`${REALTIME_PREFIX}/filter-options`),
-    ]);
-
-    return {
-      logsPage: logsResponse.data,
-      stats: statsResponse.data,
-      filterOptions: filterOptionsResponse.data,
-    };
-  },
-  /**
-   * Lấy dữ liệu cho trang Analytics phức tạp.
-   * Gọi đến endpoint /dashboard trong AuditLogController.
-   */
-  getAnalyticsDashboardData: (params: FilterParams): Promise<AxiosResponse<DashboardData>> => {
-    // Gọi đến /dashboard
-    return axiosClient.get<DashboardData>(`${ANALYTICS_PREFIX}/dashboard`, { params });
+  getRecentAuthLogs: (limit = 50): Promise<AxiosResponse<AuditLog[]>> => {
+    return axiosClient.get(`${API_PREFIX}/recent`, { params: { limit } });
   },
 
   /**
-   * Lấy dữ liệu log đã lọc từ Real-time endpoint.
-   * Trả về Page<AuditLog> đơn giản để dễ dàng sử dụng với Ant Design Table.
+   * Lấy các log thuộc danh mục AUTH, có phân trang.
    */
-  getFilteredRealtimeLogs: (params: FilterParams): Promise<AxiosResponse<Page<AuditLog>>> => {
-    return axiosClient.get<Page<AuditLog>>(`${REALTIME_PREFIX}/filtered`, { params });
+  getAuthLogsByCategory: (page = 0, size = 20): Promise<AxiosResponse<Page<AuditLog>>> => {
+    // Chỉ gọi với category AUTH như logic của BE
+    return axiosClient.get(`${API_PREFIX}/category/AUTH`, { params: { page, size } });
   },
 
   /**
-   * Xuất dữ liệu audit log ra file.
-   * Gọi đến ANALYTICS_PREFIX cho xuất dữ liệu.
+   * Lấy các thống kê cơ bản.
    */
-  exportLogs: (format: 'csv' | 'json', params: Omit<FilterParams, 'page' | 'size'>): Promise<AxiosResponse<Blob>> => {
-    const exportParams = { ...params, format };
-    return axiosClient.get(`${ANALYTICS_PREFIX}/export`, {
-      params: exportParams,
-      responseType: 'blob',
-    });
+  getBasicAuthStats: (): Promise<AxiosResponse<AuthStats>> => {
+    return axiosClient.get(`${API_PREFIX}/stats`);
   },
 };
 

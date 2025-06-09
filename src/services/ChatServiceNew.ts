@@ -1,6 +1,7 @@
 // src/services/ChatServiceNew.ts
 import { ChatMessageType } from "../api/chatApi";
 import { message as antdMessage } from "antd"; // antdMessage để tránh trùng tên
+import { normalizeBaseUrl } from "../utils/urlUtils";
 
 class ChatServiceNew {
   private socket: WebSocket | null = null;
@@ -27,7 +28,7 @@ class ChatServiceNew {
       return;
     }    this.token = token;
     const baseUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
-    const cleanBaseUrl = baseUrl.replace(/\/+$/, ''); // Remove trailing slashes
+    const cleanBaseUrl = normalizeBaseUrl(baseUrl);
     const wsUrl = `${cleanBaseUrl}/ws/chat?token=${token}`;
 
     this.socket = new WebSocket(wsUrl);

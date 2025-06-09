@@ -3,6 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { message } from 'antd';
+import { normalizeBaseUrl, toWebSocketUrl } from '../utils/urlUtils';
 
 interface StompConnectionManagerOptions {
   autoConnect?: boolean;
@@ -44,16 +45,15 @@ export const useStompConnectionManager = ({
         await stompClientRef.current.deactivate();
       }
 
-      const client = new Client({
-        // Configure WebSocket factory based on useSockJS option
+      const client = new Client({        // Configure WebSocket factory based on useSockJS option
         webSocketFactory: () => {
           const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-          const cleanBaseUrl = baseUrl.replace(/\/+$/, ''); // Remove trailing slashes
+          const cleanBaseUrl = normalizeBaseUrl(baseUrl);
           
           if (useWSSockJS) {
             return new SockJS(`${cleanBaseUrl}/ws?token=${token}`);
           } else {
-            const wsUrl = cleanBaseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+            const wsUrl = toWebSocketUrl(cleanBaseUrl);
             return new WebSocket(`${wsUrl}/ws?token=${token}`);
           }
         },

@@ -1,6 +1,7 @@
 // src/services/NotificationService.ts
 import { message } from "antd";
 import { MessageType } from "../types/Notification";
+import { toWebSocketUrl } from "../utils/urlUtils";
 
 class NotificationService {
   private socket: WebSocket | null = null;
@@ -15,8 +16,7 @@ class NotificationService {
   /**
    * Connect to the WebSocket notification server
    * @param token JWT token for authentication
-   */
-  connect(token: string): void {
+   */  connect(token: string): void {
     if (
       this.socket &&
       (this.socket.readyState === WebSocket.OPEN ||
@@ -26,9 +26,8 @@ class NotificationService {
     }    this.token = token;    try {
       // Use environment variable for WebSocket URL
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const cleanBaseUrl = baseUrl.replace('http://', 'ws://').replace('https://', 'wss://').replace(/\/+$/, ''); // Remove trailing slashes
+      const cleanBaseUrl = toWebSocketUrl(baseUrl);
       const wsUrl = `${cleanBaseUrl}/ws/notifications?token=${token}`;
-      
       this.socket = new WebSocket(wsUrl);this.socket.onopen = () => {
         this.isConnected = true;
         this.reconnectAttempts = 0;

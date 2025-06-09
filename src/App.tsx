@@ -40,7 +40,7 @@ import Feedbacks from "./pages/Admin/Feedbacks";
 import { ChatProvider } from "./contexts/ChatContext";
 import LogManagerPage from "./pages/Admin/LogsManager";
 import DashboardClient from "./pages/Client/DashboardClient";
-import AuditLogDashboard from "./pages/Admin/AuditLogDashboard/AuditLogDashboard";
+import AuthLogMonitor from "./pages/Admin/AuditLogDashboard/AuthLogMonitor";
 
 // Component to handle auth logout events
 const AuthEventHandler: React.FC = () => {
@@ -105,7 +105,7 @@ function App() {
                         element={<ProjectDetailPage />}
                       />                      <Route path="feedbacks" element={<Feedbacks />} />
                       <Route path="logs" element={<LogManagerPage />} />
-                      <Route path="audit-logs" element={<AuditLogDashboard />} />
+                      <Route path="audit-logs" element={<AuthLogMonitor />} />
                       <Route
                         path="projects/:projectId/history"
                         element={<ProjectUpdateHistory />}
