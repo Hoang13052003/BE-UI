@@ -7,12 +7,10 @@ import PublicRoute from "./routes/PublicRouter";
 import LayoutShare from "./pages/Share/_layout";
 import DashboardClient from "./pages/Client/DashboardClient";
 import DashboardAdmin from "./pages/Admin/DashboardAdmin";
-// import HeroSection from './components/home/HeroSection';
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import UserManagement from "./pages/Admin/UserManagement";
 import ProjectManager from "./pages/Admin/ProjectManager";
 import Notifications from "./pages/Admin/Notifications";
-import SystemSettings from "./pages/Admin/SystemSettings";
 import DocumentsPage from "./pages/Client/DocumentsPage";
 import Messages from "./pages/Client/Messages";
 import PageSettings from "./pages/Client/PageSettings";
@@ -35,6 +33,8 @@ import Settings from "./pages/Client/Settings";
 import Feedbacks from "./pages/Admin/Feedbacks";
 import { ChatProvider } from "./contexts/ChatContext";
 import LogManagerPage from "./pages/Admin/LogsManager";
+import MyFeedbacks from "./pages/Client/MyFeedbacks";
+import ProjectUpdatesPage from "./pages/Client/ProjectUpdatesPage";
 
 function App() {
   return (
@@ -125,6 +125,7 @@ function App() {
                         path="project-updates/:id"
                         element={<ProjectUpdateDetailsPage />}
                       />
+                      <Route path="my-feedbacks" element={<MyFeedbacks />} />
                       <Route path="messages" element={<Messages />} />
                       <Route
                         path="projects/:projectId/details"

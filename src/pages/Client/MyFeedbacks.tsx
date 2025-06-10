@@ -1,44 +1,41 @@
-import React, { useState, useEffect, useMemo } from "react"; // Added useMemo
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   Row,
   Col,
   Typography,
   Space,
-  Button,
   Table,
   Tag,
-  // Input,
+  Button,
+  Statistic,
+  Tooltip,
   Select,
   DatePicker,
-  Tooltip,
-  Statistic,
-  Avatar,
 } from "antd";
 import {
   EyeOutlined,
   StarOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
-  UserOutlined,
 } from "@ant-design/icons";
+import dayjs from "dayjs";
 import {
-  filter,
+  getFeedbacksByUser,
   type FeedbackCriteria,
   type PaginatedFeedbackResponse,
-} from "../../api/feedbackApi"; // Assuming FeedbackItem has projectId and projectName
-import dayjs from "dayjs";
-import FeedbackDetailModal from "./FeedbackDetailModal";
+} from "../../api/feedbackApi";
+import { useAuth } from "../../contexts/AuthContext";
+import ClientFeedbackDetailModal from "./ClientFeedbackDetailModal";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 interface FeedbackItem {
   id: string | number;
   fullName?: string;
   email?: string;
   projectName: string;
-  projectId: number; // Assuming projectId is a number
+  projectId: number;
   content: string;
   createdAt: string;
   read: boolean;
@@ -49,7 +46,17 @@ interface TypedPaginatedFeedbackResponse
   content: FeedbackItem[];
 }
 
-const Feedbacks: React.FC = () => {
+// Tạo model mới cho detail
+interface FeedbackDetailModel {
+  projectName: string;
+  projectId: number;
+  content: string;
+  createdAt: string;
+  read: boolean;
+  // Có thể bổ sung các trường khác nếu cần cho detail
+}
+
+const MyFeedbacks: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [feedbacks, setFeedbacks] = useState<TypedPaginatedFeedbackResponse>({
     content: [],
@@ -62,18 +69,17 @@ const Feedbacks: React.FC = () => {
     last: true,
     empty: true,
   });
-
-  const [criteria, setCriteria] = useState<FeedbackCriteria>({});
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
   });
-
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
-  const [selectedFeedbackId, setSelectedFeedbackId] = useState<string | null>(
-    null
-  );
+  const [selectedFeedback, setSelectedFeedback] =
+    useState<FeedbackDetailModel | null>(null);
+  const [criteria, setCriteria] = useState<FeedbackCriteria>({});
+
+  const { userDetails } = useAuth();
 
   const unreadCount = useMemo(
     () => feedbacks.content.filter((item) => !item.read).length,
@@ -81,13 +87,11 @@ const Feedbacks: React.FC = () => {
   );
 
   const stats = {
-    totalFeedback: feedbacks.content.length || 0,
+    totalFeedback: feedbacks.totalElements || 0,
     pendingReviews: unreadCount,
-    averageRating: 4.7,
     responseRate: 94,
     growthStats: {
       feedbackGrowth: "+13%",
-      ratingGrowth: "+0.3",
       responseGrowth: "+5%",
     },
   };
@@ -95,23 +99,31 @@ const Feedbacks: React.FC = () => {
   const fetchFeedbacks = async (
     page: number = 0,
     size: number = 10,
-    searchCriteria: FeedbackCriteria = {}
+    searchCriteria: FeedbackCriteria = criteria
   ) => {
     try {
       setLoading(true);
-      const response = await filter(
-        searchCriteria,
+      // Build params with dot notation for equals
+      const params: any = {
         page,
         size,
-        "createdAt",
-        "desc"
-      );
+        sort: "desc",
+      };
+      if (
+        searchCriteria.projectId &&
+        searchCriteria.projectId.equals !== undefined
+      ) {
+        params["projectId.equals"] = searchCriteria.projectId.equals;
+      }
+      if (searchCriteria.read && searchCriteria.read.equals !== undefined) {
+        params["read.equals"] = searchCriteria.read.equals;
+      }
+      if (searchCriteria.createdAt && searchCriteria.createdAt.equals) {
+        params["createdAt.equals"] = searchCriteria.createdAt.equals;
+      }
+      const response = await getFeedbacksByUser(userDetails?.id, params);
       setFeedbacks(response as TypedPaginatedFeedbackResponse);
-      setPagination((prev) => ({
-        ...prev,
-        total: response.totalElements,
-      }));
-      console.log("Data feedbacks: " + JSON.stringify(feedbacks.content));
+      setPagination((prev) => ({ ...prev, total: response.totalElements }));
     } catch (error) {
       console.error("Error fetching feedbacks:", error);
     } finally {
@@ -122,15 +134,16 @@ const Feedbacks: React.FC = () => {
   useEffect(() => {
     fetchFeedbacks(0, pagination.pageSize, criteria);
     setPagination((prev) => ({ ...prev, current: 1 }));
-  }, [criteria]);
-  const handleViewDetails = (feedbackId: string) => {
-    setSelectedFeedbackId(feedbackId);
+  }, [userDetails, criteria]);
+
+  const handleViewDetails = (feedback: FeedbackItem) => {
+    setSelectedFeedback({ ...feedback });
     setIsDetailModalVisible(true);
   };
 
   const handleCloseDetailModal = () => {
     setIsDetailModalVisible(false);
-    setSelectedFeedbackId(null);
+    setSelectedFeedback(null);
     fetchFeedbacks(0, pagination.pageSize, criteria);
   };
 
@@ -154,18 +167,22 @@ const Feedbacks: React.FC = () => {
     );
   }, [feedbacks.content]);
 
+  const getDatePickerValue = () => {
+    if (criteria.createdAt && criteria.createdAt.equals) {
+      const dateObj = dayjs(criteria.createdAt.equals, "YYYY-MM-DD");
+      return dateObj.isValid() ? dateObj : null;
+    }
+    return null;
+  };
+
   const columns = [
     {
       title: "User",
       key: "user",
       width: "20%",
-      render: (_: any, record: any) => (
+      render: (_: any, record: FeedbackItem) => (
         <Space>
-          <Avatar
-            src={record.image}
-            icon={!record.image && <UserOutlined />}
-            className="bg-blue-500"
-          />
+          {/* Nếu có avatar/image thì thêm vào đây, ví dụ: <Avatar src={record.image} icon={!record.image && <UserOutlined />} /> */}
           <div>
             <div className="font-medium">{record.fullName}</div>
             <Text type="secondary" className="text-xs">
@@ -214,7 +231,7 @@ const Feedbacks: React.FC = () => {
         <Space>
           <Tooltip title="View Details">
             <Button
-              onClick={() => handleViewDetails(String(record.id))} // Pass record.id to handler
+              onClick={() => handleViewDetails(record)}
               type="text"
               icon={<EyeOutlined />}
             />
@@ -224,25 +241,16 @@ const Feedbacks: React.FC = () => {
     },
   ];
 
-  const getDatePickerValue = () => {
-    if (criteria.createdAt && criteria.createdAt.equals) {
-      const dateObj = dayjs(criteria.createdAt.equals, "YYYY-MM-DD");
-      return dateObj.isValid() ? dateObj : null;
-    }
-    return null; // Hoặc undefined nếu DatePicker của bạn xử lý được
-  };
-
   return (
     <Card style={{ height: "100%" }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
-          <Title level={4}>Feedback Management</Title>
+          <Title level={4}>My Feedbacks</Title>
           <Text type="secondary">
-            Monitor and respond to client feedback across all projects
+            View the list of feedback you have submitted to projects
           </Text>
         </Col>
       </Row>
-
       {/* Statistics */}
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
@@ -281,7 +289,6 @@ const Feedbacks: React.FC = () => {
           </Card>
         </Col>
       </Row>
-
       {/* Filter */}
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={8}>
@@ -302,11 +309,11 @@ const Feedbacks: React.FC = () => {
               criteria.projectId ? String(criteria.projectId.equals) : undefined
             }
           >
-            <Option value="">All Projects</Option>
+            <Select.Option value="">All Projects</Select.Option>
             {derivedProjectOptions.map((p) => (
-              <Option key={p.value} value={String(p.value)}>
+              <Select.Option key={p.value} value={String(p.value)}>
                 {p.label}
-              </Option>
+              </Select.Option>
             ))}
           </Select>
         </Col>
@@ -332,9 +339,9 @@ const Feedbacks: React.FC = () => {
                 : undefined
             }
           >
-            <Option value="">All Status</Option>
-            <Option value="read">Reviewed</Option>
-            <Option value="unread">Pending</Option>
+            <Select.Option value="">All Status</Select.Option>
+            <Select.Option value="read">Reviewed</Select.Option>
+            <Select.Option value="unread">Pending</Select.Option>
           </Select>
         </Col>
         <Col xs={24} sm={8}>
@@ -343,11 +350,10 @@ const Feedbacks: React.FC = () => {
             placeholder="Chọn ngày lọc"
             allowClear
             onChange={(date) => {
-              // date là Day.js object từ DatePicker hoặc null
               if (date) {
                 setCriteria((prev) => ({
                   ...prev,
-                  createdAt: { equals: date.format("YYYY-MM-DD") }, // << SỬA Ở ĐÂY
+                  createdAt: { equals: date.format("YYYY-MM-DD") },
                 }));
               } else {
                 setCriteria((prev) => {
@@ -361,8 +367,6 @@ const Feedbacks: React.FC = () => {
           />
         </Col>
       </Row>
-
-      {/* Table */}
       <Table
         columns={columns}
         dataSource={feedbacks.content}
@@ -387,10 +391,9 @@ const Feedbacks: React.FC = () => {
             : false
         }
       />
-
-      {selectedFeedbackId && (
-        <FeedbackDetailModal
-          feedbackId={selectedFeedbackId}
+      {selectedFeedback && (
+        <ClientFeedbackDetailModal
+          feedback={selectedFeedback}
           visible={isDetailModalVisible}
           onClose={handleCloseDetailModal}
         />
@@ -399,4 +402,4 @@ const Feedbacks: React.FC = () => {
   );
 };
 
-export default Feedbacks;
+export default MyFeedbacks;
