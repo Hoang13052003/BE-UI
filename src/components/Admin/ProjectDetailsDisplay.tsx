@@ -44,8 +44,7 @@ interface ProjectDetailsDisplayProps {
   onToggleMilestoneDetail?: (id: number) => void;
   onToggleTimelogDetail?: (id: number) => void;
 
-  onAddMilestone?: (projectId: number, refreshCallback?: () => void) => void;
-  onEditMilestone?: (
+  onAddMilestone?: (projectId: number, refreshCallback?: () => void) => void;  onEditMilestone?: (
     milestoneId: number,
     projectId: number,
     refreshCallback?: () => void
@@ -57,6 +56,9 @@ interface ProjectDetailsDisplayProps {
   reviewedMilestoneCount?: number;
 
   currentUserIsAdmin?: boolean; // Thêm prop để nhận từ ProjectManager
+  
+  // Thêm callback để refresh progress overview
+  onRefreshProgress?: () => void;
 }
 
 const getStatusColor = (
@@ -101,8 +103,15 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   sentMilestoneCount,
   reviewedMilestoneCount,
   currentUserIsAdmin = false,
+  onRefreshProgress, // Thêm prop mới
 }) => {
   const projectData = project;
+
+  // Wrapper function để refresh progress sau khi milestone/timelog thay đổi
+  const handleRefreshWithProgress = (callback?: () => void) => {
+    if (callback) callback();
+    if (onRefreshProgress) onRefreshProgress();
+  };
 
   const createMilestoneStatusColors = () => {
     const colors = [];
@@ -550,14 +559,17 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               borderRadius: "8px",
               border: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}`,
             }}
-          >
-            <MilestoneDetailsDisplayInternal
+          >            <MilestoneDetailsDisplayInternal
               projectId={projectData.id}
               onAddMilestone={(refreshCallback) =>
                 currentUserIsAdmin &&
-                onAddMilestone(projectData.id, refreshCallback)
+                onAddMilestone(projectData.id, () => handleRefreshWithProgress(refreshCallback))
               } // Chỉ cho admin
-              onEditMilestone={currentUserIsAdmin ? onEditMilestone : undefined} // Chỉ cho admin
+              onEditMilestone={currentUserIsAdmin ? 
+                (milestoneId, projectId, refreshCallback) => 
+                  onEditMilestone && onEditMilestone(milestoneId, projectId, () => handleRefreshWithProgress(refreshCallback))
+                : undefined} // Chỉ cho admin
+              onRefreshProgress={onRefreshProgress} // Truyền callback xuống milestone
             />
           </div>
         )}
@@ -573,11 +585,11 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               borderRadius: "8px",
               border: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}`,
             }}
-          >
-            <TimelogDetailsDisplayInternal
+          >            <TimelogDetailsDisplayInternal
               projectId={projectData.id}
               theme={theme}
               isAdmin={currentUserIsAdmin}
+              onRefreshProgress={onRefreshProgress} // Truyền callback xuống timelog
             />
           </div>
         )}

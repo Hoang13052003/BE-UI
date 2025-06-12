@@ -29,13 +29,15 @@ interface MilestoneDetailsDisplayProps {
   onEditMilestone?: (milestoneId: number, projectId: number, onSuccessRefresh?: () => void) => void; // Làm optional
   milestoneCount?: number;
   theme?: string;
+  onRefreshProgress?: () => void; // Thêm callback để refresh progress
 }
 
 const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   projectId,
   onAddMilestone,
   onEditMilestone, // Nhận prop (giờ là optional)
-  theme = 'light'
+  theme = 'light',
+  onRefreshProgress, // Thêm prop mới
 }) => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -155,12 +157,13 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
     setPageSize(size);
     setCurrentPage(0);
   };
-
   const handleDeleteMilestone = async (milestoneId: number) => {
     try {
       await deleteMilestoneApi(milestoneId);
       message.success('Milestone deleted successfully');
       fetchMilestones();
+      // Refresh progress overview after deleting milestone
+      if (onRefreshProgress) onRefreshProgress();
     } catch (err: any) {
       console.error(`Error deleting milestone ${milestoneId}:`, err);
       message.error(err.response?.data?.message || 'Failed to delete milestone');
