@@ -193,11 +193,16 @@ const ProjectManager: React.FC = () => {
     setExpandedProjectId(prevId => (prevId === projectId ? null : projectId));
     if (expandedTimelogProjectId === projectId) setExpandedTimelogProjectId(null);
   };
-
   const toggleTimelogDetail = (projectId: number) => {
     setExpandedTimelogProjectId(prevId => (prevId === projectId ? null : projectId));
     if (expandedProjectId === projectId) setExpandedProjectId(null);
   };
+  // Function để refresh progress overview cho một project cụ thể
+  const handleRefreshProjectProgress = useCallback((projectId: number) => {
+    // Re-fetch project để lấy progress mới nhất
+    console.log(`Refreshing progress for project ${projectId}`);
+    loadProjects(false);
+  }, [loadProjects]);
 
   const handleEditProject = (project: Project) => {
     setSelectedProjectForEdit(project);
@@ -407,8 +412,7 @@ const ProjectManager: React.FC = () => {
                   View Full Details
                 </Button>,
               ]}
-            >
-              <ProjectDetailsDisplay
+            >              <ProjectDetailsDisplay
                 project={item}
                 theme={theme}
                 milestoneCount={item.milestoneCount}
@@ -423,6 +427,7 @@ const ProjectManager: React.FC = () => {
                 onEditMilestone={currentUserIsAdmin ? handleEditMilestone : undefined}
                 onEditProject={currentUserIsAdmin ? () => handleEditProject(item) : undefined}
                 currentUserIsAdmin={currentUserIsAdmin}
+                onRefreshProgress={() => handleRefreshProjectProgress(item.id)} // Thêm callback
               />
             </List.Item>
           )}

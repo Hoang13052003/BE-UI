@@ -31,6 +31,7 @@ interface TimelogDetailsDisplayProps {
   projectId: number;
   theme?: string;
   isAdmin?: boolean;
+  onRefreshProgress?: () => void; // Thêm callback để refresh progress
 }
 
 interface DisplayTimeLogData extends TimeLogResponse {}
@@ -39,6 +40,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   projectId,
   theme = 'light',
   isAdmin = false,
+  onRefreshProgress, // Thêm prop mới
 }) => {
   const [timelogs, setTimelogs] = useState<DisplayTimeLogData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -87,7 +89,6 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
       if (showLoadingSpinner && !initialLoadComplete) setLoading(false);
     }
   }, [projectId, currentPage, pageSize, initialLoadComplete]);
-
   // INLINE EDIT HOOK
   const {
     editedData,
@@ -103,7 +104,11 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     searchedUsers,
     currentPerformersMap,
     setCurrentPerformersMap,
-    onRefreshData: () => fetchTimelogs(false),
+    onRefreshData: () => {
+      fetchTimelogs(false);
+      // Refresh progress overview after inline edit
+      if (onRefreshProgress) onRefreshProgress();
+    },
   });
 
   useEffect(() => {
@@ -111,11 +116,12 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
       fetchTimelogs();
     }
   }, [fetchTimelogs, projectId]);
-
   const handleUploadComplete = useCallback(() => {
     fetchTimelogs(false);
     message.success('Time logs uploaded successfully');
-  }, [fetchTimelogs]);
+    // Refresh progress overview after upload
+    if (onRefreshProgress) onRefreshProgress();
+  }, [fetchTimelogs, onRefreshProgress]);
 
   const handleToggleBatchMode = () => {
     setIsInBatchMode(!isInBatchMode);
@@ -132,12 +138,13 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     }
     const idsToDelete = selectedRowKeys.map(key => Number(key));
     setBatchDeleting(true);
-    try {
-      await batchDeleteTimeLogsApi(idsToDelete);
+    try {      await batchDeleteTimeLogsApi(idsToDelete);
       message.success(`${selectedRowKeys.length} time log(s) deleted successfully!`);
       setSelectedRowKeys([]);
       setIsInBatchMode(false);
       fetchTimelogs(false);
+      // Refresh progress overview after batch delete
+      if (onRefreshProgress) onRefreshProgress();
     } catch (err) {
       console.error('Error batch deleting time logs:', err);
       if (err instanceof Error && err.message) {
@@ -402,12 +409,14 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
             </div>
           )}
         </Card>
-      )}
-
-      <AddTimeLogModal 
+      )}      <AddTimeLogModal 
         visible={isAddModalVisible} 
         onClose={() => setIsAddModalVisible(false)} 
-        onSuccess={() => fetchTimelogs(false)} 
+        onSuccess={() => {
+          fetchTimelogs(false);
+          // Refresh progress overview after adding new timelog
+          if (onRefreshProgress) onRefreshProgress();
+        }} 
         projectId={projectId} 
       />
     </div>

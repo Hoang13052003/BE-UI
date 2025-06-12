@@ -193,10 +193,13 @@ const ProjectDetailPage: React.FC = () => {
 
       {/* Static Layout using Ant Design Grid */}
       <Row gutter={[16, 16]}>  
-        {/* Overview: full width on xs, sm, md; half width on lg and xl */}
-        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
+        {/* Overview: full width on xs, sm, md; half width on lg and xl */}        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
           <Card title="Project Overview" style={{ border: 'none' }} bodyStyle={{ padding: 16 }}>
-            <ProjectDetailsDisplay project={project} theme={theme} />
+            <ProjectDetailsDisplay 
+              project={project as any} 
+              theme={theme} 
+              onRefreshProgress={fetchProjectData} // Thêm callback để refresh project data
+            />
           </Card>
         </Col>
         {/* Milestones/Time Logs: full width on xs, sm, md; half width on lg and xl */}
