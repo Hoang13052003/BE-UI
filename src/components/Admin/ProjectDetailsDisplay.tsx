@@ -35,7 +35,7 @@ import TimelogDetailsDisplayInternal from "./TimelogDetailsDisplay";
 const { Title, Text, Paragraph } = Typography;
 
 interface ProjectDetailsDisplayProps {
-  project: Project;
+  project: Project | ProjectDetail; // Sửa để nhận cả project object
   theme?: string;
   onEditProject?: (project: Project | ProjectDetail) => void; // Sửa để nhận cả project object
 

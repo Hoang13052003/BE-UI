@@ -1,32 +1,60 @@
-// import React, { useState, useEffect } from 'react';
-// import { Card, List, Typography, Skeleton, Divider, Empty } from 'antd';
-// import { Link } from 'react-router-dom';
-// import { getRecentFeedback, Feedback, markFeedbackAsRead } from '../../../api/feedbackApi';
-// import './RecentFeedback.scss';
+import React, { useState, useEffect } from "react";
+import { Card, List, Typography, Skeleton, Divider, Empty } from "antd";
+import { Link } from "react-router-dom";
+import {
+  FeedbackCriteria,
+  FeedbackResponse,
+  filter,
+} from "../../../api/feedbackApi";
+import { MessageOutlined } from "@ant-design/icons";
 
 // const { Title, Text } = Typography;
 
-// // Function to format dates in a relative way (e.g., "2 hours ago", "1 day ago")
-// const getRelativeTime = (dateStr: string): string => {
-//   const now = new Date();
-//   const past = new Date(dateStr);
-//   const diffMs = now.getTime() - past.getTime();
-  
-//   // Convert to minutes, hours, days
-//   const diffMins = Math.round(diffMs / (1000 * 60));
-//   const diffHours = Math.round(diffMs / (1000 * 60 * 60));
-//   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-  
-//   if (diffMins < 60) {
-//     return diffMins === 1 ? '1 minute ago' : `${diffMins} minutes ago`;
-//   } else if (diffHours < 24) {
-//     return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
-//   } else if (diffDays < 30) {
-//     return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
-//   } else {
-//     return past.toLocaleDateString();
-//   }
-// };
+// Function to format dates in a relative way (e.g., "2 hours ago", "1 day ago")
+const getRelativeTime = (dateStr: string): string => {
+  const now = new Date();
+  const past = new Date(dateStr);
+  const diffMs = now.getTime() - past.getTime();
+
+  // Convert to minutes, hours, days
+  const diffMins = Math.round(diffMs / (1000 * 60));
+  const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 60) {
+    return diffMins === 1 ? "1 minute ago" : `${diffMins} minutes ago`;
+  } else if (diffHours < 24) {
+    return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
+  } else if (diffDays < 30) {
+    return diffDays === 1 ? "1 day ago" : `${diffDays} days ago`;
+  } else {
+    return past.toLocaleDateString();
+  }
+};
+
+// Định nghĩa lại type cho độc lập
+interface FeedbackItem {
+  id: string | number;
+  fullName?: string;
+  email?: string;
+  projectName: string;
+  projectId: number;
+  content: string;
+  createdAt: string;
+  read: boolean;
+}
+
+interface TypedPaginatedFeedbackResponse {
+  content: FeedbackItem[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
 
 // interface RecentFeedbackProps {
 //   limit?: number;
@@ -34,158 +62,213 @@
 //   useMockData?: boolean; // For demo/development purpose
 // }
 
-// const RecentFeedback: React.FC<RecentFeedbackProps> = ({ 
-//   limit = 5,
-//   onViewAll = () => {},
-//   useMockData = true // Default to mock data for development
-// }) => {
-//   const [feedback, setFeedback] = useState<Feedback[]>([]);
-//   const [loading, setLoading] = useState<boolean>(true);
-//   const [error, setError] = useState<string | null>(null);
+const RecentFeedback: React.FC<RecentFeedbackProps> = ({
+  limit = 5,
+  onViewAll = () => {},
+  useMockData = true, // Default to mock data for development
+}) => {
+  const [feedbacks, setFeedbacks] = useState<TypedPaginatedFeedbackResponse>({
+    content: [],
+    totalElements: 0,
+    totalPages: 0,
+    size: 10,
+    number: 0,
+    numberOfElements: 0,
+    first: true,
+    last: true,
+    empty: true,
+  });
+  const [loading, setLoading] = useState<boolean>(true);
 
-//   // Mock data - In a real application, this would come from an API
-//   const mockFeedback: Feedback[] = [
-//     {
-//       id: '1',
-//       updateId: 1,
-//       projectId: 101,
-//       userId: 1,
-//       content: 'Great progress!',
-//       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-//       read: false
-//     },
-//     {
-//       id: '2',
-//       updateId: 2,
-//       projectId: 102,
-//       userId: 2,
-//       content: 'Needs attention',
-//       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-//       read: false
-//     },
-//     {
-//       id: '3',
-//       updateId: 3,
-//       projectId: 103,
-//       userId: 1,
-//       content: 'Milestone completed ahead of schedule. Great job team!',
-//       createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-//       read: true
-//     },
-//     {
-//       id: '4',
-//       updateId: 4,
-//       projectId: 104,
-//       userId: 3,
-//       content: 'Client requested changes to the design',
-//       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-//       read: true
-//     }
-//   ];
+  useEffect(() => {
+    const fetchFeedbacks = async (
+      page: number = 0,
+      size: number = 10,
+      searchCriteria: FeedbackCriteria = {}
+    ) => {
+      try {
+        setLoading(true);
+        const response = await filter(
+          searchCriteria,
+          page,
+          size,
+          "createdAt",
+          "desc"
+        );
+        setFeedbacks(response as TypedPaginatedFeedbackResponse);
+        console.log("Data feedbacks: " + JSON.stringify(feedbacks.content));
+      } catch (error) {
+        console.error("Error fetching feedbacks:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-//   useEffect(() => {
-//     const fetchFeedback = async () => {
-//       setLoading(true);
-//       setError(null);
-      
-//       try {
-//         if (useMockData) {
-//           // Use mock data for development/demo
-//           setTimeout(() => {
-//             setFeedback(mockFeedback);
-//             setLoading(false);
-//           }, 800);
-//         } else {
-//           // Use actual API in production
-//           const data = await getRecentFeedback(limit);
-//           setFeedback(data);
-//         }
-//       } catch (err) {
-//         console.error('Error fetching feedback:', err);
-//         setError('Failed to load feedback. Please try again later.');
-//       } finally {
-//         if (!useMockData) {
-//           setLoading(false);
-//         }
-//       }
-//     };
+    fetchFeedbacks();
+  }, [limit, useMockData]);
 
-//     fetchFeedback();
-//   }, [limit, useMockData]);
+  // Handle clicking on a feedback item (mark as read)
+  const handleFeedbackClick = async (_id: string | number) => {
+    // Reserved for future use
+  };
 
-//   // Handle clicking on a feedback item (mark as read)
-//   const handleFeedbackClick = async (id: string) => {
-//     // Only mark as unread items
-//     const feedbackItem = feedback.find(item => item.id === id);
-//     if (feedbackItem && !feedbackItem.read) {
-//       try {
-//         if (!useMockData) {
-//           await markFeedbackAsRead(id);
-//         }
-//         // Update local state
-//         setFeedback(prevFeedback => 
-//           prevFeedback.map(item => 
-//             item.id === id ? { ...item, read: true } : item
-//           )
-//         );
-//       } catch (err) {
-//         console.error('Error marking feedback as read:', err);
-//       }
-//     }
-//   };
+  const limitedFeedback =
+    feedbacks.content.length > limit
+      ? feedbacks.content.slice(0, limit)
+      : feedbacks.content;
 
-//   const limitedFeedback = feedback.slice(0, limit);
+  return (
+    <Card
+      className="recent-feedback-card"
+      title={
+        <div
+          className="card-header"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingBottom: 8,
+          }}
+        >
+          <Title
+            level={5}
+            className="card-title"
+            style={{ margin: 0, display: "flex", alignItems: "center" }}
+          >
+            <MessageOutlined
+              style={{ color: "#1890ff", marginRight: 8, fontSize: 20 }}
+            />{" "}
+            Recent Feedback
+          </Title>
+          <Link
+            to="/admin/feedbacks"
+            onClick={onViewAll}
+            className="view-all-link"
+            style={{
+              fontWeight: 500,
+              color: "#1890ff",
+              border: "1px solid #e6f4ff",
+              borderRadius: 6,
+              padding: "2px 12px",
+              background: "#f0faff",
+              transition: "all 0.2s",
+              display: "inline-block",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = "#e6f4ff")}
+            onMouseOut={(e) => (e.currentTarget.style.background = "#f0faff")}
+          >
+            View All
+          </Link>
+        </div>
+      }
+      bordered={false}
+      style={{
+        boxShadow: "0 2px 8px #f0f1f2",
+        borderRadius: 12,
+        padding: 0,
+      }}
+    >
+      {loading ? (
+        <Skeleton active paragraph={{ rows: 4 }} />
+      ) : limitedFeedback.length === 0 ? (
+        <Empty description="No feedback available" />
+      ) : (
+        <List
+          itemLayout="vertical"
+          dataSource={limitedFeedback}
+          renderItem={(item, index) => (
+            <React.Fragment key={item.id}>
+              <div
+                className={`feedback-item${item.read ? "" : " unread"}`}
+                style={{
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  background: item.read ? "#fff" : "#e6f4ff",
+                  borderRadius: 8,
+                  transition: "background 0.2s",
+                  display: "flex",
+                  flexDirection: "column",
+                  position: "relative",
+                  boxShadow: item.read ? "none" : "0 2px 8px #e6f4ff",
+                }}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.background = "#f0faff")
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.background = item.read
+                    ? "#fff"
+                    : "#e6f4ff")
+                }
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  {!item.read && (
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "#1890ff",
+                        display: "inline-block",
+                        marginRight: 8,
+                      }}
+                    ></span>
+                  )}
+                  <Title
+                    level={5}
+                    className={
+                      item.read ? "project-title read" : "project-title"
+                    }
+                    style={{
+                      margin: 0,
+                      color: item.read ? "#222" : "#1890ff",
+                      fontWeight: item.read ? 500 : 700,
+                    }}
+                  >
+                    Project #{item.projectId} - {item.projectName}
+                  </Title>
+                </div>
+                <Text
+                  className="feedback-message"
+                  style={{
+                    fontSize: 15,
+                    color: "#444",
+                    marginBottom: 4,
+                  }}
+                >
+                  {item.content}
+                </Text>
+                <div
+                  className="feedback-meta"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginTop: 2,
+                  }}
+                >
+                  <Text
+                    type="secondary"
+                    className="time-ago"
+                    style={{ fontSize: 13 }}
+                  >
+                    {getRelativeTime(item.createdAt)}
+                  </Text>
+                </div>
+              </div>
+              {index < limitedFeedback.length - 1 && (
+                <Divider style={{ margin: "12px 0" }} />
+              )}
+            </React.Fragment>
+          )}
+        />
+      )}
+    </Card>
+  );
+};
 
-//   return (
-//     <Card 
-//       className="recent-feedback-card" 
-//       title={
-//         <div className="card-header">
-//           <Title level={5} className="card-title">Recent Feedback</Title>
-//           <Link to="/admin/feedback" onClick={onViewAll} className="view-all-link">
-//             View All
-//           </Link>
-//         </div>
-//       }
-//       bordered={false}
-//     >
-//       {loading ? (
-//         <Skeleton active paragraph={{ rows: 4 }} />
-//       ) : error ? (
-//         <Empty description={error} />
-//       ) : limitedFeedback.length === 0 ? (
-//         <Empty description="No feedback available" />
-//       ) : (
-//         <List
-//           itemLayout="vertical"
-//           dataSource={limitedFeedback}
-//           renderItem={(item, index) => (
-//             <React.Fragment key={item.id}>
-//               <div 
-//                 className="feedback-item"
-//                 onClick={() => handleFeedbackClick(item.id)}
-//               >
-//                 <Link to={`/admin/projects/${item.projectId}`}>
-//                   <Title level={5} className={item.read ? 'project-title read' : 'project-title'}>
-//                     Project #{item.projectId}
-//                   </Title>
-//                 </Link>
-//                 <Text className="feedback-message">{item.content}</Text>
-//                 <div className="feedback-meta">
-//                   <Text type="secondary" className="time-ago">
-//                     {getRelativeTime(item.createdAt)}
-//                   </Text>
-//                 </div>
-//               </div>
-//               {index < limitedFeedback.length - 1 && (
-//                 <Divider style={{ margin: '12px 0' }} />
-//               )}
-//             </React.Fragment>
-//           )}
-//         />
-//       )}
-//     </Card>
-//   );
-// };
-
-// export default RecentFeedback;
+export default RecentFeedback;

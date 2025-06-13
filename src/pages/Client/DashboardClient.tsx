@@ -38,6 +38,24 @@ const DashboardClient: React.FC = () => {
           ),
         },
         {
+          key: "my-feedbacks",
+          icon: <MessageOutlined />,
+          label: (
+            <Link to="/client/my-feedbacks">
+              {t("clientPages.my-feedbacks")}
+            </Link>
+          ),
+        },
+        {
+          key: "project-updates",
+          icon: <MessageOutlined />,
+          label: (
+            <Link to="/client/project-updates">
+              {t("clientPages.project-updates")}
+            </Link>
+          ),
+        },
+        {
           key: "messages",
           icon: <MessageOutlined />,
           label: <Link to="/client/messages">{t("clientPages.messages")}</Link>,

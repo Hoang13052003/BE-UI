@@ -17,6 +17,7 @@ import {
 import { createNotification } from "../../../api/apiNotification";
 import { SendOutlined, UserOutlined } from "@ant-design/icons";
 import { useAlert } from "../../../contexts/AlertContext";
+import { sendReport } from "../../../api/reportApi";
 
 interface SendReportProjectUpdateModalProps {
   visible: boolean;
@@ -67,6 +68,7 @@ const SendReportProjectUpdateModal: React.FC<
 
     setLoading(true);
     try {
+      // Gửi notification như cũ
       await Promise.all(
         selectedUserIds.map((userId) =>
           createNotification({
@@ -80,6 +82,20 @@ const SendReportProjectUpdateModal: React.FC<
               projectId: updateData.projectId,
             },
           } as CreateNotificationRequestDto)
+        )
+      );
+
+      // Gửi email report cho các user đã chọn
+      const selectedUsers = users.filter((user) =>
+        selectedUserIds.includes(user.id)
+      );
+      await Promise.all(
+        selectedUsers.map((user) =>
+          sendReport({
+            to: user.email,
+            subject: `Project Update: ${updateData.projectName || ""}`,
+            url: `${window.location.origin}/client/project-updates/${updateData.id}`,
+          })
         )
       );
 

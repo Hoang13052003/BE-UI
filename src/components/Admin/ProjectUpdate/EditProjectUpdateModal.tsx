@@ -87,7 +87,8 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
         summary: updateData.summary,
         details: updateData.details,
         statusAtUpdate: updateData.statusAtUpdate,
-        completionPercentage: updateData.completionPercentage,
+        overallProcess: updateData.overallProcess,
+        actualProcess: updateData.actualProcess,
         isPublished: updateData.published,
         internalNotes: updateData.internalNotes,
       });
@@ -118,7 +119,8 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
         summary: values.summary,
         details: values.details,
         statusAtUpdate: values.statusAtUpdate,
-        completionPercentage: values.completionPercentage,
+        overallProcess: values.overallProcess,
+        actualProcess: values.actualProcess,
         published: values.isPublished,
         internalNotes: values.internalNotes,
       };
@@ -148,6 +150,16 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
       console.error("Failed to delete attachment:", error);
       message.error("Failed to delete attachment");
     }
+  };
+
+  const handleSelectProject = (value: number) => {
+    const project = projects.find((p) => p.id === value);
+
+    form.setFieldsValue({
+      projectId: value,
+      overallProcess: project?.overallProcess || 0,
+      actualProcess: project?.actualProcess || 0,
+    });
   };
 
   return (
@@ -183,6 +195,7 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
               <Select
                 placeholder="Select a project"
                 showSearch
+                onChange={handleSelectProject}
                 optionFilterProp="children"
                 filterOption={(input, option) =>
                   (option?.children as unknown as string)
@@ -246,12 +259,35 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
           </Col>
           <Col span={12}>
             <Form.Item
-              name="completionPercentage"
-              label="Completion Percentage"
+              name="overallProcess"
+              label="Overall Completion Percentage"
               rules={[
                 {
                   required: true,
-                  message: "Please specify completion percentage",
+                  message: "Please specify overall completion percentage",
+                },
+              ]}
+            >
+              <Slider
+                min={0}
+                max={100}
+                marks={{
+                  0: "0%",
+                  25: "25%",
+                  50: "50%",
+                  75: "75%",
+                  100: "100%",
+                }}
+                // disabled={true}
+              />
+            </Form.Item>
+            <Form.Item
+              name="actualProcess"
+              label="Actual Completion Percentage"
+              rules={[
+                {
+                  required: true,
+                  message: "Please specify actual completion percentage",
                 },
               ]}
             >

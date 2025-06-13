@@ -160,10 +160,10 @@ const Overview: React.FC = () => {
                 <Space
                   style={{ justifyContent: "space-between", width: "100%" }}
                 >
-                  <Text>Progress</Text>
-                  <Text strong>{project.progress}%</Text>
+                  <Text>Overall Progress</Text>
+                  <Text strong>{project.overallProcess}%</Text>
                 </Space>
-                <Progress percent={project.progress} />
+                <Progress percent={project.overallProcess} />
               </div>
 
               <Row gutter={16}>

@@ -43,6 +43,8 @@ import { Project } from "../../../types/project";
 import SendReportProjectUpdateModal from "../../../components/Admin/ProjectUpdate/SendReportProjectUpdateModal";
 import { useAuth } from "../../../contexts/AuthContext";
 import SendFeedbackModal from "../../Client/SendFeedbackModal";
+import ProjectMilestonesTab from "../../../components/Admin/ProjectDetailsPage/ProjectMilestonesTab";
+import ProjectTimeLogsTab from "../../../components/Admin/ProjectDetailsPage/ProjectTimeLogsTab";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -303,14 +305,14 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                   }}
                 >
                   Overall Progress:{" "}
-                  {project?.overallProcess?.toFixed(2) || "0.00"}%
+                  {update?.overallProcess?.toFixed(2) || "0.00"}%
                 </Text>
                 <Progress
-                  percent={Number(project?.overallProcess)}
+                  percent={Number(update?.overallProcess)}
                   strokeColor="#1890ff" // Xanh nước biển
                   // trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
                   format={() =>
-                    `${Number(project?.overallProcess)?.toFixed(2) || "0.00"}%`
+                    `${Number(update?.overallProcess)?.toFixed(2) || "0.00"}%`
                   }
                   size="small"
                 />
@@ -327,14 +329,14 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                   }}
                 >
                   Actual Progress Today:{" "}
-                  {project?.actualProcess?.toFixed(2) || "0.00"}%
+                  {update?.actualProcess?.toFixed(2) || "0.00"}%
                 </Text>
                 <Progress
-                  percent={Number(project?.actualProcess)}
+                  percent={Number(update?.actualProcess)}
                   strokeColor="#52c41a" // Xanh lá cây
                   // trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
                   format={() =>
-                    `${Number(project?.actualProcess)?.toFixed(2) || "0.00"}%`
+                    `${Number(update?.actualProcess)?.toFixed(2) || "0.00"}%`
                   }
                   size="small"
                 />
@@ -414,6 +416,23 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
               </Button>
             </Card>
           )}
+        </Col>
+        <Col span={24} style={{ marginTop: 16 }}>
+          <Card
+            // title={
+            //   project?.type === "FIXED_PRICE"
+            //     ? "Project Milestones"
+            //     : "Time Logs"
+            // }
+            style={{ border: "none" }}
+            bodyStyle={{ padding: 16 }}
+          >
+            {project?.type === "FIXED_PRICE" ? (
+              <ProjectMilestonesTab projectId={project?.id} />
+            ) : (
+              <ProjectTimeLogsTab projectId={project?.id!} />
+            )}
+          </Card>
         </Col>
       </Row>
 

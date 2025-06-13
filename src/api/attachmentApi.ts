@@ -19,17 +19,18 @@ const API_PROJECT_UPDATES_BASE_PATH = "/api/private/admin";
 export const uploadSingleAttachment = async (
   file: File,
   feedbackId: string,
-  projectUpdateId: number,
+  projectUpdateId: number | undefined,
   logicalName?: string
 ): Promise<AttachmentResponseDto> => {
   const formData = new FormData();
   formData.append("file", file);
-  if (feedbackId) {
+  if (feedbackId !== undefined && feedbackId !== null) {
     formData.append("feedbackId", feedbackId);
-  } else {
-    formData.append("feedbackId", "");
   }
-  formData.append("projectUpdateId", projectUpdateId.toString());
+  // Chỉ append nếu projectUpdateId có giá trị hợp lệ
+  if (projectUpdateId !== undefined && projectUpdateId !== null) {
+    formData.append("projectUpdateId", projectUpdateId.toString());
+  }
   if (logicalName) {
     formData.append("logicalName", logicalName);
   }

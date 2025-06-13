@@ -1,5 +1,5 @@
-import React from 'react';
-import { Typography, Progress } from 'antd';
+import React from "react";
+import { Typography, Progress } from "antd";
 
 interface MilestoneInfoProps {
   name: string;
@@ -14,20 +14,21 @@ const MilestoneInfo: React.FC<MilestoneInfoProps> = ({
   description,
   notes,
   completed,
-  completionPercentage
+  completionPercentage,
 }) => {
   // Xử lý trường hợp completionPercentage là null, mặc định là 0
-  const actualCompletionPercentage = completionPercentage === null ? 0 : completionPercentage;
+  const actualCompletionPercentage =
+    completionPercentage === null ? 0 : completionPercentage;
 
   return (
     <div className="milestone-info">
-      <Typography.Title level={5} style={{ margin: '0 0 8px 0' }}>
+      <Typography.Title level={5} style={{ margin: "0 0 8px 0" }}>
         {name}
       </Typography.Title>
-      
+
       {/* Hiển thị Progress bar với giá trị mặc định là 0 nếu completionPercentage là null */}
       {completionPercentage !== undefined && (
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: "12px" }}>
           <Progress
             percent={actualCompletionPercentage}
             size="small"
@@ -38,13 +39,16 @@ const MilestoneInfo: React.FC<MilestoneInfoProps> = ({
       )}
 
       {description && (
-        <Typography.Paragraph style={{ margin: '0 0 8px 0' }}>
+        <Typography.Paragraph style={{ margin: "0 0 8px 0" }}>
           {description}
         </Typography.Paragraph>
       )}
-      
+
       {notes && (
-        <Typography.Paragraph type="secondary" style={{ margin: 0, fontSize: '0.9em' }}>
+        <Typography.Paragraph
+          type="secondary"
+          style={{ margin: 0, fontSize: "0.9em" }}
+        >
           <strong>Notes:</strong> {notes}
         </Typography.Paragraph>
       )}

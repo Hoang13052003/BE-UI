@@ -13,7 +13,7 @@ const ROLE_OPTIONS = [
 ];
 
 interface AddUserProps {
-  onSuccess: () => void; // Thêm prop onSuccess
+  onSuccess: () => void; // Thêm prop onSuccesss
 }
 const AddUser: React.FC<AddUserProps> = () => {
   const [form] = Form.useForm();

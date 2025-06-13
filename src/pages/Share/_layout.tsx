@@ -82,10 +82,22 @@ const LayoutShare: React.FC = () => {
     setCurrentLang(language);
   }, [language]);
 
-
   return (
     <Layout className="app-layout">
-      <Header className="app-header">
+      <Header
+        className="app-header"
+        style={{
+          background: "#fff",
+          boxShadow: "0 2px 8px #f0f1f2",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          padding: "0 80px",
+          height: 80,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         <div className="header-left">
           <div className="logo" onClick={() => navigate("/")}>
             <span className="logo-icon">Progress</span>
@@ -166,79 +178,89 @@ const LayoutShare: React.FC = () => {
 
           {/* Dropdown for mobile view */}
           <Dropdown
-            menu={{ items: [
-              {
-                key: "1",
-                label: (
-                  <Select
-                    style={{ width: "100%" }}
-                    value={currentLang}
-                    onChange={handleLanguageChange}
-                    dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
-                    suffixIcon={<GlobalOutlined />}
-                  >
-                    {languages.map((lang) => (
-                      <Select.Option key={lang.code} value={lang.code}>
-                        <img
-                          src={lang.flagUrl}
-                          alt={`${lang.name} flag`}
-                          style={{
-                            width: "20px",
-                            marginRight: "10px",
-                            verticalAlign: "middle",
-                          }}
-                        />
-                        {lang.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                )
-              },
-              {
-                key: "2",
-                label: (
-                  <Button
-                    type="text"
-                    icon={theme === "light" ? <SunOutlined /> : <MoonOutlined />}
-                    onClick={toggleTheme}
-                  />
-                )
-              },
-              ...(isAuthenticated ? [
+            menu={{
+              items: [
                 {
-                  key: "3",
-                  label: <Button type="text" icon={<BellFilled />} />
+                  key: "1",
+                  label: (
+                    <Select
+                      style={{ width: "100%" }}
+                      value={currentLang}
+                      onChange={handleLanguageChange}
+                      dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
+                      suffixIcon={<GlobalOutlined />}
+                    >
+                      {languages.map((lang) => (
+                        <Select.Option key={lang.code} value={lang.code}>
+                          <img
+                            src={lang.flagUrl}
+                            alt={`${lang.name} flag`}
+                            style={{
+                              width: "20px",
+                              marginRight: "10px",
+                              verticalAlign: "middle",
+                            }}
+                          />
+                          {lang.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  ),
                 },
                 {
-                  key: "4",
+                  key: "2",
                   label: (
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <Avatar className="user-avatar">JT</Avatar>
-                      <div className="user-info">
-                        <div className="user-name">{userDetails?.fullName}</div>
-                      </div>
-                    </div>
-                  )
-                }
-              ] : [
-                {
-                  key: "5",
-                  label: (
-                    <Tooltip title="Login">
-                      <Button
-                        type="text"
-                        icon={<LoginOutlined />}
-                        onClick={() => {
-                          navigate("/login");
-                        }}
-                      >
-                        {t("common.getStarted")}
-                      </Button>
-                    </Tooltip>
-                  )
-                }
-              ])
-            ]}}
+                    <Button
+                      type="text"
+                      icon={
+                        theme === "light" ? <SunOutlined /> : <MoonOutlined />
+                      }
+                      onClick={toggleTheme}
+                    />
+                  ),
+                },
+                ...(isAuthenticated
+                  ? [
+                      {
+                        key: "3",
+                        label: <Button type="text" icon={<BellFilled />} />,
+                      },
+                      {
+                        key: "4",
+                        label: (
+                          <div
+                            style={{ display: "flex", alignItems: "center" }}
+                          >
+                            <Avatar className="user-avatar">JT</Avatar>
+                            <div className="user-info">
+                              <div className="user-name">
+                                {userDetails?.fullName}
+                              </div>
+                            </div>
+                          </div>
+                        ),
+                      },
+                    ]
+                  : [
+                      {
+                        key: "5",
+                        label: (
+                          <Tooltip title="Login">
+                            <Button
+                              type="text"
+                              icon={<LoginOutlined />}
+                              onClick={() => {
+                                navigate("/login");
+                              }}
+                            >
+                              {t("common.getStarted")}
+                            </Button>
+                          </Tooltip>
+                        ),
+                      },
+                    ]),
+              ],
+            }}
             trigger={["click"]}
             className="mobile-dropdown"
           >

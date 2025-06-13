@@ -29,7 +29,7 @@ export const useAttachmentUpload = (props?: UseAttachmentUploadProps) => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const uploadFilesIndividually = async (
-    projectUpdateId: number,
+    projectUpdateId: number | undefined,
     feedbackId: string,
     antdFileList: UploadFile[]
   ): Promise<UploadResult> => {

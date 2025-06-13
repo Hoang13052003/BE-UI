@@ -1,18 +1,20 @@
-import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router-dom";
 import React, { useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AlertProvider } from "./contexts/AlertContext";
-import LayoutShare from "./pages/Share/_layout";
-import DashboardAdmin from "./pages/Admin/DashboardAdmin";
-// import AuditLogDashboard from './components/AuditLogDashboard/AuditLogDashboard'; // Đường dẫn đến component của bạn
-// import { StompProvider, useStompContext } from "./contexts/StompContext"; // Removed StompProvider and useStompContext
-// import React, { useEffect } from "react"; // Removed React and useEffect
-
-// Các import khác giữ nguyên...
 import LoginComponent from "./components/LoginComponent";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RegisterComponent from "./components/RegisterComponent";
 import PublicRoute from "./routes/PublicRouter";
+import LayoutShare from "./pages/Share/_layout";
+import DashboardClient from "./pages/Client/DashboardClient";
+import DashboardAdmin from "./pages/Admin/DashboardAdmin";
+
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import UserManagement from "./pages/Admin/UserManagement";
 import ProjectManager from "./pages/Admin/ProjectManager";
@@ -38,27 +40,29 @@ import Settings from "./pages/Client/Settings";
 import Feedbacks from "./pages/Admin/Feedbacks";
 import { ChatProvider } from "./contexts/ChatContext";
 import LogManagerPage from "./pages/Admin/LogsManager";
-import DashboardClient from "./pages/Client/DashboardClient";
+import MyFeedbacks from "./pages/Client/MyFeedbacks";
 import AuthLogMonitor from "./pages/Admin/AuditLogDashboard/AuthLogMonitor";
+import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientPage";
+import LandingPage from "./pages/LandingPage";
 
 // Component to handle auth logout events
 const AuthEventHandler: React.FC = () => {
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     const handleAuthLogout = () => {
-      console.warn('Auth logout event received, redirecting to login');
-      navigate('/login');
+      console.warn("Auth logout event received, redirecting to login");
+      navigate("/login");
     };
 
-    window.addEventListener('auth:logout', handleAuthLogout);
-    
+    window.addEventListener("auth:logout", handleAuthLogout);
+
     return () => {
-      window.removeEventListener('auth:logout', handleAuthLogout);
+      window.removeEventListener("auth:logout", handleAuthLogout);
     };
   }, [navigate]);
 
-  return null; // This component doesn't render anything
+  return null;
 };
 
 function App() {
@@ -73,11 +77,17 @@ function App() {
                 {/* Public Routes */}
                 <Route element={<PublicRoute />}>
                   <Route path="/" element={<LayoutShare />}>
-                    <Route index element={<HomeIntroSection />} />
-                    <Route path="reset-password" element={<ResetPasswordPage />} />
+                    <Route index element={<LandingPage />} />
+                    <Route
+                      path="reset-password"
+                      element={<ResetPasswordPage />}
+                    />
                     <Route path="register" element={<RegisterComponent />} />
                     <Route path="login" element={<LoginComponent />} />
-                    <Route path="verify-email" element={<EmailVerification />} />
+                    <Route
+                      path="verify-email"
+                      element={<EmailVerification />}
+                    />
                   </Route>
                 </Route>
 
@@ -88,21 +98,26 @@ function App() {
                       <Route path="overview" element={<OverviewAdmin />} />
                       <Route path="users" element={<UserManagement />} />
                       <Route path="updates" element={<ProjectManager />} />
-                      <Route path="project-progress" element={<ProjectProgressPage />} />                      <Route path="project-updates/:id" element={<ProjectUpdateDetailsPage />} />
+                      <Route
+                        path="project-progress"
+                        element={<ProjectProgressPage />}
+                      />{" "}
+                      <Route
+                        path="project-updates/:id"
+                        element={<ProjectUpdateDetailsPage />}
+                      />
                       <Route path="notifications" element={<Notifications />} />
-
                       <Route path="messages" element={<Messages />} />
-
                       <Route path="settings" element={<PageSettings />}>
                         <Route index element={<Settings />} />{" "}
                         {/* Route mặc định ("/settings") */}
                         <Route path="profile" element={<Profile />} />
                       </Route>
-
                       <Route
                         path="projects/:projectId/details"
                         element={<ProjectDetailPage />}
-                      />                      <Route path="feedbacks" element={<Feedbacks />} />
+                      />{" "}
+                      <Route path="feedbacks" element={<Feedbacks />} />
                       <Route path="logs" element={<LogManagerPage />} />
                       <Route path="audit-logs" element={<AuthLogMonitor />} />
                       <Route
@@ -130,11 +145,19 @@ function App() {
                         <Route index element={<Settings />} />
                         <Route path="profile" element={<Profile />} />
                       </Route>
-                      <Route path="projects/documents" element={<DocumentsPage />} />
+                      <Route
+                        path="projects/documents"
+                        element={<DocumentsPage />}
+                      />
                       <Route path="notifications" element={<Notifications />} />
                       <Route
                         path="project-updates/:id"
                         element={<ProjectUpdateDetailsPage />}
+                      />
+                      <Route path="my-feedbacks" element={<MyFeedbacks />} />
+                      <Route
+                        path="project-updates"
+                        element={<ProjectUpdatesForClientPage />}
                       />
                       <Route path="messages" element={<Messages />} />
                       <Route
