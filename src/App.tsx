@@ -22,7 +22,6 @@ import Notifications from "./pages/Admin/Notifications";
 import DocumentsPage from "./pages/Client/DocumentsPage";
 import Messages from "./pages/Client/Messages";
 import PageSettings from "./pages/Client/PageSettings";
-import HomeIntroSection from "./pages/HomeIntroSection";
 import OverviewAdmin from "./pages/Admin/Overview";
 import Overview from "./pages/Client/overview";
 import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
