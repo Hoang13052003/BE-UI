@@ -62,7 +62,6 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
   // Sử dụng hook upload
   const { isUploading, uploadFilesIndividually, uploadFolderContents } =
     useAttachmentUpload();
-
   // Fetch status options when modal opens
   useEffect(() => {
     if (visible) {
@@ -77,9 +76,10 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
       };
 
       fetchStatuses();
-    } else {
+      // Reset form when modal opens instead of when it closes
       form.resetFields();
       setFileList([]);
+      setFolderItemsToUpload([]);
     }
   }, [visible, form]);
 
@@ -238,7 +238,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           Create Update
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

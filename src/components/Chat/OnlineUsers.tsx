@@ -40,7 +40,9 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
   const { userDetails } = useAuth();
   const { onlineUsers, refreshOnlineUsers } = useChat();
   const [searchText, setSearchText] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState<UserConnectionResponse[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserConnectionResponse[]>(
+    []
+  );
 
   useEffect(() => {
     if (visible) {
@@ -147,7 +149,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
     );
   };
 
-  const onlineCount = filteredUsers.filter(user => user.isConnected).length;
+  const onlineCount = filteredUsers.filter((user) => user.isConnected).length;
   const totalUsers = filteredUsers.length;
 
   return (
@@ -173,7 +175,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
       width={360}
       onClose={onClose}
       open={visible}
-      bodyStyle={{ padding: 0 }}
+      styles={{ body: { padding: 0 } }}
       headerStyle={{ padding: '16px 20px', background: '#fafafa' }}
       closable={false}
     >

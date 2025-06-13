@@ -371,7 +371,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             : "0 2px 8px rgba(0,0,0,0.06)",
         border: theme === "dark" ? "1px solid #303030" : "1px solid #f0f0f0",
       }}
-      bodyStyle={{ padding: "20px" }}
+      styles={{ body: { padding: "20px" } }}
     >
       {/* Header Section */}
       <Row justify="space-between" align="top" style={{ marginBottom: "16px" }}>

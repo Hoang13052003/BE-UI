@@ -103,7 +103,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
         </Button>,
       ]}
       width={600}
-      destroyOnClose // Add this to reset form state when modal is closed
+      destroyOnHidden
     >
       <Form
         form={form}

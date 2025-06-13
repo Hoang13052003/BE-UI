@@ -181,7 +181,7 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
           Save Changes
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         <Title level={5}>Update Information</Title>

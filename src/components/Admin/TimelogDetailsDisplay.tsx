@@ -222,7 +222,8 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
           borderRadius: '12px', 
           background: theme === 'dark' ? '#1f1f1f' : '#fafafa' 
         }} 
-        bodyStyle={{ padding: '20px' }}
+        
+        styles={{ body: { padding: "20px" } }}
       >
         <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
           <Col>
@@ -380,7 +381,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
           />
         </Card>
       ) : (
-        <Card style={{ borderRadius: '12px' }} bodyStyle={{ padding: '0' }}>
+        <Card style={{ borderRadius: '12px' }} styles={{ body: { padding: '0' } }}>
           <Table
             rowKey="id"
             dataSource={timelogs}

@@ -399,7 +399,7 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
         <Button type="text" icon={<CloseOutlined />} onClick={handleClose} />
       }
       style={{ overflow: "hidden" }}
-      bodyStyle={{ padding: 24, overflow: "auto" }}
+      styles={{ body: { padding: 24, overflow: "auto" } }}
     >
       {content}
     </Drawer>

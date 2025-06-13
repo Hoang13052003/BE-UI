@@ -253,7 +253,8 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
               border: "1px solid #f0f0f0",
               height: "100%",
             }}
-            bodyStyle={{ padding: "20px" }}
+            styles={{ body: { padding: '20px' } }}
+            cover
           >
             <div style={{ marginBottom: "12px" }}>
               <Badge

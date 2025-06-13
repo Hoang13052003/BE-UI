@@ -163,7 +163,7 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
           Send Feedback
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <div style={{ marginBottom: 16 }}>
         <Text type="secondary">

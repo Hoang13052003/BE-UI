@@ -194,7 +194,7 @@ const ProjectDetailPage: React.FC = () => {
       {/* Static Layout using Ant Design Grid */}
       <Row gutter={[16, 16]}>  
         {/* Overview: full width on xs, sm, md; half width on lg and xl */}        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
-          <Card title="Project Overview" style={{ border: 'none' }} bodyStyle={{ padding: 16 }}>
+          <Card title="Project Overview" style={{ border: 'none' }} styles={{ body: { padding: 16 } }}>
             <ProjectDetailsDisplay 
               project={project as any} 
               theme={theme} 
@@ -207,7 +207,7 @@ const ProjectDetailPage: React.FC = () => {
           <Card
             title={project.type === 'FIXED_PRICE' ? 'Project Milestones' : 'Time Logs'}
             style={{ border: 'none' }}
-            bodyStyle={{ padding: 16 }}
+            styles={{ body: { padding: 16 } }}
           >
             {project.type === 'FIXED_PRICE' ? (
               <ProjectMilestonesTab projectId={project.id} />
@@ -219,7 +219,7 @@ const ProjectDetailPage: React.FC = () => {
       </Row>
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
-          <Card title="Project Updates Timeline" style={{ border: 'none' }} bodyStyle={{ padding: 16 }}>
+          <Card title="Project Updates Timeline" style={{ border: 'none' }} styles={{ body: { padding: 16 } }}>
             <ProjectUpdatesTab projectId={project.id} theme={theme} />
           </Card>
         </Col>

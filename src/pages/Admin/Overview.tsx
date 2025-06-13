@@ -4,7 +4,7 @@ import { ArrowUpOutlined } from "@ant-design/icons";
 
 import DashboardChart from "../../components/Admin/dashboard/DashboardChart";
 import ProjectList from "../../components/Admin/dashboard/ProjectList";
-// import RecentFeedback from "../../components/Admin/dashboard/RecentFeedback";
+import RecentFeedback from "../../components/Admin/dashboard/RecentFeedback";
 import {
   DashboardSummaryFull,
   getAdminDashboardSummary,
@@ -180,9 +180,9 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        {/* <Col span={8}>
+        <Col span={8}>
           <RecentFeedback limit={5} useMockData={false} />
-        </Col> */}
+        </Col>
       </Row>
 
       {/* Milestones Table */}

@@ -223,7 +223,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onS
       open={visible}
       onCancel={handleModalClose}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
       forceRender
       width={700}
     >
@@ -373,9 +373,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({ visible, onClose, onS
                   {label}
                 </Tag>
               );
-            }}
-            style={{ width: "100%" }}
-            dropdownRender={menu => (
+            }}            style={{ width: "100%" }}
+            popupRender={menu => (
               <div>
                 {menu}
                 <div style={{ display: 'flex', flexDirection: 'row', padding: 8 }}>
