@@ -46,14 +46,17 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
       setLoading(true);
       const { email, password } = values;
 
-      await props.handleLogin(await loginApi(email, password));
-    } catch (error) {
-      const errorMessage = error?.response?.data?.message;
-      if (errorMessage) {
-        setMessage(errorMessage);
-      } else {
-        setMessage("Incorrect email or password. Please try again!");
+      await props.handleLogin(await loginApi(email, password));    } catch (error: unknown) {
+      let errorMessage = "Incorrect email or password. Please try again!";
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
       }
+      
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }

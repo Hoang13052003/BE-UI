@@ -110,7 +110,7 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
         </Button>
       ]}
       width={600}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, use } from "react";
+import React, { useState, useRef } from "react";
 import { Input, Button, Form, message } from "antd";
 import { useFormik } from "formik";
 import * as yup from "yup";
@@ -65,13 +65,21 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
       recaptchaRef.current?.reset();
       setCaptchaValue(null);
 
-      props.handleRegister(data.message);
-    } catch (err) {
+      props.handleRegister(data.message);    } catch (err: unknown) {
       console.error("register error:", err);
       // Reset captcha khi có lỗi
       recaptchaRef.current?.reset();
       setCaptchaValue(null);
-      const errorMessage = err?.response?.data?.message;
+      
+      let errorMessage = "Registration failed. Please try again!";
+      
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      
       addAlert(errorMessage, "warning");
     } finally {
       setLoading(false);

@@ -104,12 +104,11 @@ const LayoutShare: React.FC = () => {
           </div>
         </div>
         <div className="header-right">
-          <div className="header-content">
-            <Select
+          <div className="header-content">            <Select
               style={{ width: 150 }}
               value={currentLang}
               onChange={handleLanguageChange}
-              dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
+              styles={{ popup: { root: { maxHeight: 400, overflow: "auto" } } }}
               suffixIcon={<GlobalOutlined />}
             >
               {languages.map((lang) => (
@@ -181,12 +180,11 @@ const LayoutShare: React.FC = () => {
               items: [
                 {
                   key: "1",
-                  label: (
-                    <Select
+                  label: (                    <Select
                       style={{ width: "100%" }}
                       value={currentLang}
                       onChange={handleLanguageChange}
-                      dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
+                      styles={{ popup: { root: { maxHeight: 400, overflow: "auto" } } }}
                       suffixIcon={<GlobalOutlined />}
                     >
                       {languages.map((lang) => (

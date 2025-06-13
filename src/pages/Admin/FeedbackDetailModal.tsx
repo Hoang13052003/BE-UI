@@ -303,8 +303,12 @@ const FeedbackDetailModal: React.FC<FeedbackDetailModalProps> = ({
         // </Button>,
       ]}
       width={800} // Adjust width as needed
-      destroyOnClose // Ensures modal content is unmounted and state is reset
-      bodyStyle={{ paddingTop: "12px", maxHeight: "75vh", overflowY: "auto" }}
+      destroyOnHidden // Ensures modal content is unmounted and state is reset
+      styles={{ body: {
+        paddingTop: "12px",
+        maxHeight: "75vh",
+        overflowY: "auto"
+      } }}
     >
       {renderFeedbackContent()}
     </Modal>

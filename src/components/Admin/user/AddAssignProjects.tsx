@@ -65,11 +65,11 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
       fetchAssignedProjects();
     }
   }, [visible, userId]);
-
   useEffect(() => {
-    if (!visible) {
-      setSearchedProjects([]);
+    if (visible) {
+      // Reset form when modal opens
       form.resetFields();
+      setSearchedProjects([]);
     }
   }, [visible, form]);
 
@@ -190,75 +190,84 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
         </Button>,
       ]}
       width={800}
-      destroyOnClose
+      destroyOnHidden
     >
-      {loading ? (
-        <Spin size="large" />
-      ) : (
-        <Form form={form} layout="vertical" preserve={false}>
-          <List
-            header={
-              <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                <Title level={5} style={{ margin: 0 }}>
-                  Your Projects
-                </Title>
-              </Space>
-            }
-            bordered
-            dataSource={projects}
-            renderItem={(project) => (
-              <List.Item
-                actions={[
-                  <Popconfirm
-                    title="Are you sure you want to remove this project?"
-                    onConfirm={() => handleRemoveProject(project.id)}
-                    okText="Yes"
-                    cancelText="No"
-                  >
-                    <Button danger icon={<DeleteOutlined />} />
-                  </Popconfirm>,
-                ]}
-              >
-                <Space direction="vertical" style={{ width: "100%" }} size={16}>
-                  <Space
-                    style={{ justifyContent: "space-between", width: "100%" }}
-                  >
-                    <Title level={5} style={{ margin: 0 }}>
-                      {project.name}
-                    </Title>
-                    <Tag
-                      color={project.type === "FIXED_PRICE" ? "blue" : "green"}
-                    >
-                      {project.type}
-                    </Tag>
-                  </Space>
-
-                  <Text type="secondary">{project.description}</Text>
-                </Space>
-              </List.Item>
-            )}
-          />
-
-          <Form.Item
-            name="projectId"
-            label="Select Project"
-            rules={[{ required: true, message: "Please select a project" }]}
-          >
-            <Select
-              showSearch
-              placeholder="Search for projects"
-              filterOption={false}
-              onSearch={handleProjectSearch}
-              loading={searchLoading}
-              notFoundContent={
-                searchLoading ? <Spin size="small" /> : "No projects found"
+      <Form form={form} layout="vertical" preserve={false}>
+        {loading ? (
+          <Spin size="large" />
+        ) : (
+          <>
+            <List
+              header={
+                <Space
+                  style={{ width: "100%", justifyContent: "space-between" }}
+                >
+                  <Title level={5} style={{ margin: 0 }}>
+                    Your Projects
+                  </Title>                </Space>
               }
+              bordered
+              dataSource={projects}
+              renderItem={(project) => (
+                <List.Item
+                  actions={[
+                    <Popconfirm
+                      title="Are you sure you want to remove this project?"
+                      onConfirm={() => handleRemoveProject(project.id)}
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <Button danger icon={<DeleteOutlined />} />
+                    </Popconfirm>,
+                  ]}
+                >
+                  <Space
+                    direction="vertical"
+                    style={{ width: "100%" }}
+                    size={16}
+                  >
+                    <Space
+                      style={{ justifyContent: "space-between", width: "100%" }}
+                    >
+                      <Title level={5} style={{ margin: 0 }}>
+                        {project.name}
+                      </Title>
+                      <Tag
+                        color={
+                          project.type === "FIXED_PRICE" ? "blue" : "green"
+                        }
+                      >
+                        {project.type}
+                      </Tag>
+                    </Space>
+
+                    <Text type="secondary">{project.description}</Text>
+                  </Space>
+                </List.Item>
+              )}
+            />
+
+            <Form.Item
+              name="projectId"
+              label="Select Project"
+              rules={[{ required: true, message: "Please select a project" }]}
             >
-              {renderProjectOptions()}
-            </Select>
-          </Form.Item>
-        </Form>
-      )}
+              <Select
+                showSearch
+                placeholder="Search for projects"
+                filterOption={false}
+                onSearch={handleProjectSearch}
+                loading={searchLoading}
+                notFoundContent={
+                  searchLoading ? <Spin size="small" /> : "No projects found"
+                }
+              >
+                {renderProjectOptions()}
+              </Select>
+            </Form.Item>
+          </>
+        )}
+      </Form>
     </Modal>
   );
 };

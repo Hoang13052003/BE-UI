@@ -208,7 +208,7 @@ const SendReportProjectUpdateModal: React.FC<
           Send to Selected ({selectedUserIds.length})
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Table
         rowKey="id"

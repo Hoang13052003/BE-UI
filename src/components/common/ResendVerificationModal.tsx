@@ -81,7 +81,7 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
           {isLoading ? "Đang gửi..." : "Gửi lại"}
         </Button>,
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Space direction="vertical" size="middle" style={{ width: "100%" }}>
         <div>

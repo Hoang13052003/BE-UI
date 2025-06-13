@@ -365,10 +365,9 @@ const NotificationBell: React.FC = () => {
       )}
     </NotificationContainer>
   );
-
   return (
     <Dropdown
-      dropdownRender={() => content}
+      popupRender={() => content}
       trigger={["click"]}
       open={open}
       onOpenChange={setOpen}

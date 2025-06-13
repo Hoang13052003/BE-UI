@@ -8,7 +8,7 @@ import {
 } from "@ant-design/icons";
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordModal from "../../components/ChangePasswordModal";
-import { useEffect, useState } from "react";
+import {useState } from "react";
 
 const { Text } = Typography;
 

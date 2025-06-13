@@ -29,7 +29,7 @@ interface MilestoneDetailsDisplayProps {
   onEditMilestone?: (milestoneId: number, projectId: number, onSuccessRefresh?: () => void) => void; // Làm optional
   milestoneCount?: number;
   theme?: string;
-  onRefreshProgress?: () => void; // Thêm callback để refresh progress
+     onRefreshProgress?: () => void; // Thêm callback để refresh progress
 }
 
 const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
@@ -289,13 +289,12 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   return (
     <div>
       {/* Header Section */}
-      <Card 
-        style={{ 
+      <Card        style={{ 
           marginBottom: '20px',
           borderRadius: '12px',
           background: theme === 'dark' ? '#1f1f1f' : '#fafafa'
         }}
-        bodyStyle={{ padding: '20px' }}
+        styles={{ body: { padding: '20px' } }}
       >
         <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
           <Col>
@@ -438,10 +437,9 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
             dataSource={milestones}
             loading={loading && milestones.length > 0}            renderItem={(item) => {              
               return (
-                <List.Item style={{ padding: 0, border: 'none' }}>
-                  <Card
+                <List.Item style={{ padding: 0, border: 'none' }}>                  <Card
                     style={getMilestoneCardStyle(item)}
-                    bodyStyle={{ padding: '20px' }}
+                    styles={{ body: { padding: '20px' } }}
                     hoverable
                   >
                     <Row gutter={[16, 16]} align="middle">
@@ -571,7 +569,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
               );
             }}
           />          {/* Pagination and Summary */}
-          <Card style={{ borderRadius: '12px', marginTop: '16px' }} bodyStyle={{ padding: '16px' }}>
+          <Card style={{ borderRadius: '12px', marginTop: '16px' }} styles={{ body: { padding: '16px' } }}>
             <Row justify="space-between" align="middle">
               <Col>
                 <Space direction="vertical" size={4}>

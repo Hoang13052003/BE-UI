@@ -157,7 +157,6 @@ const ProjectManager: React.FC = () => {
   const handleMilestoneSuccess = () => {
     setIsAddMilestoneModalVisible(false);
     setSelectedProjectIdForMilestone(null);
-    message.success('Milestone added successfully!');
     if (currentMilestoneRefreshCallback) {
       currentMilestoneRefreshCallback();
       setCurrentMilestoneRefreshCallback(null);

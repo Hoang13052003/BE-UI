@@ -122,7 +122,7 @@
 //             width={320}
 //             onClose={() => setMobileDrawerVisible(false)}
 //             open={mobileDrawerVisible}
-//             bodyStyle={{ padding: 0 }}
+//             styles={{ body: { padding: 0 } }}
 //             headerStyle={{ background: '#fafafa' }}
 //           >
 //             <ChatSidebar collapsed={false} />

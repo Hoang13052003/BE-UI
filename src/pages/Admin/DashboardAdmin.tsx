@@ -9,7 +9,6 @@ import {
   EditOutlined,
   ProjectOutlined,
   WechatOutlined,
-  CloudUploadOutlined,
   MessageOutlined,
   FileSearchOutlined,
 } from "@ant-design/icons";
@@ -71,11 +70,6 @@ const DashboardAdmin: React.FC = () => {
               {t("adminPages.feedbacksManagement")}
             </Link>
           ),
-        },
-        {
-          key: "logs",
-          icon: <CloudUploadOutlined />,
-          label: <Link to="/admin/logs">{t("adminPages.logsManagement")}</Link>,
         },
         {
           key: "messages",

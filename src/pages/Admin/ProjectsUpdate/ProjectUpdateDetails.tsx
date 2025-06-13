@@ -257,7 +257,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
 
       <Row gutter={[24, 24]}>
         <Col span={16}>
-          <Card title="Basic Information" bordered={false}>
+          <Card title="Basic Information" variant="borderless">
             <Descriptions column={2}>
               <Descriptions.Item label="Project">
                 {project?.name || update.projectName}
@@ -344,10 +344,9 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
               </div>
             </Space>
           </Card>
-
           <Card
             title="Update Details"
-            bordered={false}
+            variant="borderless"
             style={{ marginTop: 16 }}
           >
             <Paragraph>{update.details}</Paragraph>
@@ -356,7 +355,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
           {update.internalNotes && userRole === "ADMIN" ? (
             <Card
               title="Internal Notes"
-              bordered={false}
+              variant="borderless"
               style={{
                 marginTop: 16,
                 background: "#fffbe6",
@@ -426,7 +425,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             //     : "Time Logs"
             // }
             style={{ border: "none" }}
-            bodyStyle={{ padding: 16 }}
+            styles={{ body: { padding: 16 } }}
           >
             {project?.type === "FIXED_PRICE" ? (
               <ProjectUpdateHistoryMilestonesTab

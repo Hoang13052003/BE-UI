@@ -736,10 +736,9 @@ const LandingPage: React.FC = () => {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
-                    variants={fadeInUp}
-                  >
+                    variants={fadeInUp}                  >
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{
                         borderRadius: 16,
                         boxShadow: "rgba(0, 0, 0, 0.1) 0px 4px 12px",
@@ -866,9 +865,8 @@ const LandingPage: React.FC = () => {
                     whileInView="visible"
                     viewport={{ once: true }}
                     variants={fadeInUp}
-                  >
-                    <Card
-                      bordered={false}
+                  >                    <Card
+                      variant="borderless"
                       style={{
                         borderRadius: 8,
                         background: "#F8FAFC",
@@ -948,10 +946,9 @@ const LandingPage: React.FC = () => {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
-                    variants={fadeInUp}
-                  >
+                    variants={fadeInUp}                  >
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{
                         borderRadius: 16,
                         boxShadow: "0 4px 20px 0 rgba(0,0,0,0.06)",
@@ -1041,10 +1038,9 @@ const LandingPage: React.FC = () => {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
-                    variants={fadeInUp}
-                  >
+                    variants={fadeInUp}                  >
                     <Card
-                      bordered={false}
+                      variant="borderless"
                       style={{
                         borderRadius: 16,
                         boxShadow: plan.highlight
@@ -1190,8 +1186,7 @@ const LandingPage: React.FC = () => {
               Everything you need to know about ProgressHub
             </Paragraph>
             <Row justify="center">
-              <Col xs={24} md={16}>
-                <Collapse
+              <Col xs={24} md={16}>                <Collapse
                   accordion
                   bordered={false}
                   style={{ background: "transparent" }}

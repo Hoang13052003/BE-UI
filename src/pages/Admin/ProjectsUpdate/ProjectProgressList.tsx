@@ -319,53 +319,53 @@ const ProjectProgressList: React.FC = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: ProjectUpdate) => (
-        <Dropdown
-          overlay={
-            <Menu>
-              <Menu.Item
-                key="edit"
-                icon={<EditOutlined />}
-                onClick={() => handleEditUpdate(record)}
-              >
-                Edit
-              </Menu.Item>
-              <Menu.Item
-                key="view"
-                icon={<EyeOutlined />}
-                onClick={() => navigate(`/admin/project-updates/${record.id}`)}
-              >
-                View Details
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item
-                key="delete"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={(e) => {
+      render: (_: any, record: ProjectUpdate) => (        <Dropdown
+          menu={{
+            items: [
+              {
+                key: "edit",
+                icon: <EditOutlined />,
+                label: "Edit",
+                onClick: () => handleEditUpdate(record),
+              },
+              {
+                key: "view",
+                icon: <EyeOutlined />,
+                label: "View Details",
+                onClick: () => navigate(`/admin/project-updates/${record.id}`),
+              },
+              {
+                type: "divider",
+              },
+              {
+                key: "delete",
+                danger: true,
+                icon: <DeleteOutlined />,
+                label: (
+                  <Popconfirm
+                    title="Are you sure you want to delete this update?"
+                    onConfirm={(e) => {
+                      e?.stopPropagation();
+                      handleDeleteUpdate(record.id);
+                    }}
+                    onCancel={(e) => {
+                      e?.stopPropagation();
+                    }}
+                    okText="Yes"
+                    cancelText="No"
+                    placement="left"
+                  >
+                    <span style={{ display: "block", width: "100%" }}>
+                      Delete
+                    </span>
+                  </Popconfirm>
+                ),
+                onClick: (e) => {
                   e.domEvent.stopPropagation();
-                }}
-              >
-                <Popconfirm
-                  title="Are you sure you want to delete this update?"
-                  onConfirm={(e) => {
-                    e?.stopPropagation();
-                    handleDeleteUpdate(record.id);
-                  }}
-                  onCancel={(e) => {
-                    e?.stopPropagation();
-                  }}
-                  okText="Yes"
-                  cancelText="No"
-                  placement="left"
-                >
-                  <span style={{ display: "block", width: "100%" }}>
-                    Delete
-                  </span>
-                </Popconfirm>
-              </Menu.Item>
-            </Menu>
-          }
+                },
+              },
+            ],
+          }}
           trigger={["click"]}
           placement="bottomRight"
         >
@@ -398,18 +398,21 @@ const ProjectProgressList: React.FC = () => {
               onClick={() => setIsAddModalVisible(true)}
             >
               Add Update
-            </Button>
-            <Dropdown
-              overlay={
-                <Menu>
-                  <Menu.Item key="excel" icon={<FileExcelOutlined />}>
-                    Export to Excel
-                  </Menu.Item>
-                  <Menu.Item key="pdf" icon={<FilePdfOutlined />}>
-                    Export to PDF
-                  </Menu.Item>
-                </Menu>
-              }
+            </Button>            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: "excel",
+                    icon: <FileExcelOutlined />,
+                    label: "Export to Excel",
+                  },
+                  {
+                    key: "pdf",
+                    icon: <FilePdfOutlined />,
+                    label: "Export to PDF",
+                  },
+                ],
+              }}
             >
               <Button>
                 Export <FilterOutlined />

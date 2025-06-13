@@ -51,8 +51,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     }
   };
 
-  return (
-    <Modal
+  return (    <Modal
       title="Change Password"
       open={visible}
       onCancel={onClose}
@@ -60,7 +59,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       confirmLoading={loading}
       okText="Confirm"
       cancelText="Cancel"
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         <Form.Item

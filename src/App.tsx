@@ -38,7 +38,6 @@ import Profile from "./pages/Client/Profile";
 import Settings from "./pages/Client/Settings";
 import Feedbacks from "./pages/Admin/Feedbacks";
 import { ChatProvider } from "./contexts/ChatContext";
-import LogManagerPage from "./pages/Admin/LogsManager";
 import MyFeedbacks from "./pages/Client/MyFeedbacks";
 import AuthLogMonitor from "./pages/Admin/AuditLogDashboard/AuthLogMonitor";
 import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientPage";
@@ -117,7 +116,6 @@ function App() {
                         element={<ProjectDetailPage />}
                       />{" "}
                       <Route path="feedbacks" element={<Feedbacks />} />
-                      <Route path="logs" element={<LogManagerPage />} />
                       <Route path="audit-logs" element={<AuthLogMonitor />} />
                       <Route
                         path="projects/:projectId/history"

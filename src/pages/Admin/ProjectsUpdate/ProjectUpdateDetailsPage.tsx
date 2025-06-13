@@ -14,37 +14,53 @@ const { Title } = Typography;
 const ProjectUpdateDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { userRole } = useAuth();
+  const adminBreadcrumbItems = [
+    {
+      title: (
+        <Link to="/admin/overview">
+          <HomeOutlined />
+        </Link>
+      ),
+    },
+    {
+      title: (
+        <Link to="/admin/project-progress">
+          <BarChartOutlined /> Project Progress
+        </Link>
+      ),
+    },
+    {
+      title: (
+        <>
+          <FileOutlined /> Update Details
+        </>
+      ),
+    },
+  ];
+
+  const clientBreadcrumbItems = [
+    {
+      title: (
+        <Link to="/client/overview">
+          <HomeOutlined />
+        </Link>
+      ),
+    },
+    {
+      title: (
+        <>
+          <FileOutlined /> Update Details
+        </>
+      ),
+    },
+  ];
 
   return (
     <Card style={{ width: "100%", height: "100%" }}>
-      {userRole === "ADMIN" ? (
-        <Breadcrumb style={{ marginBottom: 16 }}>
-          <Breadcrumb.Item>
-            <Link to="/admin/overview">
-              <HomeOutlined />
-            </Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
-            <Link to="/admin/project-progress">
-              <BarChartOutlined /> Project Progress
-            </Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
-            <FileOutlined /> Update Details
-          </Breadcrumb.Item>
-        </Breadcrumb>
-      ) : (
-        <Breadcrumb style={{ marginBottom: 16 }}>
-          <Breadcrumb.Item>
-            <Link to="/client/overview">
-              <HomeOutlined />
-            </Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
-            <FileOutlined /> Update Details
-          </Breadcrumb.Item>
-        </Breadcrumb>
-      )}
+      <Breadcrumb
+        style={{ marginBottom: 16 }}
+        items={userRole === "ADMIN" ? adminBreadcrumbItems : clientBreadcrumbItems}
+      />
 
       <Title level={3} style={{ marginBottom: 24 }}>
         Project Update Details

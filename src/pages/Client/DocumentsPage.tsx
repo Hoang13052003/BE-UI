@@ -8,8 +8,7 @@ import {
   Row,
   Col,
   Avatar,
-  Dropdown,
-  Menu
+  Dropdown
 } from 'antd';
 import {
   SearchOutlined,
@@ -120,14 +119,13 @@ const DocumentsPage: React.FC = () => {
         return <FileOutlined style={{ color: '#1677ff' }} />;
     }
   };
-
-  const actionMenu = (
-    <Menu items={[
+  const actionMenu = {
+    items: [
       { key: '1', label: 'Download' },
       { key: '2', label: 'Rename' },
       { key: '3', label: 'Delete' },
-    ]} />
-  );
+    ]
+  };
 
   return (
     <React.Fragment>
@@ -207,7 +205,7 @@ const DocumentsPage: React.FC = () => {
             <Col span={4} style={{ textAlign: 'right' }}>
               <Space>
                 <Button type="text" icon={<ShareAltOutlined />} />
-                <Dropdown overlay={actionMenu} placement="bottomRight">
+                <Dropdown menu={actionMenu} placement="bottomRight">
                   <Button type="text" icon={<MoreOutlined />} />
                 </Dropdown>
               </Space>

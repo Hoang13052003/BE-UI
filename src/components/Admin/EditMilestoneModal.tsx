@@ -98,7 +98,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({ visible, milest
         onClose();
       }}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       {loading && !error && <Spin tip="Loading milestone..."><div style={{height: '200px'}}/></Spin>}
       {error && <Alert message="Error" description={error} type="error" showIcon style={{ marginBottom: 16 }} />}

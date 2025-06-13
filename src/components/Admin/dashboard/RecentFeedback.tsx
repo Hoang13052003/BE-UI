@@ -6,7 +6,6 @@ import { MessageOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
-// Function to format dates in a relative way (e.g., "2 hours ago", "1 day ago")
 const getRelativeTime = (dateStr: string): string => {
   const now = new Date();
   const past = new Date(dateStr);
@@ -102,7 +101,6 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
 
     fetchFeedbacks();
   }, [limit, useMockData]);
-
   const limitedFeedback =
     feedbacks.content.length > limit
       ? feedbacks.content.slice(0, limit)
@@ -149,10 +147,9 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
             onMouseOut={(e) => (e.currentTarget.style.background = "#f0faff")}
           >
             View All
-          </Link>
-        </div>
+          </Link>        </div>
       }
-      bordered={false}
+      variant="borderless"
       style={{
         boxShadow: "0 2px 8px #f0f1f2",
         borderRadius: 12,

@@ -663,12 +663,12 @@ const Messages: React.FC = () => {
                   borderRadius: 0,
                   border: "none",
                 }}
-                bodyStyle={{
+                styles={{ body: {
                   padding: 0,
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
-                }}
+                }}}
               >
                 {/* Header */}
                 <div
