@@ -4,16 +4,16 @@ import attachmentApi from '../../../api/attachmentApi';
 import { TreeNodeDto } from '../../../types/Attachment';
 import FileRow from './FileRow';
 
-const formatDate = (dateString: string | null): string => {
-  if (!dateString) return '';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  } catch (error) {
-    console.error("Error formatting date:", dateString, error);
-    return 'Invalid date';
-  }
-};
+// const formatDate = (dateString: string | null): string => {
+//   if (!dateString) return '';
+//   try {
+//     const date = new Date(dateString);
+//     return date.toLocaleString();
+//   } catch (error) {
+//     console.error("Error formatting date:", dateString, error);
+//     return 'Invalid date';
+//   }
+// };
 
 interface ProjectFileExplorerProps {
   projectId: number;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, DatePicker, Select, Button, message, InputNumber, Slider } from 'antd';
+import { Modal, Form, Input, DatePicker, Select, Button, message, Slider } from 'antd';
 import { addMilestoneToProjectApi, MilestoneRequest } from '../../api/projectApi'; // Ensure this API path is correct
 import TextArea from 'antd/lib/input/TextArea';
 

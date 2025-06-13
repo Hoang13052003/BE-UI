@@ -1,7 +1,5 @@
 import React from 'react';
 import { Typography, Progress } from 'antd';
-import { FileTextOutlined } from '@ant-design/icons';
-
 
 interface MilestoneInfoProps {
   name: string;

@@ -27,7 +27,7 @@ const ProjectUpdateHistory: React.FC = () => {
   const [history, setHistory] = useState<ProjectUpdateSummaryDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [projectName, setProjectName] = useState<string>(''); // Để lưu tên project nếu cần
+  const [projectName, _setProjectName] = useState<string>(''); // Để lưu tên project nếu cần
 
   useEffect(() => {
     if (!projectId || isNaN(projectId)) {

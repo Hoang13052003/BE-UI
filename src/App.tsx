@@ -17,7 +17,6 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import UserManagement from "./pages/Admin/UserManagement";
 import ProjectManager from "./pages/Admin/ProjectManager";
 import Notifications from "./pages/Admin/Notifications";
-import SystemSettings from "./pages/Admin/SystemSettings";
 import DocumentsPage from "./pages/Client/DocumentsPage";
 import Messages from "./pages/Client/Messages";
 import PageSettings from "./pages/Client/PageSettings";

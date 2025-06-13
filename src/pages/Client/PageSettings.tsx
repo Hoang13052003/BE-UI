@@ -1,11 +1,10 @@
 import React from "react";
-import { Card, Avatar, Typography, Menu, Button, Row, Col } from "antd";
+import { Card, Avatar, Typography, Menu, Row, Col } from "antd";
 import {
   UserOutlined,
   // HistoryOutlined,
   // ProjectOutlined,
   SettingOutlined,
-  EditOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
 
