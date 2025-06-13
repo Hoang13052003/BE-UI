@@ -29,7 +29,7 @@ interface MilestoneDetailsDisplayProps {
   onEditMilestone?: (milestoneId: number, projectId: number, onSuccessRefresh?: () => void) => void; // Làm optional
   milestoneCount?: number;
   theme?: string;
-  onRefreshProgress?: () => void; // Thêm callback để refresh progress
+     onRefreshProgress?: () => void; // Thêm callback để refresh progress
 }
 
 const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
