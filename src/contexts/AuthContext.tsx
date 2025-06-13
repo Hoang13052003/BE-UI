@@ -61,9 +61,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Derived state
   const isAuthenticated = !!token && !!userDetails;
-  // const userRole = userDetails?.role || null;
-
-  // Initialize authentication state
   useEffect(() => {
     const initializeAuth = async () => {
       setLoading(true);

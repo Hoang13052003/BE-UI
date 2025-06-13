@@ -1,4 +1,4 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import { Form, Input, Button, Select, message } from "antd";
 import { UserOutlined, MailOutlined, LockOutlined } from "@ant-design/icons";
 import { createUser } from "../../../api/userApi";
@@ -13,7 +13,7 @@ const ROLE_OPTIONS = [
 ];
 
 interface AddUserProps {
-  onSuccess: () => void; // Thêm prop onSuccess
+  onSuccess: () => void; // Thêm prop onSuccesss
 }
 const AddUser: React.FC<AddUserProps> = () => {
   const [form] = Form.useForm();

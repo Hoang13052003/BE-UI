@@ -16,7 +16,7 @@ const ProjectUpdateDetailsPage: React.FC = () => {
   const { userRole } = useAuth();
 
   return (
-    <Card className="project-update-details-page">
+    <Card style={{ width: "100%", height: "100%" }}>
       {userRole === "ADMIN" ? (
         <Breadcrumb style={{ marginBottom: 16 }}>
           <Breadcrumb.Item>

@@ -167,7 +167,7 @@ const LogManagerPage: React.FC = () => {
     useState<string>("All Levels");
   const [selectedCategoryFilter, setSelectedCategoryFilter] =
     useState<string>("All Categories");
-  const [selectedUserFilter, setSelectedUserFilter] =
+  const [selectedUserFilter, _setSelectedUserFilter] =
     useState<string>("All Users");
   const [selectedTimeRange, setSelectedTimeRange] =
     useState<string>("Last 24 hours");
@@ -459,7 +459,7 @@ const LogManagerPage: React.FC = () => {
               <RangePicker
                 showTime
                 format="YYYY-MM-DD HH:mm:ss"
-                onChange={(dates, dateStrings) => console.log(dateStrings)}
+                onChange={(_dates, dateStrings) => console.log(dateStrings)}
               />
             </Col>
           )}

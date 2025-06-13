@@ -243,7 +243,7 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
     }
   };
 
-  const handleSelect = (selectedKeys: React.Key[], info: { node: any }) => {
+  const handleSelect = (_selectedKeys: React.Key[], info: { node: any }) => {
     const clickedNode = info.node as DataNode;
     if (clickedNode.isLeaf && clickedNode.apiData?.attachmentId) {
       handleFileView(clickedNode);

@@ -13,6 +13,11 @@ import axiosClient from "./axiosClient";
 //   updatedAt: string;
 // }
 
+export interface DashboardStatus {
+  labels: string[];
+  data: number[];
+}
+
 export interface DashboardSummary {
   totalProjects: number;
   activeProjects: number;
@@ -25,11 +30,18 @@ export interface DashboardSummary {
   };
 }
 
+export interface DashboardSummaryFull extends DashboardSummary {
+  projectStatusWeek?: DashboardStatus;
+  projectStatusMonth?: DashboardStatus;
+  projectStatusQuarter?: DashboardStatus;
+}
+
 // API calls for admin dashboard
-export const getAdminDashboardSummary = async (): Promise<DashboardSummary> => {
-  const { data } = await axiosClient.get("/api/private/admin/dashboards");
-  return data;
-};
+export const getAdminDashboardSummary =
+  async (): Promise<DashboardSummaryFull> => {
+    const { data } = await axiosClient.get("/api/private/admin/dashboards");
+    return data;
+  };
 
 // Projects
 export const getAllProjects = async (

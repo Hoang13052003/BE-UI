@@ -83,8 +83,8 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
 
       await createNotification({
         userId,
-        title: "Cập nhật dự án",
-        content: "Bạn mới vừa được thêm vào dự án!",
+        title: "Update Project Assignment",
+        content: "You have been assigned a new project.",
         type: MessageType.PROJECT_ASSIGN,
         priority: NotificationPriority.MEDIUM,
         metadata: { projectId: values.projectId },

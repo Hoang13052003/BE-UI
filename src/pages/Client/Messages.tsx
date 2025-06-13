@@ -33,6 +33,11 @@ import {
   WifiOutlined,
   DisconnectOutlined,
   MessageOutlined,
+  DeleteOutlined,
+  FilePdfOutlined,
+  FileWordOutlined,
+  FileExcelOutlined,
+  FilePptOutlined,
 } from "@ant-design/icons";
 import { useChat } from "../../contexts/ChatContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -44,10 +49,16 @@ import {
   ChatRoomType,
 } from "../../api/chatApi";
 import { useDebouncedCallback } from "use-debounce"; // Thêm import này
+import { useAttachmentUpload } from "../../hooks/useAttachmentUpload";
 
 const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
 
+import type {
+  UploadFile,
+  UploadFileStatus,
+  RcFile,
+} from "antd/es/upload/interface";
 // Component hiển thị dấu ba chấm động
 const TypingDots: React.FC = () => (
   <span className="typing-dots" style={{ marginLeft: "4px" }}>
@@ -106,6 +117,9 @@ const Messages: React.FC = () => {
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const { isUploading, uploadFilesIndividually } = useAttachmentUpload();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const debouncedSendTyping = useDebouncedCallback(() => {
@@ -174,31 +188,64 @@ const Messages: React.FC = () => {
 
   // Handle sending message
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !activeChatRoom) return;
-
+    if ((!messageInput.trim() && fileList.length === 0) || !activeChatRoom)
+      return;
     try {
-      const messageRequest: ChatMessageRequest = {
-        senderName: userDetails?.fullName,
-        content: messageInput.trim(),
-        messageType: ChatMessageType.TEXT,
-      };
-
-      // Determine message target based on room type
-      if (activeChatRoom.roomType === ChatRoomType.PRIVATE) {
-        const otherParticipant = activeChatRoom.participants.find(
-          (p) => p.userId !== userDetails?.id
-        );
-        if (otherParticipant) {
-          messageRequest.receiverId = otherParticipant.userId;
+      // 1. Gửi message text (nếu có)
+      if (messageInput.trim()) {
+        const messageRequest: ChatMessageRequest = {
+          senderName: userDetails?.fullName,
+          content: messageInput.trim(),
+          messageType: ChatMessageType.TEXT,
+        };
+        if (activeChatRoom.roomType === ChatRoomType.PRIVATE) {
+          const otherParticipant = activeChatRoom.participants.find(
+            (p) => p.userId !== userDetails?.id
+          );
+          if (otherParticipant) {
+            messageRequest.receiverId = otherParticipant.userId;
+          }
+        } else if (activeChatRoom.roomType === ChatRoomType.PROJECT_CHAT) {
+          messageRequest.projectId = activeChatRoom.projectId;
+        } else {
+          messageRequest.topic = activeChatRoom.roomName;
         }
-      } else if (activeChatRoom.roomType === ChatRoomType.PROJECT_CHAT) {
-        messageRequest.projectId = activeChatRoom.projectId;
-      } else {
-        messageRequest.topic = activeChatRoom.roomName;
+        await sendChatMessage(messageRequest);
       }
 
-      await sendChatMessage(messageRequest);
+      // 2. Gửi từng file (nếu có)
+      if (fileList.length > 0) {
+        const uploadResult = await uploadFilesIndividually(
+          undefined,
+          "",
+          fileList
+        );
+        for (const file of uploadResult.successfulUploads) {
+          const fileMessage: ChatMessageRequest = {
+            senderName: userDetails?.fullName,
+            content: "", // hoặc để tên file nếu muốn
+            messageType: ChatMessageType.FILE,
+            fileUrl: file.storagePath,
+            fileName: file.fileName,
+          };
+          if (activeChatRoom.roomType === ChatRoomType.PRIVATE) {
+            const otherParticipant = activeChatRoom.participants.find(
+              (p) => p.userId !== userDetails?.id
+            );
+            if (otherParticipant) {
+              fileMessage.receiverId = otherParticipant.userId;
+            }
+          } else if (activeChatRoom.roomType === ChatRoomType.PROJECT_CHAT) {
+            fileMessage.projectId = activeChatRoom.projectId;
+          } else {
+            fileMessage.topic = activeChatRoom.roomName;
+          }
+          await sendChatMessage(fileMessage);
+        }
+      }
+
       setMessageInput("");
+      setFileList([]);
       scrollToBottom();
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -211,20 +258,6 @@ const Messages: React.FC = () => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
-    }
-  };
-
-  // Handle file upload
-  const handleFileUpload = async () => {
-    if (!activeChatRoom) return;
-    try {
-      // You can implement file upload logic here
-      antdMessage.info(
-        "Chức năng upload file sẽ được triển khai trong tương lai"
-      );
-    } catch (error) {
-      console.error("Failed to upload file:", error);
-      antdMessage.error("Upload file thất bại");
     }
   };
 
@@ -320,6 +353,43 @@ const Messages: React.FC = () => {
       return room.roomName;
     }
   };
+
+  // Hàm render icon/preview cho file đính kèm
+  function renderFileIconPreview(fileName?: string, fileUrl?: string) {
+    const ext = (fileName || "").split(".").pop()?.toLowerCase();
+    const imageExts = ["jpg", "jpeg", "png", "gif", "bmp", "webp"];
+    if (ext && imageExts.includes(ext) && fileUrl) {
+      return (
+        <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+          <img
+            src={fileUrl}
+            alt={fileName}
+            style={{
+              width: 48,
+              height: 48,
+              objectFit: "cover",
+              borderRadius: 6,
+              border: "1px solid #ddd",
+              background: "#fff",
+            }}
+          />
+        </a>
+      );
+    }
+    if (ext === "pdf") {
+      return <FilePdfOutlined style={{ fontSize: 32, color: "#e74c3c" }} />;
+    }
+    if (["doc", "docx"].includes(ext || "")) {
+      return <FileWordOutlined style={{ fontSize: 32, color: "#2980b9" }} />;
+    }
+    if (["xls", "xlsx"].includes(ext || "")) {
+      return <FileExcelOutlined style={{ fontSize: 32, color: "#27ae60" }} />;
+    }
+    if (["ppt", "pptx"].includes(ext || "")) {
+      return <FilePptOutlined style={{ fontSize: 32, color: "#e67e22" }} />;
+    }
+    return <FileOutlined style={{ fontSize: 32 }} />;
+  }
 
   return (
     <>
@@ -856,59 +926,81 @@ const Messages: React.FC = () => {
                                       </Paragraph>
                                     </Tooltip>
                                   )}{" "}
-                                  {message.fileUrl && (
-                                    <Card
-                                      size="small"
-                                      style={{
-                                        marginTop: 4,
-                                        width: "auto",
-                                        maxWidth: 200,
-                                        borderRadius: isMyMessage
-                                          ? "18px 18px 4px 18px"
-                                          : "18px 18px 18px 4px",
-                                        backgroundColor: isMyMessage
-                                          ? "#0A7CFF"
-                                          : "#E4E6EB",
-                                        borderColor: isMyMessage
-                                          ? "#0A7CFF"
-                                          : "#E4E6EB",
-                                        position: "relative",
-                                        boxShadow:
-                                          "0 1px 2px rgba(0, 0, 0, 0.05)",
-                                      }}
-                                    >
-                                      <Space>
-                                        <FileOutlined
-                                          style={{
-                                            color: isMyMessage
-                                              ? "#fff"
-                                              : "#000",
-                                          }}
-                                        />
-                                        <div>
-                                          <div
-                                            style={{
-                                              color: isMyMessage
-                                                ? "#fff"
-                                                : "#000",
-                                            }}
-                                          >
-                                            {message.fileName}
+                                  {message.fileUrl &&
+                                    message.messageType ===
+                                      ChatMessageType.FILE && (
+                                      <Card
+                                        size="small"
+                                        style={{
+                                          marginTop: 4,
+                                          width: "auto",
+                                          maxWidth: 320,
+                                          borderRadius: isMyMessage
+                                            ? "18px 18px 4px 18px"
+                                            : "18px 18px 18px 4px",
+                                          backgroundColor: isMyMessage
+                                            ? "#0A7CFF"
+                                            : "#E4E6EB",
+                                          borderColor: isMyMessage
+                                            ? "#0A7CFF"
+                                            : "#E4E6EB",
+                                          position: "relative",
+                                          boxShadow:
+                                            "0 1px 2px rgba(0, 0, 0, 0.05)",
+                                          padding: 8,
+                                        }}
+                                      >
+                                        <Space
+                                          align="start"
+                                          style={{ width: "100%" }}
+                                        >
+                                          {/* File preview/icon */}
+                                          {renderFileIconPreview(
+                                            message.fileName,
+                                            message.fileUrl
+                                          )}
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <Tooltip
+                                              title={message.fileName}
+                                              placement="topLeft"
+                                            >
+                                              <div
+                                                style={{
+                                                  color: isMyMessage
+                                                    ? "#fff"
+                                                    : "#050505",
+                                                  fontWeight: 500,
+                                                  fontSize: 15,
+                                                  overflow: "hidden",
+                                                  textOverflow: "ellipsis",
+                                                  whiteSpace: "nowrap",
+                                                  maxWidth: 200,
+                                                }}
+                                              >
+                                                {message.fileName}
+                                              </div>
+                                            </Tooltip>
+                                            <div style={{ marginTop: 2 }}>
+                                              <a
+                                                href={message.fileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                  color: isMyMessage
+                                                    ? "#fff"
+                                                    : "#0A7CFF",
+                                                  fontSize: 13,
+                                                  fontWeight: 500,
+                                                  textDecoration: "underline",
+                                                }}
+                                              >
+                                                Tải xuống
+                                              </a>
+                                            </div>
                                           </div>
-                                          <Text
-                                            type="secondary"
-                                            style={{
-                                              color: isMyMessage
-                                                ? "rgba(255,255,255,0.8)"
-                                                : "#65676B",
-                                            }}
-                                          >
-                                            File
-                                          </Text>
-                                        </div>
-                                      </Space>
-                                    </Card>
-                                  )}
+                                        </Space>
+                                      </Card>
+                                    )}
                                   {message.messageType ===
                                     ChatMessageType.SYSTEM_NOTIFICATION && (
                                     <Card
@@ -997,48 +1089,125 @@ const Messages: React.FC = () => {
                     padding: "12px 16px",
                     borderTop: "1px solid #e8e8e8",
                     backgroundColor: "#fff",
+                    flexDirection: "column",
                   }}
                 >
-                  {" "}
-                  <Input.TextArea
-                    placeholder="Nhập tin nhắn..."
-                    value={messageInput}
-                    onChange={handleMessageInputChange} // Sử dụng hàm mới
-                    onKeyPress={handleKeyPress}
-                    disabled={!isConnected}
-                    autoSize={{ minRows: 1, maxRows: 4 }}
-                    style={{
-                      resize: "none",
-                      borderRadius: "20px",
-                      padding: "10px 12px",
-                      fontSize: "15px",
-                      lineHeight: "1.3",
-                    }}
-                  />
-                  <Button
-                    type="text"
-                    icon={<PaperClipOutlined />}
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={!isConnected}
-                    title="Đính kèm file"
-                  />
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<SendOutlined />}
-                    onClick={handleSendMessage}
-                    disabled={!messageInput.trim() || !isConnected}
-                    title="Gửi tin nhắn (Enter)"
-                    style={{ backgroundColor: "#0A7CFF" }}
-                  />
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) handleFileUpload();
-                    }}
-                  />
+                  {/* Danh sách file đã chọn, hiển thị dưới ô nhập */}
+                  {fileList.length > 0 && (
+                    <Space
+                      style={{
+                        width: "100%",
+                        marginBottom: 4,
+                        display: "flex",
+                        gap: 8,
+                        flexWrap: "wrap", // Allow wrapping to next line if needed
+                      }}
+                    >
+                      {fileList.map((file, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            background: "#f5f5f5",
+                            borderRadius: 6,
+                            padding: "4px 10px",
+                            maxWidth: 220,
+                          }}
+                        >
+                          <FileOutlined
+                            style={{ marginRight: 6, color: "#0A7CFF" }}
+                          />
+                          <Text ellipsis style={{ maxWidth: 200 }}>
+                            {file.name.length > 20
+                              ? `${file.name.slice(0, 20)}...`
+                              : file.name}
+                          </Text>
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={() => {
+                              const newFileList = fileList.filter(
+                                (_, i) => i !== index
+                              );
+                              setFileList(newFileList);
+                            }}
+                            style={{ marginLeft: 8 }}
+                          />
+                        </div>
+                      ))}
+                    </Space>
+                  )}
+                  <div
+                    style={{ display: "flex", gap: 8, alignItems: "flex-end" }}
+                  >
+                    <Button
+                      type="text"
+                      shape="circle"
+                      icon={<PaperClipOutlined style={{ fontSize: 22 }} />}
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading || !isConnected}
+                      title="Attach file"
+                      style={{
+                        color: fileList.length > 0 ? "#0A7CFF" : undefined,
+                      }}
+                    />
+                    <Input.TextArea
+                      placeholder="Nhập tin nhắn..."
+                      value={messageInput}
+                      onChange={handleMessageInputChange}
+                      onKeyPress={handleKeyPress}
+                      disabled={!isConnected || isUploading}
+                      autoSize={{ minRows: 1, maxRows: 4 }}
+                      style={{
+                        resize: "none",
+                        borderRadius: "20px",
+                        padding: "10px 12px",
+                        fontSize: "15px",
+                        lineHeight: "1.3",
+                      }}
+                    />
+                    <Button
+                      type="primary"
+                      shape="circle"
+                      icon={<SendOutlined />}
+                      onClick={handleSendMessage}
+                      disabled={
+                        (!messageInput.trim() && fileList.length === 0) ||
+                        !isConnected ||
+                        isUploading
+                      }
+                      title="Gửi tin nhắn (Enter)"
+                      style={{ backgroundColor: "#0A7CFF" }}
+                      loading={isUploading}
+                    />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const files = Array.from(e.target.files).map(
+                            (file) => {
+                              const rcFile = file as RcFile;
+                              rcFile.uid = `${Date.now()}-${file.name}`;
+                              return {
+                                uid: rcFile.uid,
+                                name: rcFile.name,
+                                status: "done" as UploadFileStatus,
+                                originFileObj: rcFile,
+                              } as UploadFile;
+                            }
+                          );
+                          setFileList((prev) => [...prev, ...files]);
+                          e.target.value = ""; // reset input
+                        }
+                      }}
+                      disabled={isUploading}
+                    />
+                  </div>
                 </div>
               </Card>
             ) : (

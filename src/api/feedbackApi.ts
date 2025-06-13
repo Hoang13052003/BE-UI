@@ -114,6 +114,16 @@ export const getFeedbacksByUserAndProject = async (
   return data;
 };
 
+export const getFeedbacksByUser = async (
+  userId: number | undefined,
+  params: Record<string, any> = {}
+): Promise<PaginatedFeedbackResponse> => {
+  const { data } = await axiosClient.get(`/api/feedbacks/user/${userId}`, {
+    params,
+  });
+  return data;
+};
+
 // Alternative method for getting feedbacks with query parameters (if needed)
 export interface FeedbackCriteria {
   updateId?: {

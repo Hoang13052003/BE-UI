@@ -6,7 +6,6 @@ import { ApiPage } from "../types/project"; // << IMPORT ApiPage
 
 // Project Update Types
 export interface ProjectUpdate {
-  // Kiểu này giữ nguyên, khớp với item trong 'content'
   id: number;
   projectId: number;
   projectName: string;
@@ -17,9 +16,10 @@ export interface ProjectUpdate {
   summary: string | null;
   details: string | null;
   statusAtUpdate: string;
-  completionPercentage: number | null;
+  overallProcess?: number;
+  actualProcess?: number;
   // createdByUserId?: number; // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
-  createdByName?: string; // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
+  createdByName?: string;
 
   published: boolean;
   internalNotes: string | null;
@@ -46,7 +46,8 @@ export interface ProjectUpdateRequestPayload {
   summary: string;
   details: string;
   statusAtUpdate: string;
-  completionPercentage: number;
+  overallProcess: number;
+  actualProcess: number;
   published: boolean;
   internalNotes?: string;
 }
@@ -90,9 +91,7 @@ export const getAllProjectUpdatesApi = async (
   sortConfig?: SortConfig | SortConfig[],
   filters?: Record<string, any>
 ): Promise<ApiPage<ProjectUpdate>> => {
-  // << THAY ĐỔI KIỂU TRẢ VỀ THÀNH ApiPage
   try {
-    // Gọi hàm fetchSpringPageData (mới)
     const apiPageResult = await fetchSpringPageData<ProjectUpdate>(
       "/api/private/admin/project-updates", // Endpoint của bạn
       page,
@@ -279,5 +278,50 @@ export const getProjectStatusesApi = async (): Promise<string[]> => {
     console.error("Error fetching project statuses:", error);
     // Return default statuses if API fails
     return ["NEW", "PENDING", "PROGRESS", "AT_RISK", "COMPLETED", "CLOSED"];
+  }
+};
+
+// Get updates for a specific user (client)
+export const getProjectUpdatesForUserApi = async (
+  userId: number,
+  page: number = 0,
+  size: number = 10,
+  filters?: Record<string, any>
+): Promise<ApiPage<ProjectUpdate>> => {
+  try {
+    const params = {
+      page,
+      size,
+      ...filters,
+    };
+
+    const { data } = await axiosClient.get(
+      `/api/users/${userId}/project-updates`,
+      { params }
+    );
+    return data;
+  } catch (error) {
+    console.error(`Error fetching project updates for user ${userId}:`, error);
+    // Return empty page on error
+    return {
+      content: [],
+      pageable: {
+        pageNumber: page,
+        pageSize: size,
+        offset: page * size,
+        paged: true,
+        unpaged: false,
+        sort: { sorted: false, unsorted: true, empty: true },
+      },
+      last: true,
+      totalPages: 0,
+      totalElements: 0,
+      size: size,
+      number: page,
+      sort: { sorted: false, unsorted: true, empty: true },
+      first: true,
+      numberOfElements: 0,
+      empty: true,
+    };
   }
 };
