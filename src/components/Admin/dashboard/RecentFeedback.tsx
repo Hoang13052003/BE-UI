@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, List, Typography, Skeleton, Divider, Empty } from "antd";
 import { Link } from "react-router-dom";
-import {
-  FeedbackCriteria,
-  FeedbackResponse,
-  filter,
-} from "../../../api/feedbackApi";
+import { FeedbackCriteria, filter } from "../../../api/feedbackApi";
 import { MessageOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -106,11 +102,6 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
 
     fetchFeedbacks();
   }, [limit, useMockData]);
-
-  // Handle clicking on a feedback item (mark as read)
-  const handleFeedbackClick = async (_id: string | number) => {
-    // Reserved for future use
-  };
 
   const limitedFeedback =
     feedbacks.content.length > limit

@@ -43,8 +43,8 @@ import { Project } from "../../../types/project";
 import SendReportProjectUpdateModal from "../../../components/Admin/ProjectUpdate/SendReportProjectUpdateModal";
 import { useAuth } from "../../../contexts/AuthContext";
 import SendFeedbackModal from "../../Client/SendFeedbackModal";
-import ProjectMilestonesTab from "../../../components/Admin/ProjectDetailsPage/ProjectMilestonesTab";
-import ProjectTimeLogsTab from "../../../components/Admin/ProjectDetailsPage/ProjectTimeLogsTab";
+import ProjectUpdateHistoryTimeLogsTab from "../../../components/Admin/ProjectDetailsPage/ProjectUpdateHistoryTimeLogsTab";
+import ProjectUpdateHistoryMilestonesTab from "../../../components/Admin/ProjectDetailsPage/ProjectUpdateHistoryMilestonesTab";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -105,6 +105,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
       try {
         setLoading(true);
         const updateData = await getProjectUpdateByIdApi(id);
+        console.log("Fetched update data:", updateData);
         setUpdate(updateData);
 
         if (updateData.projectId) {
@@ -428,9 +429,13 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             bodyStyle={{ padding: 16 }}
           >
             {project?.type === "FIXED_PRICE" ? (
-              <ProjectMilestonesTab projectId={project?.id} />
+              <ProjectUpdateHistoryMilestonesTab
+                historyId={update?.historyKey!}
+              />
             ) : (
-              <ProjectTimeLogsTab projectId={project?.id!} />
+              <ProjectUpdateHistoryTimeLogsTab
+                historyId={update?.historyKey!}
+              />
             )}
           </Card>
         </Col>
