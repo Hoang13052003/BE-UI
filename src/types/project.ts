@@ -34,7 +34,8 @@ export interface UserSummary {
   email: string;
 }
 
-export interface ProjectDetail { // ĐỔI TÊN TỪ Project thành ProjectDetail cho rõ ràng
+export interface ProjectDetail {
+  // ĐỔI TÊN TỪ Project thành ProjectDetail cho rõ ràng
   id: number;
   name: string;
   description: string | null; // Cho phép null nếu backend có thể trả về null
@@ -47,8 +48,7 @@ export interface ProjectDetail { // ĐỔI TÊN TỪ Project thành ProjectDetai
   totalEstimatedHours: number | null;
   overallProcess?: number; // Added
   actualProcess?: number; // Added
-  users: UserSummary[]; 
-
+  users: UserSummary[];
 }
 
 export interface ProjectUpdateTimelineItem {
@@ -63,7 +63,8 @@ export interface ProjectUpdateTimelineItem {
   // attachments?: AttachmentSummary[]; // Nếu sau này có hiển thị attachments
 }
 
-export interface ProjectContextTimeLog { // Đặt tên khác để phân biệt với TimeLogResponseDTO cũ nếu có
+export interface ProjectContextTimeLog {
+  // Đặt tên khác để phân biệt với TimeLogResponseDTO cũ nếu có
   id: number;
   performer: UserSummary;
   taskDate: string;
@@ -71,13 +72,15 @@ export interface ProjectContextTimeLog { // Đặt tên khác để phân biệt
   hoursSpent: number;
 }
 
-export interface SortInfo { // Thông tin sắp xếp
+export interface SortInfo {
+  // Thông tin sắp xếp
   sorted: boolean;
   unsorted: boolean;
   empty: boolean;
 }
 
-export interface PageableInfo { // Thông tin của đối tượng "pageable"
+export interface PageableInfo {
+  // Thông tin của đối tượng "pageable"
   sort: SortInfo;
   offset: number;
   pageNumber: number;
@@ -88,14 +91,14 @@ export interface PageableInfo { // Thông tin của đối tượng "pageable"
 
 export interface ApiPage<T> {
   content: T[];
-  pageable: PageableInfo; // << Sử dụng PageableInfo
+  pageable: PageableInfo;
   last: boolean;
   totalPages: number;
   totalElements: number;
   size: number;
-  number: number;         // Số trang hiện tại (0-indexed)
-  sort: SortInfo;           // << Sử dụng SortInfo cho sort ở cấp ngoài
+  number: number;
+  sort: SortInfo;
   first: boolean;
-  numberOfElements: number; // Số phần tử trong trang hiện tại
+  numberOfElements: number;
   empty: boolean;
 }

@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, List, Typography, Skeleton, Divider, Empty } from "antd";
 import { Link } from "react-router-dom";
-import {
-  FeedbackCriteria,
-  filter,
-} from "../../../api/feedbackApi";
+import { FeedbackCriteria, filter } from "../../../api/feedbackApi";
 import { MessageOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;

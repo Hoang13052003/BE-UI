@@ -1,0 +1,536 @@
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  List,
+  Spin,
+  Empty,
+  Pagination,
+  Typography,
+  message,
+  Row,
+  Col,
+  Tag,
+  Space,
+  Avatar,
+  Card,
+  Input,
+  Button,
+  Tooltip,
+  Radio,
+} from "antd";
+import {
+  UserOutlined,
+  CalendarOutlined,
+  ClockCircleOutlined,
+  SearchOutlined,
+  ClearOutlined,
+  AppstoreOutlined,
+  UnorderedListOutlined,
+} from "@ant-design/icons";
+import { ApiPage } from "../../../types/project";
+import { getProjectUpdateHistoryById } from "../../../api/projectUpdateHistoryApi";
+import dayjs from "dayjs";
+import localizedFormat from "dayjs/plugin/localizedFormat";
+dayjs.extend(localizedFormat);
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime);
+const { Text, Paragraph, Title } = Typography;
+const { Search } = Input;
+
+interface ProjectUpdateHistoryTimeLogsTabProps {
+  historyId: string;
+}
+
+const ProjectUpdateHistoryTimeLogsTab: React.FC<
+  ProjectUpdateHistoryTimeLogsTabProps
+> = ({ historyId }) => {
+  const [timeLogsPage, setTimeLogsPage] = useState<ApiPage<any> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [uiPagination, setUiPagination] = useState({
+    current: 1,
+    pageSize: 10,
+  });
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+
+  const fetchTimeLogs = useCallback(
+    async (_pageToFetch: number, currentSize: number) => {
+      if (!historyId) {
+        setLoading(false);
+        setTimeLogsPage({
+          content: [],
+          pageable: {
+            pageNumber: 0,
+            pageSize: currentSize,
+            offset: 0,
+            paged: true,
+            unpaged: false,
+            sort: { sorted: false, unsorted: true, empty: true },
+          },
+          last: true,
+          totalPages: 0,
+          totalElements: 0,
+          size: currentSize,
+          number: 0,
+          sort: { sorted: false, unsorted: true, empty: true },
+          first: true,
+          numberOfElements: 0,
+          empty: true,
+        } as ApiPage<any>);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await getProjectUpdateHistoryById(historyId);
+
+        console.log("Fetched time logs:", res);
+        setTimeLogsPage(res);
+        setUiPagination({
+          current: res.number + 1,
+          pageSize: res.size,
+        });
+      } catch (error) {
+        console.error(
+          "Failed to fetch project update history time logs:",
+          error
+        );
+        message.error("Failed to load time logs.");
+        setTimeLogsPage(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [historyId]
+  );
+
+  useEffect(() => {
+    if (historyId) {
+      fetchTimeLogs(uiPagination.current - 1, uiPagination.pageSize);
+    }
+    // eslint-disable-next-line
+  }, [historyId, uiPagination.current, uiPagination.pageSize, fetchTimeLogs]);
+
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    setUiPagination((prev) => ({
+      ...prev,
+      current: page,
+      pageSize: newPageSize || prev.pageSize,
+    }));
+  };
+
+  const filteredTimeLogs = timeLogsPage?.content.filter(
+    (timelog: any) =>
+      timelog.performer?.fullName
+        ?.toLowerCase()
+        .includes(searchText.toLowerCase()) ||
+      timelog.taskDescription?.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  const formatDuration = (hours: number) => {
+    if (hours < 1) {
+      return `${Math.round(hours * 60)}m`;
+    } else if (hours === Math.floor(hours)) {
+      return `${hours}h`;
+    } else {
+      const h = Math.floor(hours);
+      const m = Math.round((hours - h) * 60);
+      return `${h}h ${m}m`;
+    }
+  };
+
+  const totalHours =
+    filteredTimeLogs?.reduce(
+      (sum: number, timelog: any) => sum + (timelog.hoursSpent || 0),
+      0
+    ) || 0;
+
+  const TimeLogGridCard: React.FC<{ timelog: any }> = ({ timelog }) => (
+    <Card
+      hoverable
+      style={{
+        height: "280px",
+        borderRadius: 12,
+        border: "1px solid #f0f0f0",
+        transition: "all 0.3s ease",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        display: "flex",
+        flexDirection: "column",
+      }}
+      bodyStyle={{
+        padding: "20px",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Space
+        direction="vertical"
+        size="middle"
+        style={{ width: "100%", flex: 1 }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Avatar
+            size={52}
+            style={{
+              backgroundColor: "#1890ff",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "18px",
+              fontWeight: "600",
+            }}
+          >
+            {timelog.performer?.fullName &&
+            timelog.performer.fullName.trim() !== "" ? (
+              (timelog.performer.fullName.includes(" ")
+                ? timelog.performer.fullName
+                    .split(" ")
+                    .map((name: string) => name[0])
+                    .join("")
+                    .substring(0, 2)
+                : timelog.performer.fullName.substring(0, 2)
+              ).toUpperCase()
+            ) : (
+              <UserOutlined />
+            )}
+          </Avatar>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              strong
+              style={{ display: "block", fontSize: "16px", marginBottom: 2 }}
+            >
+              {timelog.performer?.fullName}
+            </Text>
+            <Text type="secondary" style={{ fontSize: "13px" }} ellipsis>
+              {timelog.performer?.email}
+            </Text>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Tag
+            icon={<CalendarOutlined />}
+            color="green"
+            style={{ borderRadius: 16, fontSize: "12px" }}
+          >
+            {dayjs(timelog.taskDate).format("MMM DD, YYYY")}
+          </Tag>
+          <Tag
+            icon={<ClockCircleOutlined />}
+            color="blue"
+            style={{ borderRadius: 16, fontSize: "12px" }}
+          >
+            {formatDuration(timelog.hoursSpent)}
+          </Tag>
+        </div>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <Paragraph
+            ellipsis={{ rows: 3, expandable: true, symbol: "Show more" }}
+            style={{
+              margin: 0,
+              color: "#262626",
+              lineHeight: "1.5",
+              fontSize: "14px",
+              flex: 1,
+            }}
+          >
+            {timelog.taskDescription}
+          </Paragraph>
+        </div>
+        <div
+          style={{
+            borderTop: "1px solid #f0f0f0",
+            paddingTop: 12,
+            marginTop: "auto",
+          }}
+        >
+          <Text type="secondary" style={{ fontSize: "12px" }}>
+            Logged {dayjs(timelog.taskDate).fromNow()}
+          </Text>
+        </div>
+      </Space>
+    </Card>
+  );
+
+  if (loading && !timeLogsPage) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px 0" }}>
+        <Spin size="large" tip="Loading time logs..." />
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: "20px 0" }}>
+      <div style={{ marginBottom: 24 }}>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: 16 }}
+        >
+          <Col>
+            <Space direction="vertical" size="small">
+              <Title level={3} style={{ margin: 0, color: "#1890ff" }}>
+                <ClockCircleOutlined style={{ marginRight: 8 }} />
+                Time Logs (History)
+              </Title>
+              {timeLogsPage && (
+                <Space size="middle">
+                  <Tag
+                    color="blue"
+                    style={{
+                      borderRadius: 16,
+                      fontSize: "14px",
+                      padding: "5px 15px",
+                    }}
+                  >
+                    <Text strong style={{ color: "#1890ff" }}>
+                      {timeLogsPage.totalElements} entries
+                    </Text>
+                  </Tag>
+                  <Tag
+                    color="green"
+                    style={{
+                      borderRadius: 16,
+                      fontSize: "14px",
+                      padding: "5px 15px",
+                    }}
+                  >
+                    <ClockCircleOutlined style={{ marginRight: 4 }} />
+                    <Text strong style={{ color: "#52c41a" }}>
+                      {formatDuration(totalHours)} total
+                    </Text>
+                  </Tag>
+                </Space>
+              )}
+            </Space>
+          </Col>
+          <Col>
+            <Radio.Group
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value)}
+            >
+              <Radio.Button value="list">
+                <UnorderedListOutlined /> List
+              </Radio.Button>
+              <Radio.Button value="grid">
+                <AppstoreOutlined /> Grid
+              </Radio.Button>
+            </Radio.Group>
+          </Col>
+        </Row>
+        <Row gutter={[12, 12]} align="middle">
+          <Col xs={24} sm={24} md={8} lg={8}>
+            <Search
+              placeholder="Search by name or description"
+              allowClear
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: "100%" }}
+              prefix={<SearchOutlined />}
+            />
+          </Col>
+          <Col xs={24} sm={24} md={16} lg={16}>
+            <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+              <Tooltip title="Clear search">
+                <Button
+                  type="text"
+                  icon={<ClearOutlined />}
+                  onClick={() => {
+                    setSearchText("");
+                    setUiPagination((prev) => ({ ...prev, current: 1 }));
+                  }}
+                  disabled={!searchText}
+                  style={{
+                    color: "#ff4d4f",
+                    borderColor: "#ff4d4f",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "32px",
+                    width: "32px",
+                  }}
+                />
+              </Tooltip>
+            </Space>
+          </Col>
+        </Row>
+      </div>
+      {!loading && (!timeLogsPage || timeLogsPage.content.length === 0) ? (
+        <Card style={{ textAlign: "center", backgroundColor: "#fafafa" }}>
+          <Empty
+            description={
+              <span style={{ color: "#8c8c8c" }}>
+                No time logs found for this history
+              </span>
+            }
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        </Card>
+      ) : viewMode === "grid" ? (
+        <Row gutter={[20, 20]}>
+          {filteredTimeLogs?.map((timelog: any) => (
+            <Col xs={24} sm={12} md={8} lg={6} key={timelog.id}>
+              <TimeLogGridCard timelog={timelog} />
+            </Col>
+          ))}
+        </Row>
+      ) : (
+        <List
+          itemLayout="vertical"
+          dataSource={filteredTimeLogs}
+          loading={loading}
+          renderItem={(timelog: any) => {
+            if (!timelog) return null;
+            return (
+              <Card
+                key={timelog.id}
+                style={{
+                  marginBottom: 16,
+                  borderRadius: 8,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  border: "1px solid #f0f0f0",
+                  transition: "all 0.3s ease",
+                }}
+                hoverable
+                bodyStyle={{ padding: "20px" }}
+              >
+                <List.Item style={{ border: "none", padding: 0 }}>
+                  <Row gutter={[16, 16]} align="top">
+                    <Col xs={24} sm={6} md={6}>
+                      <Space
+                        direction="vertical"
+                        size="small"
+                        style={{ width: "100%" }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <Avatar
+                            size={40}
+                            style={{
+                              backgroundColor: "#1890ff",
+                              width: "40px",
+                              height: "40px",
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              overflow: "hidden",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {timelog.performer?.fullName &&
+                            timelog.performer.fullName.trim() !== "" ? (
+                              (timelog.performer.fullName.includes(" ")
+                                ? timelog.performer.fullName
+                                    .split(" ")
+                                    .map((name: string) => name[0])
+                                    .join("")
+                                    .substring(0, 2)
+                                : timelog.performer.fullName.substring(0, 2)
+                              ).toUpperCase()
+                            ) : (
+                              <UserOutlined />
+                            )}
+                          </Avatar>
+                          <div>
+                            <Text
+                              strong
+                              style={{ display: "block", fontSize: "15px" }}
+                            >
+                              {timelog.performer?.fullName}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: "13px" }}>
+                              {timelog.performer?.email}
+                            </Text>
+                          </div>
+                        </div>
+                      </Space>
+                    </Col>
+                    <Col xs={24} sm={12} md={14}>
+                      <Space
+                        direction="vertical"
+                        size="small"
+                        style={{ width: "100%" }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            marginBottom: 8,
+                          }}
+                        >
+                          <Tag
+                            icon={<CalendarOutlined />}
+                            color="green"
+                            style={{ margin: 0 }}
+                          >
+                            {dayjs(timelog.taskDate).format("MMM DD, YYYY")}
+                          </Tag>
+                          <Tag
+                            icon={<ClockCircleOutlined />}
+                            color="blue"
+                            style={{ margin: 0 }}
+                          >
+                            {formatDuration(timelog.hoursSpent)}
+                          </Tag>
+                        </div>
+                        <Paragraph
+                          ellipsis={{
+                            rows: 2,
+                            expandable: true,
+                            symbol: "Show more",
+                          }}
+                          style={{
+                            margin: 0,
+                            color: "#262626",
+                            lineHeight: "1.5",
+                          }}
+                        >
+                          {timelog.taskDescription}
+                        </Paragraph>
+                      </Space>
+                    </Col>
+                    <Col xs={24} sm={6} md={4}>
+                      <div style={{ textAlign: "right" }}>
+                        <Space direction="vertical" size="small">
+                          <Text type="secondary" style={{ fontSize: "12px" }}>
+                            Logged {dayjs(timelog.taskDate).fromNow()}
+                          </Text>
+                        </Space>
+                      </div>
+                    </Col>
+                  </Row>
+                </List.Item>
+              </Card>
+            );
+          }}
+        />
+      )}
+      {timeLogsPage && timeLogsPage.totalElements > uiPagination.pageSize && (
+        <Card style={{ marginTop: 24, textAlign: "center" }}>
+          <Pagination
+            current={uiPagination.current}
+            pageSize={uiPagination.pageSize}
+            total={timeLogsPage.totalElements}
+            onChange={handlePageChange}
+            showSizeChanger
+            pageSizeOptions={["10", "20", "50", "100"]}
+            showTotal={(total, range) => (
+              <Text type="secondary">
+                Showing {range[0]}-{range[1]} of {total} time logs
+              </Text>
+            )}
+            style={{ margin: 0 }}
+          />
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default ProjectUpdateHistoryTimeLogsTab;

@@ -89,11 +89,10 @@ const LayoutShare: React.FC = () => {
         style={{
           background: "#fff",
           boxShadow: "0 2px 8px #f0f1f2",
-          position: "sticky",
+          position: "fixed",
           top: 0,
           zIndex: 10,
           padding: "0 80px",
-          height: 80,
           display: "flex",
           alignItems: "center",
         }}

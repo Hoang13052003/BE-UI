@@ -1,8 +1,7 @@
 // src/api/projectUpdateApi.ts
 import axiosClient from "./axiosClient";
-// SỬ DỤNG fetchSpringPageData VÀ CÁC TYPE LIÊN QUAN ĐẾN ApiPage
-import { SortConfig, fetchSpringPageData } from "./apiUtils"; // << CHỈ CẦN fetchSpringPageData (và SortConfig)
-import { ApiPage } from "../types/project"; // << IMPORT ApiPage
+import { SortConfig, fetchSpringPageData } from "./apiUtils";
+import { ApiPage } from "../types/project";
 
 // Project Update Types
 export interface ProjectUpdate {
@@ -18,7 +17,7 @@ export interface ProjectUpdate {
   statusAtUpdate: string;
   overallProcess?: number;
   actualProcess?: number;
-  // createdByUserId?: number; // Thêm nếu backend DTO có những trường này và ProjectUpdateTimelineItem cần
+  historyKey?: string;
   createdByName?: string;
 
   published: boolean;
