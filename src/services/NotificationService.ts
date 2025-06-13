@@ -16,22 +16,26 @@ class NotificationService {
   /**
    * Connect to the WebSocket notification server
    * @param token JWT token for authentication
-   */  connect(token: string): void {
+   */ connect(token: string): void {
     if (
       this.socket &&
       (this.socket.readyState === WebSocket.OPEN ||
         this.socket.readyState === WebSocket.CONNECTING)
     ) {
       return;
-    }    this.token = token;    try {
+    }
+    this.token = token;
+    try {
       // Use environment variable for WebSocket URL
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
       const cleanBaseUrl = toWebSocketUrl(baseUrl);
       const wsUrl = `${cleanBaseUrl}/ws/notifications?token=${token}`;
-      this.socket = new WebSocket(wsUrl);this.socket.onopen = () => {
+      this.socket = new WebSocket(wsUrl);
+      this.socket.onopen = () => {
         this.isConnected = true;
         this.reconnectAttempts = 0;
         message.success("Connected to notifications service");
+        this.subscribeUser(token);
       };
 
       this.socket.onmessage = (event) => {
@@ -62,7 +66,8 @@ class NotificationService {
         if (!event.wasClean && this.token) {
           this.attemptReconnect(this.token);
         }
-      };      this.socket.onerror = () => {
+      };
+      this.socket.onerror = () => {
         message.error("Connection error. Trying to reconnect...", 3);
 
         if (!this.isConnected && this.token) {

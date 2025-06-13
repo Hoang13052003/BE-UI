@@ -42,6 +42,8 @@ import { ChatProvider } from "./contexts/ChatContext";
 import LogManagerPage from "./pages/Admin/LogsManager";
 import MyFeedbacks from "./pages/Client/MyFeedbacks";
 import AuthLogMonitor from "./pages/Admin/AuditLogDashboard/AuthLogMonitor";
+import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientPage";
+import LandingPage from "./pages/LandingPage";
 
 // Component to handle auth logout events
 const AuthEventHandler: React.FC = () => {
@@ -75,7 +77,7 @@ function App() {
                 {/* Public Routes */}
                 <Route element={<PublicRoute />}>
                   <Route path="/" element={<LayoutShare />}>
-                    <Route index element={<HomeIntroSection />} />
+                    <Route index element={<LandingPage />} />
                     <Route
                       path="reset-password"
                       element={<ResetPasswordPage />}
@@ -153,6 +155,10 @@ function App() {
                         element={<ProjectUpdateDetailsPage />}
                       />
                       <Route path="my-feedbacks" element={<MyFeedbacks />} />
+                      <Route
+                        path="project-updates"
+                        element={<ProjectUpdatesForClientPage />}
+                      />
                       <Route path="messages" element={<Messages />} />
                       <Route
                         path="projects/:projectId/details"

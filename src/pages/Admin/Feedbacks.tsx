@@ -44,7 +44,7 @@ interface FeedbackItem {
   read: boolean;
 }
 
-interface TypedPaginatedFeedbackResponse
+export interface TypedPaginatedFeedbackResponse
   extends Omit<PaginatedFeedbackResponse, "content"> {
   content: FeedbackItem[];
 }

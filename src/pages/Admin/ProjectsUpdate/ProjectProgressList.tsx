@@ -114,18 +114,21 @@ const ProjectProgressList: React.FC = () => {
     try {
       const filters: Record<string, any> = {};
       if (selectedProject) {
-        filters.projectId = selectedProject;
+        filters["projectId.equals"] = selectedProject;
       }
       if (dateRange && dateRange[0] && dateRange[1]) {
-        filters.startDate = dateRange[0].format("YYYY-MM-DD");
-        filters.endDate = dateRange[1].format("YYYY-MM-DD");
+        filters["startDate.greaterThanOrEqual"] =
+          dateRange[0].format("YYYY-MM-DD");
+        filters["endDate.lessThanOrEqual"] = dateRange[1].format("YYYY-MM-DD");
       }
       if (searchText) {
-        filters.search = searchText;
+        filters["search.contains"] = searchText;
       }
       if (statusFilter) {
-        filters.status = statusFilter;
+        filters["status.equals"] = statusFilter;
       }
+      // Debug: log filters to check what is sent
+      console.log("Filters sent to API:", filters);
 
       const resultPage = await getAllProjectUpdatesApi(
         tablePagination.current - 1,
@@ -134,10 +137,6 @@ const ProjectProgressList: React.FC = () => {
         filters
       );
 
-      // console.log(
-      //   "ProjectProgressList - Received ApiPage:",
-      //   JSON.stringify(resultPage, null, 2)
-      // );
       setUpdatesPage(resultPage);
 
       setTablePagination((prev) => ({
@@ -262,9 +261,9 @@ const ProjectProgressList: React.FC = () => {
       ),
     },
     {
-      title: "Progress",
-      dataIndex: "completionPercentage",
-      key: "completionPercentage",
+      title: "Overall Progress",
+      dataIndex: "overallProcess",
+      key: "overallProcess",
       render: (percentage: number) => (
         <div style={{ display: "flex", alignItems: "center" }}>
           <div
@@ -289,11 +288,34 @@ const ProjectProgressList: React.FC = () => {
         </div>
       ),
     },
-    // {
-    //   title: "Created By",
-    //   dataIndex: "email",
-    //   key: "createdBy",
-    // },
+    {
+      title: "Actual Progress",
+      dataIndex: "actualProcess",
+      key: "actualProcess",
+      render: (percentage: number) => (
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <div
+            style={{
+              width: "50px",
+              height: "8px",
+              background: "#f0f0f0",
+              borderRadius: "4px",
+              marginRight: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: `${percentage}%`,
+                height: "100%",
+                background: percentage >= 100 ? "#52c41a" : "#1890ff",
+                borderRadius: "4px",
+              }}
+            />
+          </div>
+          <Text>{percentage}%</Text>
+        </div>
+      ),
+    },
     {
       title: "Actions",
       key: "actions",

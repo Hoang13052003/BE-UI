@@ -137,7 +137,8 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
         summary: values.summary,
         details: values.details,
         statusAtUpdate: values.statusAtUpdate,
-        completionPercentage: values.completionPercentage,
+        overallProcess: values.overallProcess,
+        actualProcess: values.actualProcess,
         published: values.isPublished,
         internalNotes: values.internalNotes,
       };
@@ -213,7 +214,8 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
 
     form.setFieldsValue({
       projectId: value,
-      completionPercentage: project?.overallProcess || 0,
+      overallProcess: project?.overallProcess || 0,
+      actualProcess: project?.actualProcess || 0,
     });
   };
 
@@ -321,12 +323,12 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           </Col>
           <Col span={12}>
             <Form.Item
-              name="completionPercentage"
-              label="Completion Percentage"
+              name="overallProcess"
+              label="Overall Completion Percentage"
               rules={[
                 {
                   required: true,
-                  message: "Please specify completion percentage",
+                  message: "Please specify overall completion percentage",
                 },
               ]}
             >
@@ -341,6 +343,29 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
                   100: "100%",
                 }}
                 // disabled={true}
+              />
+            </Form.Item>
+            <Form.Item
+              name="actualProcess"
+              label="Actual Completion Percentage"
+              rules={[
+                {
+                  required: true,
+                  message: "Please specify actual completion percentage",
+                },
+              ]}
+            >
+              <Slider
+                min={0}
+                max={100}
+                marks={{
+                  0: "0%",
+                  25: "25%",
+                  50: "50%",
+                  75: "75%",
+                  100: "100%",
+                }}
+                disabled={true}
               />
             </Form.Item>
           </Col>

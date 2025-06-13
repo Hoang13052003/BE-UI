@@ -24,7 +24,7 @@ i18n
   // Khởi tạo i18next
   .init({
     resources,
-    // lng: 'en', // Ngôn ngữ mặc định
+    lng: "en", // Ngôn ngữ mặc định
     fallbackLng: "en", // Ngôn ngữ dự phòng nếu không có bản dịch
     interpolation: {
       escapeValue: false, // Không cần escape vì React đã xử lý XSS

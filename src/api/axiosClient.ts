@@ -18,10 +18,14 @@ const axiosClient: AxiosInstance = axios.create({
 // Request interceptor
 axiosClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  
+
   // SỬA ĐỔI 1: Cách kiểm tra public API đáng tin cậy hơn
-  const publicPaths = ['/api/auth/login', '/api/auth/signup', '/api/auth/refresh-token'];
-  const isPublic = publicPaths.some(path => config.url?.startsWith(path));
+  const publicPaths = [
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/auth/refresh-token",
+  ];
+  const isPublic = publicPaths.some((path) => config.url?.startsWith(path));
 
   if (token && !isPublic) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -30,16 +34,22 @@ axiosClient.interceptors.request.use((config) => {
 });
 
 // Hàm gọi refresh token
-const refreshAccessToken = async (): Promise<{ jwt: string; jwtRefreshToken: string }> => {
+const refreshAccessToken = async (): Promise<{
+  jwt: string;
+  jwtRefreshToken: string;
+}> => {
   const refreshToken = localStorage.getItem("tokenRefresh");
   if (!refreshToken) throw new Error("No refresh token available");
 
   // SỬA ĐỔI 2: Dùng axios gốc và header Authorization chuẩn, sử dụng normalizedBaseURL
-  const response = await axios.get(`${normalizedBaseURL}/api/auth/refresh-token`, {
-    headers: {
-      "Authorization": `Bearer ${refreshToken}`,
-    },
-  });
+  const response = await axios.get(
+    `${normalizedBaseURL}/api/auth/refresh-token`,
+    {
+      headers: {
+        "X-Refresh-Token": `Bearer ${refreshToken}`,
+      },
+    }
+  );
   return response.data;
 };
 
@@ -95,6 +105,8 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        console.error("Refresh token failed:", refreshError);
+        alert("Your session has expired. Please log in again.");
         localStorage.clear();
         return Promise.reject(refreshError);
       } finally {
