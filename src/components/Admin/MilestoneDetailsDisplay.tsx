@@ -579,7 +579,6 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                     render: (percent: number) => (
                       <Progress
                         percent={percent || 0}
-                        size="small"
                         status={percent === 100 ? 'success' : 'active'}
                         strokeColor={percent === 100 ? '#52c41a' : '#1890ff'}
                       />

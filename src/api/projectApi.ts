@@ -250,7 +250,8 @@ export const getProjectMilestonesOverviewApi = async (
   projectId: number,
   page: number = 0,
   size: number = 10,
-  sortConfig?: SortConfig | SortConfig[]
+  sortConfig?: SortConfig | SortConfig[],
+  filterParams?: Record<string, any>
 ): Promise<ApiPage<Milestone>> => {
   try {
     const defaultSort: SortConfig[] = [
@@ -266,7 +267,8 @@ export const getProjectMilestonesOverviewApi = async (
       `/api/projects/${projectId}/milestones-overview`,
       page,
       size,
-      currentSortConfig
+      currentSortConfig,
+      filterParams
     );
     return result;
   } catch (error) {
