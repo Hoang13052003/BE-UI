@@ -154,8 +154,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
       const m = Math.round((hours - h) * 60);
       return `${h}h ${m}m`;
     }
-  };
-  // Calculate total hours from filtered data
+  };  // Calculate total hours from filtered data
   const totalHours =
     filteredTimeLogs?.reduce((sum, timelog) => sum + timelog.hoursSpent, 0) ||
     0;
@@ -164,7 +163,6 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
     timelog,
   }) => (
     <Card
-      hoverable
       style={{
         height: "280px",
         borderRadius: 12,
@@ -432,8 +430,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
           loading={loading}
           renderItem={(timelog) => {
             if (!timelog) return null;
-            return (
-              <Card
+            return (              <Card
                 key={timelog.id}
                 style={{
                   marginBottom: 16,
@@ -442,7 +439,6 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
                   border: "1px solid #f0f0f0",
                   transition: "all 0.3s ease",
                 }}
-                hoverable
                 styles={{ body: { padding: "20px" } }}
               >
                 <List.Item style={{ border: "none", padding: 0 }}>

@@ -5,20 +5,15 @@ import {
   Tag,
   Typography,
   Space,
-  Button,
   Row,
   Col,
   Tooltip,
   Progress,
   Card,
-  Divider,
   Avatar,
 } from "antd";
 import {
-  EditOutlined,
   CalendarOutlined,
-  DownOutlined,
-  UpOutlined,
   ClockCircleOutlined,
   FlagOutlined,
   TeamOutlined,
@@ -37,7 +32,6 @@ const { Title, Text, Paragraph } = Typography;
 interface ProjectDetailsDisplayProps {
   project: Project | ProjectDetail; // Sửa để nhận cả project object
   theme?: string;
-  onEditProject?: (project: Project | ProjectDetail) => void; // Sửa để nhận cả project object
 
   isExpanded?: boolean;
   expandedTimelogProjectId?: number | null;
@@ -91,7 +85,6 @@ const isProjectDetail = (
 const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   project,
   theme,
-  onEditProject,
   isExpanded,
   expandedTimelogProjectId,
   onToggleMilestoneDetail,
@@ -111,6 +104,17 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   const handleRefreshWithProgress = (callback?: () => void) => {
     if (callback) callback();
     if (onRefreshProgress) onRefreshProgress();
+  };  // Handler để tự động expand milestone/timelog khi click vào project
+  const handleProjectCardClick = (e: React.MouseEvent) => {
+    // Chỉ expand/collapse khi click vào các phần có class project-card-clickable
+    const target = e.target as Element;
+    if (target.closest('.project-card-clickable') || e.target === e.currentTarget) {
+      if (projectData.type === "FIXED_PRICE" && onToggleMilestoneDetail) {
+        onToggleMilestoneDetail(projectData.id);
+      } else if (projectData.type === "LABOR" && onToggleTimelogDetail) {
+        onToggleTimelogDetail(projectData.id);
+      }
+    }
   };
 
   const createMilestoneStatusColors = () => {
@@ -359,10 +363,10 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
 
     return null;
   };
-
   return (
     <Card
       hoverable
+      onClick={handleProjectCardClick}
       style={{
         borderRadius: "12px",
         boxShadow:
@@ -370,11 +374,11 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             ? "0 2px 8px rgba(255,255,255,0.05)"
             : "0 2px 8px rgba(0,0,0,0.06)",
         border: theme === "dark" ? "1px solid #303030" : "1px solid #f0f0f0",
+        cursor: "pointer",
       }}
       styles={{ body: { padding: "20px" } }}
-    >
-      {/* Header Section */}
-      <Row justify="space-between" align="top" style={{ marginBottom: "16px" }}>
+    >      {/* Header Section */}
+      <Row justify="space-between" align="top" style={{ marginBottom: "16px" }} className="project-card-clickable">
         <Col flex="auto">
           <Space direction="vertical" size={12} style={{ width: "100%" }}>
             {/* Status and Type Tags */}
@@ -389,8 +393,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                   }}
                 >
                   {projectData.status}
-                </Tag>
-                <Tag
+                </Tag>                <Tag
                   style={{
                     borderRadius: "6px",
                     background: theme === "dark" ? "#262626" : "#f6f6f6",
@@ -400,22 +403,30 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                   <FlagOutlined style={{ marginRight: "4px" }} />
                   {projectData.type}
                 </Tag>
+                {/* Expand Status Indicator */}
+                {projectData.type === "FIXED_PRICE" && (
+                  <Text 
+                    type="secondary" 
+                    style={{ 
+                      fontSize: "12px", 
+                      fontStyle: "italic",
+                    }}
+                  >
+                    {isExpanded ? "👇 Milestones expanded" : "📋 Click to view milestones"}
+                  </Text>
+                )}
+                {projectData.type === "LABOR" && (
+                  <Text 
+                    type="secondary" 
+                    style={{ 
+                      fontSize: "12px", 
+                      fontStyle: "italic",
+                    }}
+                  >
+                    {expandedTimelogProjectId === projectData.id ? "👇 Timelogs expanded" : "⏰ Click to view timelogs"}
+                  </Text>
+                )}
               </Space>
-              {/* Chỉ hiển thị nút Edit Project nếu onEditProject được truyền và là admin */}
-              {currentUserIsAdmin && onEditProject && (
-                <Button
-                  type="text"
-                  icon={<EditOutlined />}
-                  onClick={() => onEditProject(projectData)} // Truyền cả projectData
-                  style={{
-                    borderRadius: "6px",
-                    color: theme === "dark" ? "#1890ff" : "#1890ff",
-                  }}
-                  size="small"
-                >
-                  Edit Project
-                </Button>
-              )}
             </Row>
 
             {/* Project Name */}
@@ -440,15 +451,13 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             </Paragraph>
           </Space>
         </Col>
-      </Row>
-
-      {/* Progress Section */}
+      </Row>      {/* Progress Section */}
       {renderProgressSection() && (
-        <div style={{ marginBottom: "16px" }}>{renderProgressSection()}</div>
+        <div style={{ marginBottom: "16px" }} className="project-card-clickable">{renderProgressSection()}</div>
       )}
 
       {/* Info Section */}
-      <Row gutter={[16, 8]}>
+      <Row gutter={[16, 8]} className="project-card-clickable">
         <Col xs={24} sm={12} md={8}>
           <Space align="center">
             <TeamOutlined style={{ color: "#1890ff" }} />
@@ -500,58 +509,15 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               </Text>
             </div>
           </Space>
-        </Col>
-      </Row>
-
-      {/* Action Buttons */}
-      {(onToggleMilestoneDetail || onToggleTimelogDetail) && (
-        <>
-          <Divider style={{ margin: "16px 0" }} />
-          <Row justify="start">
-            <Space>
-              {onToggleMilestoneDetail &&
-                projectData.type === "FIXED_PRICE" && (
-                  <Button
-                    type="default"
-                    icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
-                    onClick={() => onToggleMilestoneDetail(projectData.id)}
-                    style={{ borderRadius: "6px" }}
-                    size="small"
-                  >
-                    {isExpanded ? "Hide Milestones" : "Show Milestones"}
-                  </Button>
-                )}
-              {onToggleTimelogDetail && projectData.type === "LABOR" && (
-                <Button
-                  type="default"
-                  icon={
-                    expandedTimelogProjectId === projectData.id ? (
-                      <UpOutlined />
-                    ) : (
-                      <DownOutlined />
-                    )
-                  }
-                  onClick={() => onToggleTimelogDetail(projectData.id)}
-                  style={{ borderRadius: "6px" }}
-                  size="small"
-                >
-                  {expandedTimelogProjectId === projectData.id
-                    ? "Hide Timelog"
-                    : "Show Timelog"}
-                </Button>
-              )}
-            </Space>
-          </Row>
-        </>
-      )}
+        </Col>      </Row>
 
       {/* Expanded Sections */}
       {isExpanded &&
         onToggleMilestoneDetail &&
         projectData.type === "FIXED_PRICE" &&
-        onAddMilestone &&
-        onEditMilestone && (
+        onAddMilestone &&        onEditMilestone && (
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               marginTop: "16px",
               padding: "16px",
@@ -559,7 +525,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               borderRadius: "8px",
               border: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}`,
             }}
-          >            <MilestoneDetailsDisplayInternal
+          ><MilestoneDetailsDisplayInternal
               projectId={projectData.id}
               onAddMilestone={(refreshCallback) =>
                 currentUserIsAdmin &&
@@ -575,9 +541,9 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
         )}
 
       {expandedTimelogProjectId === projectData.id &&
-        onToggleTimelogDetail &&
-        projectData.type === "LABOR" && (
+        onToggleTimelogDetail &&        projectData.type === "LABOR" && (
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               marginTop: "16px",
               padding: "16px",
@@ -585,7 +551,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               borderRadius: "8px",
               border: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}`,
             }}
-          >            <TimelogDetailsDisplayInternal
+          ><TimelogDetailsDisplayInternal
               projectId={projectData.id}
               theme={theme}
               isAdmin={currentUserIsAdmin}
