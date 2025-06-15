@@ -1,6 +1,6 @@
 // filepath: d:\labsparkmind\BE-UI\src\components\Admin\MilestoneDetailsDisplay.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { List, Typography, Spin, Alert, Tag, Space, Row, Col, Button, Popconfirm, message, Pagination, Card, Empty, Statistic } from 'antd';
+import { Typography, Spin, Alert, Tag, Space, Row, Col, Button, Popconfirm, message, Pagination, Card, Empty, Statistic, Table, Progress } from 'antd';
 import {
   CalendarOutlined,
   FlagOutlined,
@@ -9,17 +9,22 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  CloseCircleOutlined,
   BarChartOutlined,
   ExclamationCircleOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  SettingOutlined,
+  CloseOutlined,
+  SaveOutlined,
+  DeleteFilled
 } from '@ant-design/icons';
 import {
   getMilestonesByProjectIdApi,
-  deleteMilestoneApi
+  deleteMilestoneApi,
+  batchDeleteMilestonesApi
 } from '../../api/milestoneApi';
 import { Milestone, MilestoneStatus } from '../../types/milestone';
-import MilestoneInfo from './MilestoneDetailsDisplay/MilestoneInfo';
+import { useInlineEditMilestone } from '../../hooks/useInlineEditMilestone';
+import { createInlineEditMilestoneColumns } from './InlineEditMilestoneColumns';
 
 const { Text, Title } = Typography;
 
@@ -38,14 +43,41 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   onEditMilestone, // Nhận prop (giờ là optional)
   theme = 'light',
   onRefreshProgress, // Thêm prop mới
-}) => {
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
+}) => {  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
   // Phân trang
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);  const [totalItems, setTotalItems] = useState(0);  // Helper function to check if milestone is completed
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Bulk edit states
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [batchDeleting, setBatchDeleting] = useState<boolean>(false);
+  const [isInBatchMode, setIsInBatchMode] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card'); // New state for view mode
+
+  // INLINE EDIT HOOK
+  const {
+    editedData,
+    batchSaving,
+    hasUnsavedChanges,
+    handleInlineEdit,
+    handleBatchSave,
+    handleMarkSelectedAsCompleted,
+    resetEditedData,
+  } = useInlineEditMilestone({
+    milestones,
+    setMilestones,
+    onRefreshData: () => {
+      fetchMilestones();
+      // Refresh progress overview after inline edit
+      if (onRefreshProgress) onRefreshProgress();
+    },
+  });
+
+  // Helper function to check if milestone is completed
   const isMilestoneCompleted = (milestone: Milestone): boolean => {
     return milestone.completionDate !== null && 
            milestone.completionDate !== undefined && 
@@ -74,32 +106,10 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
       const currentDate = new Date();
       const deadlineEndOfDay = new Date(deadlineDate);
       deadlineEndOfDay.setHours(23, 59, 59, 999);
-      
-      return currentDate > deadlineEndOfDay;
+        return currentDate > deadlineEndOfDay;
     }
   };
-  // Helper function to calculate days overdue
-  const getOverdueDays = (milestone: Milestone): number => {
-    if (!milestone.deadlineDate || !isOverdueMilestone(milestone)) return 0;
-    
-    const deadlineDate = new Date(milestone.deadlineDate);
-    let comparisonDate: Date;
-    
-    if (isMilestoneCompleted(milestone)) {
-      comparisonDate = new Date(milestone.completionDate!);
-    } else {
-      comparisonDate = new Date();
-    }
-    
-    // Reset times to start of day for accurate day calculation
-    const deadlineDay = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate());
-    const comparisonDay = new Date(comparisonDate.getFullYear(), comparisonDate.getMonth(), comparisonDate.getDate());
-    
-    const diffTime = comparisonDay.getTime() - deadlineDay.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays > 0 ? diffDays : 0;
-  };
+
   const fetchMilestones = useCallback(async () => {
     if (!projectId) {
       setLoading(false);
@@ -152,11 +162,50 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   const handlePageChange = (page: number) => {
     setCurrentPage(page - 1);
   };
-
   const handlePageSizeChange = (_current: number, size: number) => {
     setPageSize(size);
     setCurrentPage(0);
   };
+
+  const handleToggleBatchMode = () => {
+    setIsInBatchMode(!isInBatchMode);
+    if (isInBatchMode) {
+      setSelectedRowKeys([]);
+      resetEditedData();
+      setViewMode('card');
+    } else {
+      setViewMode('table');
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.info('Please select milestones to delete.');
+      return;
+    }
+    const idsToDelete = selectedRowKeys.map(key => Number(key));
+    setBatchDeleting(true);
+    try {
+      await batchDeleteMilestonesApi(idsToDelete);
+      message.success(`${selectedRowKeys.length} milestone(s) deleted successfully!`);
+      setSelectedRowKeys([]);
+      setIsInBatchMode(false);
+      setViewMode('card');
+      fetchMilestones();
+      // Refresh progress overview after batch delete
+      if (onRefreshProgress) onRefreshProgress();
+    } catch (err) {
+      console.error('Error batch deleting milestones:', err);
+      if (err instanceof Error && err.message) {
+        message.error(err.message);
+      } else {
+        message.error('Failed to delete selected milestones.');
+      }
+    } finally {
+      setBatchDeleting(false);
+    }
+  };
+
   const handleDeleteMilestone = async (milestoneId: number) => {
     try {
       await deleteMilestoneApi(milestoneId);
@@ -195,73 +244,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
       case 'SENT': return 'orange';
       case 'REVIEWED': return 'green';
       default: return 'default';
-    }
-  };
-
-  const getStatusIcon = (status: MilestoneStatus | null | undefined) => {
-    if (!status) return null;
-
-    switch (String(status).toUpperCase()) {
-      case 'NEW': return <FlagOutlined />;
-      case 'SENT': return <ClockCircleOutlined />;
-      case 'REVIEWED': return <CheckCircleOutlined />;
-      default: return null;
-    }
-  };
-  const getMilestoneCardStyle = (item: Milestone): React.CSSProperties => {
-    const baseStyle: React.CSSProperties = {
-      marginBottom: '16px',
-      borderRadius: '12px',
-      transition: 'all 0.3s ease',
-      cursor: 'pointer',
-      width: '100%',
-    };    if (isMilestoneCompleted(item) && !isOverdueMilestone(item)) {
-      // Completed on time - green
-      return {
-        ...baseStyle,
-        background: theme === 'dark' ? '#162312' : '#f6ffed',
-        border: `2px solid ${theme === 'dark' ? '#389e0d' : '#52c41a'}`,
-        boxShadow: theme === 'dark' 
-          ? '0 2px 8px rgba(82, 196, 26, 0.15)' 
-          : '0 2px 8px rgba(82, 196, 26, 0.1)',
-      };
-    }
-
-    const isOverdue = isOverdueMilestone(item);
-
-    if (isOverdue) {
-      if (isMilestoneCompleted(item)) {
-        // Completed late - orange/yellow
-        return {
-          ...baseStyle,
-          background: theme === 'dark' ? '#1d1a0f' : '#fffbe6',
-          border: `2px solid ${theme === 'dark' ? '#d48806' : '#faad14'}`,
-          boxShadow: theme === 'dark' 
-            ? '0 2px 8px rgba(250, 173, 20, 0.15)' 
-            : '0 2px 8px rgba(250, 173, 20, 0.1)',
-        };
-      } else {
-        // Not completed and overdue - red
-        return {
-          ...baseStyle,
-          background: theme === 'dark' ? '#1f1f1f' : '#ffffff', 
-          border: `2px solid ${theme === 'dark' ? '#cf1322' : '#ff7875'}`, 
-          boxShadow: theme === 'dark' 
-            ? '0 2px 8px rgba(255, 77, 79, 0.15)' 
-            : '0 2px 8px rgba(255, 77, 79, 0.1)',
-        };
-      }
-    }
-
-    return {
-      ...baseStyle,
-      background: theme === 'dark' ? '#1f1f1f' : '#ffffff',
-      border: `1px solid ${theme === 'dark' ? '#303030' : '#f0f0f0'}`,
-      boxShadow: theme === 'dark' 
-        ? '0 2px 8px rgba(255,255,255,0.05)' 
-        : '0 2px 8px rgba(0,0,0,0.06)',
-    };
-  };
+    }  };
 
   if (loading && milestones.length === 0) {
     return (
@@ -287,40 +270,111 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   }
 
   return (
-    <div>
-      {/* Header Section */}
-      <Card        style={{ 
-          marginBottom: '20px',
+    <div>      {/* Header Section */}
+      <Card
+        style={{ 
+          marginBottom: '16px',
           borderRadius: '12px',
           background: theme === 'dark' ? '#1f1f1f' : '#fafafa'
         }}
-        styles={{ body: { padding: '20px' } }}
+        styles={{ body: { padding: '18px' } }}
       >
-        <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
+        <Row justify="space-between" align="middle" style={{ marginBottom: '12px' }}>
           <Col>
             <Space direction="vertical" size={4}>
               <Title level={4} style={{ margin: 0, color: theme === 'dark' ? '#fff' : '#262626' }}>
                 <TrophyOutlined style={{ marginRight: '8px', color: '#faad14' }} />
                 Project Milestones
+                {isInBatchMode && <Tag color="processing">Batch Mode</Tag>}
+                {hasUnsavedChanges && <Tag color="warning">Unsaved Changes</Tag>}
               </Title>
-              <Text type="secondary">Track and manage project deliverables</Text>
+              <Text type="secondary">
+                {isInBatchMode ? 'Click directly on fields to edit, select items for batch actions' : 'Track and manage project deliverables'}
+              </Text>
             </Space>
           </Col>
           <Col>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => onAddMilestone(fetchMilestones)}
-              style={{ borderRadius: '6px' }}
-            >
-              Add Milestone
-            </Button>
-          </Col>
-        </Row>
+            <Space>
+              {/* BATCH MODE ACTIONS */}
+              {isInBatchMode && (
+                <>
+                  {hasUnsavedChanges && (
+                    <Button
+                      type="primary"
+                      icon={<SaveOutlined />}
+                      onClick={handleBatchSave}
+                      loading={batchSaving}
+                      disabled={batchDeleting}
+                    >
+                      Save Changes ({Object.keys(editedData).length})
+                    </Button>
+                  )}
+                  <Button
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => handleMarkSelectedAsCompleted(selectedRowKeys)}
+                    disabled={batchSaving || selectedRowKeys.length === 0}
+                    loading={batchSaving}
+                  >
+                    Mark as Completed ({selectedRowKeys.length})
+                  </Button>
+                  <Popconfirm
+                    title={`Delete ${selectedRowKeys.length} selected item(s)?`}
+                    description="This action cannot be undone."
+                    onConfirm={handleBatchDelete}
+                    disabled={selectedRowKeys.length === 0 || batchDeleting || batchSaving}
+                    okButtonProps={{ danger: true, loading: batchDeleting }}
+                    okText="Yes, Delete"
+                    cancelText="No"
+                  >
+                    <Button
+                      danger
+                      icon={<DeleteFilled />}
+                      disabled={selectedRowKeys.length === 0 || batchDeleting || batchSaving}
+                      loading={batchDeleting}
+                    >
+                      Delete Selected ({selectedRowKeys.length})
+                    </Button>
+                  </Popconfirm>
+                  <Button 
+                    icon={<CloseOutlined />}
+                    onClick={handleToggleBatchMode}
+                    disabled={batchSaving || batchDeleting}
+                  >
+                    Exit Batch Mode
+                  </Button>
+                </>
+              )}
 
-        {/* Statistics Cards */}
+              {!isInBatchMode && milestones.length > 0 && (
+                <Button 
+                  icon={<SettingOutlined />}
+                  onClick={handleToggleBatchMode}
+                  loading={loading}
+                >
+                  Enter Batch Mode
+                </Button>
+              )}
+              
+              {/* NORMAL MODE ACTIONS */}
+              {!isInBatchMode && (
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => onAddMilestone(fetchMilestones)}
+                  style={{ borderRadius: '6px' }}
+                >
+                  Add Milestone
+                </Button>
+              )}
+
+              {selectedRowKeys.length > 0 && (
+                 <Text type="secondary" style={{ marginLeft: 8 }}> ({selectedRowKeys.length} item(s) selected)</Text>
+              )}
+            </Space>
+          </Col>
+        </Row>        {/* Statistics Cards */}
         {milestones.length > 0 && (
-          <Row gutter={16} style={{ marginBottom: '16px' }}>
+          <Row gutter={16} style={{ marginBottom: '12px' }}>
             <Col xs={12} sm={6}>
               <Card 
                 size="small" 
@@ -330,11 +384,12 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                   border: 'none',
                   borderRadius: '8px'
                 }}
+                styles={{ body: { padding: '10px' } }}
               >
                 <Statistic
                   title="Total"
                   value={stats.total}
-                  valueStyle={{ color: '#1890ff', fontSize: '20px' }}
+                  valueStyle={{ color: '#1890ff', fontSize: '18px' }}
                   prefix={<BarChartOutlined />}
                 />
               </Card>
@@ -348,11 +403,12 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                   border: 'none',
                   borderRadius: '8px'
                 }}
+                styles={{ body: { padding: '10px' } }}
               >
                 <Statistic
                   title="Completed"
                   value={stats.completed}
-                  valueStyle={{ color: '#52c41a', fontSize: '20px' }}
+                  valueStyle={{ color: '#52c41a', fontSize: '18px' }}
                   prefix={<CheckCircleOutlined />}
                 />
               </Card>
@@ -366,11 +422,12 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                   border: 'none',
                   borderRadius: '8px'
                 }}
+                styles={{ body: { padding: '10px' } }}
               >
                 <Statistic
                   title="In Progress"
                   value={stats.inProgress}
-                  valueStyle={{ color: '#faad14', fontSize: '20px' }}
+                  valueStyle={{ color: '#faad14', fontSize: '18px' }}
                   prefix={<ClockCircleOutlined />}
                 />
               </Card>
@@ -384,11 +441,12 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                   border: 'none',
                   borderRadius: '8px'
                 }}
+                styles={{ body: { padding: '10px' } }}
               >
                 <Statistic
                   title="Overdue"
                   value={stats.overdue}
-                  valueStyle={{ color: '#ff4d4f', fontSize: '20px' }}
+                  valueStyle={{ color: '#ff4d4f', fontSize: '18px' }}
                   prefix={<ExclamationCircleOutlined />}
                 />
               </Card>
@@ -426,183 +484,216 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
             }
           />
         </Card>
-      )}
-
-      {/* Milestone List */}
+      )}      {/* Milestone List */}
       {Array.isArray(milestones) && milestones.length > 0 && (
         <>
-          <List
-            className="milestone-list"
-            itemLayout="horizontal"
-            dataSource={milestones}
-            loading={loading && milestones.length > 0}            renderItem={(item) => {              
-              return (
-                <List.Item style={{ padding: 0, border: 'none' }}>                  <Card
-                    style={getMilestoneCardStyle(item)}
-                    styles={{ body: { padding: '20px' } }}
-                    hoverable
-                  >
-                    <Row gutter={[16, 16]} align="middle">
-                      <Col flex="auto">
-                        <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                          {/* Milestone Header */}
-                          <Row justify="space-between" align="middle">
-                            <Col>
-                              <Space size={8}>
-                                <Tag
-                                  color={getMilestoneStatusColor(item.status)}
-                                  icon={getStatusIcon(item.status)}
-                                  style={{ 
-                                    borderRadius: '12px',
-                                    fontWeight: 'bold',
-                                    border: 'none'
-                                  }}
-                                >                                  {item.status ? String(item.status).replace('_', ' ') : 'Not set'}
-                                </Tag>                                {isMilestoneCompleted(item) && !isOverdueMilestone(item) && (
-                                  <Tag color="green" style={{ borderRadius: '12px', border: 'none' }}>
-                                    <CheckCircleOutlined /> Completed
-                                  </Tag>
-                                )}
-                                {isOverdueMilestone(item) && (
-                                  <Tag 
-                                    color={isMilestoneCompleted(item) ? "orange" : "red"} 
-                                    style={{ borderRadius: '12px', border: 'none' }}
-                                  >
-                                    <ExclamationCircleOutlined /> 
-                                    {isMilestoneCompleted(item) ? 'Completed Late' : 'Overdue'}
-                                    {getOverdueDays(item) > 0 && ` (${getOverdueDays(item)} day${getOverdueDays(item) > 1 ? 's' : ''})`}
-                                  </Tag>
-                                )}
-                              </Space>
-                            </Col>
-                            <Col>
-                              <Space size="small">
-                                {/* Chỉ hiển thị nút Edit nếu onEditMilestone được truyền vào */}
-                                {onEditMilestone && (
-                                  <Button
-                                    type="text"
-                                    icon={<EditOutlined />}
-                                    onClick={() => onEditMilestone(item.id, projectId, fetchMilestones)}
-                                    style={{ borderRadius: '4px' }}
-                                    size="small"
-                                  >
-                                    Edit
-                                  </Button>
-                                )}
-                                <Popconfirm
-                                  title="Delete Milestone"
-                                  description="Are you sure you want to delete this milestone?"
-                                  onConfirm={() => handleDeleteMilestone(item.id)}
-                                  okText="Delete"
-                                  cancelText="Cancel"
-                                  okButtonProps={{ danger: true }}
-                                >
-                                  <Button 
-                                    type="text" 
-                                    icon={<DeleteOutlined />} 
-                                    danger 
-                                    size="small"
-                                    style={{ borderRadius: '4px' }}
-                                  >
-                                    Delete
-                                  </Button>
-                                </Popconfirm>
-                              </Space>
-                            </Col>
-                          </Row>
-
-                          {/* Milestone Info */}                          <MilestoneInfo
-                            name={item.name || ''}
-                            description={item.description}
-                            notes={item.notes}
-                            completed={isMilestoneCompleted(item)}
-                            completionPercentage={item.completionPercentage}
+          {viewMode === 'table' && isInBatchMode ? (
+            // Table view for batch editing
+            <Card style={{ borderRadius: '12px' }} styles={{ body: { padding: '0' } }}>              <Table
+                rowKey="id"
+                dataSource={milestones}
+                columns={createInlineEditMilestoneColumns({
+                  isInBatchMode,
+                  isAdmin: true,
+                  editedData,
+                  batchSaving,
+                  batchDeleting,
+                  onInlineEdit: handleInlineEdit,
+                })}
+                loading={loading || batchDeleting || batchSaving}
+                pagination={false}
+                rowSelection={{
+                  selectedRowKeys,
+                  onChange: (keys: React.Key[]) => { setSelectedRowKeys(keys); },
+                }}
+                size="small"
+                bordered
+              />
+              {totalItems > 0 && (
+                <div style={{ padding: '16px 20px', borderTop: `1px solid ${theme === 'dark' ? '#303030' : '#f0f0f0'}`, background: theme === 'dark' ? '#1a1a1a' : '#fafafa' }}>
+                  <Row justify="end">
+                    <Pagination
+                      current={currentPage + 1}
+                      pageSize={pageSize}
+                      total={totalItems}
+                      onChange={handlePageChange}
+                      showSizeChanger
+                      onShowSizeChange={handlePageSizeChange}
+                      pageSizeOptions={['5', '10', '20', '50']}
+                      showTotal={(total, range) => <Text type="secondary">{range[0]}-{range[1]} of {total} entries</Text>}
+                      style={{ margin: 0 }}
+                    />
+                  </Row>
+                </div>
+              )}            </Card>
+          ) : (
+            // Table view (default) - Clean table layout như timelog
+            <Card style={{ borderRadius: '12px' }} styles={{ body: { padding: '0' } }}>
+              <Table
+                rowKey="id"
+                dataSource={milestones}
+                loading={loading && milestones.length > 0}
+                pagination={false}
+                size="middle"                columns={[
+                  {
+                    title: 'Milestone Name',
+                    dataIndex: 'name',
+                    key: 'name',                    render: (text: string) => (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <FlagOutlined style={{ color: '#1890ff' }} />
+                        <Text strong>{text || 'Untitled Milestone'}</Text>
+                      </div>
+                    ),
+                  },                  {
+                    title: 'Description',
+                    dataIndex: 'description',
+                    key: 'description',
+                    ellipsis: true,
+                    render: (text: string) => (
+                      <Text>{text || '-'}</Text>
+                    ),
+                  },
+                  {
+                    title: 'Notes',
+                    dataIndex: 'notes',
+                    key: 'notes',
+                    ellipsis: true,
+                    width: 150,
+                    render: (text: string) => (
+                      text ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Text style={{ color: '#666' }}>
+                            📝 {text}
+                          </Text>
+                        </div>
+                      ) : (
+                        <Text style={{ color: '#ccc' }}>-</Text>
+                      )
+                    ),
+                  },
+                  {
+                    title: 'Progress',
+                    dataIndex: 'completionPercentage',
+                    key: 'progress',
+                    width: 120,
+                    render: (percent: number) => (
+                      <Progress
+                        percent={percent || 0}
+                        size="small"
+                        status={percent === 100 ? 'success' : 'active'}
+                        strokeColor={percent === 100 ? '#52c41a' : '#1890ff'}
+                      />
+                    ),
+                  },                  {
+                    title: 'Start Date',
+                    dataIndex: 'startDate',
+                    key: 'startDate',
+                    width: 120,
+                    render: (date: string) => (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <CalendarOutlined style={{ color: '#52c41a' }} />
+                        <Text>{formatDate(date)}</Text>
+                      </div>
+                    ),
+                  },
+                  {
+                    title: 'Due Date',
+                    dataIndex: 'deadlineDate',
+                    key: 'deadlineDate',
+                    width: 120,
+                    render: (date: string, record: Milestone) => (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <ClockCircleOutlined style={{ 
+                          color: isOverdueMilestone(record) ? '#ff4d4f' : '#faad14'
+                        }} />
+                        <Text style={{ 
+                          color: isOverdueMilestone(record) ? '#ff4d4f' : undefined
+                        }}>{formatDate(date)}</Text>
+                      </div>
+                    ),
+                  },
+                  {
+                    title: 'Status',
+                    dataIndex: 'status',
+                    key: 'status',
+                    width: 100,
+                    render: (status: MilestoneStatus, record: Milestone) => (                      <Space direction="vertical" size={2}>
+                        <Tag
+                          color={getMilestoneStatusColor(status)}
+                          style={{ 
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            margin: 0
+                          }}
+                        >
+                          {status ? String(status).replace('_', ' ') : 'New'}
+                        </Tag>
+                        {isMilestoneCompleted(record) && !isOverdueMilestone(record) && (
+                          <Tag color="success" style={{ padding: '1px 4px', borderRadius: '8px', margin: 0 }}>
+                            Done
+                          </Tag>
+                        )}
+                        {isOverdueMilestone(record) && (
+                          <Tag 
+                            color={isMilestoneCompleted(record) ? "warning" : "error"} 
+                            style={{ padding: '1px 4px', borderRadius: '8px', margin: 0 }}
+                          >
+                            {isMilestoneCompleted(record) ? 'Late' : 'Overdue'}
+                          </Tag>
+                        )}
+                      </Space>
+                    ),
+                  },
+                  {
+                    title: 'Actions',
+                    key: 'actions',
+                    width: 80,
+                    render: (_, record: Milestone) => (
+                      <Space size="small">
+                        {onEditMilestone && (
+                          <Button
+                            type="text"
+                            icon={<EditOutlined />}
+                            onClick={() => onEditMilestone(record.id, projectId, fetchMilestones)}
+                            size="small"
                           />
-
-                          {/* Date Information */}
-                          <Row gutter={[24, 8]}>
-                            <Col xs={24} sm={8}>
-                              <Space size={4}>
-                                <CalendarOutlined style={{ color: '#52c41a' }} />
-                                <Text type="secondary" style={{ fontSize: '12px' }}>Start:</Text>
-                                <Text style={{ fontSize: '12px' }}>{formatDate(item.startDate)}</Text>
-                              </Space>
-                            </Col>                            <Col xs={24} sm={8}>
-                              <Space size={4}>
-                                <CalendarOutlined style={{ 
-                                  color: isOverdueMilestone(item) 
-                                    ? (isMilestoneCompleted(item) ? '#faad14' : '#ff4d4f') 
-                                    : '#faad14' 
-                                }} />
-                                <Text type="secondary" style={{ fontSize: '12px' }}>Due:</Text>
-                                <Text style={{ 
-                                  fontSize: '12px', 
-                                  color: isOverdueMilestone(item) 
-                                    ? (isMilestoneCompleted(item) ? '#faad14' : '#ff4d4f') 
-                                    : undefined 
-                                }}>
-                                  {formatDate(item.deadlineDate)}
-                                </Text>
-                              </Space>
-                            </Col>
-                            <Col xs={24} sm={8}>                              <Space size={4}>
-                                {isMilestoneCompleted(item) ? (
-                                  <>
-                                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                                    <Text type="secondary" style={{ fontSize: '12px' }}>Completed:</Text>
-                                    <Text style={{ fontSize: '12px' }}>{formatDate(item.completionDate)}</Text>
-                                  </>
-                                ) : (
-                                  <>
-                                    <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                                    <Text type="secondary" style={{ fontSize: '12px' }}>Status: In Progress</Text>
-                                  </>
-                                )}
-                              </Space>
-                            </Col>
-                          </Row>
-                        </Space>
-                      </Col>
-                    </Row>
-                  </Card>
-                </List.Item>
-              );
-            }}
-          />          {/* Pagination and Summary */}
-          <Card style={{ borderRadius: '12px', marginTop: '16px' }} styles={{ body: { padding: '16px' } }}>
-            <Row justify="space-between" align="middle">
-              <Col>
-                <Space direction="vertical" size={4}>
-                  <Text type="secondary" style={{ fontSize: '13px' }}>
-                    Showing {Math.min((currentPage * pageSize) + 1, totalItems)}-{Math.min((currentPage + 1) * pageSize, totalItems)} of {totalItems} milestones
-                  </Text>
-                  {totalItems > pageSize && (
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
-                      Page {currentPage + 1} of {Math.ceil(totalItems / pageSize)}
-                    </Text>
-                  )}
-                </Space>
-              </Col>
-              <Col>
-                {totalItems > pageSize && (
-                  <Pagination
-                    current={currentPage + 1}
-                    pageSize={pageSize}
-                    total={totalItems}
-                    onChange={handlePageChange}
-                    showSizeChanger
-                    onShowSizeChange={handlePageSizeChange}
-                    pageSizeOptions={['5', '10', '20', '50']}
-                    showQuickJumper
-                    size="small"
-                    showTotal={(total, range) => 
-                      `${range[0]}-${range[1]} of ${total}`
-                    }
-                  />
-                )}
-              </Col>
-            </Row>
-          </Card>
+                        )}
+                        <Popconfirm
+                          title="Delete this milestone?"
+                          onConfirm={() => handleDeleteMilestone(record.id)}
+                          okText="Delete"
+                          cancelText="Cancel"
+                          okButtonProps={{ danger: true }}
+                        >
+                          <Button 
+                            type="text" 
+                            icon={<DeleteOutlined />} 
+                            danger 
+                            size="small"
+                          />
+                        </Popconfirm>
+                      </Space>
+                    ),
+                  },                ]}
+              />
+              {totalItems > pageSize && (
+                <div style={{ padding: '16px 20px', borderTop: `1px solid ${theme === 'dark' ? '#303030' : '#f0f0f0'}`, background: theme === 'dark' ? '#1a1a1a' : '#fafafa' }}>
+                  <Row justify="end">
+                    <Pagination
+                      current={currentPage + 1}
+                      pageSize={pageSize}
+                      total={totalItems}
+                      onChange={handlePageChange}
+                      showSizeChanger
+                      onShowSizeChange={handlePageSizeChange}
+                      pageSizeOptions={['5', '10', '20', '50']}
+                      showTotal={(total, range) => <Text type="secondary">{range[0]}-{range[1]} of {total} entries</Text>}
+                      style={{ margin: 0 }}
+                    />
+                  </Row>                </div>
+              )}
+            </Card>
+          )}
         </>
       )}
     </div>
