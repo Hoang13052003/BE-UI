@@ -1,5 +1,3 @@
-// File: src/components/Admin/ProjectDetailsPage/ProjectMilestonesTab.tsx
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Spin,
@@ -20,6 +18,8 @@ import {
   List,
   Input,
   DatePicker,
+  Select,
+  Checkbox,
 } from "antd";
 import {
   CalendarOutlined,
@@ -29,18 +29,12 @@ import {
   FlagOutlined,
   AppstoreOutlined,
   BarsOutlined,
-  SearchOutlined,
   ClearOutlined,
 } from "@ant-design/icons";
 import { Milestone, MilestoneStatus } from "../../../types/milestone";
-// << THAY ĐỔI IMPORT VÀ TYPE SỬ DỤNG >>
-import { ApiPage } from "../../../types/project"; // Import ApiPage từ project.ts
-import { getProjectMilestonesOverviewApi } from "../../../api/projectApi"; // API này giờ trả về ApiPage<Milestone>
+import { ApiPage } from "../../../types/project";
+import { getProjectMilestonesOverviewApi } from "../../../api/projectApi";
 import dayjs from "dayjs";
-import localizedFormat from "dayjs/plugin/localizedFormat";
-dayjs.extend(localizedFormat);
-import relativeTime from "dayjs/plugin/relativeTime";
-dayjs.extend(relativeTime);
 
 const { Text, Title } = Typography;
 const { Search } = Input;
@@ -90,17 +84,16 @@ const getProgressColor = (percentage: number) => {
 const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
   projectId,
 }) => {
-  // << THAY ĐỔI KIỂU STATE >>
-  const [milestonesPage, setMilestonesPage] =
-    useState<ApiPage<Milestone> | null>(null);
+  const [milestonesPage, setMilestonesPage] = useState<ApiPage<Milestone> | null>(null);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchText, setSearchText] = useState("");
   const [startDate, setStartDate] = useState<string | undefined>(undefined);
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
-  // UI Pagination state (1-indexed)
-  const [uiPagination, setUiPagination] = useState({ current: 1, pageSize: 6 });
-  const fetchMilestones = useCallback(
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [completionFilter, setCompletionFilter] = useState<boolean | undefined>(undefined);
+  const [currentWeekFilter, setCurrentWeekFilter] = useState<boolean>(true);
+  const [uiPagination, setUiPagination] = useState({ current: 1, pageSize: 6 });const fetchMilestones = useCallback(
     async (pageToFetch: number, currentSize: number) => {
       if (!projectId || projectId <= 0) {
         setLoading(false);
@@ -126,41 +119,62 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
         } as ApiPage<Milestone>);
         return;
       }
-      setLoading(true);
-      try {
+      setLoading(true);      try {
+        const filterParams: Record<string, any> = {};
+        
+        if (searchText?.trim()) {
+          filterParams.name = searchText.trim();
+        }
+        
+        if (statusFilter) {
+          filterParams.status = statusFilter;
+        }
+        
+        if (completionFilter !== undefined) {
+          filterParams.isCompleted = completionFilter;
+        }
+        
+        if (currentWeekFilter) {
+          filterParams.isCurrentWeek = true;
+        }
+        
+        if (startDate) {
+          filterParams.fromDate = startDate;
+        }
+        
+        if (endDate) {
+          filterParams.toDate = endDate;
+        }
+
         const data = await getProjectMilestonesOverviewApi(
-          // Hàm này trả về ApiPage
           projectId,
-          pageToFetch, // 0-indexed
+          pageToFetch,
           currentSize,
-          [{ property: "startDate", direction: "asc" }]
+          [{ property: "startDate", direction: "asc" }],
+          filterParams
         );
-        console.log(
-          "ProjectMilestonesTab - API Response Data:",
-          JSON.stringify(data, null, 2)
-        );
+        
         setMilestonesPage(data);
         setUiPagination({
-          // Cập nhật UI pagination từ response
           current: data.number + 1,
           pageSize: data.size,
-          // total không cần set ở đây, Pagination của AntD sẽ lấy từ totalElements của milestonesPage
         });
       } catch (error) {
         console.error("Failed to fetch project milestones:", error);
         message.error("Failed to load milestones.");
-        setMilestonesPage(null); // Reset khi lỗi
+        setMilestonesPage(null);
       } finally {
-        setLoading(false);
-      }
+        setLoading(false);      }
     },
-    [projectId]
+    [projectId, searchText, statusFilter, completionFilter, currentWeekFilter, startDate, endDate]
   );
+
   useEffect(() => {
     if (projectId && projectId > 0) {
       fetchMilestones(uiPagination.current - 1, uiPagination.pageSize);
     }
   }, [projectId, uiPagination.current, uiPagination.pageSize, fetchMilestones]);
+  
   const handlePageChange = (page: number, newPageSize?: number) => {
     setUiPagination((prev) => ({
       ...prev,
@@ -168,54 +182,23 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
       pageSize: newPageSize || prev.pageSize,
     }));
   };
-
-  // Reset pagination when search or filters change
   useEffect(() => {
     setUiPagination((prev) => ({ ...prev, current: 1 }));
-  }, [searchText, startDate, endDate]);
-  // Function to handle view mode change
+  }, [searchText, startDate, endDate, statusFilter, completionFilter, currentWeekFilter]);
+  
   const handleViewModeChange = (newMode: "grid" | "list") => {
     setViewMode(newMode);
-    // Adjust pageSize based on view mode
     const newPageSize = newMode === "grid" ? 6 : 10;
     setUiPagination((prev) => ({
       ...prev,
-      current: 1, // Reset to first page
+      current: 1,
       pageSize: newPageSize,
     }));
   };
-  // Filter milestones based on search text and date range
-  const filteredMilestones = milestonesPage?.content.filter((milestone) => {
-    // Search filter
-    const matchesSearch =
-      !searchText ||
-      (milestone.name &&
-        milestone.name.toLowerCase().includes(searchText.toLowerCase())) ||
-      (milestone.notes &&
-        milestone.notes.toLowerCase().includes(searchText.toLowerCase()));
 
-    // Date filter
-    const matchesDateRange =
-      (!startDate && !endDate) ||
-      (milestone.startDate &&
-        (!startDate ||
-          dayjs(milestone.startDate).isAfter(
-            dayjs(startDate).subtract(1, "day")
-          )) &&
-        (!endDate ||
-          dayjs(milestone.startDate).isBefore(dayjs(endDate).add(1, "day"))));
-
-    return matchesSearch && matchesDateRange;
-  });
-  // Get paginated data for current page
-  const paginatedMilestones =
-    filteredMilestones?.slice(
-      (uiPagination.current - 1) * uiPagination.pageSize,
-      uiPagination.current * uiPagination.pageSize
-    ) || [];
+  const paginatedMilestones = milestonesPage?.content || [];
 
   if (loading && !milestonesPage) {
-    // Chỉ hiển thị Spin to khi chưa có dữ liệu gì cả
     return (
       <Spin
         tip="Loading milestones..."
@@ -224,29 +207,10 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
     );
   }
 
-  // Sau khi fetch lần đầu, nếu không có content và không loading -> Empty
-  if (!loading && (!milestonesPage || milestonesPage.content.length === 0)) {
-    return (
-      <div style={{ paddingTop: "10px" }}>
-        <Empty description="No milestones found for this project." />
-      </div>
-    );
-  }
-
-  // Nếu milestonesPage là null (trường hợp lỗi nặng không mong muốn sau lần fetch đầu)
-  if (!milestonesPage) {
-    return (
-      <div style={{ paddingTop: "10px" }}>
-        <Empty description="Could not load milestones." />
-      </div>
-    );
-  } // Render Grid View
   const renderGridView = () => (
     <Row gutter={[16, 16]}>
-      {paginatedMilestones?.map((milestone) => (
-        <Col xs={24} sm={24} md={12} lg={8} xl={8} key={milestone.id}>
+      {paginatedMilestones?.map((milestone) => (        <Col xs={24} sm={24} md={12} lg={8} xl={8} key={milestone.id}>
           <Card
-            hoverable
             style={{
               borderRadius: "12px",
               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
@@ -255,8 +219,7 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
             }}
             styles={{ body: { padding: '20px' } }}
             cover
-          >
-            <div style={{ marginBottom: "12px" }}>
+          ><div style={{ marginBottom: "12px" }}>
               <Badge
                 status={getMilestoneStatusColor(milestone.status) as any}
                 text={
@@ -278,7 +241,6 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
             <Divider style={{ margin: "12px 0" }} />
 
             <Space direction="vertical" size="small" style={{ width: "100%" }}>
-              {/* Status Tag with Icon */}
               <div
                 style={{ display: "flex", alignItems: "center", gap: "8px" }}
               >
@@ -291,7 +253,6 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                 </Tag>
               </div>
 
-              {/* Progress Bar */}
               {milestone.completionPercentage !== undefined &&
                 milestone.completionPercentage !== null && (
                   <div>
@@ -316,11 +277,9 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                         milestone.completionPercentage
                       )}
                       showInfo={false}
-                    />
-                  </div>
+                    />                  </div>
                 )}
 
-              {/* Dates Information */}
               <Space direction="vertical" size={2} style={{ width: "100%" }}>
                 {milestone.startDate && (
                   <div
@@ -388,11 +347,9 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                       Completed:{" "}
                       {new Date(milestone.completionDate).toLocaleDateString()}
                     </Text>
-                  </div>
-                )}
+                  </div>                )}
               </Space>
 
-              {/* Notes */}
               {milestone.notes && (
                 <div style={{ marginTop: "8px" }}>
                   <Tooltip title={milestone.notes}>
@@ -414,11 +371,11 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                 </div>
               )}
             </Space>
-          </Card>
-        </Col>
+          </Card>        </Col>
       ))}
     </Row>
-  ); // Render List View
+  );
+  
   const renderListView = () => (
     <List
       itemLayout="horizontal"
@@ -427,98 +384,73 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
         <List.Item
           style={{
             background: "#fafafa",
-            marginBottom: "12px",
+            marginBottom: "8px",
             borderRadius: "8px",
             border: "1px solid #f0f0f0",
-            padding: "16px",
+            padding: "12px 16px",
           }}
         >
           <List.Item.Meta
             title={
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  marginBottom: "8px",
-                }}
-              >
-                <Text strong style={{ fontSize: "16px", color: "#1890ff" }}>
-                  {milestone.name || "Untitled Milestone"}
-                </Text>
-                <Tag
-                  icon={getMilestoneStatusIcon(milestone.status)}
-                  color={getMilestoneStatusColor(milestone.status)}
-                >
-                  {milestone.status || "N/A"}
-                </Tag>
-              </div>
+              <Row justify="space-between" align="middle" style={{ marginBottom: "4px" }}>
+                <Col flex="auto">
+                  <Text strong style={{ fontSize: "16px", color: "#1890ff" }}>
+                    {milestone.name || "Untitled Milestone"}
+                  </Text>
+                </Col>
+                <Col>
+                  <Tag
+                    icon={getMilestoneStatusIcon(milestone.status)}
+                    color={getMilestoneStatusColor(milestone.status)}
+                    style={{ margin: 0 }}
+                  >
+                    {milestone.status || "N/A"}
+                  </Tag>
+                </Col>
+              </Row>
             }
             description={
-              <Space
-                direction="vertical"
-                size="small"
-                style={{ width: "100%" }}
-              >
+              <Space direction="vertical" size={4} style={{ width: "100%" }}>
                 {milestone.description && (
-                  <Text type="secondary" style={{ fontSize: "14px" }}>
+                  <Text type="secondary" style={{ fontSize: "14px", lineHeight: "1.4" }}>
                     {milestone.description}
                   </Text>
                 )}
 
-                <Row gutter={[16, 8]} align="middle">
+                <Row gutter={[12, 4]} align="middle">
                   {milestone.completionPercentage !== undefined &&
                     milestone.completionPercentage !== null && (
-                      <Col span={8}>
-                        <Space direction="vertical" size={2}>
-                          <Text type="secondary" style={{ fontSize: "12px" }}>
-                            Progress
+                      <Col xs={24} sm={8} md={6}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <Text type="secondary" style={{ fontSize: "12px", minWidth: "50px" }}>
+                            Progress:
                           </Text>
                           <Progress
                             percent={milestone.completionPercentage}
                             size="small"
-                            strokeColor={getProgressColor(
-                              milestone.completionPercentage
-                            )}
+                            strokeColor={getProgressColor(milestone.completionPercentage)}
+                            style={{ flex: 1, minWidth: "60px" }}
                           />
-                        </Space>
+                        </div>
                       </Col>
                     )}
 
-                  <Col span={16}>
-                    <Space wrap>
+                  <Col xs={24} sm={16} md={18}>
+                    <Space wrap size={[12, 2]}>
                       {milestone.startDate && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          <CalendarOutlined
-                            style={{ color: "#52c41a", fontSize: "12px" }}
-                          />
+                        <Space size={4}>
+                          <CalendarOutlined style={{ color: "#52c41a", fontSize: "12px" }} />
                           <Text type="secondary" style={{ fontSize: "12px" }}>
-                            Start:{" "}
-                            {new Date(milestone.startDate).toLocaleDateString()}
+                            Start: {new Date(milestone.startDate).toLocaleDateString()}
                           </Text>
-                        </div>
+                        </Space>
                       )}
 
                       {milestone.deadlineDate && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
+                        <Space size={4}>
                           <ClockCircleOutlined
                             style={{
-                              color:
-                                new Date(milestone.deadlineDate) < new Date()
-                                  ? "#ff4d4f"
-                                  : "#faad14",
+                              color: new Date(milestone.deadlineDate) < new Date() ? "#ff4d4f" : "#faad14",
                               fontSize: "12px",
                             }}
                           />
@@ -526,52 +458,45 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                             type="secondary"
                             style={{
                               fontSize: "12px",
-                              color:
-                                new Date(milestone.deadlineDate) < new Date()
-                                  ? "#ff4d4f"
-                                  : undefined,
+                              color: new Date(milestone.deadlineDate) < new Date() ? "#ff4d4f" : undefined,
                             }}
                           >
-                            Deadline:{" "}
-                            {new Date(
-                              milestone.deadlineDate
-                            ).toLocaleDateString()}
+                            Deadline: {new Date(milestone.deadlineDate).toLocaleDateString()}
                           </Text>
-                        </div>
+                        </Space>
                       )}
 
                       {milestone.completionDate && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          <CheckCircleOutlined
-                            style={{ color: "#52c41a", fontSize: "12px" }}
-                          />
+                        <Space size={4}>
+                          <CheckCircleOutlined style={{ color: "#52c41a", fontSize: "12px" }} />
                           <Text type="secondary" style={{ fontSize: "12px" }}>
-                            Completed:{" "}
-                            {new Date(
-                              milestone.completionDate
-                            ).toLocaleDateString()}
+                            Completed: {new Date(milestone.completionDate).toLocaleDateString()}
                           </Text>
-                        </div>
+                        </Space>
+                      )}
+
+                      {milestone.notes && (
+                        <Space size={4}>
+                          <FileTextOutlined style={{ fontSize: "12px" }} />
+                          <Text
+                            type="secondary"
+                            style={{ 
+                              fontSize: "12px", 
+                              fontStyle: "italic",
+                              maxWidth: "200px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap"
+                            }}
+                            title={milestone.notes}
+                          >
+                            {milestone.notes}
+                          </Text>
+                        </Space>
                       )}
                     </Space>
                   </Col>
                 </Row>
-
-                {milestone.notes && (
-                  <Text
-                    type="secondary"
-                    style={{ fontSize: "12px", fontStyle: "italic" }}
-                  >
-                    <FileTextOutlined style={{ marginRight: "4px" }} />
-                    {milestone.notes}
-                  </Text>
-                )}
               </Space>
             }
           />
@@ -579,11 +504,8 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
       )}
     />
   );
-  return (
-    <div style={{ padding: "16px 0" }}>
-      {/* Header Section */}
+  return (    <div style={{ padding: "16px 0" }}>
       <div style={{ marginBottom: 24 }}>
-        {/* Title and View Toggle Row */}
         <Row
           justify="space-between"
           align="middle"
@@ -595,8 +517,7 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
               <Title level={3} style={{ margin: 0, color: "#1890ff" }}>
                 <FlagOutlined style={{ marginRight: 8 }} />
                 Milestones
-              </Title>
-              {milestonesPage && (
+              </Title>              {milestonesPage && (
                 <Space size="middle">
                   {" "}
                   <Tag
@@ -608,16 +529,13 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                     }}
                   >
                     <Text strong style={{ color: "#1890ff" }}>
-                      {filteredMilestones?.length || 0} of{" "}
                       {milestonesPage.totalElements} milestones
                     </Text>
                   </Tag>
                 </Space>
               )}
-            </Space>
-          </Col>
+            </Space>          </Col>
           <Col>
-            {/* View Mode Toggle */}
             <Button.Group>
               <Button
                 type={viewMode === "grid" ? "primary" : "default"}
@@ -634,75 +552,114 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                 List
               </Button>
             </Button.Group>
-          </Col>
-        </Row>
-
-        {/* Controls Row */}
-        <Row gutter={[12, 12]} align="middle">
-          <Col xs={24} sm={24} md={8} lg={8}>
+          </Col>        </Row>
+        
+        <Row gutter={[8, 8]} align="top">
+          <Col xs={24} sm={12} md={8} lg={8}>
             <Search
-              placeholder="Search by name or notes"
+              placeholder="Search by name..."
               allowClear
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               style={{ width: "100%" }}
-              prefix={<SearchOutlined />}
+              size="small"
             />
           </Col>
-          <Col xs={24} sm={24} md={10} lg={10}>
+          <Col xs={24} sm={12} md={6} lg={5}>
+            <Select
+              placeholder="Status"
+              allowClear
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: "100%" }}
+              size="small"
+              options={[
+                { value: "NEW", label: "New" },
+                { value: "SENT", label: "Sent" },
+                { value: "REVIEWED", label: "Reviewed" },
+              ]}
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6} lg={5}>
+            <Select
+              placeholder="Completion"
+              allowClear
+              value={completionFilter}
+              onChange={setCompletionFilter}
+              style={{ width: "100%" }}
+              size="small"
+              options={[
+                { value: true, label: "Completed" },
+                { value: false, label: "In Progress" },
+              ]}
+            />
+          </Col>
+          <Col xs={24} sm={12} md={4} lg={3}>
+            <Checkbox
+              checked={currentWeekFilter}
+              onChange={(e) => setCurrentWeekFilter(e.target.checked)}
+              style={{ fontSize: "12px", whiteSpace: "nowrap" }}
+            >
+              This Week
+            </Checkbox>
+          </Col>        </Row>
+        
+        <Row gutter={[8, 8]} align="middle" style={{ marginTop: 8 }}>
+          <Col xs={24} sm={18} md={20} lg={22}>
             <RangePicker
               allowClear
               onChange={(_, dateStrings) => {
                 setStartDate(dateStrings[0] || undefined);
                 setEndDate(dateStrings[1] || undefined);
-                setUiPagination((prev) => ({ ...prev, current: 1 }));
               }}
               style={{ width: "100%" }}
+              size="small"
               value={
                 startDate && endDate
                   ? [dayjs(startDate), dayjs(endDate)]
                   : undefined
               }
-              placeholder={["Start date", "End date"]}
+              placeholder={["From date", "To date"]}
             />
           </Col>
-          <Col xs={24} sm={24} md={6} lg={6}>
-            <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-              <Tooltip title="Clear all filters">
-                <Button
-                  type="text"
-                  icon={<ClearOutlined />}
-                  onClick={() => {
-                    setStartDate(undefined);
-                    setEndDate(undefined);
-                    setSearchText("");
-                    setUiPagination((prev) => ({ ...prev, current: 1 }));
-                  }}
-                  disabled={!searchText && !startDate && !endDate}
-                  style={{
-                    color: "#ff4d4f",
-                    borderColor: "#ff4d4f",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "32px",
-                    width: "32px",
-                  }}
-                />
-              </Tooltip>
-            </Space>
-          </Col>
-        </Row>
-      </div>{" "}
-      {/* Content */}
-      {!loading && (!filteredMilestones || filteredMilestones.length === 0) ? (
+          <Col xs={24} sm={6} md={4} lg={2}>
+            <Tooltip title="Clear all filters">
+              <Button
+                type="text"
+                icon={<ClearOutlined />}                onClick={() => {
+                  setStartDate(undefined);
+                  setEndDate(undefined);
+                  setSearchText("");
+                  setStatusFilter(undefined);
+                  setCompletionFilter(undefined);                  setCurrentWeekFilter(true);
+                }}
+                disabled={!searchText && !startDate && !endDate && !statusFilter && completionFilter === undefined && currentWeekFilter}
+                style={{
+                  color: "#ff4d4f",
+                  borderColor: "#ff4d4f",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "24px",
+                  width: "100%",
+                }}
+                size="small"
+              />
+            </Tooltip>
+          </Col>        </Row>
+      </div>
+      
+      {!loading && (!milestonesPage || !paginatedMilestones || paginatedMilestones.length === 0) ? (
         <Card style={{ textAlign: "center", backgroundColor: "#fafafa" }}>
           <Empty
             description={
               <span style={{ color: "#8c8c8c" }}>
-                {searchText || startDate || endDate
-                  ? "No milestones match your search criteria"
-                  : "No milestones found for this project"}
+                {!milestonesPage 
+                  ? "Could not load milestones."
+                  : (searchText || startDate || endDate || statusFilter || completionFilter !== undefined || !currentWeekFilter
+                    ? "No milestones match your search criteria"
+                    : "No milestones found for this project this week")
+                }
               </span>
             }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -718,13 +675,12 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
           <Spin size="large" tip="Loading milestones..." />
         </div>
       )}{" "}
-      {filteredMilestones &&
-        filteredMilestones.length > uiPagination.pageSize && (
+      {milestonesPage && milestonesPage.totalElements > uiPagination.pageSize && (
           <Row justify="center" style={{ marginTop: 32 }}>
             <Pagination
               current={uiPagination.current}
               pageSize={uiPagination.pageSize}
-              total={filteredMilestones.length}
+              total={milestonesPage.totalElements}
               onChange={handlePageChange}
               showSizeChanger
               pageSizeOptions={

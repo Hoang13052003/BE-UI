@@ -194,13 +194,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
         ...values,
         startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : undefined,
         plannedEndDate: values.plannedEndDate ? values.plannedEndDate.format('YYYY-MM-DD') : undefined
-      };
-
-      await updateProjectApi(projectId, updateData);
-      notification.success({
-        message: t('project.edit.success'),
-        description: t('project.edit.successDesc')
-      });
+      };      await updateProjectApi(projectId, updateData);
       form.resetFields();
       onSuccess();
     } catch (error) {

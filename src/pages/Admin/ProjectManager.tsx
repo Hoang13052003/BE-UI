@@ -416,15 +416,13 @@ const ProjectManager: React.FC = () => {
                 theme={theme}
                 milestoneCount={item.milestoneCount}
                 newMilestoneCount={item.newMilestoneCount}
-                sentMilestoneCount={item.sentMilestoneCount}
-                reviewedMilestoneCount={item.reviewedMilestoneCount}
+                sentMilestoneCount={item.sentMilestoneCount}                reviewedMilestoneCount={item.reviewedMilestoneCount}
                 isExpanded={expandedProjectId === item.id}
                 expandedTimelogProjectId={expandedTimelogProjectId === item.id ? item.id : null}
                 onToggleMilestoneDetail={toggleMilestoneDetail}
                 onToggleTimelogDetail={toggleTimelogDetail}
                 onAddMilestone={currentUserIsAdmin ? handleAddMilestoneClick : undefined}
                 onEditMilestone={currentUserIsAdmin ? handleEditMilestone : undefined}
-                onEditProject={currentUserIsAdmin ? () => handleEditProject(item) : undefined}
                 currentUserIsAdmin={currentUserIsAdmin}
                 onRefreshProgress={() => handleRefreshProjectProgress(item.id)} // Thêm callback
               />
