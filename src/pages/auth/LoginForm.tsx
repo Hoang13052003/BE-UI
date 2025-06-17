@@ -10,6 +10,7 @@ import * as yup from "yup";
 import { useFormik } from "formik";
 import { forgotPasswordApi, loginApi, LoginResponse } from "../../api/authApi";
 import { useTranslation } from "react-i18next";
+import { useAlert } from "../../contexts/AlertContext";
 
 const validationSchema = yup.object({
   email: yup
@@ -40,22 +41,26 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const { addAlert } = useAlert();
 
   const handleSubmit = async (values: LoginFormValues) => {
     try {
       setLoading(true);
       const { email, password } = values;
 
-      await props.handleLogin(await loginApi(email, password));    } catch (error: unknown) {
+      await props.handleLogin(await loginApi(email, password));
+    } catch (error: unknown) {
       let errorMessage = "Incorrect email or password. Please try again!";
-      
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string } } };
+
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { message?: string } };
+        };
         if (axiosError.response?.data?.message) {
           errorMessage = axiosError.response.data.message;
         }
       }
-      
+
       setMessage(errorMessage);
     } finally {
       setLoading(false);
@@ -70,19 +75,18 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
         alert("Please enter your email.");
         return;
       }
-
       await forgotPasswordApi(email);
-
-      setMessage("Password reset link sent to your email.");
+      addAlert("Password reset link sent to your email.", "success");
     } catch (error) {
       console.error("Error sending password reset link:", error);
+      addAlert("Error sending password reset link.", "error");
     }
   };
 
   const formik = useFormik<LoginFormValues>({
     initialValues: {
-      email: "admin@gmail.com",
-      password: "123456",
+      email: "",
+      password: "",
     },
     validationSchema,
     onSubmit: handleSubmit,
@@ -179,8 +183,14 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
               </p>
             </div>
 
-            <div className="forgot-password">
-              <a href="" onClick={() => handleForgotPassword(formik.values)}>
+            <div className="forgot-password" style={{ textAlign: "center" }}>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleForgotPassword(formik.values);
+                }}
+              >
                 {t("auth.login.forgotPassword")}
               </a>
             </div>

@@ -62,7 +62,7 @@ const EmailVerification: React.FC = () => {
 
       setVerificationState({
         status: "success",
-        message: response.message || "Email đã được xác thực thành công!",
+        message: response.message || "Email has been successfully verified!",
       });
 
       message.success("Email verification successful!");
@@ -72,7 +72,7 @@ const EmailVerification: React.FC = () => {
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Có lỗi xảy ra khi xác thực email";
+        "error occurred during email verification";
 
       setVerificationState({
         status: "error",
@@ -97,8 +97,8 @@ const EmailVerification: React.FC = () => {
                 indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
               />
             }
-            title="Đang xác thực email..."
-            subTitle="Vui lòng chờ trong giây lát"
+            title="Verifying email..."
+            subTitle="Please wait a moment"
           />
         );
 
@@ -107,19 +107,19 @@ const EmailVerification: React.FC = () => {
           <Result
             status="success"
             icon={<CheckCircleOutlined style={{ color: "#52c41a" }} />}
-            title="Xác thực thành công!"
+            title="Verification Successful!"
             subTitle={
               <Space direction="vertical" size="small">
                 <Text>{verificationState.message}</Text>
                 <Text type="secondary">
-                  Bạn sẽ được chuyển hướng đến trang đăng nhập sau {countdown}{" "}
-                  giây...
+                  You will be redirected to the login page in {countdown}{" "}
+                  seconds...
                 </Text>
               </Space>
             }
             extra={[
               <Button type="primary" key="login" onClick={handleBackToLogin}>
-                Đến trang đăng nhập ngay
+                Go to Login Page
               </Button>,
             ]}
           />
@@ -130,11 +130,11 @@ const EmailVerification: React.FC = () => {
           <Result
             status="error"
             icon={<CloseCircleOutlined style={{ color: "#ff4d4f" }} />}
-            title="Lỗi xác thực"
+            title="Verification Failed"
             subTitle={verificationState.message}
             extra={[
               <Button type="primary" key="login" onClick={handleBackToLogin}>
-                Về trang đăng nhập
+                Go to Login Page
               </Button>,
             ]}
           />
@@ -151,7 +151,7 @@ const EmailVerification: React.FC = () => {
         <Card>
           <div className="text-center mb-6">
             <Title level={2} className="mb-2">
-              Xác thực Email
+              Email Verification
             </Title>
           </div>
 

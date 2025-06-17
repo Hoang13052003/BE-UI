@@ -25,40 +25,38 @@ const ResetPasswordPage: React.FC = () => {
     token: string;
     newPassword: string;
     passwordConfirmation: string;
-    }
-
+  }
 
   const handleSubmit = async (values: ResetPasswordValues) => {
     const { token, newPassword, passwordConfirmation } = values;
     try {
       setLoading(true);
 
-      if(newPassword !== passwordConfirmation) {
-        alert("Mật khẩu không khớp. Vui lòng kiểm tra lại.");
+      if (newPassword !== passwordConfirmation) {
+        alert("Passwords do not match. Please check again.");
         return;
       }
 
       const data = await resetPasswordApi(token, newPassword);
 
       console.log("Password reset successful:", data);
-      alert("Mật khẩu đã được đặt lại thành công!");
+      alert("Password reset successful!");
       navigate("/login");
     } catch (error) {
       console.error("Error resetting password:", error);
-      alert("Đặt lại mật khẩu thất bại. Vui lòng thử lại.");
-    }
-    finally {
+      alert("Password reset failed. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
   const formik = useFormik<ResetPasswordValues>({
-      initialValues: {
-        token: resettoken || "",
-        newPassword: "",
-        passwordConfirmation: "",
-      },
-      onSubmit: handleSubmit,
-    });
+    initialValues: {
+      token: resettoken || "",
+      newPassword: "",
+      passwordConfirmation: "",
+    },
+    onSubmit: handleSubmit,
+  });
   return (
     <div className="login-container">
       <div className="login-content">
@@ -71,11 +69,9 @@ const ResetPasswordPage: React.FC = () => {
         </div>
 
         <div className="login-form-container">
-          <h1 className="welcome-text">
-            {t('common.welcomeback')} 👋
-          </h1>
+          <h1 className="welcome-text">{t("common.welcomeback")} 👋</h1>
           <p className="login-description">
-            {t('auth.forgotPassword.description')}
+            {t("auth.forgotPassword.description")}
           </p>
 
           <Form
@@ -85,19 +81,13 @@ const ResetPasswordPage: React.FC = () => {
           >
             <Form.Item
               label="New password"
-              validateStatus={
-                formik.touched.newPassword
-                  ? "error"
-                  : ""
-              }
-              help={
-                formik.touched.newPassword
-              }
+              validateStatus={formik.touched.newPassword ? "error" : ""}
+              help={formik.touched.newPassword}
             >
               <Input.Password
                 id="newPassword"
                 name="newPassword"
-                placeholder={t('auth.input.newPassword')}
+                placeholder={t("auth.input.newPassword")}
                 size="large"
                 value={formik.values.newPassword}
                 onChange={formik.handleChange}
@@ -107,18 +97,14 @@ const ResetPasswordPage: React.FC = () => {
             <Form.Item
               label="Password confirmation"
               validateStatus={
-                formik.touched.passwordConfirmation
-                  ? "error"
-                  : ""
+                formik.touched.passwordConfirmation ? "error" : ""
               }
-              help={
-                formik.touched.passwordConfirmation
-              }
+              help={formik.touched.passwordConfirmation}
             >
               <Input.Password
                 id="passwordConfirmation"
                 name="passwordConfirmation"
-                placeholder={t('auth.input.newPasswordConfirm')}
+                placeholder={t("auth.input.newPasswordConfirm")}
                 size="large"
                 value={formik.values.passwordConfirmation}
                 onChange={formik.handleChange}
@@ -134,33 +120,15 @@ const ResetPasswordPage: React.FC = () => {
                 htmlType="submit"
                 loading={loading}
               >
-                {t('auth.resetPassword')}
+                {t("auth.resetPassword")}
               </Button>
             </Form.Item>
 
             <div className="account-options">
               <p>
-                {t('auth.register.exist-account')} <a href="/login">{t('auth.login.title')}</a>
+                {t("auth.register.exist-account")}{" "}
+                <a href="/login">{t("auth.login.title")}</a>
               </p>
-              {/* <p className="or-divider">or</p>
-
-              <div className="social-login">
-                <Button
-                  icon={<FacebookFilled />}
-                  shape="circle"
-                  className="social-button fa-brands fa-facebook-f facebook"
-                />
-                <Button
-                  icon={<GoogleOutlined />}
-                  shape="circle"
-                  className="social-button google"
-                />
-                <Button
-                  icon={<TwitterOutlined />}
-                  shape="circle"
-                  className="social-button twitter"
-                />
-              </div> */}
             </div>
           </Form>
         </div>

@@ -42,6 +42,7 @@ import MyFeedbacks from "./pages/Client/MyFeedbacks";
 import AuthLogMonitor from "./pages/Admin/AuditLogDashboard/AuthLogMonitor";
 import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientPage";
 import LandingPage from "./pages/LandingPage";
+import AlertContainer from "./components/AlertContainer";
 
 // Component to handle auth logout events
 const AuthEventHandler: React.FC = () => {
@@ -70,6 +71,7 @@ function App() {
         <ChatProvider>
           <NotificationProvider>
             <Router>
+              <AlertContainer />
               <AuthEventHandler />
               <Routes>
                 {/* Public Routes */}
