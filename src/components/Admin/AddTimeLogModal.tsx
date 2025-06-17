@@ -1,8 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, DatePicker, InputNumber, Button, Select, message, Spin } from 'antd';
-import { createTimeLogApi, TimeLogRequest } from '../../api/timelogApi';
-import { useUserSearch } from '../../hooks/useUserSearch';
-import dayjs from 'dayjs';
+import React, { useState, useEffect } from "react";
+import {
+  Modal,
+  Form,
+  Input,
+  DatePicker,
+  InputNumber,
+  Button,
+  Select,
+  message,
+  Spin,
+} from "antd";
+import { createTimeLogApi, TimeLogRequest } from "../../api/timelogApi";
+import { useUserSearch } from "../../hooks/useUserSearch";
+import dayjs from "dayjs";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -15,17 +25,18 @@ interface AddTimeLogModalProps {
   users?: { id: number; name: string }[];
 }
 
-const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({ 
-  visible, 
-  onClose, 
-  onSuccess, 
-  projectId, 
-  users = []
+const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
+  visible,
+  onClose,
+  onSuccess,
+  projectId,
+  users = [],
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const { searchedUsers, searchLoading, handleUserSearch, resetSearch } = useUserSearch();
-  
+  const { searchedUsers, searchLoading, handleUserSearch, resetSearch } =
+    useUserSearch();
+
   // Reset search results when modal closes
   useEffect(() => {
     if (!visible) {
@@ -36,20 +47,20 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
+
       setLoading(true);
-      
+
       const payload: TimeLogRequest = {
         projectId: projectId,
         performerId: values.performerId,
-        taskDate: values.taskDate.format('YYYY-MM-DD'),
+        taskDate: values.taskDate.format("YYYY-MM-DD"),
         taskDescription: values.taskDescription,
-        hoursSpent: values.hoursSpent
+        hoursSpent: values.hoursSpent,
       };
-      
+
       await createTimeLogApi(payload);
-      
-      message.success('Time log added successfully');
+
+      message.success("Time log added successfully");
       form.resetFields();
       onSuccess();
       onClose();
@@ -57,9 +68,9 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
       if (error instanceof Error) {
         message.error(`Failed to add time log: ${error.message}`);
       } else {
-        message.error('Failed to add time log');
+        message.error("Failed to add time log");
       }
-      console.error('Error adding time log:', error);
+      console.error("Error adding time log:", error);
     } finally {
       setLoading(false);
     }
@@ -68,23 +79,27 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
   // Function to render user options
   const renderUserOptions = () => {
     const renderedOptions = new Set<number>();
-    
+
     return (
       <>
         {/* Show predefined users if available */}
-        {users.map(user => {
+        {users.map((user) => {
           renderedOptions.add(user.id);
           return (
-            <Option key={`predefined-${user.id}`} value={user.id}>{user.name}</Option>
+            <Option key={`predefined-${user.id}`} value={user.id}>
+              {user.name}
+            </Option>
           );
         })}
-        
+
         {/* Show searched users, avoiding duplicates */}
-        {searchedUsers.map(user => {
+        {searchedUsers.map((user) => {
           if (!renderedOptions.has(user.id)) {
             renderedOptions.add(user.id);
             return (
-              <Option key={`searched-${user.id}`} value={user.id}>{user.email}</Option>
+              <Option key={`searched-${user.id}`} value={user.id}>
+                {user.email}
+              </Option>
             );
           }
           return null;
@@ -99,32 +114,33 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
       open={visible}
       onCancel={onClose}
       footer={[
-        <Button key="cancel" onClick={onClose}>Cancel</Button>,
-        <Button 
-          key="submit" 
-          type="primary" 
-          loading={loading} 
+        <Button key="cancel" onClick={onClose}>
+          Cancel
+        </Button>,
+        <Button
+          key="submit"
+          type="primary"
+          loading={loading}
           onClick={handleSubmit}
         >
           Submit
-        </Button>
+        </Button>,
       ]}
       width={600}
-      destroyOnHidden
     >
       <Form
         form={form}
         layout="vertical"
-        initialValues={{ 
+        initialValues={{
           taskDate: dayjs(),
-          hoursSpent: 1
+          hoursSpent: 1,
         }}
         preserve={false}
       >
         <Form.Item
           name="performerId"
           label="Performed By"
-          rules={[{ required: true, message: 'Please select a user' }]}
+          rules={[{ required: true, message: "Please select a user" }]}
         >
           <Select
             showSearch
@@ -132,49 +148,58 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
             filterOption={false}
             onSearch={handleUserSearch}
             loading={searchLoading}
-            notFoundContent={searchLoading ? <Spin size="small" /> : 'No users found'}
+            notFoundContent={
+              searchLoading ? <Spin size="small" /> : "No users found"
+            }
           >
             {renderUserOptions()}
           </Select>
         </Form.Item>
-        
+
         <Form.Item
           name="taskDate"
           label="Date"
-          rules={[{ required: true, message: 'Please select a date' }]}
+          rules={[{ required: true, message: "Please select a date" }]}
         >
-          <DatePicker style={{ width: '100%' }} />
+          <DatePicker style={{ width: "100%" }} />
         </Form.Item>
-        
+
         <Form.Item
           name="taskDescription"
           label="Task Description"
           rules={[
-            { required: true, message: 'Please enter task description' },
-            { max: 500, message: 'Description must be less than 500 characters' }
+            { required: true, message: "Please enter task description" },
+            {
+              max: 500,
+              message: "Description must be less than 500 characters",
+            },
           ]}
         >
-          <TextArea 
-            rows={4} 
-            placeholder="Describe the work done..." 
-            maxLength={500} 
-            showCount 
+          <TextArea
+            rows={4}
+            placeholder="Describe the work done..."
+            maxLength={500}
+            showCount
           />
         </Form.Item>
-        
+
         <Form.Item
           name="hoursSpent"
           label="Hours Spent"
           rules={[
-            { required: true, message: 'Please enter hours spent' },
-            { type: 'number', min: 0.01, message: 'Hours must be greater than 0' }
+            { required: true, message: "Please enter hours spent" },
+            {
+              type: "number",
+              min: 0.01,
+              message: "Hours must be greater than 0",
+            },
           ]}
         >
-          <InputNumber 
-            min={0.01} 
-            step={0.25} 
+          <InputNumber
+            min={0.01}
+            step={0.25}
             precision={2}
-            style={{ width: '100%' }} 
+            style={{ width: "100%" }}
             placeholder="Enter time spent on this task"
           />
         </Form.Item>

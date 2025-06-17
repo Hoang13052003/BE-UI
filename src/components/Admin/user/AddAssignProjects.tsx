@@ -190,7 +190,6 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
         </Button>,
       ]}
       width={800}
-      destroyOnHidden
     >
       <Form form={form} layout="vertical" preserve={false}>
         {loading ? (
@@ -204,7 +203,8 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
                 >
                   <Title level={5} style={{ margin: 0 }}>
                     Your Projects
-                  </Title>                </Space>
+                  </Title>{" "}
+                </Space>
               }
               bordered
               dataSource={projects}

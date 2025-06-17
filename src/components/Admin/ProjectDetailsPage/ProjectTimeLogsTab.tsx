@@ -51,8 +51,12 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
     useState<ApiPage<ProjectContextTimeLog> | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [startDate, setStartDate] = useState<string | undefined>(undefined);
-  const [endDate, setEndDate] = useState<string | undefined>(undefined);
+  const [startDate, setStartDate] = useState<string | undefined>(
+    dayjs().startOf("day").format("YYYY-MM-DD")
+  );
+  const [endDate, setEndDate] = useState<string | undefined>(
+    dayjs().endOf("day").format("YYYY-MM-DD")
+  );
   const [uiPagination, setUiPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -154,7 +158,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
       const m = Math.round((hours - h) * 60);
       return `${h}h ${m}m`;
     }
-  };  // Calculate total hours from filtered data
+  }; // Calculate total hours from filtered data
   const totalHours =
     filteredTimeLogs?.reduce((sum, timelog) => sum + timelog.hoursSpent, 0) ||
     0;
@@ -172,7 +176,14 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
         display: "flex",
         flexDirection: "column",
       }}
-      styles={{ body: { padding: "20px", flex: 1, display: "flex", flexDirection: "column", } }}
+      styles={{
+        body: {
+          padding: "20px",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        },
+      }}
     >
       <Space
         direction="vertical"
@@ -366,6 +377,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
                   ? [dayjs(startDate), dayjs(endDate)]
                   : undefined
               }
+              defaultValue={[dayjs().startOf("day"), dayjs().endOf("day")]}
               placeholder={["Start date", "End date"]}
             />
           </Col>
@@ -430,7 +442,8 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
           loading={loading}
           renderItem={(timelog) => {
             if (!timelog) return null;
-            return (              <Card
+            return (
+              <Card
                 key={timelog.id}
                 style={{
                   marginBottom: 16,
