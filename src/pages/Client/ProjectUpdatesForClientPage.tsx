@@ -24,6 +24,7 @@ const ProjectUpdatesForClientPage: React.FC = () => {
     undefined
   );
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState(""); // Thêm state cho input search
 
   useEffect(() => {
     const fetchUserProjects = async () => {
@@ -73,6 +74,7 @@ const ProjectUpdatesForClientPage: React.FC = () => {
   useEffect(() => {
     if (userDetails?.id)
       fetchUpdates(1, pagination.pageSize, selectedProject, search);
+    setPagination((prev) => ({ ...prev, current: 1 })); // Reset về trang 1 khi search/filter
   }, [selectedProject, search, userDetails]);
 
   const columns = [
@@ -98,7 +100,15 @@ const ProjectUpdatesForClientPage: React.FC = () => {
       title: "Status",
       dataIndex: "statusAtUpdate",
       key: "statusAtUpdate",
-      render: (status: string) => <Tag color="blue">{status}</Tag>,
+      render: (status: string) => {
+        const color =
+          {
+            NEW: "blue",
+            SENT: "orange",
+            FEEDBACK: "green",
+          }[status] || "default";
+        return <Tag color={color}>{status}</Tag>;
+      },
     },
     {
       title: "Overall Progress",
@@ -159,7 +169,11 @@ const ProjectUpdatesForClientPage: React.FC = () => {
   ];
 
   return (
-    <Card>
+    <Card
+      style={{
+        height: "100%",
+      }}
+    >
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
           <Title level={4}>Project Updates</Title>
@@ -168,18 +182,12 @@ const ProjectUpdatesForClientPage: React.FC = () => {
           <Input.Search
             placeholder="Search summary..."
             allowClear
-            onSearch={setSearch}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              setSearch(e.target.value); // Search realtime khi thay đổi input
+            }}
             style={{ width: "100%" }}
-          />
-        </Col>
-        <Col span={6}>
-          <Select
-            allowClear
-            placeholder="Filter by project"
-            style={{ width: "100%" }}
-            value={selectedProject}
-            onChange={setSelectedProject}
-            options={projects.map((p) => ({ label: p.name, value: p.id }))}
           />
         </Col>
       </Row>

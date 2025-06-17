@@ -18,7 +18,6 @@ import {
 } from "./apiUtils";
 import { User } from "../types/User";
 
-// --- CÁC HÀM API CŨ DÙNG fetchPaginatedData - GIỮ NGUYÊN ---
 export interface FetchProjectsResult extends PaginatedResult<Project> {
   projects: Project[];
 }
@@ -83,7 +82,6 @@ export const filterProjects = async (
   }
 };
 
-// --- CÁC HÀM API KHÔNG PHÂN TRANG HOẶC CRUD ĐƠN LẺ (giữ nguyên) ---
 export const getProjectByIdApi = async (id: number): Promise<Project> => {
   try {
     const { data } = await axiosClient.get<Project>(`/api/projects/${id}`);
@@ -149,14 +147,18 @@ export const updateProjectApi = async (
       `/api/projects/${projectId}`,
       projectData
     );
-    return data;  } catch (error: any) {
+    return data;
+  } catch (error: any) {
     if (error.response) {
       if (error.response.status === 404) throw new Error("Project not found");
       else if (error.response.status === 400) {
-        const errorMessage = error.response.data.message || "Invalid project data";
-        // Tạm thời bỏ qua validation về planned end date từ backend
-        if (errorMessage.includes("Planned end date must be in the present or future")) {
-          // Không throw error, coi như update thành công
+        const errorMessage =
+          error.response.data.message || "Invalid project data";
+        if (
+          errorMessage.includes(
+            "Planned end date must be in the present or future"
+          )
+        ) {
           console.warn("Backend validation về planned end date đã được bỏ qua");
           return { ...projectData, id: projectId } as Project;
         }
@@ -166,10 +168,6 @@ export const updateProjectApi = async (
     throw error;
   }
 };
-
-// ============================================================================
-// CÁC HÀM API MỚI CHO PROJECT DETAIL - SẼ DÙNG fetchSpringPageData
-// ============================================================================
 
 export const getProjectDetailsApi = async (
   projectId: number
@@ -185,10 +183,6 @@ export const getProjectDetailsApi = async (
   }
 };
 
-/**
- * Fetches the timeline of updates for a specific project.
- * Returns ApiPage<ProjectUpdateTimelineItem>.
- */
 export const getProjectUpdatesTimelineApi = async (
   projectId: number,
   page: number = 0,
@@ -242,10 +236,6 @@ export const getProjectUpdatesTimelineApi = async (
   }
 };
 
-/**
- * Fetches an overview of milestones for a specific project (uses ProjectService logic).
- * Returns ApiPage<Milestone>.
- */
 export const getProjectMilestonesOverviewApi = async (
   projectId: number,
   page: number = 0,
@@ -301,11 +291,6 @@ export const getProjectMilestonesOverviewApi = async (
   }
 };
 
-/**
- * Fetches a list of time logs for a specific project (uses ProjectService logic).
- * Supports optional filtering by date range (startDate, endDate).
- * Returns ApiPage<ProjectContextTimeLog>.
- */
 export const getProjectTimeLogsListApi = async (
   projectId: number,
   page: number = 0,

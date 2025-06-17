@@ -367,7 +367,7 @@ const NotificationBell: React.FC = () => {
   );
   return (
     <Dropdown
-      popupRender={() => content}
+      dropdownRender={() => content} // Sử dụng dropdownRender thay cho popupRender
       trigger={["click"]}
       open={open}
       onOpenChange={setOpen}

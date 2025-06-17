@@ -1,13 +1,12 @@
 import axios, { AxiosInstance } from "axios";
 import { normalizeBaseUrl } from "../utils/urlUtils";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL; // Ví dụ: http://localhost:8080
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 if (!API_BASE_URL) {
   throw new Error("VITE_API_URL is not defined in your .env file.");
 }
 
-// SỬA LỖI: Loại bỏ trailing slash để tránh double slash trong URL
 const normalizedBaseURL = normalizeBaseUrl(API_BASE_URL);
 
 const axiosClient: AxiosInstance = axios.create({
@@ -15,11 +14,9 @@ const axiosClient: AxiosInstance = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Request interceptor
 axiosClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 
-  // SỬA ĐỔI 1: Cách kiểm tra public API đáng tin cậy hơn
   const publicPaths = [
     "/api/auth/login",
     "/api/auth/signup",
@@ -33,7 +30,6 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Hàm gọi refresh token
 const refreshAccessToken = async (): Promise<{
   jwt: string;
   jwtRefreshToken: string;
@@ -41,7 +37,6 @@ const refreshAccessToken = async (): Promise<{
   const refreshToken = localStorage.getItem("tokenRefresh");
   if (!refreshToken) throw new Error("No refresh token available");
 
-  // SỬA ĐỔI 2: Dùng axios gốc và header Authorization chuẩn, sử dụng normalizedBaseURL
   const response = await axios.get(
     `${normalizedBaseURL}/api/auth/refresh-token`,
     {
@@ -72,7 +67,6 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Response interceptor
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {

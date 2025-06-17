@@ -78,8 +78,12 @@ const getProgressColor = (percentage: number) => {
   return "#ff4d4f";
 };
 
-const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestonesTabProps> = ({ historyId }) => {
-  const [milestonesPage, setMilestonesPage] = useState<ApiPage<any> | null>(null);
+const ProjectUpdateHistoryMilestonesTab: React.FC<
+  ProjectUpdateHistoryMilestonesTabProps
+> = ({ historyId }) => {
+  const [milestonesPage, setMilestonesPage] = useState<ApiPage<any> | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchText, setSearchText] = useState("");
@@ -121,7 +125,10 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
         pageSize: res.size,
       });
     } catch (error) {
-      console.error("Failed to fetch project update history milestones:", error);
+      console.error(
+        "Failed to fetch project update history milestones:",
+        error
+      );
       message.error("Failed to load milestones.");
       setMilestonesPage(null);
     } finally {
@@ -143,18 +150,26 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
   };
 
   // Filter milestones based on search text and date range
-  const filteredMilestones = milestonesPage?.content.filter((milestone: any) => {
-    const matchesSearch =
-      !searchText ||
-      (milestone.name && milestone.name.toLowerCase().includes(searchText.toLowerCase())) ||
-      (milestone.notes && milestone.notes.toLowerCase().includes(searchText.toLowerCase()));
-    const matchesDateRange =
-      (!startDate && !endDate) ||
-      (milestone.startDate &&
-        (!startDate || dayjs(milestone.startDate).isAfter(dayjs(startDate).subtract(1, "day"))) &&
-        (!endDate || dayjs(milestone.startDate).isBefore(dayjs(endDate).add(1, "day"))));
-    return matchesSearch && matchesDateRange;
-  });
+  const filteredMilestones = milestonesPage?.content.filter(
+    (milestone: any) => {
+      const matchesSearch =
+        !searchText ||
+        (milestone.name &&
+          milestone.name.toLowerCase().includes(searchText.toLowerCase())) ||
+        (milestone.notes &&
+          milestone.notes.toLowerCase().includes(searchText.toLowerCase()));
+      const matchesDateRange =
+        (!startDate && !endDate) ||
+        (milestone.startDate &&
+          (!startDate ||
+            dayjs(milestone.startDate).isAfter(
+              dayjs(startDate).subtract(1, "day")
+            )) &&
+          (!endDate ||
+            dayjs(milestone.startDate).isBefore(dayjs(endDate).add(1, "day"))));
+      return matchesSearch && matchesDateRange;
+    }
+  );
   const paginatedMilestones =
     filteredMilestones?.slice(
       (uiPagination.current - 1) * uiPagination.pageSize,
@@ -163,7 +178,10 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
 
   if (loading && !milestonesPage) {
     return (
-      <Spin tip="Loading milestones..." style={{ display: "block", textAlign: "center", marginTop: 20 }} />
+      <Spin
+        tip="Loading milestones..."
+        style={{ display: "block", textAlign: "center", marginTop: 20 }}
+      />
     );
   }
   if (!loading && (!milestonesPage || milestonesPage.content.length === 0)) {
@@ -186,7 +204,12 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
         <Col xs={24} sm={24} md={12} lg={8} xl={8} key={milestone.id}>
           <Card
             hoverable
-            style={{ borderRadius: "12px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "1px solid #f0f0f0", height: "100%" }}
+            style={{
+              borderRadius: "12px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              border: "1px solid #f0f0f0",
+              height: "100%",
+            }}
             bodyStyle={{ padding: "20px" }}
           >
             <div style={{ marginBottom: "12px" }}>
@@ -208,7 +231,9 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
             )}
             <Divider style={{ margin: "12px 0" }} />
             <Space direction="vertical" size="small" style={{ width: "100%" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <Tag
                   icon={getMilestoneStatusIcon(milestone.status)}
                   color={getMilestoneStatusColor(milestone.status)}
@@ -217,46 +242,97 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
                   {milestone.status || "N/A"}
                 </Tag>
               </div>
-              {milestone.completionPercentage !== undefined && milestone.completionPercentage !== null && (
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <Text type="secondary" style={{ fontSize: "12px" }}>
-                      Progress
-                    </Text>
-                    <Text strong style={{ fontSize: "12px" }}>
-                      {milestone.completionPercentage}%
-                    </Text>
+              {milestone.completionPercentage !== undefined &&
+                milestone.completionPercentage !== null && (
+                  <div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <Text type="secondary" style={{ fontSize: "12px" }}>
+                        Progress
+                      </Text>
+                      <Text strong style={{ fontSize: "12px" }}>
+                        {milestone.completionPercentage}%
+                      </Text>
+                    </div>
+                    <Progress
+                      percent={milestone.completionPercentage}
+                      size="small"
+                      strokeColor={getProgressColor(
+                        milestone.completionPercentage
+                      )}
+                      showInfo={false}
+                    />
                   </div>
-                  <Progress
-                    percent={milestone.completionPercentage}
-                    size="small"
-                    strokeColor={getProgressColor(milestone.completionPercentage)}
-                    showInfo={false}
-                  />
-                </div>
-              )}
+                )}
               <Space direction="vertical" size={2} style={{ width: "100%" }}>
                 {milestone.startDate && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <CalendarOutlined style={{ color: "#52c41a", fontSize: "12px" }} />
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <CalendarOutlined
+                      style={{ color: "#52c41a", fontSize: "12px" }}
+                    />
                     <Text type="secondary" style={{ fontSize: "12px" }}>
-                      Start: {new Date(milestone.startDate).toLocaleDateString()}
+                      Start:{" "}
+                      {new Date(milestone.startDate).toLocaleDateString()}
                     </Text>
                   </div>
                 )}
                 {milestone.deadlineDate && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <ClockCircleOutlined style={{ color: new Date(milestone.deadlineDate) < new Date() ? "#ff4d4f" : "#faad14", fontSize: "12px" }} />
-                    <Text type="secondary" style={{ fontSize: "12px", color: new Date(milestone.deadlineDate) < new Date() ? "#ff4d4f" : undefined }}>
-                      Deadline: {new Date(milestone.deadlineDate).toLocaleDateString()}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <ClockCircleOutlined
+                      style={{
+                        color:
+                          new Date(milestone.deadlineDate) < new Date()
+                            ? "#ff4d4f"
+                            : "#faad14",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Text
+                      type="secondary"
+                      style={{
+                        fontSize: "12px",
+                        color:
+                          new Date(milestone.deadlineDate) < new Date()
+                            ? "#ff4d4f"
+                            : undefined,
+                      }}
+                    >
+                      Deadline:{" "}
+                      {new Date(milestone.deadlineDate).toLocaleDateString()}
                     </Text>
                   </div>
                 )}
                 {milestone.completionDate && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <CheckCircleOutlined style={{ color: "#52c41a", fontSize: "12px" }} />
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <CheckCircleOutlined
+                      style={{ color: "#52c41a", fontSize: "12px" }}
+                    />
                     <Text type="secondary" style={{ fontSize: "12px" }}>
-                      Completed: {new Date(milestone.completionDate).toLocaleDateString()}
+                      Completed:{" "}
+                      {new Date(milestone.completionDate).toLocaleDateString()}
                     </Text>
                   </div>
                 )}
@@ -264,7 +340,17 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
               {milestone.notes && (
                 <div style={{ marginTop: "8px" }}>
                   <Tooltip title={milestone.notes}>
-                    <Text type="secondary" style={{ fontSize: "12px", fontStyle: "italic", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <Text
+                      type="secondary"
+                      style={{
+                        fontSize: "12px",
+                        fontStyle: "italic",
+                        display: "block",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       <FileTextOutlined style={{ marginRight: "4px" }} />
                       {milestone.notes}
                     </Text>
@@ -282,59 +368,134 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
       itemLayout="horizontal"
       dataSource={paginatedMilestones}
       renderItem={(milestone: any) => (
-        <List.Item style={{ background: "#fafafa", marginBottom: "12px", borderRadius: "8px", border: "1px solid #f0f0f0", padding: "16px" }}>
+        <List.Item
+          style={{
+            background: "#fafafa",
+            marginBottom: "12px",
+            borderRadius: "8px",
+            border: "1px solid #f0f0f0",
+            padding: "16px",
+          }}
+        >
           <List.Item.Meta
             title={
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  marginBottom: "8px",
+                }}
+              >
                 <Text strong style={{ fontSize: "16px", color: "#1890ff" }}>
                   {milestone.name || "Untitled Milestone"}
                 </Text>
-                <Tag icon={getMilestoneStatusIcon(milestone.status)} color={getMilestoneStatusColor(milestone.status)}>
+                <Tag
+                  icon={getMilestoneStatusIcon(milestone.status)}
+                  color={getMilestoneStatusColor(milestone.status)}
+                >
                   {milestone.status || "N/A"}
                 </Tag>
               </div>
             }
             description={
-              <Space direction="vertical" size="small" style={{ width: "100%" }}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: "100%" }}
+              >
                 {milestone.description && (
                   <Text type="secondary" style={{ fontSize: "14px" }}>
                     {milestone.description}
                   </Text>
                 )}
                 <Row gutter={[16, 8]} align="middle">
-                  {milestone.completionPercentage !== undefined && milestone.completionPercentage !== null && (
-                    <Col span={8}>
-                      <Space direction="vertical" size={2}>
-                        <Text type="secondary" style={{ fontSize: "12px" }}>
-                          Progress
-                        </Text>
-                        <Progress percent={milestone.completionPercentage} size="small" strokeColor={getProgressColor(milestone.completionPercentage)} />
-                      </Space>
-                    </Col>
-                  )}
+                  {milestone.completionPercentage !== undefined &&
+                    milestone.completionPercentage !== null && (
+                      <Col span={8}>
+                        <Space direction="vertical" size={2}>
+                          <Text type="secondary" style={{ fontSize: "12px" }}>
+                            Progress
+                          </Text>
+                          <Progress
+                            percent={milestone.completionPercentage}
+                            size="small"
+                            strokeColor={getProgressColor(
+                              milestone.completionPercentage
+                            )}
+                          />
+                        </Space>
+                      </Col>
+                    )}
                   <Col span={16}>
                     <Space wrap>
                       {milestone.startDate && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <CalendarOutlined style={{ color: "#52c41a", fontSize: "12px" }} />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <CalendarOutlined
+                            style={{ color: "#52c41a", fontSize: "12px" }}
+                          />
                           <Text type="secondary" style={{ fontSize: "12px" }}>
-                            Start: {new Date(milestone.startDate).toLocaleDateString()}
+                            Start:{" "}
+                            {new Date(milestone.startDate).toLocaleDateString()}
                           </Text>
                         </div>
                       )}
                       {milestone.deadlineDate && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <ClockCircleOutlined style={{ color: new Date(milestone.deadlineDate) < new Date() ? "#ff4d4f" : "#faad14", fontSize: "12px" }} />
-                          <Text type="secondary" style={{ fontSize: "12px", color: new Date(milestone.deadlineDate) < new Date() ? "#ff4d4f" : undefined }}>
-                            Deadline: {new Date(milestone.deadlineDate).toLocaleDateString()}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <ClockCircleOutlined
+                            style={{
+                              color:
+                                new Date(milestone.deadlineDate) < new Date()
+                                  ? "#ff4d4f"
+                                  : "#faad14",
+                              fontSize: "12px",
+                            }}
+                          />
+                          <Text
+                            type="secondary"
+                            style={{
+                              fontSize: "12px",
+                              color:
+                                new Date(milestone.deadlineDate) < new Date()
+                                  ? "#ff4d4f"
+                                  : undefined,
+                            }}
+                          >
+                            Deadline:{" "}
+                            {new Date(
+                              milestone.deadlineDate
+                            ).toLocaleDateString()}
                           </Text>
                         </div>
                       )}
                       {milestone.completionDate && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <CheckCircleOutlined style={{ color: "#52c41a", fontSize: "12px" }} />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <CheckCircleOutlined
+                            style={{ color: "#52c41a", fontSize: "12px" }}
+                          />
                           <Text type="secondary" style={{ fontSize: "12px" }}>
-                            Completed: {new Date(milestone.completionDate).toLocaleDateString()}
+                            Completed:{" "}
+                            {new Date(
+                              milestone.completionDate
+                            ).toLocaleDateString()}
                           </Text>
                         </div>
                       )}
@@ -342,7 +503,10 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
                   </Col>
                 </Row>
                 {milestone.notes && (
-                  <Text type="secondary" style={{ fontSize: "12px", fontStyle: "italic" }}>
+                  <Text
+                    type="secondary"
+                    style={{ fontSize: "12px", fontStyle: "italic" }}
+                  >
                     <FileTextOutlined style={{ marginRight: "4px" }} />
                     {milestone.notes}
                   </Text>
@@ -357,7 +521,11 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
   return (
     <div style={{ padding: "16px 0" }}>
       <div style={{ marginBottom: 24 }}>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: 16 }}
+        >
           <Col>
             <Space direction="vertical" size="small">
               <Title level={3} style={{ margin: 0, color: "#1890ff" }}>
@@ -366,9 +534,17 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
               </Title>
               {milestonesPage && (
                 <Space size="middle">
-                  <Tag color="blue" style={{ borderRadius: 16, fontSize: "14px", padding: "5px 15px" }}>
+                  <Tag
+                    color="blue"
+                    style={{
+                      borderRadius: 16,
+                      fontSize: "14px",
+                      padding: "5px 15px",
+                    }}
+                  >
                     <Text strong style={{ color: "#1890ff" }}>
-                      {filteredMilestones?.length || 0} of {milestonesPage.totalElements} milestones
+                      {filteredMilestones?.length || 0} of{" "}
+                      {milestonesPage.totalElements} milestones
                     </Text>
                   </Tag>
                 </Space>
@@ -414,7 +590,11 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
                 setUiPagination((prev) => ({ ...prev, current: 1 }));
               }}
               style={{ width: "100%" }}
-              value={startDate && endDate ? [dayjs(startDate), dayjs(endDate)] : undefined}
+              value={
+                startDate && endDate
+                  ? [dayjs(startDate), dayjs(endDate)]
+                  : undefined
+              }
               placeholder={["Start date", "End date"]}
             />
           </Col>
@@ -431,7 +611,15 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
                     setUiPagination((prev) => ({ ...prev, current: 1 }));
                   }}
                   disabled={!searchText && !startDate && !endDate}
-                  style={{ color: "#ff4d4f", borderColor: "#ff4d4f", display: "flex", alignItems: "center", justifyContent: "center", height: "32px", width: "32px" }}
+                  style={{
+                    color: "#ff4d4f",
+                    borderColor: "#ff4d4f",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "32px",
+                    width: "32px",
+                  }}
                 />
               </Tooltip>
             </Space>
@@ -461,17 +649,28 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<ProjectUpdateHistoryMilestones
           <Spin size="large" tip="Loading milestones..." />
         </div>
       )}
-      {filteredMilestones && filteredMilestones.length > uiPagination.pageSize && (
-        <Row justify="center" style={{ marginTop: 32 }}>
+      {filteredMilestones && (
+        <Row justify="end" style={{ marginTop: 32 }}>
           <Pagination
             current={uiPagination.current}
             pageSize={uiPagination.pageSize}
             total={filteredMilestones.length}
             onChange={handlePageChange}
             showSizeChanger
-            pageSizeOptions={viewMode === "grid" ? ["6", "12", "24", "48"] : ["5", "10", "20", "50"]}
-            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} milestones`}
-            style={{ padding: "16px", background: "#fafafa", borderRadius: "8px", border: "1px solid #f0f0f0" }}
+            pageSizeOptions={
+              viewMode === "grid"
+                ? ["6", "12", "24", "48"]
+                : ["5", "10", "20", "50"]
+            }
+            showTotal={(total, range) =>
+              `${range[0]}-${range[1]} of ${total} milestones`
+            }
+            style={{
+              padding: "16px",
+              background: "#fafafa",
+              borderRadius: "8px",
+              border: "1px solid #f0f0f0",
+            }}
           />
         </Row>
       )}

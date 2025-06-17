@@ -226,6 +226,29 @@ export const updateProjectUpdateStatusApi = async (
   }
 };
 
+export const updateProjectUpdateStatusForUserApi = async (
+  updateId: number,
+  status: string
+): Promise<void> => {
+  try {
+    await axiosClient.patch(
+      `/api/users/project-updates/${updateId}/status`,
+      null,
+      {
+        params: {
+          status: status,
+        },
+      }
+    );
+  } catch (error) {
+    console.error(
+      `Error updating project update status with ID ${updateId}:`,
+      error
+    );
+    throw error;
+  }
+};
+
 // Upload attachment for a project update
 export const uploadAttachmentApi = async (
   projectUpdateId: number,

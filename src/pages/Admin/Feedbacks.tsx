@@ -286,9 +286,16 @@ const Feedbacks: React.FC = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} sm={8}>
           <Select
-            placeholder="All Projects"
+            placeholder="Search Projects..."
             style={{ width: "100%" }}
             allowClear
+            showSearch
+            optionFilterProp="children"
+            filterOption={(input, option) =>
+              (option?.children as unknown as string)
+                .toLowerCase()
+                .includes(input.toLowerCase())
+            }
             onChange={(value) =>
               setCriteria((prev) => ({
                 ...prev,

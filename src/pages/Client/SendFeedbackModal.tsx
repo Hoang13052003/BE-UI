@@ -12,7 +12,11 @@ import {
 } from "antd";
 import { MessageOutlined, InboxOutlined } from "@ant-design/icons";
 import { createFeedback, CreateFeedbackRequest } from "../../api/feedbackApi";
-import { ProjectUpdate } from "../../api/projectUpdateApi";
+import {
+  ProjectUpdate,
+  updateProjectUpdateStatusForUserApi,
+  UpdateStatusEnum,
+} from "../../api/projectUpdateApi";
 import { useAuth } from "../../contexts/AuthContext";
 import { createNotification } from "../../api/apiNotification";
 import { MessageType, NotificationPriority } from "../../types/Notification";
@@ -92,6 +96,11 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
         throw new Error("Failed to create feedback");
       }
 
+      await updateProjectUpdateStatusForUserApi(
+        updateData.id,
+        UpdateStatusEnum.FEEDBACK
+      );
+
       // Upload attachments if any
       if (fileList.length > 0) {
         const uploadResult = await uploadFilesIndividually(
@@ -163,7 +172,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
           Send Feedback
         </Button>,
       ]}
-      destroyOnHidden
     >
       <div style={{ marginBottom: 16 }}>
         <Text type="secondary">

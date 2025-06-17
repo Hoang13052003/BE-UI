@@ -74,13 +74,11 @@ export const signupApi = async (
   recaptchaToken: string
 ) => {
   try {
-    console.log("Sending signup request with token:", recaptchaToken);
-
     const response = await axiosClient.post("/api/auth/signup", {
       email,
       password,
       fullName,
-      recaptchaToken, // Đảm bảo tên field này match với backend DTO
+      recaptchaToken,
     });
 
     return response.data;
@@ -96,9 +94,6 @@ export const getUserInfoApi = async (token: string): Promise<UserInfo> => {
   });
   return data;
 };
-
-// ============== EMAIL VERIFICATION APIs =============
-
 export const verifyEmailApi = async (
   token: string
 ): Promise<EmailVerificationResponse> => {
@@ -116,11 +111,6 @@ export const verifyEmailApi = async (
   }
 };
 
-/**
- * Resend email verification to user's email
- * @param email - User's email address
- * @returns Promise<ResendVerificationResponse>
- */
 export const resendVerificationEmailApi = async (
   email: string
 ): Promise<ResendVerificationResponse> => {

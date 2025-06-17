@@ -8,14 +8,8 @@ import {
 } from "../types/Attachment";
 export type { FolderFileItem };
 const API_ATTACHMENTS_BASE_PATH = "/api/attachments";
-// Base path cho các API liên quan đến Project/ProjectUpdate (nếu khác)
-// Dựa trên ProjectUpdateController của bạn, nó là /api/private/admin
 const API_PROJECT_UPDATES_BASE_PATH = "/api/private/admin";
 
-// --- Các hàm hiện tại (upload, get latest, soft delete, presigned URL) ---
-// ... (giữ nguyên các hàm uploadSingleAttachment, uploadFolderAttachments,
-// getLatestAttachmentsForProjectUpdate, getLatestAttachmentsForProject,
-// softDeleteAttachmentsByLogicalName, getPresignedUrl) ...
 export const uploadSingleAttachment = async (
   file: File,
   feedbackId: string,
@@ -27,7 +21,6 @@ export const uploadSingleAttachment = async (
   if (feedbackId !== undefined && feedbackId !== null) {
     formData.append("feedbackId", feedbackId);
   }
-  // Chỉ append nếu projectUpdateId có giá trị hợp lệ
   if (projectUpdateId !== undefined && projectUpdateId !== null) {
     formData.append("projectUpdateId", projectUpdateId.toString());
   }
@@ -126,69 +119,38 @@ export const getAwsUrl = async (
   return response.data;
 };
 
-// --- Đổi tên các hàm lấy cây thư mục HIỆN TẠI của Project ---
-/**
- * Retrieves the root directory structure for the CURRENT state of a specific project.
- *
- * @param projectId The ID of the project.
- * @returns A promise resolving to an array of TreeNodeDto objects.
- */
 export const getCurrentProjectTreeRoot = async (
-  // <<--- ĐỔI TÊN
   projectId: number
 ): Promise<TreeNodeDto[]> => {
   const response = await axiosClient.get<TreeNodeDto[]>(
-    `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/tree` // Endpoint không đổi
+    `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/tree`
   );
   return response.data;
 };
 
-/**
- * Retrieves the directory structure for a given path within the CURRENT state of a specific project.
- *
- * @param projectId The ID of the project.
- * @param path The relative path (e.g., "src/main/java"). Will be URL encoded.
- * @returns A promise resolving to an array of TreeNodeDto objects.
- */
 export const getCurrentProjectTreeByPath = async (
-  // <<--- ĐỔI TÊN
   projectId: number,
   path: string
 ): Promise<TreeNodeDto[]> => {
   if (!path || path === "/") {
-    return getCurrentProjectTreeRoot(projectId); // Gọi hàm root nếu path rỗng
+    return getCurrentProjectTreeRoot(projectId);
   }
   const encodedPath = encodeURIComponent(path);
   const response = await axiosClient.get<TreeNodeDto[]>(
-    `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/tree/${encodedPath}` // Endpoint không đổi
+    `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/tree/${encodedPath}`
   );
   return response.data;
 };
 
-// === CÁC HÀM MỚI CHO LỊCH SỬ VÀ SNAPSHOT ===
-
-/**
- * Retrieves the history of project updates for a specific project.
- *
- * @param projectId The ID of the project.
- * @returns A promise resolving to an array of ProjectUpdateSummaryDto objects.
- */
 export const getProjectUpdateHistory = async (
   projectId: number
 ): Promise<ProjectUpdateSummaryDto[]> => {
   const response = await axiosClient.get<ProjectUpdateSummaryDto[]>(
-    // Sử dụng endpoint chính xác từ BE controller
     `${API_PROJECT_UPDATES_BASE_PATH}/projects/${projectId}/updates-history`
   );
   return response.data;
 };
 
-/**
- * Retrieves the root directory structure for a SNAPSHOT of a specific project update.
- *
- * @param projectUpdateId The ID of the project update.
- * @returns A promise resolving to an array of TreeNodeDto objects for that snapshot.
- */
 export const getProjectUpdateSnapshotTreeRoot = async (
   projectUpdateId: number
 ): Promise<TreeNodeDto[]> => {
@@ -198,19 +160,12 @@ export const getProjectUpdateSnapshotTreeRoot = async (
   return response.data;
 };
 
-/**
- * Retrieves the directory structure for a given path within a SNAPSHOT of a specific project update.
- *
- * @param projectUpdateId The ID of the project update.
- * @param path The relative path (e.g., "src/main/java"). Will be URL encoded.
- * @returns A promise resolving to an array of TreeNodeDto objects for that snapshot.
- */
 export const getProjectUpdateSnapshotTreeByPath = async (
   projectUpdateId: number,
   path: string
 ): Promise<TreeNodeDto[]> => {
   if (!path || path === "/") {
-    return getProjectUpdateSnapshotTreeRoot(projectUpdateId); // Gọi hàm root snapshot nếu path rỗng
+    return getProjectUpdateSnapshotTreeRoot(projectUpdateId);
   }
   const encodedPath = encodeURIComponent(path);
   const response = await axiosClient.get<TreeNodeDto[]>(
@@ -219,7 +174,6 @@ export const getProjectUpdateSnapshotTreeByPath = async (
   return response.data;
 };
 
-// Cập nhật object export
 const attachmentApi = {
   uploadSingleAttachment,
   uploadFolderAttachments,

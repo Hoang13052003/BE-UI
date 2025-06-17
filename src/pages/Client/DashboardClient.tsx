@@ -6,6 +6,7 @@ import {
   MessageOutlined,
   BellOutlined,
   SettingOutlined,
+  ProjectOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -48,18 +49,18 @@ const DashboardClient: React.FC = () => {
         },
         {
           key: "project-updates",
-          icon: <MessageOutlined />,
+          icon: <ProjectOutlined />,
           label: (
             <Link to="/client/project-updates">
               {t("clientPages.project-updates")}
             </Link>
           ),
         },
-        {
-          key: "messages",
-          icon: <MessageOutlined />,
-          label: <Link to="/client/messages">{t("clientPages.messages")}</Link>,
-        },
+        // {
+        //   key: "messages",
+        //   icon: <MessageOutlined />,
+        //   label: <Link to="/client/messages">{t("clientPages.messages")}</Link>,
+        // },
       ],
     },
     {
