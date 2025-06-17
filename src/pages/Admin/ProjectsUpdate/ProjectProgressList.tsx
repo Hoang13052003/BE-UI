@@ -1,4 +1,3 @@
-// src/components/Admin/ProjectProgress/ProjectProgressList.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
@@ -9,7 +8,6 @@ import {
   Tag,
   Typography,
   Dropdown,
-  Menu,
   DatePicker,
   Select,
   message,
@@ -319,7 +317,8 @@ const ProjectProgressList: React.FC = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: ProjectUpdate) => (        <Dropdown
+      render: (_: any, record: ProjectUpdate) => (
+        <Dropdown
           menu={{
             items: [
               {
@@ -398,7 +397,8 @@ const ProjectProgressList: React.FC = () => {
               onClick={() => setIsAddModalVisible(true)}
             >
               Add Update
-            </Button>            <Dropdown
+            </Button>{" "}
+            <Dropdown
               menu={{
                 items: [
                   {
@@ -438,8 +438,15 @@ const ProjectProgressList: React.FC = () => {
             placeholder="Select Project"
             style={{ width: "100%" }}
             allowClear
+            showSearch
+            optionFilterProp="children"
             value={selectedProject}
             onChange={(value) => setSelectedProject(value)}
+            filterOption={(input, option) =>
+              (option?.children as unknown as string)
+                .toLowerCase()
+                .indexOf(input.toLowerCase()) >= 0
+            }
           >
             {projects.map((project) => (
               <Option key={project.id} value={project.id}>

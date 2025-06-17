@@ -238,7 +238,6 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           Create Update
         </Button>,
       ]}
-      destroyOnHidden
     >
       <Form
         form={form}

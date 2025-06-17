@@ -60,7 +60,6 @@ export interface PaginatedFeedbackResponse {
   empty: boolean;
 }
 
-// Create new feedback
 export const createFeedback = async (
   feedbackData: CreateFeedbackRequest
 ): Promise<Feedback> => {
@@ -68,7 +67,6 @@ export const createFeedback = async (
   return data;
 };
 
-// Update feedback
 export const updateFeedback = async (
   id: string,
   feedbackData: UpdateFeedbackRequest
@@ -77,7 +75,6 @@ export const updateFeedback = async (
   return data;
 };
 
-// Delete feedback
 export const deleteFeedback = async (id: string): Promise<void> => {
   await axiosClient.delete(`/api/feedbacks/${id}`);
 };
@@ -86,7 +83,6 @@ export const markFeedbackAsRead = async (id: string): Promise<void> => {
   await axiosClient.patch(`/api/feedbacks/${id}/read`);
 };
 
-// Get feedback by ID
 export const getFeedbackById = async (
   id: string
 ): Promise<FeedbackResponse> => {
@@ -94,7 +90,6 @@ export const getFeedbackById = async (
   return data;
 };
 
-// Get feedbacks by user ID and project ID with pagination
 export const getFeedbacksByUserAndProject = async (
   userId: number,
   projectId: number,
@@ -124,7 +119,6 @@ export const getFeedbacksByUser = async (
   return data;
 };
 
-// Alternative method for getting feedbacks with query parameters (if needed)
 export interface FeedbackCriteria {
   updateId?: {
     equals?: number;
@@ -150,10 +144,6 @@ export const filter = async (
   sortBy: string = "createdAt",
   direction: "asc" | "desc" = "desc"
 ): Promise<PaginatedFeedbackResponse> => {
-  console.log(
-    "--- BẮT ĐẦU filter --- criteria ban đầu:",
-    JSON.stringify(criteria, null, 2)
-  ); // LOG 6
   const criteriaParams = flattenCriteria(criteria);
 
   const params = {
@@ -164,21 +154,12 @@ export const filter = async (
     direction,
   };
 
-  console.log(
-    "!!! FINAL PARAMS TRƯỚC KHI GỌI AXIOS:",
-    JSON.stringify(params, null, 2)
-  );
   const { data } = await axiosClient.get("/api/feedbacks", { params });
   return data;
 };
 
-// Hàm flattenCriteria ĐÃ SỬA LỖI
 function flattenCriteria(criteria: FeedbackCriteria): Record<string, any> {
   const params: Record<string, any> = {};
-  console.log(
-    "--- FLATTENCRITERIA NHẬN ĐẦU VÀO ---",
-    JSON.stringify(criteria, null, 2)
-  );
 
   for (const key in criteria) {
     if (Object.prototype.hasOwnProperty.call(criteria, key)) {
@@ -190,14 +171,8 @@ function flattenCriteria(criteria: FeedbackCriteria): Record<string, any> {
 
       if (dayjs.isDayjs(valueAtKey)) {
         params[key] = valueAtKey.toISOString();
-        console.log(
-          `[flattenCriteria] Đã chuyển ${key} (Day.js trực tiếp) thành ISO: ${params[key]}`
-        );
       } else if (valueAtKey instanceof Date) {
         params[key] = valueAtKey.toISOString();
-        console.log(
-          `[flattenCriteria] Đã chuyển ${key} (Date trực tiếp) thành ISO: ${params[key]}`
-        );
       } else if (typeof valueAtKey === "object" && !Array.isArray(valueAtKey)) {
         for (const operator in valueAtKey) {
           if (Object.prototype.hasOwnProperty.call(valueAtKey, operator)) {
@@ -211,14 +186,8 @@ function flattenCriteria(criteria: FeedbackCriteria): Record<string, any> {
             if (typeof operatorValue === "object") {
               if (dayjs.isDayjs(operatorValue)) {
                 params[paramKey] = operatorValue.toISOString();
-                console.log(
-                  `[flattenCriteria] Đã chuyển ${paramKey} (Day.js trong toán tử) thành ISO: ${params[paramKey]}`
-                );
               } else if (operatorValue instanceof Date) {
                 params[paramKey] = operatorValue.toISOString();
-                console.log(
-                  `[flattenCriteria] Đã chuyển ${paramKey} (Date trong toán tử) thành ISO: ${params[paramKey]}`
-                );
               } else {
                 params[paramKey] = operatorValue;
               }
@@ -233,15 +202,8 @@ function flattenCriteria(criteria: FeedbackCriteria): Record<string, any> {
         typeof valueAtKey === "boolean"
       ) {
         params[key] = valueAtKey;
-        console.log(
-          `[flattenCriteria] Giữ nguyên giá trị đơn giản cho ${key}: ${params[key]}`
-        );
       }
     }
   }
-  console.log(
-    "--- FLATTENCRITERIA TRẢ VỀ ---",
-    JSON.stringify(params, null, 2)
-  );
   return params;
 }

@@ -80,14 +80,17 @@ const ProjectUpdateHistoryTimeLogsTab: React.FC<
       }
       setLoading(true);
       try {
-        const res = await getProjectUpdateHistoryById(historyId);
+        const res = await getProjectUpdateHistoryById(
+          historyId,
+          _pageToFetch,
+          currentSize
+        );
 
         console.log("Fetched time logs:", res);
         setTimeLogsPage(res);
-        setUiPagination({
-          current: res.number + 1,
-          pageSize: res.size,
-        });
+        setUiPagination((prev) =>
+          prev.pageSize !== res.size ? { ...prev, pageSize: res.size } : prev
+        );
       } catch (error) {
         console.error(
           "Failed to fetch project update history time logs:",

@@ -147,13 +147,14 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
             onMouseOut={(e) => (e.currentTarget.style.background = "#f0faff")}
           >
             View All
-          </Link>        </div>
+          </Link>{" "}
+        </div>
       }
       variant="borderless"
       style={{
         boxShadow: "0 2px 8px #f0f1f2",
-        borderRadius: 12,
         padding: 0,
+        height: "420px",
       }}
     >
       {loading ? (
@@ -162,6 +163,7 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
         <Empty description="No feedback available" />
       ) : (
         <List
+          style={{ overflowY: "auto", maxHeight: "310px" }}
           itemLayout="vertical"
           dataSource={limitedFeedback}
           renderItem={(item, index) => (

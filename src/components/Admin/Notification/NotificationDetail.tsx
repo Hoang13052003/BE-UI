@@ -225,7 +225,7 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
                           <Text type="secondary">No attachments found.</Text>
                         ) : (
                           <List
-                            dataSource={feedback?.attachments}
+                            dataSource={feedback?.attachments || []}
                             itemLayout="horizontal"
                             renderItem={(item) => (
                               <List.Item

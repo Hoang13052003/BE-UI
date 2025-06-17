@@ -1,9 +1,6 @@
 import axiosClient from "./axiosClient";
 import { ApiPage } from "../types/project";
 
-// Nếu đã có định nghĩa TimeLogResponseDTO và MilestoneResponseDto thì import vào đây
-// import { TimeLogResponseDTO, MilestoneResponseDto } from '../types/your-types';
-
 export const getProjectUpdateHistoryById = async (
   id: string,
   page: number = 0,
@@ -20,10 +17,8 @@ export const getProjectUpdateHistoryById = async (
         },
       }
     );
-    console.log(`Fetched project update history for ID ${id}:`, result.data);
     return result.data;
   } catch (error) {
-    console.error(`Error fetching project update history for ID ${id}:`, error);
     const defaultSortInfo = { sorted: false, unsorted: true, empty: true };
     const defaultPageable = {
       pageNumber: 0,

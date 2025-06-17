@@ -9,7 +9,7 @@ import {
   EditOutlined,
   ProjectOutlined,
   WechatOutlined,
-  MessageOutlined,
+  // MessageOutlined,
   FileSearchOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet } from "react-router-dom";
@@ -71,11 +71,11 @@ const DashboardAdmin: React.FC = () => {
             </Link>
           ),
         },
-        {
-          key: "messages",
-          icon: <MessageOutlined />,
-          label: <Link to="/admin/messages">{t("clientPages.messages")}</Link>,
-        },
+        // {
+        //   key: "messages",
+        //   icon: <MessageOutlined />,
+        //   label: <Link to="/admin/messages">{t("clientPages.messages")}</Link>,
+        // },
         {
           key: "auditLogs",
           icon: <FileSearchOutlined />,
