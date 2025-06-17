@@ -103,7 +103,6 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
         </Button>,
       ]}
       width={600}
-      destroyOnHidden
     >
       <Form
         form={form}

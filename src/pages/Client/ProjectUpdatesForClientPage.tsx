@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Table, Row, Col, Select, Input, Typography, Tag } from "antd";
+import { Card, Table, Row, Col, Input, Typography, Tag } from "antd";
 import {
   getProjectUpdatesForUserApi,
   ProjectUpdate,
@@ -14,13 +14,13 @@ const ProjectUpdatesForClientPage: React.FC = () => {
   const { userDetails } = useAuth();
   const [loading, setLoading] = useState(false);
   const [updates, setUpdates] = useState<ProjectUpdate[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [_projects, setProjects] = useState<any[]>([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
   });
-  const [selectedProject, setSelectedProject] = useState<string | undefined>(
+  const [selectedProject, _setSelectedProject] = useState<string | undefined>(
     undefined
   );
   const [search, setSearch] = useState("");

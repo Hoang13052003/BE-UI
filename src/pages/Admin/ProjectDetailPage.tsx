@@ -84,7 +84,6 @@ const ProjectDetailPage: React.FC = () => {
     fetchProjectData();
   };
 
-
   if (loading) {
     return (
       <div
@@ -156,17 +155,25 @@ const ProjectDetailPage: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div>
       {/* Header */}
       {userRole === "ADMIN" ? (
-        <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: 20 }}
+        >
           <Col>
             <Button icon={<ArrowLeftOutlined />} onClick={handleBackToList}>
               Back to Projects
             </Button>
           </Col>
           <Col>
-            <Button type="primary" icon={<EditOutlined />} onClick={handleOpenEditProjectModal}>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={handleOpenEditProjectModal}
+            >
               Edit Project
             </Button>
           </Col>
@@ -192,12 +199,17 @@ const ProjectDetailPage: React.FC = () => {
       </Title>
 
       {/* Static Layout using Ant Design Grid */}
-      <Row gutter={[16, 16]}>  
-        {/* Overview: full width on xs, sm, md; half width on lg and xl */}        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
-          <Card title="Project Overview" style={{ border: 'none' }} styles={{ body: { padding: 16 } }}>
-            <ProjectDetailsDisplay 
-              project={project as any} 
-              theme={theme} 
+      <Row gutter={[16, 16]}>
+        {/* Overview: full width on xs, sm, md; half width on lg and xl */}{" "}
+        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
+          <Card
+            title="Project Overview"
+            style={{ border: "none" }}
+            styles={{ body: { padding: 16 } }}
+          >
+            <ProjectDetailsDisplay
+              project={project as any}
+              theme={theme}
               onRefreshProgress={fetchProjectData} // Thêm callback để refresh project data
             />
           </Card>
@@ -205,11 +217,15 @@ const ProjectDetailPage: React.FC = () => {
         {/* Milestones/Time Logs: full width on xs, sm, md; half width on lg and xl */}
         <Col xs={24} sm={24} md={24} lg={12} xl={12}>
           <Card
-            title={project.type === 'FIXED_PRICE' ? 'Project Milestones' : 'Time Logs'}
-            style={{ border: 'none' }}
+            title={
+              project.type === "FIXED_PRICE"
+                ? "Project Milestones"
+                : "Time Logs"
+            }
+            style={{ border: "none" }}
             styles={{ body: { padding: 16 } }}
           >
-            {project.type === 'FIXED_PRICE' ? (
+            {project.type === "FIXED_PRICE" ? (
               <ProjectMilestonesTab projectId={project.id} />
             ) : (
               <ProjectTimeLogsTab projectId={project.id} />
@@ -219,7 +235,11 @@ const ProjectDetailPage: React.FC = () => {
       </Row>
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
-          <Card title="Project Updates Timeline" style={{ border: 'none' }} styles={{ body: { padding: 16 } }}>
+          <Card
+            title="Project Updates Timeline"
+            style={{ border: "none" }}
+            styles={{ body: { padding: 16 } }}
+          >
             <ProjectUpdatesTab projectId={project.id} theme={theme} />
           </Card>
         </Col>
