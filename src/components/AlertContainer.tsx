@@ -13,7 +13,7 @@ const AlertContainer: React.FC = () => {
         position: "fixed",
         top: 16,
         right: 16,
-        zIndex: 1000,
+        zIndex: 10000000,
         width: "auto",
         maxWidth: "400px",
       }}
