@@ -1,23 +1,16 @@
-// src/utils/styleUtils.ts
+import { AuditLogSeverity } from "../types/auditLog.types";
 
-import { AuditLogSeverity } from '../types/auditLog.types';
-
-/**
- * Trả về màu sắc tương ứng của Ant Design Tag cho mỗi mức độ nghiêm trọng.
- * @param severity - Mức độ nghiêm trọng của log.
- * @returns Tên màu của Ant Design.
- */
 export const getSeverityTagColor = (severity: AuditLogSeverity): string => {
   switch (severity) {
     case AuditLogSeverity.CRITICAL:
-      return 'volcano'; // Màu đỏ đậm
+      return "volcano";
     case AuditLogSeverity.ERROR:
-      return 'error';   // Màu đỏ
+      return "error";
     case AuditLogSeverity.WARNING:
-      return 'warning'; // Màu vàng
+      return "warning";
     case AuditLogSeverity.INFO:
-      return 'processing'; // Màu xanh dương
+      return "processing";
     default:
-      return 'default'; // Màu xám
+      return "default";
   }
 };

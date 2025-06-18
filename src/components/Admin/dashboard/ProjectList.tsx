@@ -19,7 +19,6 @@ const ProjectList: React.FC = () => {
       setLoading(true);
       const response = await filterProjects(
         {
-          // Add any default criteria if needed
           name: undefined,
           status: undefined,
           startDate: undefined,
@@ -45,7 +44,6 @@ const ProjectList: React.FC = () => {
     fetchProjects(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  // Status color mapping
   const statusColors: Record<string, string> = {
     NEW: "blue",
     PENDING: "orange",

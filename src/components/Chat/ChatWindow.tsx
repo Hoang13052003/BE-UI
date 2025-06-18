@@ -247,7 +247,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
     return (
       <div className="chat-window-empty">
         <Empty
-          description="Chọn một cuộc trò chuyện để bắt đầu"
+          description="Select a conversation to start"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         />
       </div>
@@ -270,16 +270,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             <Text strong>{activeChatRoom.roomName}</Text>
             <Text type="secondary" className="chat-header-status">
               {isConnected ? (
-                <Badge status="success" text="Đang kết nối" />
+                <Badge status="success" text="Connected" />
               ) : (
-                <Badge status="error" text="Mất kết nối" />
+                <Badge status="error" text="Disconnected" />
               )}
             </Text>
           </div>
         </div>
 
         <Space>
-          <Tooltip title="Thêm tùy chọn">
+          <Tooltip title="More options">
             <Button type="text" icon={<MoreOutlined />} />
           </Tooltip>
         </Space>
@@ -300,7 +300,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
           </div>
         ) : (
           <Empty
-            description="Chưa có tin nhắn nào"
+            description="No messages"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         )}
@@ -311,7 +311,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
       {/* Message Input */}
       <div className="chat-input">
         <Space.Compact style={{ width: "100%" }}>
-          <Tooltip title="Đính kém file">
+          <Tooltip title="Attach file">
             <Button
               icon={<PaperClipOutlined />}
               onClick={() => setUploadModalVisible(true)}
@@ -323,7 +323,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Nhập tin nhắn..."
+            placeholder="Enter message..."
             autoSize={{ minRows: 1, maxRows: 4 }}
             disabled={!isConnected}
           />
@@ -343,7 +343,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
 
       {/* Upload Modal */}
       <Modal
-        title="Đính kém file"
+        title="Attach File"
         open={uploadModalVisible}
         onCancel={() => setUploadModalVisible(false)}
         footer={null}
@@ -359,10 +359,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
             onChange={(info) => {
               if (info.file.status === "done") {
                 // Handle successful upload
-                antdMessage.success(`${info.file.name} tải lên thành công`);
+                antdMessage.success(`${info.file.name} uploaded successfully`);
                 setUploadModalVisible(false);
               } else if (info.file.status === "error") {
-                antdMessage.error(`${info.file.name} tải lên thất bại`);
+                antdMessage.error(`${info.file.name} upload failed`);
               }
             }}
           >
@@ -370,14 +370,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
               <FileOutlined />
             </p>
             <p className="ant-upload-text">
-              Kéo thả file vào đây hoặc click để chọn
+              Drag and drop files here or click to select
             </p>
             <p className="ant-upload-hint">
-              Hỗ trợ: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, GIF
+              Supported formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG,
+              GIF
             </p>
           </Upload.Dragger>
 
-          <Divider>hoặc</Divider>
+          <Divider>or</Divider>
 
           <Space direction="vertical" style={{ width: "100%" }}>
             {" "}
@@ -388,7 +389,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
                 // Handle image upload
               }}
             >
-              Chọn hình ảnh
+              Select Image
             </Button>
             <Button
               block
@@ -397,7 +398,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
                 // Handle video upload
               }}
             >
-              Chọn video
+              Select Video
             </Button>
             <Button
               block
@@ -406,7 +407,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
                 // Handle audio upload
               }}
             >
-              Chọn âm thanh
+              Select Audio
             </Button>
           </Space>
         </div>

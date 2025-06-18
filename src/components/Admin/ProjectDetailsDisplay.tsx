@@ -1,5 +1,3 @@
-// File: src/components/Admin/ProjectDetailsDisplay.tsx
-
 import React from "react";
 import {
   Tag,
@@ -30,7 +28,7 @@ import TimelogDetailsDisplayInternal from "./TimelogDetailsDisplay";
 const { Title, Text, Paragraph } = Typography;
 
 interface ProjectDetailsDisplayProps {
-  project: Project | ProjectDetail; // Sửa để nhận cả project object
+  project: Project | ProjectDetail;
   theme?: string;
 
   isExpanded?: boolean;
@@ -38,7 +36,8 @@ interface ProjectDetailsDisplayProps {
   onToggleMilestoneDetail?: (id: number) => void;
   onToggleTimelogDetail?: (id: number) => void;
 
-  onAddMilestone?: (projectId: number, refreshCallback?: () => void) => void;  onEditMilestone?: (
+  onAddMilestone?: (projectId: number, refreshCallback?: () => void) => void;
+  onEditMilestone?: (
     milestoneId: number,
     projectId: number,
     refreshCallback?: () => void
@@ -49,9 +48,8 @@ interface ProjectDetailsDisplayProps {
   sentMilestoneCount?: number;
   reviewedMilestoneCount?: number;
 
-  currentUserIsAdmin?: boolean; // Thêm prop để nhận từ ProjectManager
-  
-  // Thêm callback để refresh progress overview
+  currentUserIsAdmin?: boolean;
+
   onRefreshProgress?: () => void;
 }
 
@@ -96,19 +94,20 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   sentMilestoneCount,
   reviewedMilestoneCount,
   currentUserIsAdmin = false,
-  onRefreshProgress, // Thêm prop mới
+  onRefreshProgress,
 }) => {
   const projectData = project;
 
-  // Wrapper function để refresh progress sau khi milestone/timelog thay đổi
   const handleRefreshWithProgress = (callback?: () => void) => {
     if (callback) callback();
     if (onRefreshProgress) onRefreshProgress();
-  };  // Handler để tự động expand milestone/timelog khi click vào project
+  };
   const handleProjectCardClick = (e: React.MouseEvent) => {
-    // Chỉ expand/collapse khi click vào các phần có class project-card-clickable
     const target = e.target as Element;
-    if (target.closest('.project-card-clickable') || e.target === e.currentTarget) {
+    if (
+      target.closest(".project-card-clickable") ||
+      e.target === e.currentTarget
+    ) {
       if (projectData.type === "FIXED_PRICE" && onToggleMilestoneDetail) {
         onToggleMilestoneDetail(projectData.id);
       } else if (projectData.type === "LABOR" && onToggleTimelogDetail) {
@@ -119,7 +118,6 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
 
   const createMilestoneStatusColors = () => {
     const colors = [];
-    // Chỉ dùng nếu projectData là kiểu Project (có các trường count) và props được truyền vào
     if (
       !isProjectDetail(projectData) &&
       newMilestoneCount !== undefined &&
@@ -149,11 +147,9 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
     const startDate = new Date(projectData.startDate);
     const currentDate = new Date();
 
-    // FIX 1: Cộng thêm 1 giờ để tránh timezone issue
     const timeDiff = currentDate.getTime() - startDate.getTime();
-    const daysPassed = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1; // +1 vì ngày bắt đầu cũng tính
+    const daysPassed = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
 
-    // FIX 2: Kiểm tra nếu chưa bắt đầu project
     if (currentDate < startDate) {
       return { percent: 0, totalDays, currentDay: 0 };
     }
@@ -226,7 +222,6 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
           <Space direction="vertical" size={8} style={{ width: "100%" }}>
             <Text strong>Progress Overview</Text>
 
-            {/* Overall Progress - Xanh nước biển */}
             <div>
               <Text
                 type="secondary"
@@ -241,7 +236,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               </Text>
               <Progress
                 percent={Number(projectData.overallProcess)}
-                strokeColor="#1890ff" // Xanh nước biển
+                strokeColor="#1890ff"
                 trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
                 format={() =>
                   `${Number(projectData.overallProcess)?.toFixed(2) || "0.00"}%`
@@ -250,7 +245,6 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               />
             </div>
 
-            {/* Actual Progress - Xanh lá cây */}
             <div>
               <Text
                 type="secondary"
@@ -265,7 +259,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               </Text>
               <Progress
                 percent={Number(projectData.actualProcess)}
-                strokeColor="#52c41a" // Xanh lá cây
+                strokeColor="#52c41a"
                 trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
                 format={() =>
                   `${Number(projectData.actualProcess)?.toFixed(2) || "0.00"}%`
@@ -352,8 +346,6 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       );
     }
 
-    // Fallback for projects that don't fit LABOR or FIXED_PRICE with milestones,
-    // but still might have overall/actual progress.
     if (
       projectData.overallProcess !== undefined &&
       projectData.actualProcess !== undefined
@@ -377,8 +369,13 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
         cursor: "pointer",
       }}
       styles={{ body: { padding: "20px" } }}
-    >      {/* Header Section */}
-      <Row justify="space-between" align="top" style={{ marginBottom: "16px" }} className="project-card-clickable">
+    >
+      <Row
+        justify="space-between"
+        align="top"
+        style={{ marginBottom: "16px" }}
+        className="project-card-clickable"
+      >
         <Col flex="auto">
           <Space direction="vertical" size={12} style={{ width: "100%" }}>
             {/* Status and Type Tags */}
@@ -393,7 +390,8 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                   }}
                 >
                   {projectData.status}
-                </Tag>                <Tag
+                </Tag>{" "}
+                <Tag
                   style={{
                     borderRadius: "6px",
                     background: theme === "dark" ? "#262626" : "#f6f6f6",
@@ -405,25 +403,29 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                 </Tag>
                 {/* Expand Status Indicator */}
                 {projectData.type === "FIXED_PRICE" && (
-                  <Text 
-                    type="secondary" 
-                    style={{ 
-                      fontSize: "12px", 
+                  <Text
+                    type="secondary"
+                    style={{
+                      fontSize: "12px",
                       fontStyle: "italic",
                     }}
                   >
-                    {isExpanded ? "👇 Milestones expanded" : "📋 Click to view milestones"}
+                    {isExpanded
+                      ? "👇 Milestones expanded"
+                      : "📋 Click to view milestones"}
                   </Text>
                 )}
                 {projectData.type === "LABOR" && (
-                  <Text 
-                    type="secondary" 
-                    style={{ 
-                      fontSize: "12px", 
+                  <Text
+                    type="secondary"
+                    style={{
+                      fontSize: "12px",
                       fontStyle: "italic",
                     }}
                   >
-                    {expandedTimelogProjectId === projectData.id ? "👇 Timelogs expanded" : "⏰ Click to view timelogs"}
+                    {expandedTimelogProjectId === projectData.id
+                      ? "👇 Timelogs expanded"
+                      : "⏰ Click to view timelogs"}
                   </Text>
                 )}
               </Space>
@@ -451,11 +453,16 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             </Paragraph>
           </Space>
         </Col>
-      </Row>      {/* Progress Section */}
+      </Row>{" "}
+      {/* Progress Section */}
       {renderProgressSection() && (
-        <div style={{ marginBottom: "16px" }} className="project-card-clickable">{renderProgressSection()}</div>
+        <div
+          style={{ marginBottom: "16px" }}
+          className="project-card-clickable"
+        >
+          {renderProgressSection()}
+        </div>
       )}
-
       {/* Info Section */}
       <Row gutter={[16, 8]} className="project-card-clickable">
         <Col xs={24} sm={12} md={8}>
@@ -472,7 +479,6 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             </div>
           </Space>
         </Col>
-
         <Col xs={24} sm={12} md={8}>
           <Space align="center">
             <CalendarOutlined style={{ color: "#52c41a" }} />
@@ -491,7 +497,6 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             </div>
           </Space>
         </Col>
-
         <Col xs={24} sm={12} md={8}>
           <Space align="center">
             <ClockCircleOutlined style={{ color: "#faad14" }} />
@@ -509,13 +514,14 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               </Text>
             </div>
           </Space>
-        </Col>      </Row>
-
+        </Col>{" "}
+      </Row>
       {/* Expanded Sections */}
       {isExpanded &&
         onToggleMilestoneDetail &&
         projectData.type === "FIXED_PRICE" &&
-        onAddMilestone &&        onEditMilestone && (
+        onAddMilestone &&
+        onEditMilestone && (
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -525,23 +531,31 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               borderRadius: "8px",
               border: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}`,
             }}
-          ><MilestoneDetailsDisplayInternal
+          >
+            <MilestoneDetailsDisplayInternal
               projectId={projectData.id}
               onAddMilestone={(refreshCallback) =>
                 currentUserIsAdmin &&
-                onAddMilestone(projectData.id, () => handleRefreshWithProgress(refreshCallback))
+                onAddMilestone(projectData.id, () =>
+                  handleRefreshWithProgress(refreshCallback)
+                )
               } // Chỉ cho admin
-              onEditMilestone={currentUserIsAdmin ? 
-                (milestoneId, projectId, refreshCallback) => 
-                  onEditMilestone && onEditMilestone(milestoneId, projectId, () => handleRefreshWithProgress(refreshCallback))
-                : undefined} // Chỉ cho admin
+              onEditMilestone={
+                currentUserIsAdmin
+                  ? (milestoneId, projectId, refreshCallback) =>
+                      onEditMilestone &&
+                      onEditMilestone(milestoneId, projectId, () =>
+                        handleRefreshWithProgress(refreshCallback)
+                      )
+                  : undefined
+              } // Chỉ cho admin
               onRefreshProgress={onRefreshProgress} // Truyền callback xuống milestone
             />
           </div>
         )}
-
       {expandedTimelogProjectId === projectData.id &&
-        onToggleTimelogDetail &&        projectData.type === "LABOR" && (
+        onToggleTimelogDetail &&
+        projectData.type === "LABOR" && (
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -551,11 +565,12 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
               borderRadius: "8px",
               border: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}`,
             }}
-          ><TimelogDetailsDisplayInternal
+          >
+            <TimelogDetailsDisplayInternal
               projectId={projectData.id}
               theme={theme}
               isAdmin={currentUserIsAdmin}
-              onRefreshProgress={onRefreshProgress} // Truyền callback xuống timelog
+              onRefreshProgress={onRefreshProgress}
             />
           </div>
         )}

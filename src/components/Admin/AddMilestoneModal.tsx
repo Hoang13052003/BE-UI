@@ -12,18 +12,16 @@ import {
 import {
   addMilestoneToProjectApi,
   MilestoneRequest,
-} from "../../api/projectApi"; // Ensure this API path is correct
+} from "../../api/projectApi";
 import TextArea from "antd/lib/input/TextArea";
 
 interface AddMilestoneModalProps {
-  // Renamed interface
   visible: boolean;
   projectId: number;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-// Renamed component
 const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
   visible,
   projectId,
@@ -34,16 +32,14 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
 
-  // Load milestone statuses when modal opens
   useEffect(() => {
     if (visible) {
       loadMilestoneStatuses();
-      // Reset fields when modal becomes visible and projectId is valid
       if (projectId) {
         form.resetFields();
       }
     }
-  }, [visible, projectId, form]); // Added form to dependency array
+  }, [visible, projectId, form]);
 
   const loadMilestoneStatuses = async () => {
     try {
@@ -68,14 +64,11 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
         completionPercentage: values.completionPercentage,
       };
 
-      // Ensure addMilestoneToProjectApi exists and works as intended
       await addMilestoneToProjectApi(projectId, milestoneData);
       message.success("Milestone added successfully");
-      // form.resetFields(); // Moved reset to useEffect for better UX
-      onSuccess(); // Call onSuccess which should close the modal and refresh data
+      onSuccess();
     } catch (error) {
       console.error("Failed to add milestone:", error);
-      // Provide more specific error feedback if possible
       const errorMessage =
         (error as any)?.response?.data?.message || "Failed to add milestone";
       message.error(errorMessage);
@@ -86,7 +79,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
 
   return (
     <Modal
-      title="Add Milestone" // Updated title
+      title="Add Milestone"
       open={visible}
       onCancel={onClose}
       footer={[
@@ -104,11 +97,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
       ]}
       width={600}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        name="add_milestone_form" // Added form name
-      >
+      <Form form={form} layout="vertical" name="add_milestone_form">
         <Form.Item
           name="name"
           label="Milestone Name"
@@ -135,7 +124,6 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
           label="Deadline Date"
           rules={[
             { required: true, message: "Please select deadline date" },
-            // Add validation rule for deadline date > start date if needed
             ({ getFieldValue }) => ({
               validator(_, value) {
                 if (!value || !getFieldValue("startDate")) {
@@ -157,7 +145,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
           name="status"
           label="Status"
           rules={[{ required: true, message: "Please select status" }]}
-          initialValue="NEW" // Set a default status
+          initialValue="NEW"
         >
           <Select placeholder="Select status">
             {statusOptions.map((status) => (
@@ -204,4 +192,4 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
   );
 };
 
-export default AddMilestoneModal; // Export renamed component
+export default AddMilestoneModal;

@@ -1,13 +1,9 @@
-// src/types/auditLog.types.ts
-
-// Enum để code an toàn hơn
 export enum AuditLogCategory {
-  AUTH = 'AUTH',
-  ACTION = 'ACTION',
-  OTHER = 'OTHER',
+  AUTH = "AUTH",
+  ACTION = "ACTION",
+  OTHER = "OTHER",
 }
 
-// Interface này giờ đây phản ánh AuditLog entity từ backend
 export interface AuditLog {
   id: string;
   timestamp: string;
@@ -15,9 +11,9 @@ export interface AuditLog {
   username?: string;
   ipAddress?: string;
   userAgent?: string;
-  actionType: string; 
+  actionType: string;
   category: AuditLogCategory;
-  severity: AuditLogSeverity; // Giữ là string vì BE có thể có nhiều giá trị
+  severity: AuditLogSeverity;
   targetEntity?: string;
   targetEntityId?: string;
   details?: string;
@@ -28,7 +24,6 @@ export interface AuditLog {
   deleted: boolean;
 }
 
-// Interface cho API /stats
 export interface AuthStats {
   total_auth_logs: number;
   today_logs: number;
@@ -37,7 +32,6 @@ export interface AuthStats {
   generated_at: string;
 }
 
-// Interface cho Page object từ Spring (nếu có)
 export interface Page<T> {
   content: T[];
   totalPages: number;
@@ -47,8 +41,8 @@ export interface Page<T> {
 }
 
 export enum AuditLogSeverity {
-  INFO = 'INFO',
-  WARNING = 'WARNING',
-  ERROR = 'ERROR',
-  CRITICAL = 'CRITICAL',
+  INFO = "INFO",
+  WARNING = "WARNING",
+  ERROR = "ERROR",
+  CRITICAL = "CRITICAL",
 }

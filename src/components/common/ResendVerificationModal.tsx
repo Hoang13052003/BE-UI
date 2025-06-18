@@ -1,4 +1,3 @@
-// src/components/common/ResendVerificationModal.tsx
 import React, { useState } from "react";
 import { Modal, Button, Typography, Space, Alert, message } from "antd";
 import { MailOutlined } from "@ant-design/icons";
@@ -32,7 +31,7 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
 
       setMessageType("success");
       setAlertMessage(
-        response.message || "Email xác thực đã được gửi lại thành công!"
+        response.message || "Verification email has been sent successfully!"
       );
       message.success("Verification email sent successfully!");
     } catch (error: any) {
@@ -41,7 +40,7 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
-        "Có lỗi xảy ra khi gửi email";
+        "Error occurred while sending email";
 
       setMessageType("error");
       setAlertMessage(errorMessage);
@@ -62,7 +61,7 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
       title={
         <Space>
           <MailOutlined />
-          <span>Gửi lại email xác thực</span>
+          <span>Resend Verification Email</span>
         </Space>
       }
       open={visible}
@@ -70,7 +69,7 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
       width={480}
       footer={[
         <Button key="cancel" onClick={handleClose}>
-          Đóng
+          Close
         </Button>,
         <Button
           key="resend"
@@ -78,13 +77,13 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
           loading={isLoading}
           onClick={handleResend}
         >
-          {isLoading ? "Đang gửi..." : "Gửi lại"}
+          {isLoading ? "Sending..." : "Resend"}
         </Button>,
       ]}
     >
       <Space direction="vertical" size="middle" style={{ width: "100%" }}>
         <div>
-          <Text>Gửi lại email xác thực đến:</Text>
+          <Text>Resend verification email to:</Text>
           <br />
           <Text strong style={{ fontSize: "16px" }}>
             {email}
@@ -101,8 +100,8 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
         )}
 
         <Text type="secondary" style={{ fontSize: "12px" }}>
-          Nếu bạn không nhận được email, vui lòng kiểm tra thư mục spam hoặc thử
-          lại sau vài phút.
+          If you don't receive the email, please check your spam folder or try
+          again in a few minutes.
         </Text>
       </Space>
     </Modal>

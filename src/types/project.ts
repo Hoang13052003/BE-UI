@@ -1,4 +1,3 @@
-//get form api
 export interface ProjectUser {
   id: number;
   email: string;
@@ -8,24 +7,24 @@ export interface Project {
   id: number;
   name: string;
   description: string;
-  type: "FIXED_PRICE" | "LABOR"; // Updated enum values
-  status: "NEW" | "PENDING" | "PROGRESS" | "CLOSED"; // Updated enum values
-  startDate: string; // Format: "YYYY-MM-DD"
-  plannedEndDate: string; // Format: "YYYY-MM-DD"
-  actualEndDate: string | null; // Format: "YYYY-MM-DD" (can be null)
+  type: "FIXED_PRICE" | "LABOR";
+  status: "NEW" | "PENDING" | "PROGRESS" | "CLOSED";
+  startDate: string;
+  plannedEndDate: string;
+  actualEndDate: string | null;
   totalBudget: number;
   totalActualHours: number;
-  totalEstimatedHours: number | null; // Updated to allow null based on sample data
+  totalEstimatedHours: number | null;
   progress: number;
-  overallProcess?: number; // Added
-  actualProcess?: number; // Added
-  users: ProjectUser[]; // List of users assigned to the project
+  overallProcess?: number;
+  actualProcess?: number;
+  users: ProjectUser[];
   totalMilestoneCompleted: number;
   milestoneCount: number;
   newMilestoneCount: number;
   sentMilestoneCount: number;
   reviewedMilestoneCount: number;
-  updatedAt: Date; // Format: "YYYY-MM-DD HH:mm:ss"
+  updatedAt: Date;
 }
 
 export interface UserSummary {
@@ -35,36 +34,33 @@ export interface UserSummary {
 }
 
 export interface ProjectDetail {
-  // ĐỔI TÊN TỪ Project thành ProjectDetail cho rõ ràng
   id: number;
   name: string;
-  description: string | null; // Cho phép null nếu backend có thể trả về null
+  description: string | null;
   type: "FIXED_PRICE" | "LABOR";
   status: "NEW" | "PENDING" | "PROGRESS" | "CLOSED";
-  startDate: string; // Format: "YYYY-MM-DD"
-  plannedEndDate: string; // Format: "YYYY-MM-DD"
+  startDate: string;
+  plannedEndDate: string;
   actualEndDate: string | null;
-  totalBudget: number | null; // Cho phép null nếu có thể
+  totalBudget: number | null;
   totalEstimatedHours: number | null;
-  overallProcess?: number; // Added
-  actualProcess?: number; // Added
+  overallProcess?: number;
+  actualProcess?: number;
   users: UserSummary[];
 }
 
 export interface ProjectUpdateTimelineItem {
   id: number;
-  createdBy: UserSummary; // Thông tin người tạo cập nhật
-  updateDate: string; // Format: "YYYY-MM-DD"
+  createdBy: UserSummary;
+  updateDate: string;
   summary: string | null;
   details: string | null;
-  statusAtUpdate: string | null; // TODO: Định nghĩa enum cho UpdateStatusEnum nếu cần
+  statusAtUpdate: string | null;
   completionPercentage: number | null;
   published: boolean;
-  // attachments?: AttachmentSummary[]; // Nếu sau này có hiển thị attachments
 }
 
 export interface ProjectContextTimeLog {
-  // Đặt tên khác để phân biệt với TimeLogResponseDTO cũ nếu có
   id: number;
   performer: UserSummary;
   taskDate: string;
@@ -73,14 +69,12 @@ export interface ProjectContextTimeLog {
 }
 
 export interface SortInfo {
-  // Thông tin sắp xếp
   sorted: boolean;
   unsorted: boolean;
   empty: boolean;
 }
 
 export interface PageableInfo {
-  // Thông tin của đối tượng "pageable"
   sort: SortInfo;
   offset: number;
   pageNumber: number;

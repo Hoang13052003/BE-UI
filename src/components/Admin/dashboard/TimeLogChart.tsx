@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { Empty } from 'antd';
-import Chart from 'chart.js/auto';
+import React, { useEffect, useRef } from "react";
+import { Empty } from "antd";
+import Chart from "chart.js/auto";
 
 interface TimeLogChartProps {
   data: number[];
@@ -14,24 +14,22 @@ const TimeLogChart: React.FC<TimeLogChartProps> = ({ data, labels }) => {
   useEffect(() => {
     if (!chartRef.current || !data.length || !labels.length) return;
 
-    // Destroy existing chart if it exists
     if (chartInstance.current) {
       chartInstance.current.destroy();
     }
 
-    // Create the chart
-    const ctx = chartRef.current.getContext('2d');
+    const ctx = chartRef.current.getContext("2d");
     if (ctx) {
       chartInstance.current = new Chart(ctx, {
-        type: 'bar',
+        type: "bar",
         data: {
           labels: labels,
           datasets: [
             {
-              label: 'Hours Logged',
+              label: "Hours Logged",
               data: data,
-              backgroundColor: 'rgba(54, 162, 235, 0.6)',
-              borderColor: 'rgba(54, 162, 235, 1)',
+              backgroundColor: "rgba(54, 162, 235, 0.6)",
+              borderColor: "rgba(54, 162, 235, 1)",
               borderWidth: 1,
             },
           ],
@@ -44,15 +42,15 @@ const TimeLogChart: React.FC<TimeLogChartProps> = ({ data, labels }) => {
               beginAtZero: true,
               title: {
                 display: true,
-                text: 'Hours',
-              }
+                text: "Hours",
+              },
             },
             x: {
               title: {
                 display: true,
-                text: 'Date',
-              }
-            }
+                text: "Date",
+              },
+            },
           },
           plugins: {
             tooltip: {
@@ -68,7 +66,6 @@ const TimeLogChart: React.FC<TimeLogChartProps> = ({ data, labels }) => {
       });
     }
 
-    // Cleanup
     return () => {
       if (chartInstance.current) {
         chartInstance.current.destroy();
@@ -81,7 +78,7 @@ const TimeLogChart: React.FC<TimeLogChartProps> = ({ data, labels }) => {
   }
 
   return (
-    <div style={{ height: '300px', position: 'relative' }}>
+    <div style={{ height: "300px", position: "relative" }}>
       <canvas ref={chartRef}></canvas>
     </div>
   );

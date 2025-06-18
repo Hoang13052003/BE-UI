@@ -1,4 +1,3 @@
-// src/components/Admin/ProjectProgress/ProjectUpdateDetails.tsx
 import React, { useState, useEffect } from "react";
 import {
   Card,

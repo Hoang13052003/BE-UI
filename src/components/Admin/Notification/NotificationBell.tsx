@@ -289,7 +289,7 @@ const NotificationBell: React.FC = () => {
               >
                 <List.Item.Meta
                   avatar={
-                    <div style={{ position: "relative" }}>
+                    <div style={{ position: "relative", padding: "0 15px" }}>
                       <Text style={{ fontSize: "20px" }}>
                         {getNotificationIcon(notification.type)}
                       </Text>
@@ -367,7 +367,7 @@ const NotificationBell: React.FC = () => {
   );
   return (
     <Dropdown
-      dropdownRender={() => content} // Sử dụng dropdownRender thay cho popupRender
+      dropdownRender={() => content}
       trigger={["click"]}
       open={open}
       onOpenChange={setOpen}
@@ -375,11 +375,13 @@ const NotificationBell: React.FC = () => {
       arrow={{ pointAtCenter: true }}
     >
       <Badge count={unreadCount} overflowCount={99}>
-        <Button
-          type="text"
-          icon={<BellOutlined style={{ fontSize: "20px" }} />}
-          style={{ height: 40, width: 40 }}
-        />
+        <Tooltip title="Notifications">
+          <Button
+            style={{ height: 40, width: 40, border: "none", outline: "none" }}
+          >
+            <BellOutlined style={{ fontSize: "20px" }} />
+          </Button>
+        </Tooltip>
       </Badge>
     </Dropdown>
   );

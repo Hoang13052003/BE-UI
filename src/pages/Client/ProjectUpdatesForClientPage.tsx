@@ -24,7 +24,7 @@ const ProjectUpdatesForClientPage: React.FC = () => {
     undefined
   );
   const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState(""); // Thêm state cho input search
+  const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
     const fetchUserProjects = async () => {

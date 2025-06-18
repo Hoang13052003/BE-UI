@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Breadcrumb, Card } from "antd";
+import { Breadcrumb, Card } from "antd";
 import {
   HomeOutlined,
   BarChartOutlined,
@@ -8,8 +8,6 @@ import {
 import { Link, useParams } from "react-router-dom";
 import ProjectUpdateDetails from "./ProjectUpdateDetails";
 import { useAuth } from "../../../contexts/AuthContext";
-
-const { Title } = Typography;
 
 const ProjectUpdateDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +46,13 @@ const ProjectUpdateDetailsPage: React.FC = () => {
     },
     {
       title: (
+        <Link to="/client/project-updates">
+          <BarChartOutlined /> Project Progress
+        </Link>
+      ),
+    },
+    {
+      title: (
         <>
           <FileOutlined /> Update Details
         </>
@@ -59,12 +64,10 @@ const ProjectUpdateDetailsPage: React.FC = () => {
     <Card style={{ width: "100%", height: "100%" }}>
       <Breadcrumb
         style={{ marginBottom: 16 }}
-        items={userRole === "ADMIN" ? adminBreadcrumbItems : clientBreadcrumbItems}
+        items={
+          userRole === "ADMIN" ? adminBreadcrumbItems : clientBreadcrumbItems
+        }
       />
-
-      <Title level={3} style={{ marginBottom: 24 }}>
-        Project Update Details
-      </Title>
 
       <ProjectUpdateDetails id={id ? parseInt(id) : undefined} />
     </Card>

@@ -44,7 +44,6 @@ interface ProjectMilestonesTabProps {
   projectId: number;
 }
 
-// Hàm lấy màu cho status của milestone
 const getMilestoneStatusColor = (status: MilestoneStatus | null): string => {
   if (!status) return "default";
   switch (status) {
@@ -59,7 +58,6 @@ const getMilestoneStatusColor = (status: MilestoneStatus | null): string => {
   }
 };
 
-// Hàm lấy icon cho status
 const getMilestoneStatusIcon = (status: MilestoneStatus | null) => {
   switch (status) {
     case "NEW":
@@ -73,7 +71,6 @@ const getMilestoneStatusIcon = (status: MilestoneStatus | null) => {
   }
 };
 
-// Hàm tính toán màu progress dựa trên completion percentage
 const getProgressColor = (percentage: number) => {
   if (percentage >= 90) return "#52c41a"; // green
   if (percentage >= 70) return "#faad14"; // orange
@@ -84,16 +81,22 @@ const getProgressColor = (percentage: number) => {
 const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
   projectId,
 }) => {
-  const [milestonesPage, setMilestonesPage] = useState<ApiPage<Milestone> | null>(null);
+  const [milestonesPage, setMilestonesPage] =
+    useState<ApiPage<Milestone> | null>(null);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchText, setSearchText] = useState("");
   const [startDate, setStartDate] = useState<string | undefined>(undefined);
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
-  const [completionFilter, setCompletionFilter] = useState<boolean | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(
+    undefined
+  );
+  const [completionFilter, setCompletionFilter] = useState<boolean | undefined>(
+    undefined
+  );
   const [currentWeekFilter, setCurrentWeekFilter] = useState<boolean>(true);
-  const [uiPagination, setUiPagination] = useState({ current: 1, pageSize: 6 });const fetchMilestones = useCallback(
+  const [uiPagination, setUiPagination] = useState({ current: 1, pageSize: 6 });
+  const fetchMilestones = useCallback(
     async (pageToFetch: number, currentSize: number) => {
       if (!projectId || projectId <= 0) {
         setLoading(false);
@@ -119,29 +122,30 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
         } as ApiPage<Milestone>);
         return;
       }
-      setLoading(true);      try {
+      setLoading(true);
+      try {
         const filterParams: Record<string, any> = {};
-        
+
         if (searchText?.trim()) {
           filterParams.name = searchText.trim();
         }
-        
+
         if (statusFilter) {
           filterParams.status = statusFilter;
         }
-        
+
         if (completionFilter !== undefined) {
           filterParams.isCompleted = completionFilter;
         }
-        
+
         if (currentWeekFilter) {
           filterParams.isCurrentWeek = true;
         }
-        
+
         if (startDate) {
           filterParams.fromDate = startDate;
         }
-        
+
         if (endDate) {
           filterParams.toDate = endDate;
         }
@@ -153,7 +157,7 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
           [{ property: "startDate", direction: "asc" }],
           filterParams
         );
-        
+
         setMilestonesPage(data);
         setUiPagination({
           current: data.number + 1,
@@ -164,9 +168,18 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
         message.error("Failed to load milestones.");
         setMilestonesPage(null);
       } finally {
-        setLoading(false);      }
+        setLoading(false);
+      }
     },
-    [projectId, searchText, statusFilter, completionFilter, currentWeekFilter, startDate, endDate]
+    [
+      projectId,
+      searchText,
+      statusFilter,
+      completionFilter,
+      currentWeekFilter,
+      startDate,
+      endDate,
+    ]
   );
 
   useEffect(() => {
@@ -174,7 +187,7 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
       fetchMilestones(uiPagination.current - 1, uiPagination.pageSize);
     }
   }, [projectId, uiPagination.current, uiPagination.pageSize, fetchMilestones]);
-  
+
   const handlePageChange = (page: number, newPageSize?: number) => {
     setUiPagination((prev) => ({
       ...prev,
@@ -184,8 +197,15 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
   };
   useEffect(() => {
     setUiPagination((prev) => ({ ...prev, current: 1 }));
-  }, [searchText, startDate, endDate, statusFilter, completionFilter, currentWeekFilter]);
-  
+  }, [
+    searchText,
+    startDate,
+    endDate,
+    statusFilter,
+    completionFilter,
+    currentWeekFilter,
+  ]);
+
   const handleViewModeChange = (newMode: "grid" | "list") => {
     setViewMode(newMode);
     const newPageSize = newMode === "grid" ? 6 : 10;
@@ -208,18 +228,25 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
   }
 
   const renderGridView = () => (
-    <Row gutter={[16, 16]}>
-      {paginatedMilestones?.map((milestone) => (        <Col xs={24} sm={24} md={12} lg={8} xl={8} key={milestone.id}>
+    <Row
+      gutter={[16, 16]}
+      style={{
+        height: "500px",
+        overflowY: "auto",
+      }}
+    >
+      {paginatedMilestones?.map((milestone) => (
+        <Col xs={24} sm={24} md={12} lg={8} xl={8} key={milestone.id}>
           <Card
             style={{
               borderRadius: "12px",
               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               border: "1px solid #f0f0f0",
-              height: "100%",
             }}
-            styles={{ body: { padding: '20px' } }}
+            styles={{ body: { padding: "20px" } }}
             cover
-          ><div style={{ marginBottom: "12px" }}>
+          >
+            <div style={{ marginBottom: "12px" }}>
               <Badge
                 status={getMilestoneStatusColor(milestone.status) as any}
                 text={
@@ -277,7 +304,8 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                         milestone.completionPercentage
                       )}
                       showInfo={false}
-                    />                  </div>
+                    />{" "}
+                  </div>
                 )}
 
               <Space direction="vertical" size={2} style={{ width: "100%" }}>
@@ -347,7 +375,8 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                       Completed:{" "}
                       {new Date(milestone.completionDate).toLocaleDateString()}
                     </Text>
-                  </div>                )}
+                  </div>
+                )}
               </Space>
 
               {milestone.notes && (
@@ -371,15 +400,20 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                 </div>
               )}
             </Space>
-          </Card>        </Col>
+          </Card>{" "}
+        </Col>
       ))}
     </Row>
   );
-  
+
   const renderListView = () => (
     <List
       itemLayout="horizontal"
       dataSource={paginatedMilestones}
+      style={{
+        height: "500px",
+        overflowY: "auto",
+      }}
       renderItem={(milestone) => (
         <List.Item
           style={{
@@ -392,7 +426,11 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
         >
           <List.Item.Meta
             title={
-              <Row justify="space-between" align="middle" style={{ marginBottom: "4px" }}>
+              <Row
+                justify="space-between"
+                align="middle"
+                style={{ marginBottom: "4px" }}
+              >
                 <Col flex="auto">
                   <Text strong style={{ fontSize: "16px", color: "#1890ff" }}>
                     {milestone.name || "Untitled Milestone"}
@@ -412,7 +450,10 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
             description={
               <Space direction="vertical" size={4} style={{ width: "100%" }}>
                 {milestone.description && (
-                  <Text type="secondary" style={{ fontSize: "14px", lineHeight: "1.4" }}>
+                  <Text
+                    type="secondary"
+                    style={{ fontSize: "14px", lineHeight: "1.4" }}
+                  >
                     {milestone.description}
                   </Text>
                 )}
@@ -421,14 +462,25 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                   {milestone.completionPercentage !== undefined &&
                     milestone.completionPercentage !== null && (
                       <Col xs={24} sm={8} md={6}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <Text type="secondary" style={{ fontSize: "12px", minWidth: "50px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <Text
+                            type="secondary"
+                            style={{ fontSize: "12px", minWidth: "50px" }}
+                          >
                             Progress:
                           </Text>
                           <Progress
                             percent={milestone.completionPercentage}
                             size="small"
-                            strokeColor={getProgressColor(milestone.completionPercentage)}
+                            strokeColor={getProgressColor(
+                              milestone.completionPercentage
+                            )}
                             style={{ flex: 1, minWidth: "60px" }}
                           />
                         </div>
@@ -439,9 +491,12 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                     <Space wrap size={[12, 2]}>
                       {milestone.startDate && (
                         <Space size={4}>
-                          <CalendarOutlined style={{ color: "#52c41a", fontSize: "12px" }} />
+                          <CalendarOutlined
+                            style={{ color: "#52c41a", fontSize: "12px" }}
+                          />
                           <Text type="secondary" style={{ fontSize: "12px" }}>
-                            Start: {new Date(milestone.startDate).toLocaleDateString()}
+                            Start:{" "}
+                            {new Date(milestone.startDate).toLocaleDateString()}
                           </Text>
                         </Space>
                       )}
@@ -450,7 +505,10 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                         <Space size={4}>
                           <ClockCircleOutlined
                             style={{
-                              color: new Date(milestone.deadlineDate) < new Date() ? "#ff4d4f" : "#faad14",
+                              color:
+                                new Date(milestone.deadlineDate) < new Date()
+                                  ? "#ff4d4f"
+                                  : "#faad14",
                               fontSize: "12px",
                             }}
                           />
@@ -458,19 +516,30 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                             type="secondary"
                             style={{
                               fontSize: "12px",
-                              color: new Date(milestone.deadlineDate) < new Date() ? "#ff4d4f" : undefined,
+                              color:
+                                new Date(milestone.deadlineDate) < new Date()
+                                  ? "#ff4d4f"
+                                  : undefined,
                             }}
                           >
-                            Deadline: {new Date(milestone.deadlineDate).toLocaleDateString()}
+                            Deadline:{" "}
+                            {new Date(
+                              milestone.deadlineDate
+                            ).toLocaleDateString()}
                           </Text>
                         </Space>
                       )}
 
                       {milestone.completionDate && (
                         <Space size={4}>
-                          <CheckCircleOutlined style={{ color: "#52c41a", fontSize: "12px" }} />
+                          <CheckCircleOutlined
+                            style={{ color: "#52c41a", fontSize: "12px" }}
+                          />
                           <Text type="secondary" style={{ fontSize: "12px" }}>
-                            Completed: {new Date(milestone.completionDate).toLocaleDateString()}
+                            Completed:{" "}
+                            {new Date(
+                              milestone.completionDate
+                            ).toLocaleDateString()}
                           </Text>
                         </Space>
                       )}
@@ -480,13 +549,13 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                           <FileTextOutlined style={{ fontSize: "12px" }} />
                           <Text
                             type="secondary"
-                            style={{ 
-                              fontSize: "12px", 
+                            style={{
+                              fontSize: "12px",
                               fontStyle: "italic",
                               maxWidth: "200px",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
-                              whiteSpace: "nowrap"
+                              whiteSpace: "nowrap",
                             }}
                             title={milestone.notes}
                           >
@@ -504,7 +573,15 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
       )}
     />
   );
-  return (    <div style={{ padding: "16px 0" }}>
+  return (
+    <div
+      style={{
+        padding: "20px",
+        borderRadius: "8px",
+        boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
+        height: "800px",
+      }}
+    >
       <div style={{ marginBottom: 24 }}>
         <Row
           justify="space-between"
@@ -517,7 +594,8 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
               <Title level={3} style={{ margin: 0, color: "#1890ff" }}>
                 <FlagOutlined style={{ marginRight: 8 }} />
                 Milestones
-              </Title>              {milestonesPage && (
+              </Title>{" "}
+              {milestonesPage && (
                 <Space size="middle">
                   {" "}
                   <Tag
@@ -534,7 +612,8 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                   </Tag>
                 </Space>
               )}
-            </Space>          </Col>
+            </Space>{" "}
+          </Col>
           <Col>
             <Button.Group>
               <Button
@@ -552,8 +631,9 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                 List
               </Button>
             </Button.Group>
-          </Col>        </Row>
-        
+          </Col>{" "}
+        </Row>
+
         <Row gutter={[8, 8]} align="top">
           <Col xs={24} sm={12} md={8} lg={8}>
             <Search
@@ -602,8 +682,9 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
             >
               This Week
             </Checkbox>
-          </Col>        </Row>
-        
+          </Col>{" "}
+        </Row>
+
         <Row gutter={[8, 8]} align="middle" style={{ marginTop: 8 }}>
           <Col xs={24} sm={18} md={20} lg={22}>
             <RangePicker
@@ -626,14 +707,23 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
             <Tooltip title="Clear all filters">
               <Button
                 type="text"
-                icon={<ClearOutlined />}                onClick={() => {
+                icon={<ClearOutlined />}
+                onClick={() => {
                   setStartDate(undefined);
                   setEndDate(undefined);
                   setSearchText("");
                   setStatusFilter(undefined);
-                  setCompletionFilter(undefined);                  setCurrentWeekFilter(true);
+                  setCompletionFilter(undefined);
+                  setCurrentWeekFilter(true);
                 }}
-                disabled={!searchText && !startDate && !endDate && !statusFilter && completionFilter === undefined && currentWeekFilter}
+                disabled={
+                  !searchText &&
+                  !startDate &&
+                  !endDate &&
+                  !statusFilter &&
+                  completionFilter === undefined &&
+                  currentWeekFilter
+                }
                 style={{
                   color: "#ff4d4f",
                   borderColor: "#ff4d4f",
@@ -646,20 +736,27 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
                 size="small"
               />
             </Tooltip>
-          </Col>        </Row>
+          </Col>{" "}
+        </Row>
       </div>
-      
-      {!loading && (!milestonesPage || !paginatedMilestones || paginatedMilestones.length === 0) ? (
+      {!loading &&
+      (!milestonesPage ||
+        !paginatedMilestones ||
+        paginatedMilestones.length === 0) ? (
         <Card style={{ textAlign: "center", backgroundColor: "#fafafa" }}>
           <Empty
             description={
               <span style={{ color: "#8c8c8c" }}>
-                {!milestonesPage 
+                {!milestonesPage
                   ? "Could not load milestones."
-                  : (searchText || startDate || endDate || statusFilter || completionFilter !== undefined || !currentWeekFilter
-                    ? "No milestones match your search criteria"
-                    : "No milestones found for this project this week")
-                }
+                  : searchText ||
+                    startDate ||
+                    endDate ||
+                    statusFilter ||
+                    completionFilter !== undefined ||
+                    !currentWeekFilter
+                  ? "No milestones match your search criteria"
+                  : "No milestones found for this project this week"}
               </span>
             }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -675,31 +772,29 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
           <Spin size="large" tip="Loading milestones..." />
         </div>
       )}{" "}
-      {milestonesPage && milestonesPage.totalElements > uiPagination.pageSize && (
-          <Row justify="center" style={{ marginTop: 32 }}>
-            <Pagination
-              current={uiPagination.current}
-              pageSize={uiPagination.pageSize}
-              total={milestonesPage.totalElements}
-              onChange={handlePageChange}
-              showSizeChanger
-              pageSizeOptions={
-                viewMode === "grid"
-                  ? ["6", "12", "24", "48"]
-                  : ["5", "10", "20", "50"]
-              }
-              showTotal={(total, range) =>
-                `${range[0]}-${range[1]} of ${total} milestones`
-              }
-              style={{
-                padding: "16px",
-                background: "#fafafa",
-                borderRadius: "8px",
-                border: "1px solid #f0f0f0",
-              }}
-            />
-          </Row>
-        )}
+      {milestonesPage && (
+        <Row justify="end" style={{ marginTop: 16 }}>
+          <Pagination
+            current={uiPagination.current}
+            pageSize={uiPagination.pageSize}
+            total={milestonesPage.totalElements}
+            onChange={handlePageChange}
+            showSizeChanger
+            pageSizeOptions={
+              viewMode === "grid"
+                ? ["6", "12", "24", "48"]
+                : ["5", "10", "20", "50"]
+            }
+            showTotal={(total, range) =>
+              `${range[0]}-${range[1]} of ${total} milestones`
+            }
+            style={{
+              padding: "16px",
+              borderRadius: "8px",
+            }}
+          />
+        </Row>
+      )}
     </div>
   );
 };

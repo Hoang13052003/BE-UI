@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Layout,
   List,
@@ -13,7 +13,7 @@ import {
   Space,
   Tooltip,
   Empty,
-} from 'antd';
+} from "antd";
 import {
   SearchOutlined,
   PlusOutlined,
@@ -21,13 +21,13 @@ import {
   UserOutlined,
   ProjectOutlined,
   MessageOutlined,
-} from '@ant-design/icons';
-import { useChat } from '../../contexts/ChatContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { ChatRoomType, ChatRoomResponse } from '../../api/chatApi';
-import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import './ChatSidebar.scss';
+} from "@ant-design/icons";
+import { useChat } from "../../contexts/ChatContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { ChatRoomType, ChatRoomResponse } from "../../api/chatApi";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import "./ChatSidebar.scss";
 
 const { Sider } = Layout;
 const { Text, Title } = Typography;
@@ -54,10 +54,10 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
     refreshOnlineUsers,
   } = useChat();
 
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [filteredRooms, setFilteredRooms] = useState<ChatRoomResponse[]>([]);
-  const [roomTypeFilter, setRoomTypeFilter] = useState<string>('ALL');
+  const [roomTypeFilter, setRoomTypeFilter] = useState<string>("ALL");
 
   useEffect(() => {
     refreshChatRooms();
@@ -72,18 +72,19 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
     let filtered = chatRooms;
 
     // Filter by room type
-    if (roomTypeFilter !== 'ALL') {
+    if (roomTypeFilter !== "ALL") {
       filtered = filtered.filter((room) => room.roomType === roomTypeFilter);
     }
 
     // Filter by search text
     if (searchText.trim()) {
       const search = searchText.toLowerCase();
-      filtered = filtered.filter((room) =>
-        room.roomName.toLowerCase().includes(search) ||
-        room.participants.some((p) =>
-          p.fullName.toLowerCase().includes(search)
-        )
+      filtered = filtered.filter(
+        (room) =>
+          room.roomName.toLowerCase().includes(search) ||
+          room.participants.some((p) =>
+            p.fullName.toLowerCase().includes(search)
+          )
       );
     }
 
@@ -95,7 +96,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       const otherUser = room.participants.find(
         (p) => p.userId !== userDetails?.id
       );
-      return otherUser?.fullName || 'Unknown User';
+      return otherUser?.fullName || "Unknown User";
     }
     return room.roomName;
   };
@@ -124,7 +125,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   };
 
   const formatLastMessageTime = (timestamp?: string) => {
-    if (!timestamp) return '';
+    if (!timestamp) return "";
     return formatDistanceToNow(new Date(timestamp), {
       addSuffix: true,
       locale: vi,
@@ -147,24 +148,23 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const unreadCount = getUnreadCountForRoom(room);
     const isActive = activeChatRoom?.id === room.id;
     const lastMessageTime = formatLastMessageTime(room.lastMessageAt);
-    
+
     // Check if other user is online (for private chats)
-    const isOnline = room.roomType === ChatRoomType.PRIVATE ? 
-      room.participants.some(p => p.userId !== userDetails?.id && isUserOnline(p.userId)) : 
-      false;
+    const isOnline =
+      room.roomType === ChatRoomType.PRIVATE
+        ? room.participants.some(
+            (p) => p.userId !== userDetails?.id && isUserOnline(p.userId)
+          )
+        : false;
 
     return (
       <List.Item
         key={room.id}
-        className={`chat-room-item ${isActive ? 'active' : ''}`}
+        className={`chat-room-item ${isActive ? "active" : ""}`}
         onClick={() => selectChatRoom(room.id)}
       >
         <div className="room-avatar">
-          <Badge
-            dot={isOnline}
-            offset={[-8, 32]}
-            color="green"
-          >
+          <Badge dot={isOnline} offset={[-8, 32]} color="green">
             <Avatar
               src={avatarSrc}
               icon={getRoomIcon(room.roomType)}
@@ -199,10 +199,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 </Text>
               )}
             </div>
-            
-            {unreadCount > 0 && (
-              <Badge count={unreadCount} size="small" />
-            )}
+
+            {unreadCount > 0 && <Badge count={unreadCount} size="small" />}
           </div>
         </div>
       </List.Item>
@@ -219,25 +217,29 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       >
         <div className="sidebar-header-collapsed">
           <Tooltip title="Chat">
-            <MessageOutlined style={{ fontSize: '20px' }} />
+            <MessageOutlined style={{ fontSize: "20px" }} />
           </Tooltip>
           {unreadCount && unreadCount.totalUnreadCount > 0 && (
             <Badge
               count={unreadCount.totalUnreadCount}
               size="small"
-              style={{ position: 'absolute', top: -5, right: -5 }}
+              style={{ position: "absolute", top: -5, right: -5 }}
             />
           )}
         </div>
-        
-        <Divider style={{ margin: '8px 0' }} />
-        
+
+        <Divider style={{ margin: "8px 0" }} />
+
         <div className="collapsed-room-list">
           {filteredRooms.slice(0, 3).map((room) => (
-            <Tooltip key={room.id} title={getRoomDisplayName(room)} placement="right">
+            <Tooltip
+              key={room.id}
+              title={getRoomDisplayName(room)}
+              placement="right"
+            >
               <div
                 className={`collapsed-room-item ${
-                  activeChatRoom?.id === room.id ? 'active' : ''
+                  activeChatRoom?.id === room.id ? "active" : ""
                 }`}
                 onClick={() => selectChatRoom(room.id)}
               >
@@ -252,7 +254,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   <Badge
                     count={getUnreadCountForRoom(room)}
                     size="small"
-                    style={{ position: 'absolute', top: -5, right: -5 }}
+                    style={{ position: "absolute", top: -5, right: -5 }}
                   />
                 )}
               </div>
@@ -275,8 +277,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             <Badge count={unreadCount.totalUnreadCount} />
           )}
         </div>
-        
-        <Tooltip title="Tạo cuộc trò chuyện mới">
+
+        <Tooltip title="Create new chat">
           <Button
             type="text"
             icon={<PlusOutlined />}
@@ -291,27 +293,27 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       <div className="sidebar-controls">
         <Input
           prefix={<SearchOutlined />}
-          placeholder="Tìm kiếm cuộc trò chuyện..."
+          placeholder="Search conversations..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           allowClear
         />
-        
+
         <Select
           value={roomTypeFilter}
           onChange={setRoomTypeFilter}
-          style={{ width: '100%', marginTop: '8px' }}
+          style={{ width: "100%", marginTop: "8px" }}
           size="small"
         >
-          <Option value="ALL">Tất cả</Option>
+          <Option value="ALL">All</Option>
           <Option value={ChatRoomType.PRIVATE}>
-            <UserOutlined /> Riêng tư
+            <UserOutlined /> Private
           </Option>
           <Option value={ChatRoomType.GROUP}>
-            <TeamOutlined /> Nhóm
+            <TeamOutlined /> Group
           </Option>
           <Option value={ChatRoomType.PROJECT_CHAT}>
-            <ProjectOutlined /> Dự án
+            <ProjectOutlined /> Project
           </Option>
         </Select>
       </div>
@@ -327,7 +329,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           />
         ) : (
           <Empty
-            description="Không có cuộc trò chuyện nào"
+            description="No conversations"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         )}
@@ -335,13 +337,13 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
       {/* Create Chat Modal */}
       <Modal
-        title="Tạo cuộc trò chuyện mới"
+        title="Create New Chat"
         open={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
         footer={null}
         width={480}
       >
-        <Space direction="vertical" style={{ width: '100%' }} size="large">
+        <Space direction="vertical" style={{ width: "100%" }} size="large">
           <Button
             block
             size="large"
@@ -351,9 +353,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
               setCreateModalVisible(false);
             }}
           >
-            Trò chuyện riêng
+            Chat private
           </Button>
-          
+
           <Button
             block
             size="large"
@@ -363,9 +365,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
               setCreateModalVisible(false);
             }}
           >
-            Tạo nhóm chat
+            Create group chat
           </Button>
-          
+
           <Button
             block
             size="large"
@@ -375,7 +377,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
               setCreateModalVisible(false);
             }}
           >
-            Tham gia chat dự án
+            Join project chat
           </Button>
         </Space>
       </Modal>

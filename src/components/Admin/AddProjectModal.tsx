@@ -31,8 +31,8 @@ dayjs.extend(isSameOrBefore);
 const { Option } = Select;
 const HOURS_PER_WORK_DAY = 8;
 const MAX_HOURS_PER_DAY_ALLOWED = 24;
-const MAX_ESTIMATED_HOURS_LIMIT = 10000; // Giới hạn tối đa số giờ có thể tính toán
-const MAX_WORKING_DAYS_LIMIT = 365; // Giới hạn tối đa số ngày làm việc (1 năm)
+const MAX_ESTIMATED_HOURS_LIMIT = 10000;
+const MAX_WORKING_DAYS_LIMIT = 365;
 
 interface AddProjectModalProps {
   visible: boolean;
@@ -56,7 +56,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
   );
   const [formInitialized, setFormInitialized] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [userSearchInput, setUserSearchInput] = useState<string>(""); // State for user search input
+  const [userSearchInput, setUserSearchInput] = useState<string>("");
 
   const { searchedUsers, searchLoading, handleUserSearch, resetSearch } =
     useUserSearch();
@@ -101,7 +101,6 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     const formStartDate = startDate ? dayjs(startDate) : null;
     const formPlannedEndDate = plannedEndDate ? dayjs(plannedEndDate) : null;
 
-    // 1. Khi startDate hoặc plannedEndDate thay đổi (và type là LABOR)
     if (
       (changedValues.startDate !== undefined ||
         changedValues.plannedEndDate !== undefined) &&
@@ -128,9 +127,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
       } else {
         form.setFieldsValue({ totalEstimatedHours: null });
       }
-    }
-    // 2. Khi totalEstimatedHours thay đổi (và type là LABOR)
-    else if (
+    } else if (
       changedValues.totalEstimatedHours !== undefined &&
       selectedType === "LABOR"
     ) {
@@ -140,10 +137,9 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         typeof totalEstimatedHours === "number" &&
         totalEstimatedHours >= 0
       ) {
-        // Kiểm tra giới hạn số giờ
         if (totalEstimatedHours > MAX_ESTIMATED_HOURS_LIMIT) {
           antdMessage.warning(
-            `Số giờ ước tính quá cao (tối đa ${MAX_ESTIMATED_HOURS_LIMIT.toLocaleString()} giờ). Vui lòng nhập số giờ hợp lý.`
+            `Estimated hours too high (maximum ${MAX_ESTIMATED_HOURS_LIMIT.toLocaleString()} hours). Please enter a reasonable number of hours.`
           );
           form.setFieldsValue({ plannedEndDate: null });
           return;
@@ -161,10 +157,9 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           workDaysRequired = 1;
         }
 
-        // Kiểm tra giới hạn số ngày làm việc
         if (workDaysRequired > MAX_WORKING_DAYS_LIMIT) {
           antdMessage.warning(
-            `Số ngày làm việc cần thiết quá lớn (${workDaysRequired} ngày). Vui lòng giảm số giờ ước tính.`
+            `Required working days too high (${workDaysRequired} days). Please reduce estimated hours.`
           );
           form.setFieldsValue({ plannedEndDate: null });
           return;
@@ -175,19 +170,15 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         let calendarDaysPassed = 0;
 
         if (workDaysRequired > 0) {
-          // Tối ưu hóa: Tính toán nhanh dựa trên tuần thay vì từng ngày
           const fullWeeks = Math.floor(workDaysRequired / 5);
 
-          // Cộng số tuần đầy đủ (5 ngày làm việc = 7 ngày lịch)
           finalEndDate = formStartDate.clone().add(fullWeeks * 7, "day");
           workDaysCounted = fullWeeks * 5;
 
-          // Xử lý số ngày làm việc còn lại
           while (
             workDaysCounted < workDaysRequired &&
             calendarDaysPassed < 14
           ) {
-            // Giới hạn tối đa 14 ngày để tránh vòng lặp vô hạn
             const dayToConsider = finalEndDate
               .clone()
               .add(calendarDaysPassed, "day");
@@ -201,10 +192,9 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
             calendarDaysPassed++;
           }
 
-          // Kiểm tra an toàn cuối cùng
           if (workDaysCounted < workDaysRequired) {
             antdMessage.error(
-              "Không thể tính toán ngày kết thúc chính xác. Vui lòng kiểm tra lại số giờ ước tính."
+              "Unable to calculate exact end date. Please check estimated hours."
             );
             form.setFieldsValue({ plannedEndDate: null });
             return;
@@ -241,13 +231,12 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
       setSelectedType(defaultType);
       setFormInitialized(true);
     }
-    // Consolidate reset logic for when modal is not visible
     if (!visible) {
       form.resetFields();
       setSelectedType(undefined);
       setFormInitialized(false);
       setParticipants([]);
-      setUserSearchInput(""); // Reset search input
+      setUserSearchInput("");
       resetSearch();
     }
   }, [
@@ -266,7 +255,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     setSelectedType(undefined);
     setFormInitialized(false);
     setParticipants([]);
-    setUserSearchInput(""); // Reset search input
+    setUserSearchInput("");
     resetSearch();
     onClose();
   };
@@ -297,21 +286,18 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
   const handleAddParticipant = (user: UserIdAndEmailResponse) => {
     if (participants.some((p) => p.id === user.id)) {
       antdMessage.warning(
-        `Người dùng với email ${user.email} đã được thêm vào danh sách.`
+        `User with email ${user.email} has already been added to the list.`
       );
       return;
     }
 
     setParticipants((prev) => [...prev, { id: user.id, email: user.email }]);
-    // Optionally clear search input and results after adding:
-    // setUserSearchInput("");
-    // resetSearch(); // This would clear searchedUsers, might be too aggressive if user wants to add more from current search
-    antdMessage.success(`Đã thêm người dùng: ${user.email}`);
+    antdMessage.success(`Added user: ${user.email}`);
   };
 
   return (
     <Modal
-      title="Thêm dự án mới"
+      title="Add new project"
       open={visible}
       onCancel={handleModalClose}
       footer={null}
@@ -328,8 +314,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           <Col span={12}>
             <Form.Item
               name="name"
-              label="Tên dự án"
-              rules={[{ required: true, message: "Bắt buộc" }]}
+              label="Project Name"
+              rules={[{ required: true, message: "Required" }]}
             >
               <Input />
             </Form.Item>
@@ -337,12 +323,14 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           <Col span={12}>
             <Form.Item
               name="type"
-              label="Loại dự án"
-              rules={[{ required: true, message: "Vui lòng chọn loại dự án" }]}
+              label="Project Type"
+              rules={[
+                { required: true, message: "Please select project type" },
+              ]}
             >
               <Select
                 loading={enumLoading}
-                placeholder="Chọn loại dự án"
+                placeholder="Select project type"
                 onChange={handleTypeChange}
                 disabled={enumLoading}
               >
@@ -358,8 +346,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
         <Form.Item
           name="description"
-          label="Mô tả"
-          rules={[{ required: true, message: "Bắt buộc" }]}
+          label="Description"
+          rules={[{ required: true, message: "Required" }]}
         >
           <Input.TextArea rows={3} />
         </Form.Item>
@@ -368,12 +356,12 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           <Col span={12}>
             <Form.Item
               name="status"
-              label="Trạng thái"
-              rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+              label="Status"
+              rules={[{ required: true, message: "Please select status" }]}
             >
               <Select
                 loading={enumLoading}
-                placeholder="Chọn trạng thái"
+                placeholder="Select status"
                 disabled={enumLoading}
               >
                 {statusOptions.map((status) => (
@@ -387,13 +375,13 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           <Col span={12}>
             <Form.Item
               name="totalBudget"
-              label="Ngân sách"
+              label="Budget"
               rules={[
-                { required: true, message: "Vui lòng nhập ngân sách" },
+                { required: true, message: "Please enter budget" },
                 {
                   type: "number",
                   min: 0,
-                  message: "Ngân sách phải là số không âm",
+                  message: "Budget must be a non-negative number",
                 },
               ]}
             >
@@ -419,10 +407,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           <Col span={12}>
             <Form.Item
               name="startDate"
-              label="Ngày bắt đầu"
-              rules={[
-                { required: true, message: "Vui lòng chọn ngày bắt đầu" },
-              ]}
+              label="Start Date"
+              rules={[{ required: true, message: "Please select start date" }]}
             >
               <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
             </Form.Item>
@@ -430,12 +416,12 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           <Col span={12}>
             <Form.Item
               name="plannedEndDate"
-              label="Ngày kết thúc dự kiến"
+              label="Planned End Date"
               dependencies={["startDate"]}
               rules={[
                 {
                   required: true,
-                  message: "Vui lòng chọn ngày kết thúc dự kiến",
+                  message: "Please select planned end date",
                 },
                 ({ getFieldValue }) => ({
                   validator(_, value) {
@@ -447,12 +433,12 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                       !value.isValid() ||
                       !startDate.isValid()
                     ) {
-                      return Promise.reject(new Error("Ngày không hợp lệ"));
+                      return Promise.reject(new Error("Invalid date"));
                     }
                     if (value.isBefore(startDate)) {
                       return Promise.reject(
                         new Error(
-                          "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu"
+                          "Planned end date must be after or equal to start date"
                         )
                       );
                     }
@@ -469,17 +455,17 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         {selectedType !== "FIXED_PRICE" && (
           <Form.Item
             name="totalEstimatedHours"
-            label="Số giờ ước tính"
+            label="Estimated Hours"
             rules={[
               {
                 required: selectedType !== "FIXED_PRICE",
-                message: "Vui lòng nhập số giờ ước tính",
+                message: "Please enter estimated hours",
               },
               {
                 type: "number",
                 min: 0,
                 max: MAX_ESTIMATED_HOURS_LIMIT,
-                message: `Số giờ phải từ 0 đến ${MAX_ESTIMATED_HOURS_LIMIT.toLocaleString()}`,
+                message: `Estimated hours must be between 0 and ${MAX_ESTIMATED_HOURS_LIMIT.toLocaleString()}`,
               },
             ]}
           >
@@ -501,13 +487,12 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           </Form.Item>
         )}
 
-        <Form.Item label="Người tham gia dự án">
+        <Form.Item label="Project Participants">
           <Select
             mode="multiple"
-            placeholder="Chọn người tham gia"
+            placeholder="Select participants"
             value={participants.map((p) => p.id)}
             onChange={(selectedIds: number[]) => {
-              // Handles deselection from the Select's UI (e.g., clicking 'x' on a tag)
               const newSelectedParticipants = participants.filter((p) =>
                 selectedIds.includes(p.id)
               );
@@ -515,9 +500,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
             }}
             tagRender={(props) => {
               const { value, closable, onClose } = props;
-              // Find the participant by ID to display their email
               const participant = participants.find((p) => p.id === value);
-              const label = participant ? participant.email : `ID: ${value}`; // Fallback if email not found
+              const label = participant ? participant.email : `ID: ${value}`;
               return (
                 <Tag
                   closable={closable}
@@ -541,7 +525,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                     onChange={(e) => {
                       const searchText = e.target.value;
                       setUserSearchInput(searchText);
-                      handleUserSearch(searchText); // Search as user types
+                      handleUserSearch(searchText);
                     }}
                     onPressEnter={(e) => {
                       e.preventDefault();
@@ -552,7 +536,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                   />
                   <Button
                     onClick={() => {
-                      handleUserSearch(userSearchInput); // Use state for search text
+                      handleUserSearch(userSearchInput);
                     }}
                     type="primary"
                     loading={searchLoading}
@@ -610,7 +594,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                         marginBottom: 8,
                         cursor: "pointer",
                         display: "block",
-                      }} // display: 'block' for better layout if many results
+                      }}
                       onClick={() => handleAddParticipant(user)}
                     >
                       {user.email}
@@ -619,7 +603,6 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                 </div>
               </div>
             )}
-            // No explicit <Option> children needed here as selection is custom
           ></Select>
         </Form.Item>
 
@@ -630,7 +613,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
             loading={submitting}
             style={{ width: "100%" }}
           >
-            Thêm dự án
+            Created Project
           </Button>
         </Form.Item>
       </Form>

@@ -1,5 +1,3 @@
-// File: src/components/Admin/ProjectDetailsPage/ProjectTimeLogsTab.tsx
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   List,
@@ -168,7 +166,6 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
   }) => (
     <Card
       style={{
-        height: "280px",
         borderRadius: 12,
         border: "1px solid #f0f0f0",
         transition: "all 0.3s ease",
@@ -289,7 +286,14 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
     );
   }
   return (
-    <div style={{ padding: "20px 0" }}>
+    <div
+      style={{
+        padding: "20px",
+        borderRadius: "8px",
+        boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
+        height: "800px",
+      }}
+    >
       {/* Header Section */}
       <div style={{ marginBottom: 24 }}>
         {/* Title and Stats Row */}
@@ -405,12 +409,6 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
                   }}
                 />
               </Tooltip>
-              {/* Uncomment if you have add functionality */}
-              {/* 
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddTimeLog}>
-                Add Time Log
-              </Button> 
-              */}
             </Space>
           </Col>
         </Row>
@@ -427,7 +425,13 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
           />
         </Card>
       ) : viewMode === "grid" /* Grid View */ ? (
-        <Row gutter={[20, 20]}>
+        <Row
+          gutter={[20, 20]}
+          style={{
+            height: "500px",
+            overflowY: "auto",
+          }}
+        >
           {filteredTimeLogs?.map((timelog) => (
             <Col xs={24} sm={12} md={8} lg={6} key={timelog.id}>
               <TimeLogGridCard timelog={timelog} />
@@ -440,6 +444,10 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
           itemLayout="vertical"
           dataSource={filteredTimeLogs}
           loading={loading}
+          style={{
+            height: "550px",
+            overflowY: "auto",
+          }}
           renderItem={(timelog) => {
             if (!timelog) return null;
             return (
@@ -471,36 +479,32 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
                           }}
                         >
                           <Avatar
-                            size={40} // Prop này cũng giúp đặt line-height và font-size phù hợp
+                            size={40}
                             style={{
                               backgroundColor: "#1890ff",
-                              width: "40px", // Đặt chiều rộng tường minh
-                              height: "40px", // Đặt chiều cao tường minh
-                              borderRadius: "50%", // Đảm bảo bo tròn thành hình tròn
-                              display: "flex", // Sử dụng flex để căn giữa nội dung bên trong
-                              alignItems: "center", // Căn giữa theo chiều dọc
-                              justifyContent: "center", // Căn giữa theo chiều ngang
-                              overflow: "hidden", // Ẩn phần nội dung tràn ra ngoài (nếu có)
-                              flexShrink: 0, // Ngăn Avatar bị co lại trong layout flex
+                              width: "40px",
+                              height: "40px",
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              overflow: "hidden",
+                              flexShrink: 0,
                             }}
-                            // src={timelog.performer.avatarUrl} // Bỏ comment và thay thế nếu bạn có URL ảnh đại diện
                           >
-                            {
-                              timelog.performer.fullName &&
-                              timelog.performer.fullName.trim() !== "" ? (
-                                (timelog.performer.fullName.includes(" ")
-                                  ? timelog.performer.fullName
-                                      .split(" ")
-                                      .map((name) => name[0])
-                                      .join("")
-                                      .substring(0, 2) // Lấy 2 chữ cái đầu nếu có nhiều từ
-                                  : timelog.performer.fullName.substring(0, 2)
-                                ) // Lấy 2 chữ cái đầu nếu chỉ có một từ
-                                  .toUpperCase()
-                              ) : (
-                                <UserOutlined />
-                              ) /* Icon dự phòng nếu không có tên */
-                            }
+                            {timelog.performer.fullName &&
+                            timelog.performer.fullName.trim() !== "" ? (
+                              (timelog.performer.fullName.includes(" ")
+                                ? timelog.performer.fullName
+                                    .split(" ")
+                                    .map((name) => name[0])
+                                    .join("")
+                                    .substring(0, 2)
+                                : timelog.performer.fullName.substring(0, 2)
+                              ).toUpperCase()
+                            ) : (
+                              <UserOutlined />
+                            )}
                           </Avatar>
                           <div>
                             <Text
@@ -517,7 +521,6 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
                       </Space>
                     </Col>
 
-                    {/* Content Column */}
                     <Col xs={24} sm={12} md={14}>
                       <Space
                         direction="vertical"
@@ -564,39 +567,12 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
                       </Space>
                     </Col>
 
-                    {/* Actions Column */}
                     <Col xs={24} sm={6} md={4}>
                       <div style={{ textAlign: "right" }}>
                         <Space direction="vertical" size="small">
                           <Text type="secondary" style={{ fontSize: "12px" }}>
                             Logged {dayjs(timelog.taskDate).fromNow()}
                           </Text>
-                          {/* Uncomment if you have edit/delete functionality */}
-                          {/* 
-                          <Space size="small">
-                            <Tooltip title="Edit time log">
-                              <Button 
-                                type="text" 
-                                size="small" 
-                                icon={<EditOutlined />}
-                                onClick={() => handleEditTimeLog(timelog)}
-                              />
-                            </Tooltip>
-                            <Popconfirm 
-                              title="Delete this time log?" 
-                              onConfirm={() => handleDeleteTimeLog(timelog.id)}
-                            >
-                              <Tooltip title="Delete time log">
-                                <Button 
-                                  type="text" 
-                                  size="small" 
-                                  danger 
-                                  icon={<DeleteOutlined />}
-                                />
-                              </Tooltip>
-                            </Popconfirm>
-                          </Space>
-                          */}
                         </Space>
                       </div>
                     </Col>
@@ -609,8 +585,8 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
       )}
 
       {/* Pagination */}
-      {timeLogsPage && timeLogsPage.totalElements > uiPagination.pageSize && (
-        <Card style={{ marginTop: 24, textAlign: "center" }}>
+      {timeLogsPage && (
+        <Row justify="end" style={{ marginTop: 24, textAlign: "center" }}>
           <Pagination
             current={uiPagination.current}
             pageSize={uiPagination.pageSize}
@@ -625,7 +601,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
             )}
             style={{ margin: 0 }}
           />
-        </Card>
+        </Row>
       )}
     </div>
   );

@@ -1,8 +1,6 @@
-// src/hooks/useAuthLogs.ts
-
-import { useState, useEffect, useCallback } from 'react';
-import auditLogService from '../services/auditLogService';
-import { AuditLog, AuthStats } from '../types/auditLog.types';
+import { useState, useEffect, useCallback } from "react";
+import auditLogService from "../services/auditLogService";
+import { AuditLog, AuthStats } from "../types/auditLog.types";
 
 export const useAuthLogs = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -14,7 +12,6 @@ export const useAuthLogs = () => {
     setLoading(true);
     setError(null);
     try {
-      // Gọi song song 2 API chính
       const [logsResponse, statsResponse] = await Promise.all([
         auditLogService.getRecentAuthLogs(50),
         auditLogService.getBasicAuthStats(),

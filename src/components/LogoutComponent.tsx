@@ -1,6 +1,6 @@
 import { message } from "antd";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext"; // Đảm bảo đường dẫn này đúng
+import { useAuth } from "../contexts/AuthContext";
 import { logoutApi } from "../api/authApi";
 
 const Logout = () => {
@@ -16,15 +16,12 @@ const Logout = () => {
 
       await logoutApi(token);
 
-      // Nếu logout thành công, xóa token và chuyển hướng về trang đăng nhập
       logout();
-      alert("Đăng xuất thành công!");
-      navigate("/login", { replace: true });
+      alert("Logout successful!");
+      navigate("/", { replace: true });
     } catch (error) {
-      console.error("Lỗi trong quá trình đăng xuất:", error);
-      message.error(
-        "Đã xảy ra lỗi trong quá trình đăng xuất. Vui lòng thử lại sau."
-      );
+      console.error("Error during logout:", error);
+      message.error("An error occurred during logout. Please try again later.");
     }
   };
 

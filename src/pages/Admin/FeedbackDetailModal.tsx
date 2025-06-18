@@ -79,10 +79,10 @@ const getFileIconByExtension = (fileName: string): React.ReactNode => {
       return <FileImageOutlined style={{ ...style, color: "#FBBC04" }} />;
     case "zip":
     case "rar":
-      return <FileZipOutlined style={{ ...style, color: "#7B1FA2" }} />; // Purple
+      return <FileZipOutlined style={{ ...style, color: "#7B1FA2" }} />;
     case "txt":
     case "md":
-      return <PaperClipOutlined style={{ ...style, color: "#5F6368" }} />; // Grey for generic text/docs
+      return <PaperClipOutlined style={{ ...style, color: "#5F6368" }} />;
     default:
       return <FileUnknownOutlined style={{ ...style, color: "#9AA0A6" }} />;
   }
@@ -131,7 +131,7 @@ const FeedbackDetailModal: React.FC<FeedbackDetailModalProps> = ({
     if (visible && feedbackId) {
       fetchDetails();
     } else if (!visible) {
-      resetModalState(); // Ensure data is cleared when modal is hidden
+      resetModalState();
     }
   }, [feedbackId, visible]);
 
@@ -297,12 +297,8 @@ const FeedbackDetailModal: React.FC<FeedbackDetailModalProps> = ({
         <Button key="close" onClick={handleClose}>
           Close
         </Button>,
-        // You can add more actions here, e.g., "Mark as Read"
-        // <Button key="markRead" type="primary" onClick={() => { /* Mark as read logic */ }}>
-        //   Mark as Read
-        // </Button>,
       ]}
-      width={800} // Adjust width as needed
+      width={800}
       styles={{
         body: {
           paddingTop: "12px",

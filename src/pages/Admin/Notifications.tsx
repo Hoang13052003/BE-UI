@@ -1,4 +1,3 @@
-// src/components/layout/Notifications.tsx
 import React, { useState, useEffect } from "react";
 import {
   Badge,
@@ -58,13 +57,6 @@ const NotificationHeader = styled.div`
   padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
 `;
-
-// const NotificationFooter = styled.div`
-//   display: flex;
-//   justify-content: space-between;
-//   padding: 8px 16px;
-//   border-top: 1px solid #f0f0f0;
-// `;
 
 const EmptyContainer = styled.div`
   padding: 24px;
@@ -166,7 +158,6 @@ const Notifications: React.FC = () => {
   );
   const {
     notifications,
-    // unreadCount,
     loading,
     markAsRead,
     markAllAsRead,
@@ -180,7 +171,6 @@ const Notifications: React.FC = () => {
   >(null);
   const [detailVisible, setDetailVisible] = useState(false);
 
-  // Filter notifications based on selected type
   const filteredNotifications = notifications.filter(
     (notification) =>
       currentFilter === "ALL" || notification.type === currentFilter
@@ -207,7 +197,7 @@ const Notifications: React.FC = () => {
   };
 
   const handleDeleteNotification = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent opening the notification detail
+    e.stopPropagation();
     try {
       await deleteNotification(id);
       message.success("Notification deleted");
@@ -229,7 +219,6 @@ const Notifications: React.FC = () => {
     fetchNotifications();
   };
 
-  // Load notifications when dropdown is opened
   useEffect(() => {
     fetchNotifications();
   }, [open, fetchNotifications]);

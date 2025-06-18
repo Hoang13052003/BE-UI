@@ -12,11 +12,9 @@ const ResetPasswordPage: React.FC = () => {
   const resettoken = searchParams.get("token");
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false);
-  // const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     if (!resettoken) {
-      // Nếu không có token, redirect về login
       navigate("/login");
     }
   }, [resettoken, navigate]);

@@ -151,26 +151,26 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
 
     switch (ext) {
       case "pdf":
-        return <FilePdfOutlined style={{ color: "#e74c3c" }} />; // Đỏ
+        return <FilePdfOutlined style={{ color: "#e74c3c" }} />;
       case "doc":
       case "docx":
-        return <FileWordOutlined style={{ color: "#2e86de" }} />; // Xanh dương
+        return <FileWordOutlined style={{ color: "#2e86de" }} />;
       case "xls":
       case "xlsx":
-        return <FileExcelOutlined style={{ color: "#27ae60" }} />; // Xanh lá
+        return <FileExcelOutlined style={{ color: "#27ae60" }} />;
       case "png":
       case "jpg":
       case "jpeg":
       case "gif":
-        return <FileImageOutlined style={{ color: "#f39c12" }} />; // Cam
+        return <FileImageOutlined style={{ color: "#f39c12" }} />;
       case "txt":
       case "md":
-        return <FileTextOutlined style={{ color: "#7f8c8d" }} />; // Xám
+        return <FileTextOutlined style={{ color: "#7f8c8d" }} />;
       case "zip":
       case "rar":
-        return <FileZipOutlined style={{ color: "#8e44ad" }} />; // Tím
+        return <FileZipOutlined style={{ color: "#8e44ad" }} />;
       default:
-        return <FileUnknownOutlined style={{ color: "#95a5a6" }} />; // Xám nhạt (mặc định)
+        return <FileUnknownOutlined style={{ color: "#95a5a6" }} />;
     }
   };
 

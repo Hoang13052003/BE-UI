@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { Upload } from 'antd';
-import { InboxOutlined } from '@ant-design/icons';
-import type { UploadProps } from 'antd/es/upload/interface';
-import { uploadTimelogsExcelApi, ExcelUploadResponseDTO } from '../../../api/timelogApi';
-import { useAlert } from '../../../contexts/AlertContext';
-import '../FileDropUpload/FileDropUpload.css'; // We'll add a small CSS file for customizations
+import React, { useState } from "react";
+import { Upload } from "antd";
+import { InboxOutlined } from "@ant-design/icons";
+import type { UploadProps } from "antd/es/upload/interface";
+import {
+  uploadTimelogsExcelApi,
+  ExcelUploadResponseDTO,
+} from "../../../api/timelogApi";
+import { useAlert } from "../../../contexts/AlertContext";
+import "../FileDropUpload/FileDropUpload.css";
 
 interface FileDropUploadProps {
   projectId: number;
@@ -18,139 +21,138 @@ const FileDropUpload: React.FC<FileDropUploadProps> = ({
   projectId,
   onUploadComplete,
   onUploadError,
-  width = '100%',
-  height = 'auto',
+  width = "100%",
+  height = "auto",
 }) => {
   const [uploading, setUploading] = useState<boolean>(false);
   const { addAlert, addBatchAlerts } = useAlert();
 
   const draggerProps: UploadProps = {
-    name: 'file',
+    name: "file",
     multiple: false,
-    accept: '.xlsx,.xls',
+    accept: ".xlsx,.xls",
     customRequest: async ({ file, onProgress, onSuccess, onError }) => {
       try {
         setUploading(true);
-        onProgress?.({ percent: 30 }); // Simulate initial progress
+        onProgress?.({ percent: 30 });
 
-        const response: ExcelUploadResponseDTO = await uploadTimelogsExcelApi(projectId, file as File);
-        console.log('API Response in FileDropUpload:', response);
-        onProgress?.({ percent: 100 }); // Simulate upload completion
+        const response: ExcelUploadResponseDTO = await uploadTimelogsExcelApi(
+          projectId,
+          file as File
+        );
+        console.log("API Response in FileDropUpload:", response);
+        onProgress?.({ percent: 100 });
 
-        // Case 1: Explicit error field in API response
         if (response.error) {
-          addAlert(`Upload failed: ${response.error}`, 'error');
-          
-          // Sử dụng addBatchAlerts thay vì setTimeout nhiều lần
+          addAlert(`Upload failed: ${response.error}`, "error");
+
           if (response.errorsDetails && response.errorsDetails.length > 0) {
             addBatchAlerts(
-              response.errorsDetails.map(error => ({
-                message: error, 
-                type: 'error'
+              response.errorsDetails.map((error) => ({
+                message: error,
+                type: "error",
               })),
               {
                 maxDisplay: 3,
                 interval: 300,
-                summaryMessage: `And {count} more errors. Please check the console or server logs.`
+                summaryMessage: `And {count} more errors. Please check the console or server logs.`,
               }
             );
           }
-          
+
           if (onError) onError(new Error(response.error));
           if (onUploadError) onUploadError();
           return;
         }
 
-        // Case 2: File was empty or contained no processable data rows
-        if (response.totalRowsInFile === 0 && response.successfulImports === 0) {
-          // Show error if present, otherwise show warning
+        if (
+          response.totalRowsInFile === 0 &&
+          response.successfulImports === 0
+        ) {
           if (response.error) {
-            addAlert(`Upload failed: ${response.error}`, 'error');
-            
-            // Sử dụng addBatchAlerts
+            addAlert(`Upload failed: ${response.error}`, "error");
+
             if (response.errorsDetails && response.errorsDetails.length > 0) {
               addBatchAlerts(
-                response.errorsDetails.map(error => ({
-                  message: error, 
-                  type: 'error'
+                response.errorsDetails.map((error) => ({
+                  message: error,
+                  type: "error",
                 })),
                 {
                   maxDisplay: 3,
                   interval: 300,
-                  summaryMessage: `And {count} more errors. Please check the console or server logs.`
+                  summaryMessage: `And {count} more errors. Please check the console or server logs.`,
                 }
               );
             }
-            
+
             if (onError) onError(new Error(response.error));
             if (onUploadError) onUploadError();
             return;
           } else {
             addAlert(
-              response.message || 'The uploaded Excel file does not contain any valid data rows.',
-              'warning'
+              response.message ||
+                "The uploaded Excel file does not contain any valid data rows.",
+              "warning"
             );
-            
-            // Sử dụng addBatchAlerts
+
             if (response.errorsDetails && response.errorsDetails.length > 0) {
               addBatchAlerts(
-                response.errorsDetails.map(error => ({
-                  message: error, 
-                  type: 'error'
+                response.errorsDetails.map((error) => ({
+                  message: error,
+                  type: "error",
                 })),
                 {
                   maxDisplay: 3,
                   interval: 300,
-                  summaryMessage: `And {count} more errors. Please check the console or server logs.`
+                  summaryMessage: `And {count} more errors. Please check the console or server logs.`,
                 }
               );
             }
-            
+
             if (onSuccess) onSuccess(response, file as any);
             if (onUploadError) onUploadError();
             return;
           }
         }
 
-        // Case 3: File processed, but there were failed imports
         if (response.failedImports > 0) {
           addAlert(
-            response.message || `Imported ${response.successfulImports} of ${response.totalRowsInFile} time logs.`,
-            'warning',
+            response.message ||
+              `Imported ${response.successfulImports} of ${response.totalRowsInFile} time logs.`,
+            "warning",
             `${response.failedImports} entries failed.`
           );
-          
-          // Sử dụng addBatchAlerts
+
           if (response.errorsDetails && response.errorsDetails.length > 0) {
             addBatchAlerts(
-              response.errorsDetails.map(error => ({
-                message: 'Import error',
-                type: 'error',
-                description: error
+              response.errorsDetails.map((error) => ({
+                message: "Import error",
+                type: "error",
+                description: error,
               })),
               {
                 maxDisplay: 3,
                 interval: 300,
-                summaryMessage: `And {count} more detailed errors. Check console or logs.`
+                summaryMessage: `And {count} more detailed errors. Check console or logs.`,
               }
             );
           }
-          
+
           if (onSuccess) onSuccess(response, file as any);
           if (onUploadError) onUploadError();
         } else {
-          // Case 4: Full success
           addAlert(
-            response.message || `Successfully imported ${response.successfulImports} time logs.`,
-            'success'
+            response.message ||
+              `Successfully imported ${response.successfulImports} time logs.`,
+            "success"
           );
           if (onSuccess) onSuccess(response, file as any);
           if (onUploadComplete) onUploadComplete();
         }
-
       } catch (error: any) {
-        console.error('File upload error:', error);
-        addAlert('Upload failed', 'error', error.message || 'Unknown error');
+        console.error("File upload error:", error);
+        addAlert("Upload failed", "error", error.message || "Unknown error");
         if (onError) onError(error);
         if (onUploadError) onUploadError();
       } finally {
@@ -158,7 +160,7 @@ const FileDropUpload: React.FC<FileDropUploadProps> = ({
       }
     },
     onDrop(e) {
-      console.log('Dropped files', e.dataTransfer.files);
+      console.log("Dropped files", e.dataTransfer.files);
     },
   };
 

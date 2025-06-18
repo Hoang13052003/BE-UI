@@ -16,7 +16,6 @@ const MilestoneInfo: React.FC<MilestoneInfoProps> = ({
   completed,
   completionPercentage,
 }) => {
-  // Xử lý trường hợp completionPercentage là null, mặc định là 0
   const actualCompletionPercentage =
     completionPercentage === null ? 0 : completionPercentage;
 
@@ -26,7 +25,6 @@ const MilestoneInfo: React.FC<MilestoneInfoProps> = ({
         {name}
       </Typography.Title>
 
-      {/* Hiển thị Progress bar với giá trị mặc định là 0 nếu completionPercentage là null */}
       {completionPercentage !== undefined && (
         <div style={{ marginBottom: "12px" }}>
           <Progress

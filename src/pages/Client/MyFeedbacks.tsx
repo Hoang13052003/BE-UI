@@ -46,14 +46,12 @@ interface TypedPaginatedFeedbackResponse
   content: FeedbackItem[];
 }
 
-// Tạo model mới cho detail
 interface FeedbackDetailModel {
   projectName: string;
   projectId: number;
   content: string;
   createdAt: string;
   read: boolean;
-  // Có thể bổ sung các trường khác nếu cần cho detail
 }
 
 const MyFeedbacks: React.FC = () => {
@@ -182,7 +180,6 @@ const MyFeedbacks: React.FC = () => {
       width: "20%",
       render: (_: any, record: FeedbackItem) => (
         <Space>
-          {/* Nếu có avatar/image thì thêm vào đây, ví dụ: <Avatar src={record.image} icon={!record.image && <UserOutlined />} /> */}
           <div>
             <div className="font-medium">{record.fullName}</div>
             <Text type="secondary" className="text-xs">
