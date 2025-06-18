@@ -49,6 +49,8 @@ const LoginForm: React.FC<LoginFormProps> = (props) => {
       const { email, password } = values;
 
       await props.handleLogin(await loginApi(email, password));
+
+      addAlert("Login successful!", "success");
     } catch (error: unknown) {
       let errorMessage = "Incorrect email or password. Please try again!";
 

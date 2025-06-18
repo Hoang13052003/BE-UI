@@ -433,7 +433,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
           }}
         >
           {filteredTimeLogs?.map((timelog) => (
-            <Col xs={24} sm={12} md={8} lg={6} key={timelog.id}>
+            <Col xs={24} sm={12} md={12} lg={8} key={timelog.id}>
               <TimeLogGridCard timelog={timelog} />
             </Col>
           ))}
