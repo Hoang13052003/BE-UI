@@ -3,7 +3,6 @@ import LoginForm from "../pages/auth/LoginForm";
 import { Spin } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-// import { get } from 'http';
 import { getUserInfoApi, LoginResponse } from "../api/authApi";
 
 const LoginComponent: React.FC = () => {
@@ -12,10 +11,8 @@ const LoginComponent: React.FC = () => {
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
   const [userDetailsLoaded, setUserDetailsLoaded] = useState(false);
 
-  // Điều hướng khi người dùng đã đăng nhập và có role
   useEffect(() => {
     if (isAuthenticated && userDetailsLoaded) {
-      // Kiểm tra khi nào thông tin người dùng đã được tải
       switch (userRole) {
         case "ADMIN":
           navigate("/admin/overview", { replace: true });
@@ -30,7 +27,6 @@ const LoginComponent: React.FC = () => {
     }
   }, [isAuthenticated, userRole, userDetailsLoaded, navigate]);
 
-  // Xử lý login thành công: lấy thông tin user và cập nhật context
   const handleLogin = async (data: LoginResponse) => {
     setLoadingUserDetails(true);
     setUserDetailsLoaded(false);
@@ -38,7 +34,7 @@ const LoginComponent: React.FC = () => {
       const user = await getUserInfoApi(data.jwt);
 
       if (data && user) {
-        login(data.jwt, data.jwtRefreshToken, user); // Cập nhật context
+        login(data.jwt, data.jwtRefreshToken, user);
 
         setUserDetailsLoaded(true);
       }
@@ -58,7 +54,7 @@ const LoginComponent: React.FC = () => {
             height: "100vh",
           }}
         >
-          <Spin tip="Đang lấy thông tin người dùng..." />
+          <Spin tip="Loading user information..." />
         </div>
       ) : (
         <LoginForm

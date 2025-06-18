@@ -22,7 +22,7 @@ interface UseAttachmentUploadProps {
 
 interface UploadResult {
   successfulUploads: AttachmentResponseDto[];
-  failedUploads: { itemName: string; reason: string }[]; // Đổi fileName thành itemName cho tổng quát
+  failedUploads: { itemName: string; reason: string }[];
 }
 
 export const useAttachmentUpload = (props?: UseAttachmentUploadProps) => {
@@ -148,7 +148,6 @@ export const useAttachmentUpload = (props?: UseAttachmentUploadProps) => {
         projectUpdateId
       );
 
-      // Trích xuất successfulUploads và uploadErrors từ response
       const successfulUploads: AttachmentResponseDto[] =
         response.successfulUploads;
       const failedUploads: { itemName: string; reason: string }[] =
@@ -184,7 +183,6 @@ export const useAttachmentUpload = (props?: UseAttachmentUploadProps) => {
         );
       }
 
-      // Gọi callback cho từng file thành công
       successfulUploads.forEach((attachment) => {
         const correspondingItem = itemsToUpload.find(
           (item) =>
@@ -196,7 +194,6 @@ export const useAttachmentUpload = (props?: UseAttachmentUploadProps) => {
         }
       });
 
-      // Gọi callback cho từng file thất bại
       response.uploadErrors.forEach((error) => {
         const correspondingItem = itemsToUpload.find(
           (item) =>
@@ -229,7 +226,7 @@ export const useAttachmentUpload = (props?: UseAttachmentUploadProps) => {
 
   return {
     isUploading,
-    uploadFilesIndividually, // Dùng cho trường hợp Dragger chỉ chọn file đơn lẻ
-    uploadFolderContents, // Dùng nếu bạn có cách lấy FolderFileItem[] (file + relativePath)
+    uploadFilesIndividually,
+    uploadFolderContents,
   };
 };

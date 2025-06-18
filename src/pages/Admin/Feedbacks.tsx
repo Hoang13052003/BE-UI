@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react"; // Added useMemo
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   Row,
@@ -17,7 +17,6 @@ import {
 } from "antd";
 import {
   EyeOutlined,
-  StarOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
   UserOutlined,
@@ -26,7 +25,7 @@ import {
   filter,
   type FeedbackCriteria,
   type PaginatedFeedbackResponse,
-} from "../../api/feedbackApi"; // Assuming FeedbackItem has projectId and projectName
+} from "../../api/feedbackApi";
 import dayjs from "dayjs";
 import FeedbackDetailModal from "./FeedbackDetailModal";
 
@@ -38,7 +37,7 @@ interface FeedbackItem {
   fullName?: string;
   email?: string;
   projectName: string;
-  projectId: number; // Assuming projectId is a number
+  projectId: number;
   content: string;
   createdAt: string;
   read: boolean;
@@ -80,16 +79,20 @@ const Feedbacks: React.FC = () => {
     [feedbacks.content]
   );
 
+  const responseRate = useMemo(() => {
+    const totalFeedback = feedbacks.content.length;
+    const reviewedFeedback = feedbacks.content.filter(
+      (item) => item.read
+    ).length;
+    return totalFeedback > 0
+      ? Math.round((reviewedFeedback / totalFeedback) * 100)
+      : 0;
+  }, [feedbacks.content]);
+
   const stats = {
     totalFeedback: feedbacks.content.length || 0,
     pendingReviews: unreadCount,
-    averageRating: 4.7,
-    responseRate: 94,
-    growthStats: {
-      feedbackGrowth: "+13%",
-      ratingGrowth: "+0.3",
-      responseGrowth: "+5%",
-    },
+    responseRate: responseRate || 0,
   };
 
   const fetchFeedbacks = async (
@@ -214,7 +217,7 @@ const Feedbacks: React.FC = () => {
         <Space>
           <Tooltip title="View Details">
             <Button
-              onClick={() => handleViewDetails(String(record.id))} // Pass record.id to handler
+              onClick={() => handleViewDetails(String(record.id))}
               type="text"
               icon={<EyeOutlined />}
             />
@@ -229,7 +232,7 @@ const Feedbacks: React.FC = () => {
       const dateObj = dayjs(criteria.createdAt.equals, "YYYY-MM-DD");
       return dateObj.isValid() ? dateObj : null;
     }
-    return null; // Hoặc undefined nếu DatePicker của bạn xử lý được
+    return null;
   };
 
   return (
@@ -247,16 +250,7 @@ const Feedbacks: React.FC = () => {
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card style={{ boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.24)" }}>
-            <Statistic
-              title="Total Feedback"
-              value={stats.totalFeedback}
-              prefix={<StarOutlined />}
-              suffix={
-                stats.growthStats.feedbackGrowth && (
-                  <Text type="success">{stats.growthStats.feedbackGrowth}</Text>
-                )
-              }
-            />
+            <Statistic title="Total Feedback" value={stats.totalFeedback} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -350,11 +344,10 @@ const Feedbacks: React.FC = () => {
             placeholder="Chọn ngày lọc"
             allowClear
             onChange={(date) => {
-              // date là Day.js object từ DatePicker hoặc null
               if (date) {
                 setCriteria((prev) => ({
                   ...prev,
-                  createdAt: { equals: date.format("YYYY-MM-DD") }, // << SỬA Ở ĐÂY
+                  createdAt: { equals: date.format("YYYY-MM-DD") },
                 }));
               } else {
                 setCriteria((prev) => {

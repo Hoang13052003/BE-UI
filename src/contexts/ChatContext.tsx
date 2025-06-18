@@ -1,4 +1,3 @@
-// Updated ChatContext to match current Messages.tsx dependencies
 import React, {
   createContext,
   useContext,
@@ -20,7 +19,7 @@ import {
   markMessageAsRead,
   ChatMessageRequest,
   ChatMessageType,
-  ChatRoomType, // Ensure ChatRoomType is imported if not already
+  ChatRoomType,
   subscribeToTopic as subscribeToTopicApi,
 } from "../api/chatApi";
 import chatServiceNew from "../services/ChatServiceNew";
@@ -52,7 +51,7 @@ export interface ChatContextType {
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
   subscribeToTopic: (topic: string, projectId?: number) => Promise<void>;
-  sendTypingActivity: () => void; // Hàm để gọi khi người dùng gõ
+  sendTypingActivity: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -129,20 +128,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   }, [activeChatRoom, userDetails]);
   const handleUserTypingEvent = useCallback(
     (data: any) => {
-      // Server gửi: { type: "user_typing", userId, userName, userAvatar, roomId, roomType }
       if (
         data.roomId !== activeChatRoom?.id ||
         data.userId === userDetails?.id
       ) {
-        // Bỏ qua nếu không phải cho phòng chat hiện tại hoặc là sự kiện từ chính mình
         return;
       }
       setTypingUsers((prev) => {
         const existingUser = prev.find(
           (u) => u.userId === (data.userId ?? data.senderId)
         );
-        if (existingUser) return prev; // Đã hiển thị rồi
-        // Lấy tên từ participants nếu có
+        if (existingUser) return prev;
         let senderName = data.senderName;
         if (!senderName && activeChatRoom) {
           const participant = activeChatRoom.participants.find(
@@ -168,30 +164,23 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       typingTimers.current[data.userId] = setTimeout(() => {
         setTypingUsers((prev) => prev.filter((u) => u.userId !== data.userId));
         delete typingTimers.current[data.userId];
-      }, 3000); // Ẩn sau 3 giây nếu không có hoạt động mới
+      }, 3000);
     },
     [activeChatRoom?.id, userDetails?.id]
   );
 
-  // Xử lý tin nhắn nhận được từ WebSocket
   const handleWebSocketMessage = useCallback(
-    (receivedData: any) => {      // receivedData là object BE gửi về, đã được dispatchMessage của service xử lý
-      // và có dạng { type: "private_message", messageId: ..., senderId: ..., content: ..., chatMessageType: "TEXT", ... }
-
-      // Kiểm tra xem có phải tin nhắn chat không (BE đã thêm trường `type`)
+    (receivedData: any) => {
       if (
         ["private_message", "group_message", "project_message"].includes(
           receivedData.type
         )
       ) {
-        // Xử lý senderName với logic fallback tốt hơn
         let senderName = receivedData.senderName;
         if (!senderName) {
-          // Nếu là tin nhắn của chính mình
           if (receivedData.senderId === userDetails?.id && userDetails) {
             senderName = userDetails.fullName || "You";
           } else {
-            // Thử tìm tên từ danh sách participants trong activeChatRoom
             const participant = activeChatRoom?.participants.find(
               (p) => p.userId === receivedData.senderId
             );
@@ -220,7 +209,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           createdAt: receivedData.timestamp || receivedData.createdAt,
         };
 
-        // Nếu có tin nhắn mới từ người đang gõ, xóa họ khỏi danh sách đang gõ
         if (
           activeChatRoom &&
           ((activeChatRoom.roomType === ChatRoomType.PRIVATE &&
@@ -249,10 +237,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         }
 
         setMessages((prev) => {
-          // Tránh thêm tin nhắn trùng lặp
           if (prev.some((m) => m.id === newMessage.id)) return prev;
 
-          // Chỉ thêm message vào state nếu thuộc về active room
           if (activeChatRoom) {
             if (activeChatRoom.roomType === "PRIVATE") {
               const otherUserId = activeChatRoom.participants.find(
@@ -285,7 +271,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           );
         });
 
-        // Thông báo nếu không phải tin của mình
         if (newMessage.senderId !== userDetails?.id) {
           antdMessage.success(`Tin nhắn mới từ ${newMessage.senderName}`);
         }
@@ -300,15 +285,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       refreshUnreadCount,
       refreshChatRooms,
       typingTimers,
-    ] // Add typingTimers
+    ]
   );
-  // Xử lý xác nhận tin nhắn đã gửi từ server
   const handleMessageSentConfirmation = useCallback(
     (confirmationData: any) => {
       setMessages((prevMessages) =>
         prevMessages
           .map((msg) => {
-            // Nếu BE trả về tempId mà FE đã gửi
             if (confirmationData.tempId && msg.id === confirmationData.tempId) {
               return {
                 ...msg,
@@ -317,7 +300,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
                 timestamp: confirmationData.timestamp || msg.timestamp,
               };
             }
-            // Nếu không có tempId, dựa vào messageId
             if (
               msg.senderId === userDetails?.id &&
               msg.id === confirmationData.messageId
@@ -342,18 +324,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    // Disconnect and clean up any existing connection first
     chatServiceNew.disconnect();
 
-    // Set callback to update connection status
     chatServiceNew.setConnectionStatusCallback(setIsConnected);
 
     chatServiceNew.connect(token);
 
-    // Clear existing listeners first to avoid duplicates
     chatServiceNew.removeAllListeners();
 
-    // Add listeners
     chatServiceNew.addListener(ChatMessageType.TEXT, handleWebSocketMessage);
     chatServiceNew.addListener(ChatMessageType.FILE, handleWebSocketMessage);
     chatServiceNew.addListener(ChatMessageType.IMAGE, handleWebSocketMessage);
@@ -367,7 +345,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       "message_sent_confirmation",
       handleMessageSentConfirmation
     );
-    // Add listener for typing events
     chatServiceNew.addListener("user_typing", handleUserTypingEvent);
   }, [
     handleWebSocketMessage,
@@ -383,10 +360,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   useEffect(() => {
     if (isAuthenticated) {
       connectWebSocket();
-      // Clear existing listeners first to avoid duplicates before adding new ones
       chatServiceNew.removeAllListeners();
 
-      // Add listeners for message types
       chatServiceNew.addListener(ChatMessageType.TEXT, handleWebSocketMessage);
       chatServiceNew.addListener(ChatMessageType.FILE, handleWebSocketMessage);
       chatServiceNew.addListener(ChatMessageType.IMAGE, handleWebSocketMessage);
@@ -400,16 +375,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         "message_sent_confirmation",
         handleMessageSentConfirmation
       );
-      // Add listener for typing events
       chatServiceNew.addListener("user_typing", handleUserTypingEvent);
     } else {
       disconnectWebSocket();
     }
-    // Cleanup listener on component unmount or when isAuthenticated changes
     return () => {
-      // Consider if removeAllListeners here is too broad if other components might use the service
-      // chatServiceNew.removeAllListeners();
-      // Or more specifically:
       chatServiceNew.removeListener(
         ChatMessageType.TEXT,
         handleWebSocketMessage
@@ -449,7 +419,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     handleUserTypingEvent,
   ]);
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       Object.values(typingTimers.current).forEach(clearTimeout);
@@ -458,44 +427,38 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    setTypingUsers([]); // Xóa người đang gõ khi chuyển phòng
+    setTypingUsers([]);
     Object.values(typingTimers.current).forEach(clearTimeout);
     typingTimers.current = {};
   }, [activeChatRoom]);
 
   const sendChatMessage = useCallback(
     async (msgRequest: ChatMessageRequest) => {
-      // msgRequest là từ FE, có các trường như receiverId, topic, content, messageType
       if (!isAuthenticated || !userDetails) {
         antdMessage.error("Bạn cần đăng nhập để gửi tin nhắn.");
         throw new Error("User not authenticated");
       }
 
       try {
-        // Chuẩn bị message cho chatService.sendMessage
         const serviceMessagePayload = {
           receiverId: msgRequest.receiverId,
           topic: msgRequest.topic,
           projectId: msgRequest.projectId,
           content: msgRequest.content,
-          chatMessageType: msgRequest.messageType || ChatMessageType.TEXT, // Chuyển messageType thành chatMessageType
+          chatMessageType: msgRequest.messageType || ChatMessageType.TEXT,
           fileUrl: msgRequest.fileUrl,
           fileName: msgRequest.fileName,
         };
 
-        // Tạo một tempId để map với confirmation từ server
         const tempId = `temp_${Date.now()}_${Math.random()
           .toString(36)
           .substring(2, 9)}`;
 
-        // Gửi qua WebSocket nếu kết nối
         if (chatServiceNew.isSocketConnected()) {
-          // Gửi payload đã chuẩn bị
           chatServiceNew.sendMessage({ ...serviceMessagePayload });
 
-          // Tạo mock response cho UI update ngay lập tức
           const mockResponse: ChatMessageResponse = {
-            id: tempId, // Sử dụng tempId
+            id: tempId,
             senderId: userDetails.id,
             senderName: userDetails.fullName || "You",
             senderImageProfile: userDetails.image || undefined,
@@ -504,15 +467,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             projectId: msgRequest.projectId,
             content: msgRequest.content,
             timestamp: new Date().toISOString(),
-            isRead: true, // Tin nhắn của mình tự đọc
-            isDelivered: false, // Sẽ được cập nhật khi có confirmation từ server
+            isRead: true,
+            isDelivered: false,
             messageType: msgRequest.messageType || ChatMessageType.TEXT,
             fileUrl: msgRequest.fileUrl,
             fileName: msgRequest.fileName,
             createdAt: new Date().toISOString(),
           };
 
-          // Thêm tin nhắn tạm thời này vào messages state
           setMessages((prevMessages) =>
             [...prevMessages, mockResponse].sort(
               (a, b) =>
@@ -521,26 +483,23 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             )
           );
 
-          return mockResponse; // Trả về mock response
+          return mockResponse;
         } else {
-          // Fallback: Gửi qua API (nếu muốn)
-          antdMessage.warning(
-            "Không có kết nối WebSocket, đang thử gửi qua API..."
-          );
+          antdMessage.warning("No WebSocket connection available.");
           throw new Error(
             "WebSocket not connected, API fallback not implemented for sendChatMessage in context."
           );
         }
       } catch (error) {
         console.error("Error sending chat message in context:", error);
-        antdMessage.error("Gửi tin nhắn thất bại.");
+        antdMessage.error("Failed to send chat message.");
         throw error;
       }
     },
     [isAuthenticated, userDetails]
   );
   const loadChatHistory = useCallback(
-    async (roomId: string, page = 0) => {      // Tìm room từ roomId thay vì dựa vào activeChatRoom state
+    async (roomId: string, page = 0) => {
       const room = chatRooms.find((r) => r.id === roomId);
       if (!room) {
         return;
@@ -548,7 +507,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       try {
         setLoading(true);
         let history;
-        if (room.roomType === "PRIVATE" && room.participants.length >= 2) {          const other = room.participants.find(
+        if (room.roomType === "PRIVATE" && room.participants.length >= 2) {
+          const other = room.participants.find(
             (p) => p.userId !== userDetails?.id
           );
           if (other) {
@@ -576,7 +536,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
     },
     [chatRooms, userDetails?.id]
-  );  const selectChatRoom = useCallback(
+  );
+  const selectChatRoom = useCallback(
     (roomId: string) => {
       const room = chatRooms.find((r) => r.id === roomId);
       setActiveChatRoom(room || null);
@@ -590,11 +551,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const markMessageReadInContext = useCallback(
     async (messageId: string) => {
       try {
-        // Gọi qua WebSocket nếu kết nối
         if (chatServiceNew.isSocketConnected()) {
           chatServiceNew.markMessageAsRead(messageId);
         } else {
-          // Fallback API
           await markMessageAsRead(messageId);
         }
 
@@ -602,10 +561,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           prev.map((m) => (m.id === messageId ? { ...m, isRead: true } : m))
         );
 
-        await Promise.all([
-          refreshUnreadCount(), // Cập nhật số lượng tin chưa đọc
-          refreshChatRooms(), // Cập nhật trạng thái phòng chat
-        ]);
+        await Promise.all([refreshUnreadCount(), refreshChatRooms()]);
       } catch (error) {
         console.error("Mark read error in context:", error);
         antdMessage.error("Failed to mark message as read");
@@ -625,14 +581,16 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         if (chatServiceNew.isSocketConnected()) {
           chatServiceNew.subscribeToTopic(topic);
           await subscribeToTopicApi({ topic, projectId });
-          antdMessage.success(`Đã đăng ký nhận tin từ ${topic}`);
+          antdMessage.success(`Successfully subscribed to ${topic}`);
         } else {
-          antdMessage.error("Chưa kết nối chat, không thể đăng ký topic.");
+          antdMessage.error(
+            "Chat not connected, unable to subscribe to topic."
+          );
           throw new Error("WebSocket not connected for topic subscription");
         }
       } catch (err) {
         console.error("Subscribe topic error:", err);
-        antdMessage.error("Không thể đăng ký topic");
+        antdMessage.error("Failed to subscribe to topic");
         throw err;
       }
     },
@@ -647,7 +605,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     onlineUsers,
     isConnected,
     loading,
-    typingUsers, // Thêm vào context
+    typingUsers,
     sendChatMessage,
     selectChatRoom,
     markMessageRead: markMessageReadInContext,
@@ -658,7 +616,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     connectWebSocket,
     disconnectWebSocket,
     subscribeToTopic,
-    sendTypingActivity, // Thêm vào context
+    sendTypingActivity,
   };
 
   return (

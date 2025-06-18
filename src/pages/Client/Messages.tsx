@@ -1,4 +1,3 @@
-// src/pages/Client/Messages.tsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
@@ -100,8 +99,8 @@ const Messages: React.FC = () => {
     selectChatRoom,
     markMessageRead,
     refreshChatRooms,
-    typingUsers, // Lấy từ context
-    sendTypingActivity, // Lấy từ context
+    typingUsers,
+    sendTypingActivity,
   } = useChat();
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -115,7 +114,6 @@ const Messages: React.FC = () => {
     ChatRoomResponse[]
   >([]);
 
-  // Refs
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -126,7 +124,7 @@ const Messages: React.FC = () => {
     if (activeChatRoom && messageInput.trim().length > 0) {
       sendTypingActivity();
     }
-  }, 300); // Gửi sự kiện sau 300ms người dùng ngừng gõ hoặc gõ liên tục
+  }, 300);
 
   const handleMessageInputChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>
@@ -191,7 +189,6 @@ const Messages: React.FC = () => {
     if ((!messageInput.trim() && fileList.length === 0) || !activeChatRoom)
       return;
     try {
-      // 1. Gửi message text (nếu có)
       if (messageInput.trim()) {
         const messageRequest: ChatMessageRequest = {
           senderName: userDetails?.fullName,
@@ -213,7 +210,6 @@ const Messages: React.FC = () => {
         await sendChatMessage(messageRequest);
       }
 
-      // 2. Gửi từng file (nếu có)
       if (fileList.length > 0) {
         const uploadResult = await uploadFilesIndividually(
           undefined,
@@ -223,7 +219,7 @@ const Messages: React.FC = () => {
         for (const file of uploadResult.successfulUploads) {
           const fileMessage: ChatMessageRequest = {
             senderName: userDetails?.fullName,
-            content: "", // hoặc để tên file nếu muốn
+            content: "",
             messageType: ChatMessageType.FILE,
             fileUrl: file.storagePath,
             fileName: file.fileName,
@@ -663,12 +659,14 @@ const Messages: React.FC = () => {
                   borderRadius: 0,
                   border: "none",
                 }}
-                styles={{ body: {
-                  padding: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "100%",
-                }}}
+                styles={{
+                  body: {
+                    padding: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
+                  },
+                }}
               >
                 {/* Header */}
                 <div
@@ -1092,7 +1090,6 @@ const Messages: React.FC = () => {
                     flexDirection: "column",
                   }}
                 >
-                  {/* Danh sách file đã chọn, hiển thị dưới ô nhập */}
                   {fileList.length > 0 && (
                     <Space
                       style={{
@@ -1154,7 +1151,7 @@ const Messages: React.FC = () => {
                       }}
                     />
                     <Input.TextArea
-                      placeholder="Nhập tin nhắn..."
+                      placeholder="Enter message..."
                       value={messageInput}
                       onChange={handleMessageInputChange}
                       onKeyPress={handleKeyPress}
@@ -1240,9 +1237,9 @@ const Messages: React.FC = () => {
                       marginBottom: "20px",
                     }}
                   />
-                  <Title level={3}>Chào mừng đến với Chat</Title>
+                  <Title level={3}>Welcome to Chat</Title>
                   <Text type="secondary" style={{ fontSize: "16px" }}>
-                    Chọn một cuộc trò chuyện để bắt đầu nhắn tin
+                    Select a chat room to start messaging.
                   </Text>
                 </div>
               </div>
@@ -1252,7 +1249,7 @@ const Messages: React.FC = () => {
 
         {/* Create Chat Room Modal */}
         <Modal
-          title="Tạo phòng chat mới"
+          title="Create New Chat Room"
           open={isCreateRoomModalVisible}
           onOk={handleCreateRoom}
           onCancel={() => {
@@ -1260,8 +1257,8 @@ const Messages: React.FC = () => {
             setNewRoomName("");
             setSelectedParticipants([]);
           }}
-          okText="Tạo"
-          cancelText="Hủy"
+          okText="Create"
+          cancelText="Cancel"
           okButtonProps={{ style: { backgroundColor: "#0A7CFF" } }}
         >
           <Space
@@ -1269,9 +1266,9 @@ const Messages: React.FC = () => {
             style={{ width: "100%", marginTop: "20px" }}
           >
             <div>
-              <Text strong>Tên phòng</Text>
+              <Text strong>Room Name</Text>
               <Input
-                placeholder="Nhập tên phòng"
+                placeholder="Enter room name"
                 value={newRoomName}
                 onChange={(e) => setNewRoomName(e.target.value)}
                 style={{ marginTop: "8px" }}
@@ -1279,10 +1276,10 @@ const Messages: React.FC = () => {
             </div>
 
             <div style={{ marginTop: "16px" }}>
-              <Text strong>Người tham gia</Text>
+              <Text strong>Participants</Text>
               <Select
                 mode="multiple"
-                placeholder="Chọn người tham gia"
+                placeholder="Select participants"
                 style={{ width: "100%", marginTop: "8px" }}
                 value={selectedParticipants}
                 onChange={setSelectedParticipants}

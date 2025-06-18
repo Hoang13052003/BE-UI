@@ -1,4 +1,3 @@
-// src/services/NotificationService.ts
 import { message } from "antd";
 import { MessageType } from "../types/Notification";
 import { toWebSocketUrl } from "../utils/urlUtils";
@@ -13,10 +12,7 @@ class NotificationService {
   private reconnectTimeoutId: NodeJS.Timeout | null = null;
   private token: string | null = null;
 
-  /**
-   * Connect to the WebSocket notification server
-   * @param token JWT token for authentication
-   */ connect(token: string): void {
+  connect(token: string): void {
     if (
       this.socket &&
       (this.socket.readyState === WebSocket.OPEN ||
@@ -26,7 +22,6 @@ class NotificationService {
     }
     this.token = token;
     try {
-      // Use environment variable for WebSocket URL
       const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
       const cleanBaseUrl = toWebSocketUrl(baseUrl);
       const wsUrl = `${cleanBaseUrl}/ws/notifications?token=${token}`;
@@ -50,19 +45,18 @@ class NotificationService {
               ?.forEach((callback) => callback(data));
           }
 
-          // Also notify 'all' listeners for any message
           if (this.listeners.has("all")) {
             this.listeners.get("all")?.forEach((callback) => callback(data));
           }
         } catch (error) {
-          // Handle JSON parsing error
+          console.error("Error parsing WebSocket message:", error);
+          message.error("Received invalid message from server");
         }
       };
 
       this.socket.onclose = (event) => {
         this.isConnected = false;
 
-        // Attempt to reconnect if not closed intentionally
         if (!event.wasClean && this.token) {
           this.attemptReconnect(this.token);
         }
@@ -79,9 +73,6 @@ class NotificationService {
     }
   }
 
-  /**
-   * Attempt to reconnect to the WebSocket server
-   */
   private attemptReconnect(token: string): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
@@ -100,9 +91,6 @@ class NotificationService {
     }
   }
 
-  /**
-   * Disconnect from the WebSocket server
-   */
   disconnect(): void {
     if (this.reconnectTimeoutId) {
       clearTimeout(this.reconnectTimeoutId);
@@ -124,11 +112,7 @@ class NotificationService {
       this.token = null;
     }
   }
-  /**
-   * Subscribe to user notifications
-   * Note: This may not be needed anymore since token is now sent in URL
-   * and backend should automatically subscribe users upon connection
-   */
+
   subscribeUser(token: string): void {
     if (!this.isConnected || !this.socket) {
       return;
@@ -154,9 +138,6 @@ class NotificationService {
     }
   }
 
-  /**
-   * Unsubscribe from user notifications
-   */
   unsubscribeUser(): void {
     if (
       !this.socket ||
@@ -176,9 +157,6 @@ class NotificationService {
     this.socket.send(JSON.stringify(unsubscribeMessage));
   }
 
-  /**
-   * Add a listener for a specific message type
-   */
   addListener(messageType: string, callback: (data: any) => void): void {
     if (!this.listeners.has(messageType)) {
       this.listeners.set(messageType, []);
@@ -186,9 +164,6 @@ class NotificationService {
     this.listeners.get(messageType)?.push(callback);
   }
 
-  /**
-   * Remove a listener
-   */
   removeListener(messageType: string, callback: (data: any) => void): void {
     if (this.listeners.has(messageType)) {
       const callbacks = this.listeners.get(messageType) || [];
@@ -199,32 +174,10 @@ class NotificationService {
     }
   }
 
-  /**
-   * Check if WebSocket is connected
-   */
   isSocketConnected(): boolean {
     return this.isConnected;
   }
-
-  /**
-   * Send a test notification (for development/testing)
-   */
-  // sendTestMessage(messageType: MessageType, payload: any): void {
-  //   if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-  //     console.error("Cannot send test message: WebSocket is not connected");
-  //     return;
-  //   }
-
-  //   const message = {
-  //     messageType,
-  //     ...payload,
-  //   };
-
-  //   this.socket.send(JSON.stringify(message));
-  //   console.log("Test message sent:", message);
-  // }
 }
 
-// Create a singleton instance
 const notificationService = new NotificationService();
 export default notificationService;

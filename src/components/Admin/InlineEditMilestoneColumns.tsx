@@ -1,8 +1,21 @@
-import { Input, DatePicker, Select, Tag, Typography, Progress, InputNumber } from 'antd';
-import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, FlagOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
-import { Milestone } from '../../types/milestone';
-import { BatchUpdateMilestoneItemDTO } from '../../api/milestoneApi';
+import {
+  Input,
+  DatePicker,
+  Select,
+  Tag,
+  Typography,
+  Progress,
+  InputNumber,
+} from "antd";
+import {
+  CalendarOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  FlagOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
+import { Milestone } from "../../types/milestone";
+import { BatchUpdateMilestoneItemDTO } from "../../api/milestoneApi";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -14,7 +27,11 @@ interface InlineEditMilestoneColumnsProps {
   editedData: Record<number, Partial<BatchUpdateMilestoneItemDTO>>;
   batchSaving: boolean;
   batchDeleting: boolean;
-  onInlineEdit: (milestoneId: number, field: keyof BatchUpdateMilestoneItemDTO, value: any) => void;
+  onInlineEdit: (
+    milestoneId: number,
+    field: keyof BatchUpdateMilestoneItemDTO,
+    value: any
+  ) => void;
 }
 
 export const createInlineEditMilestoneColumns = ({
@@ -26,35 +43,45 @@ export const createInlineEditMilestoneColumns = ({
   onInlineEdit,
 }: InlineEditMilestoneColumnsProps) => {
   const formatDate = (dateString: string | null | undefined): string => {
-    return dateString && dayjs(dateString).isValid() ? dayjs(dateString).format('MMM D, YYYY') : 'Not set';
-  };  const getStatusColor = (status: string | null | undefined): string => {
+    return dateString && dayjs(dateString).isValid()
+      ? dayjs(dateString).format("MMM D, YYYY")
+      : "Not set";
+  };
+  const getStatusColor = (status: string | null | undefined): string => {
     switch (status?.toUpperCase()) {
-      case 'NEW': return 'blue';
-      case 'SENT': return 'orange';
-      case 'REVIEWED': return 'green';
-      default: return 'default';
+      case "NEW":
+        return "blue";
+      case "SENT":
+        return "orange";
+      case "REVIEWED":
+        return "green";
+      default:
+        return "default";
     }
   };
 
   const isMilestoneCompleted = (milestone: Milestone): boolean => {
-    return milestone.completionDate !== null && 
-           milestone.completionDate !== undefined && 
-           milestone.completionDate !== '';
-  };  const columns = [
+    return (
+      milestone.completionDate !== null &&
+      milestone.completionDate !== undefined &&
+      milestone.completionDate !== ""
+    );
+  };
+  const columns = [
     {
-      title: 'Milestone',
-      key: 'milestone',
+      title: "Milestone",
+      key: "milestone",
       width: 280,
       render: (_: any, record: Milestone) => {
         if (isInBatchMode && isAdmin) {
           return (
             <div>
               <Input
-                value={record.name || ''}
+                value={record.name || ""}
                 onChange={(e) => {
                   const value = e.target.value;
                   if (value.length <= 200) {
-                    onInlineEdit(record.id, 'name', value);
+                    onInlineEdit(record.id, "name", value);
                   }
                 }}
                 placeholder="Milestone name"
@@ -64,11 +91,11 @@ export const createInlineEditMilestoneColumns = ({
                 style={{ marginBottom: 4 }}
               />
               <TextArea
-                value={record.description || ''}
+                value={record.description || ""}
                 onChange={(e) => {
                   const value = e.target.value;
                   if (value.length <= 65535) {
-                    onInlineEdit(record.id, 'description', value);
+                    onInlineEdit(record.id, "description", value);
                   }
                 }}
                 placeholder="Description"
@@ -82,13 +109,23 @@ export const createInlineEditMilestoneColumns = ({
         }
         return (
           <div>
-            <Text strong style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-              <FlagOutlined style={{ color: '#1890ff' }} />
-              {record.name || 'Untitled Milestone'}
+            <Text
+              strong
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                marginBottom: 2,
+              }}
+            >
+              <FlagOutlined style={{ color: "#1890ff" }} />
+              {record.name || "Untitled Milestone"}
             </Text>
             {record.description && (
               <Text type="secondary" ellipsis={{ tooltip: record.description }}>
-                {record.description.length > 60 ? `${record.description.substring(0, 60)}...` : record.description}
+                {record.description.length > 60
+                  ? `${record.description.substring(0, 60)}...`
+                  : record.description}
               </Text>
             )}
           </div>
@@ -96,13 +133,13 @@ export const createInlineEditMilestoneColumns = ({
       },
     },
     {
-      title: 'Progress',
-      key: 'progress',
+      title: "Progress",
+      key: "progress",
       width: 120,
-      align: 'center' as const,
+      align: "center" as const,
       render: (_: any, record: Milestone) => {
         const percentage = record.completionPercentage || 0;
-        
+
         if (isInBatchMode && isAdmin) {
           return (
             <InputNumber
@@ -110,7 +147,7 @@ export const createInlineEditMilestoneColumns = ({
               onChange={(val) => {
                 const numVal = val || 0;
                 if (numVal >= 0 && numVal <= 100) {
-                  onInlineEdit(record.id, 'completionPercentage', numVal);
+                  onInlineEdit(record.id, "completionPercentage", numVal);
                 }
               }}
               min={0}
@@ -118,8 +155,8 @@ export const createInlineEditMilestoneColumns = ({
               size="small"
               disabled={batchSaving || batchDeleting}
               formatter={(val) => `${val}%`}
-              parser={(val) => val?.replace('%', '') as any}
-              style={{ width: '100%' }}
+              parser={(val) => val?.replace("%", "") as any}
+              style={{ width: "100%" }}
             />
           );
         }
@@ -128,15 +165,15 @@ export const createInlineEditMilestoneColumns = ({
           <Progress
             percent={percentage}
             size="small"
-            status={percentage === 100 ? 'success' : 'active'}
-            strokeColor={percentage === 100 ? '#52c41a' : '#1890ff'}
+            status={percentage === 100 ? "success" : "active"}
+            strokeColor={percentage === 100 ? "#52c41a" : "#1890ff"}
           />
         );
       },
     },
     {
-      title: 'Timeline',
-      key: 'timeline',
+      title: "Timeline",
+      key: "timeline",
       width: 180,
       render: (_: any, record: Milestone) => {
         if (isInBatchMode && isAdmin) {
@@ -145,58 +182,86 @@ export const createInlineEditMilestoneColumns = ({
               <DatePicker
                 value={record.startDate ? dayjs(record.startDate) : null}
                 onChange={(dateValue) => {
-                  const formattedDate = dateValue ? dateValue.format('YYYY-MM-DD') : null;
-                  onInlineEdit(record.id, 'startDate', formattedDate);
+                  const formattedDate = dateValue
+                    ? dateValue.format("YYYY-MM-DD")
+                    : null;
+                  onInlineEdit(record.id, "startDate", formattedDate);
                 }}
                 size="small"
                 disabled={batchSaving || batchDeleting}
                 format="MMM D"
                 placeholder="Start"
-                style={{ width: '100%', marginBottom: 4 }}
+                style={{ width: "100%", marginBottom: 4 }}
               />
               <DatePicker
                 value={record.deadlineDate ? dayjs(record.deadlineDate) : null}
                 onChange={(dateValue) => {
-                  const formattedDate = dateValue ? dateValue.format('YYYY-MM-DD') : null;
-                  onInlineEdit(record.id, 'deadlineDate', formattedDate);
+                  const formattedDate = dateValue
+                    ? dateValue.format("YYYY-MM-DD")
+                    : null;
+                  onInlineEdit(record.id, "deadlineDate", formattedDate);
                 }}
                 size="small"
                 disabled={batchSaving || batchDeleting}
                 format="MMM D"
                 placeholder="Due"
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               />
             </div>
           );
         }
-        
-        const isOverdue = record.deadlineDate && !isMilestoneCompleted(record) && 
-                         new Date(record.deadlineDate) < new Date();
-        
+
+        const isOverdue =
+          record.deadlineDate &&
+          !isMilestoneCompleted(record) &&
+          new Date(record.deadlineDate) < new Date();
+
         return (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-              <CalendarOutlined style={{ color: '#52c41a', fontSize: '10px' }} />
-              <Text style={{ fontSize: '11px' }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                marginBottom: 2,
+              }}
+            >
+              <CalendarOutlined
+                style={{ color: "#52c41a", fontSize: "10px" }}
+              />
+              <Text style={{ fontSize: "11px" }}>
                 Start: {formatDate(record.startDate)}
               </Text>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-              <ClockCircleOutlined style={{ 
-                color: isOverdue ? '#ff4d4f' : '#faad14', 
-                fontSize: '10px' 
-              }} />
-              <Text style={{ 
-                fontSize: '11px',
-                color: isOverdue ? '#ff4d4f' : undefined
-              }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                marginBottom: 2,
+              }}
+            >
+              <ClockCircleOutlined
+                style={{
+                  color: isOverdue ? "#ff4d4f" : "#faad14",
+                  fontSize: "10px",
+                }}
+              />
+              <Text
+                style={{
+                  fontSize: "11px",
+                  color: isOverdue ? "#ff4d4f" : undefined,
+                }}
+              >
                 Due: {formatDate(record.deadlineDate)}
               </Text>
             </div>
             {isMilestoneCompleted(record) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '10px' }} />
-                <Text style={{ fontSize: '11px', color: '#52c41a' }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <CheckCircleOutlined
+                  style={{ color: "#52c41a", fontSize: "10px" }}
+                />
+                <Text style={{ fontSize: "11px", color: "#52c41a" }}>
                   Done: {formatDate(record.completionDate)}
                 </Text>
               </div>
@@ -204,21 +269,22 @@ export const createInlineEditMilestoneColumns = ({
           </div>
         );
       },
-    },    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
       width: 120,
-      align: 'center' as const,
+      align: "center" as const,
       render: (_: string | null, record: Milestone) => {
         if (isInBatchMode && isAdmin) {
           return (
             <Select
-              value={record.status || 'NEW'}
-              onChange={(value) => onInlineEdit(record.id, 'status', value)}
+              value={record.status || "NEW"}
+              onChange={(value) => onInlineEdit(record.id, "status", value)}
               size="small"
               disabled={batchSaving || batchDeleting}
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
             >
               <Option value="NEW">New</Option>
               <Option value="SENT">Sent</Option>
@@ -229,8 +295,10 @@ export const createInlineEditMilestoneColumns = ({
 
         // Display mode - show actual status value from database
         let statusColor = getStatusColor(record.status);
-        let statusText = record.status ? String(record.status).replace('_', ' ') : 'New';
-        
+        let statusText = record.status
+          ? String(record.status).replace("_", " ")
+          : "New";
+
         // Keep the original status color mapping
         return (
           <Tag color={statusColor} style={{ margin: 0 }}>
@@ -240,32 +308,37 @@ export const createInlineEditMilestoneColumns = ({
       },
     },
     {
-      title: 'Notes',
-      key: 'notes',
+      title: "Notes",
+      key: "notes",
       width: 150,
       render: (_: any, record: Milestone) => {
         if (isInBatchMode && isAdmin) {
           return (
             <TextArea
-              value={record.notes || ''}
-              onChange={(e) => onInlineEdit(record.id, 'notes', e.target.value)}
+              value={record.notes || ""}
+              onChange={(e) => onInlineEdit(record.id, "notes", e.target.value)}
               placeholder="Add notes..."
               size="small"
               disabled={batchSaving || batchDeleting}
               rows={2}
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
             />
           );
         }
-        
+
         // Display mode - handle notes properly
         const notesText = record.notes;
         return notesText ? (
-          <Text ellipsis={{ tooltip: notesText }} style={{ fontSize: '11px' }}>
-            {notesText.length > 30 ? `${notesText.substring(0, 30)}...` : notesText}
+          <Text ellipsis={{ tooltip: notesText }} style={{ fontSize: "11px" }}>
+            {notesText.length > 30
+              ? `${notesText.substring(0, 30)}...`
+              : notesText}
           </Text>
         ) : (
-          <Text type="secondary" style={{ fontSize: '10px', fontStyle: 'italic' }}>
+          <Text
+            type="secondary"
+            style={{ fontSize: "10px", fontStyle: "italic" }}
+          >
             No notes
           </Text>
         );

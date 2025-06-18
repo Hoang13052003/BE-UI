@@ -23,6 +23,7 @@ import {
   FolderAddOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const { Content, Footer } = Layout;
 const { Title, Paragraph, Text } = Typography;
@@ -274,6 +275,8 @@ const cardHover = {
 };
 
 const LandingPage: React.FC = () => {
+  const navigator = useNavigate();
+
   return (
     <div style={{ overflowX: "hidden" }}>
       <Layout style={{ width: "100%", margin: 0, padding: 0 }}>
@@ -321,6 +324,9 @@ const LandingPage: React.FC = () => {
                   color: "#3B82F6",
                   border: "none",
                   marginBottom: 32,
+                }}
+                onClick={() => {
+                  navigator("/login");
                 }}
               >
                 Start Free Trial <ArrowRightOutlined />
@@ -736,7 +742,8 @@ const LandingPage: React.FC = () => {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
-                    variants={fadeInUp}                  >
+                    variants={fadeInUp}
+                  >
                     <Card
                       variant="borderless"
                       style={{
@@ -865,7 +872,9 @@ const LandingPage: React.FC = () => {
                     whileInView="visible"
                     viewport={{ once: true }}
                     variants={fadeInUp}
-                  >                    <Card
+                  >
+                    {" "}
+                    <Card
                       variant="borderless"
                       style={{
                         borderRadius: 8,
@@ -946,7 +955,8 @@ const LandingPage: React.FC = () => {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
-                    variants={fadeInUp}                  >
+                    variants={fadeInUp}
+                  >
                     <Card
                       variant="borderless"
                       style={{
@@ -1038,7 +1048,8 @@ const LandingPage: React.FC = () => {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
-                    variants={fadeInUp}                  >
+                    variants={fadeInUp}
+                  >
                     <Card
                       variant="borderless"
                       style={{
@@ -1186,7 +1197,9 @@ const LandingPage: React.FC = () => {
               Everything you need to know about ProgressHub
             </Paragraph>
             <Row justify="center">
-              <Col xs={24} md={16}>                <Collapse
+              <Col xs={24} md={16}>
+                {" "}
+                <Collapse
                   accordion
                   bordered={false}
                   style={{ background: "transparent" }}

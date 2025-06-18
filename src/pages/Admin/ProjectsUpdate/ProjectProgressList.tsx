@@ -24,8 +24,8 @@ import {
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
-  FileExcelOutlined,
-  FilePdfOutlined,
+  // FileExcelOutlined,
+  // FilePdfOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
@@ -385,9 +385,9 @@ const ProjectProgressList: React.FC = () => {
 
   return (
     <Card style={{ width: "100%" }}>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+      <Row justify="space-between" style={{ marginBottom: 16 }}>
         <Col>
-          <Title level={4}>Project Progress Management</Title>
+          <Title level={4}>Projects Reports</Title>
         </Col>
         <Col>
           <Space>
@@ -398,7 +398,7 @@ const ProjectProgressList: React.FC = () => {
             >
               Add Update
             </Button>{" "}
-            <Dropdown
+            {/* <Dropdown
               menu={{
                 items: [
                   {
@@ -417,7 +417,7 @@ const ProjectProgressList: React.FC = () => {
               <Button>
                 Export <FilterOutlined />
               </Button>
-            </Dropdown>
+            </Dropdown> */}
           </Space>
         </Col>
       </Row>

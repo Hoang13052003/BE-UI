@@ -1,4 +1,3 @@
-// src/contexts/NotificationContext.tsx
 import React, {
   createContext,
   useContext,
@@ -14,12 +13,9 @@ import { useAuth } from "./AuthContext";
 import {
   MessageType,
   Notification,
-  // NotificationPayload,
   NotificationPriority,
   NotificationResponse,
 } from "../types/Notification";
-
-// Interface cho notifications để sử dụng trong context
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -47,7 +43,6 @@ export const useNotifications = () => {
   return context;
 };
 
-// Mapper function to convert API notification to our internal format
 const mapApiNotificationToInternal = (
   notification: NotificationResponse
 ): Notification => ({
@@ -69,7 +64,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const { token, isAuthenticated, userDetails } = useAuth();
 
-  // Fetch notifications from API
   const fetchNotifications = useCallback(
     async (page = 0, size = 10) => {
       if (!isAuthenticated || !userDetails) return;
@@ -86,7 +80,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         );
 
         setNotifications(mappedNotifications);
-        // Update unread count based on API response
         updateUnreadCount(mappedNotifications);
       } catch (error) {
         console.error("Error fetching notifications:", error);
@@ -97,7 +90,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     [isAuthenticated, userDetails]
   );
 
-  // Fetch only unread notifications
   const fetchUnread = useCallback(async () => {
     if (!isAuthenticated || !userDetails) return;
 
@@ -108,7 +100,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       const unreadNotifications = response.map(mapApiNotificationToInternal);
 
-      // Merge unread with existing read notifications
       const existingReadNotifications = notifications.filter((n) => n.read);
       setNotifications([...unreadNotifications, ...existingReadNotifications]);
       setUnreadCount(unreadNotifications.length);
@@ -119,7 +110,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [isAuthenticated, userDetails, notifications]);
 
-  // Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
     if (!isAuthenticated || !userDetails) return;
 
@@ -133,23 +123,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [isAuthenticated, userDetails]);
 
-  // Initial load of notifications and WebSocket setup
   useEffect(() => {
     if (isAuthenticated && token && userDetails) {
-      // // Load initial notifications
       fetchNotifications();
       fetchUnreadCount();
 
-      // Connect to WebSocket for real-time updates
       notificationService.connect(token);
 
-      // Add listener for notification updates
       notificationService.addListener(
         MessageType.USER_UPDATE,
         handleNotificationFromSocket
       );
 
-      // Clean up on unmount
       return () => {
         notificationService.removeListener(
           MessageType.USER_UPDATE,
@@ -169,7 +154,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleNotificationFromSocket = useCallback((socketMessage: any) => {
     const data = socketMessage.payload as NotificationResponse;
 
-    // Validate required fields
     if (data && data.id && data.title && data.content) {
       const newNotification: Notification = {
         id: data.id.toString(),
@@ -196,7 +180,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // Mark a notification as read
   const markAsRead = async (id: string) => {
     if (!isAuthenticated) return;
 
@@ -211,21 +194,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         )
       );
 
-      // Update unread count
       updateUnreadCount();
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
   };
 
-  // Mark all notifications as read
   const markAllAsRead = async () => {
     if (!isAuthenticated || !userDetails) return;
 
     try {
       await apiNotification.markAllAsRead(userDetails.id);
 
-      // Update local state
       setNotifications((prev) =>
         prev.map((notification) => ({ ...notification, isRead: true }))
       );
@@ -235,7 +215,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Delete a notification
   const deleteNotification = async (id: string) => {
     try {
       await apiNotification.deleteNotification(id);
@@ -244,14 +223,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         prev.filter((notification) => notification.id !== id)
       );
 
-      // Update unread count
       updateUnreadCount();
     } catch (error) {
       console.error("Error deleting notification:", error);
     }
   };
 
-  // Clear all notifications (local only, doesn't delete from API)
   const clearAll = async () => {
     setNotifications([]);
     setUnreadCount(0);
@@ -259,14 +236,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     const allIds = notifications.map((n) => n.id);
     try {
       await deleteMultipleNotifications(allIds);
-      // Sau đó cập nhật lại UI
-      setNotifications([]); // hoặc gọi API fetch lại
+      setNotifications([]);
     } catch (error) {
-      console.error("Xóa tất cả thất bại", error);
+      console.error("Error deleting all notifications:", error);
     }
   };
 
-  // Update the unread count based on notifications array
   const updateUnreadCount = (notifs = notifications) => {
     const count = notifs.filter((notification) => !notification.read).length;
     setUnreadCount(count);

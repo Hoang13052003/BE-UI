@@ -1,4 +1,3 @@
-// src/components/Admin/ProjectProgress/EditProjectUpdateModal.tsx
 import React, { useState, useEffect } from "react";
 import {
   Modal,
@@ -57,7 +56,6 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
 
   console.log("publish: " + JSON.stringify(updateData));
-  // Fetch status options and initialize form when modal opens
   useEffect(() => {
     if (visible && updateData) {
       const fetchStatuses = async () => {
@@ -66,7 +64,6 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
           setStatusOptions(statuses);
         } catch (error) {
           console.error("Failed to fetch project statuses:", error);
-          // Fallback to default statuses
           setStatusOptions([
             "NEW",
             "PENDING",
@@ -80,7 +77,6 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
 
       fetchStatuses();
 
-      // Initialize form values
       form.setFieldsValue({
         projectId: updateData.projectId,
         updateDate: updateData.updateDate ? dayjs(updateData.updateDate) : null,
@@ -93,20 +89,17 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
         internalNotes: updateData.internalNotes,
       });
 
-      // Set existing attachments if any
       if (updateData.attachments && updateData.attachments.length > 0) {
         setExistingAttachments(updateData.attachments);
       } else {
         setExistingAttachments([]);
       }
     } else {
-      // Reset form when modal closes
       form.resetFields();
       setExistingAttachments([]);
     }
   }, [visible, form, updateData]);
 
-  // Handle form submission
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -138,7 +131,6 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
     }
   };
 
-  // Handle attachment deletion
   const handleDeleteAttachment = async (attachmentId: number) => {
     try {
       await deleteAttachmentApi(attachmentId);

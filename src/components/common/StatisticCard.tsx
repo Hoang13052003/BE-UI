@@ -11,8 +11,8 @@ const StatisticCard: React.FC<{
   subInfoColor?: string;
   valueSuffix?: string;
   valuePrefix?: React.ReactNode;
-  isImprovement?: boolean; // For response time
-  changeDirection?: "up" | "down"; // For error rate / total events
+  isImprovement?: boolean;
+  changeDirection?: "up" | "down";
 }> = ({
   title,
   value,

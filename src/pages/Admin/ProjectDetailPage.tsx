@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Spin, Alert, Typography, Button, Row, Col, message } from "antd";
-import { ArrowLeftOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  EditOutlined,
+  ProjectOutlined,
+} from "@ant-design/icons";
 // removed react-grid-layout in favor of static Ant Design grid
 
 // --- Types ---
@@ -155,7 +159,7 @@ const ProjectDetailPage: React.FC = () => {
   }
 
   return (
-    <div>
+    <Card>
       {/* Header */}
       {userRole === "ADMIN" ? (
         <Row
@@ -188,58 +192,51 @@ const ProjectDetailPage: React.FC = () => {
         </Row>
       )}
 
-      <Title
-        level={2}
-        style={{
-          color: theme === "dark" ? "#fff" : undefined,
-          marginBottom: "24px",
-        }}
-      >
-        {project.name}
-      </Title>
-
       {/* Static Layout using Ant Design Grid */}
       <Row gutter={[16, 16]}>
         {/* Overview: full width on xs, sm, md; half width on lg and xl */}{" "}
-        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
-          <Card
-            title="Project Overview"
-            style={{ border: "none" }}
-            styles={{ body: { padding: 16 } }}
+        <Col
+          xs={24}
+          sm={24}
+          md={24}
+          lg={12}
+          xl={12}
+          style={{
+            boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
+            borderRadius: "8px",
+            padding: "20px",
+          }}
+        >
+          <Title
+            level={3}
+            style={{
+              margin: 0,
+              color: "#1890ff",
+            }}
           >
-            <ProjectDetailsDisplay
-              project={project as any}
-              theme={theme}
-              onRefreshProgress={fetchProjectData} // Thêm callback để refresh project data
+            <ProjectOutlined
+              style={{ marginBottom: "20px", marginLeft: "8px" }}
             />
-          </Card>
+            Project overview
+          </Title>{" "}
+          <ProjectDetailsDisplay
+            project={project as any}
+            theme={theme}
+            onRefreshProgress={fetchProjectData} // Thêm callback để refresh project data
+          />
         </Col>
         {/* Milestones/Time Logs: full width on xs, sm, md; half width on lg and xl */}
         <Col xs={24} sm={24} md={24} lg={12} xl={12}>
-          <Card
-            title={
-              project.type === "FIXED_PRICE"
-                ? "Project Milestones"
-                : "Time Logs"
-            }
-            style={{ border: "none" }}
-            styles={{ body: { padding: 16 } }}
-          >
-            {project.type === "FIXED_PRICE" ? (
-              <ProjectMilestonesTab projectId={project.id} />
-            ) : (
-              <ProjectTimeLogsTab projectId={project.id} />
-            )}
-          </Card>
+          {project.type === "FIXED_PRICE" ? (
+            <ProjectMilestonesTab projectId={project.id} />
+          ) : (
+            <ProjectTimeLogsTab projectId={project.id} />
+          )}
         </Col>
       </Row>
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
-          <Card
-            title="Project Updates Timeline"
-            style={{ border: "none" }}
-            styles={{ body: { padding: 16 } }}
-          >
+          <Card title="Project Updates Timeline">
             <ProjectUpdatesTab projectId={project.id} theme={theme} />
           </Card>
         </Col>
@@ -277,7 +274,7 @@ const ProjectDetailPage: React.FC = () => {
           onSuccess={handleEditProjectSuccess}
         />
       )}
-    </div>
+    </Card>
   );
 };
 

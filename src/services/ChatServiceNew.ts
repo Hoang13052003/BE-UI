@@ -1,6 +1,5 @@
-// src/services/ChatServiceNew.ts
 import { ChatMessageType } from "../api/chatApi";
-import { message as antdMessage } from "antd"; // antdMessage để tránh trùng tên
+import { message as antdMessage } from "antd";
 import { normalizeBaseUrl } from "../utils/urlUtils";
 
 class ChatServiceNew {
@@ -26,7 +25,8 @@ class ChatServiceNew {
         this.socket.readyState === WebSocket.CONNECTING)
     ) {
       return;
-    }    this.token = token;
+    }
+    this.token = token;
     const baseUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
     const cleanBaseUrl = normalizeBaseUrl(baseUrl);
     const wsUrl = `${cleanBaseUrl}/ws/chat?token=${token}`;
@@ -36,15 +36,14 @@ class ChatServiceNew {
       this.isConnected = true;
       this.reconnectAttempts = 0;
       this.connectionStatusCallback?.(true);
-      antdMessage.success("Đã kết nối chat");
+      antdMessage.success("Chat connected successfully!");
     };
 
     this.socket.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data as string); // Đảm bảo event.data là string
+        const data = JSON.parse(event.data as string);
         this.dispatchMessage(data);
       } catch (err) {
-        // Xử lý các thông báo dạng chuỗi đơn giản từ server nếu cần
         if (typeof event.data === "string") {
           if (
             event.data.includes("connected") ||
@@ -52,7 +51,6 @@ class ChatServiceNew {
             event.data.includes("joined") ||
             event.data.includes("kicked")
           ) {
-            // Thêm các case khác nếu có
             antdMessage.info(event.data);
           }
         }
@@ -64,21 +62,20 @@ class ChatServiceNew {
       this.connectionStatusCallback?.(false);
 
       if (!event.wasClean && this.token) {
-        antdMessage.warning("Mất kết nối chat. Đang thử kết nối lại...");
+        antdMessage.warning("Chat disconnected. Attempting to reconnect...");
         this.attemptReconnect();
       }
     };
 
     this.socket.onerror = () => {
       this.connectionStatusCallback?.(false);
-      // Không cần gọi attemptReconnect ở đây nữa vì onclose sẽ xử lý nếu kết nối không thành công
     };
   }
 
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      antdMessage.error("Không thể kết nối lại chat. Vui lòng thử lại sau.");
-      this.reconnectAttempts = 0; // Reset để có thể thử lại thủ công nếu muốn
+      antdMessage.error("Unable to reconnect to chat. Please try again later.");
+      this.reconnectAttempts = 0;
       return;
     }
 
@@ -88,10 +85,9 @@ class ChatServiceNew {
 
     this.reconnectTimeoutId = setTimeout(() => {
       if (this.token && !this.isConnected) {
-        // Chỉ kết nối lại nếu có token và chưa kết nối
         this.connect(this.token);
       }
-    }, this.reconnectInterval * this.reconnectAttempts); // Tăng thời gian chờ sau mỗi lần thử
+    }, this.reconnectInterval * this.reconnectAttempts);
   }
 
   disconnect(): void {
@@ -100,39 +96,35 @@ class ChatServiceNew {
       this.reconnectTimeoutId = null;
     }
     if (this.socket) {
-      this.socket.onclose = null; // Ngăn chặn reconnect khi tự disconnect
+      this.socket.onclose = null;
       this.socket.close();
       this.socket = null;
     }
     this.isConnected = false;
-    this.token = null; // Nên xóa token khi disconnect
+    this.token = null;
     this.connectionStatusCallback?.(false);
   }
 
-  // SỬA LẠI sendMessage
   sendMessage(msg: {
     receiverId?: number;
     topic?: string;
     projectId?: number;
     content: string;
-    chatMessageType?: ChatMessageType; // Đổi tên từ messageType để rõ nghĩa hơn
+    chatMessageType?: ChatMessageType;
     fileUrl?: string;
     fileName?: string;
   }): void {
     if (!this.isSocketConnected()) {
-      antdMessage.error("Chưa kết nối chat. Tin nhắn chưa được gửi.");
-      // Cân nhắc việc lưu tin nhắn vào queue và gửi lại khi kết nối hoặc thông báo lỗi rõ ràng hơn
+      antdMessage.error("Chat not connected. Message not sent.");
       return;
     }
 
     let type: string;
     const messageData: any = {
-      // Dữ liệu cụ thể của tin nhắn
       content: msg.content,
-      chatMessageType: msg.chatMessageType || ChatMessageType.TEXT, // Sử dụng tên mới và default
+      chatMessageType: msg.chatMessageType || ChatMessageType.TEXT,
       fileUrl: msg.fileUrl,
       fileName: msg.fileName,
-      // BE sẽ tự lấy senderId từ session WebSocket
     };
 
     if (msg.receiverId) {
@@ -146,14 +138,14 @@ class ChatServiceNew {
       messageData.projectId = msg.projectId;
     } else {
       antdMessage.error(
-        "Không thể gửi tin nhắn: Thiếu thông tin người nhận/nhóm/dự án."
+        "Unable to send message: Missing recipient/group/project information."
       );
       return;
     }
 
     const payload = {
-      type: type, // Trường type chính cho BE routing
-      ...messageData, // Các trường dữ liệu của tin nhắn
+      type: type,
+      ...messageData,
     };
 
     this.socket!.send(JSON.stringify(payload));
@@ -164,75 +156,61 @@ class ChatServiceNew {
       return;
     }
     const payload = {
-      type: "user_typing_start", // Client gửi sự kiện này khi bắt đầu gõ
+      type: "user_typing_start",
       roomId: roomId,
       roomType: roomType,
-      // Server sẽ tự thêm thông tin người gửi (senderId, senderName, senderAvatar)
-      // và phát đi sự kiện "user_typing" cho các client khác.
     };
     this.socket!.send(JSON.stringify(payload));
   }
 
-  // SỬA LẠI subscribeToTopic
   subscribeToTopic(topic: string): void {
     if (!this.isSocketConnected()) {
       return;
     }
     const payload = {
-      type: "subscribe", // Đúng với BE mong đợi
+      type: "subscribe",
       topic: topic,
     };
     this.socket!.send(JSON.stringify(payload));
   }
 
-  // SỬA LẠI unsubscribeFromTopic
   unsubscribeFromTopic(topic: string): void {
     if (!this.isSocketConnected()) {
       return;
     }
     const payload = {
-      type: "unsubscribe", // Đúng với BE mong đợi
+      type: "unsubscribe",
       topic: topic,
     };
     this.socket!.send(JSON.stringify(payload));
   }
 
-  // SỬA LẠI markMessageAsRead
   markMessageAsRead(messageId: string): void {
     if (!this.isSocketConnected()) {
       return;
     }
     const payload = {
-      type: "mark_read", // Đúng với BE mong đợi
+      type: "mark_read",
       messageId: messageId,
     };
     this.socket!.send(JSON.stringify(payload));
   }
 
-  // SỬA LẠI dispatchMessage để xử lý đúng type từ BE
   private dispatchMessage(data: any): void {
-    // data.type là type của gói tin WebSocket BE gửi (e.g., "private_message", "group_message", "message_sent")
-    // data.chatMessageType là type của nội dung chat (e.g., "TEXT", "FILE") MÀ BE CẦN GỬI THÊM
-
     if (data.error) {
-      // Xử lý lỗi từ BE trước
-      antdMessage.error(`Lỗi từ server chat: ${data.error}`);
+      antdMessage.error(`Chat server error: ${data.error}`);
       return;
     }
 
     if (data.status) {
-      // Xử lý các thông báo trạng thái từ BE (nếu có)
-      // Ví dụ: có thể dispatch một event riêng cho status
       if (this.listeners.has("server_status")) {
         this.listeners.get("server_status")?.forEach((cb) => cb(data));
       }
       return;
     }
 
-    const webSocketPacketType = data.type; // "private_message", "group_message", "message_sent" etc.
+    const webSocketPacketType = data.type;
 
-    // Các loại tin nhắn mà ChatContext đang lắng nghe (TEXT, FILE, etc.)
-    // Giả định BE sẽ gửi thêm data.chatMessageType cho các tin nhắn chat
     const chatContentMessageType = data.chatMessageType;
 
     if (
@@ -240,31 +218,25 @@ class ChatServiceNew {
         webSocketPacketType
       )
     ) {
-      // Đây là tin nhắn chat thực sự
       if (
         chatContentMessageType &&
         this.listeners.has(chatContentMessageType)
       ) {
-        // data ở đây là toàn bộ gói tin BE gửi, bao gồm webSocketPacketType, senderId, content, chatContentMessageType,...
-        // ChatContext sẽ nhận được toàn bộ data này.
         this.listeners.get(chatContentMessageType)?.forEach((cb) => cb(data));
       } else if (this.listeners.has("all_chat_messages")) {
-        // Listener chung cho mọi tin nhắn chat
         this.listeners.get("all_chat_messages")?.forEach((cb) => cb(data));
       }
     } else if (webSocketPacketType === "message_sent") {
-      // Xử lý xác nhận tin nhắn đã gửi (nếu ChatContext cần)
       if (this.listeners.has("message_sent_confirmation")) {
         this.listeners
           .get("message_sent_confirmation")
           ?.forEach((cb) => cb(data));
       }
     } else if (webSocketPacketType === "user_typing_event") {
-      // Map lại dữ liệu cho đúng FE mong muốn
       const typingData = {
         type: "user_typing",
         userId: data.senderId,
-        userName: "", // FE có thể tự lấy từ context nếu cần
+        userName: "",
         userAvatar: "",
         roomId: data.roomId,
         roomType: data.roomType,
@@ -273,10 +245,7 @@ class ChatServiceNew {
       if (this.listeners.has("user_typing")) {
         this.listeners.get("user_typing")?.forEach((cb) => cb(typingData));
       }
-    }
-    // Thêm các case xử lý cho các `type` khác từ BE nếu cần
-    // ví dụ: "topic_subscribed", "topic_unsubscribed"
-    else if (
+    } else if (
       webSocketPacketType === "topic_subscribed" ||
       webSocketPacketType === "topic_unsubscribed"
     ) {
@@ -285,7 +254,6 @@ class ChatServiceNew {
         this.listeners.get(webSocketPacketType)?.forEach((cb) => cb(data));
       }
     } else {
-      // Có thể có một listener "generic" hoặc "unknown_type" ở đây nếu muốn
       if (this.listeners.has("all")) {
         this.listeners.get("all")?.forEach((cb) => cb(data));
       }

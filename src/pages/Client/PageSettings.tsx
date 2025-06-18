@@ -1,11 +1,6 @@
 import React from "react";
 import { Card, Avatar, Typography, Menu, Row, Col } from "antd";
-import {
-  UserOutlined,
-  // HistoryOutlined,
-  // ProjectOutlined,
-  SettingOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, SettingOutlined } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
@@ -22,16 +17,6 @@ const PageSettings: React.FC = () => {
         navigate("/client/settings/profile");
       },
     },
-    // {
-    //   key: "activity",
-    //   icon: <HistoryOutlined />,
-    //   label: "Activity",
-    // },
-    // {
-    //   key: "projects",
-    //   icon: <ProjectOutlined />,
-    //   label: "Projects",
-    // },
     {
       key: "settings",
       icon: <SettingOutlined />,

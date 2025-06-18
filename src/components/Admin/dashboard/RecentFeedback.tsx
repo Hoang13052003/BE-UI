@@ -11,7 +11,6 @@ const getRelativeTime = (dateStr: string): string => {
   const past = new Date(dateStr);
   const diffMs = now.getTime() - past.getTime();
 
-  // Convert to minutes, hours, days
   const diffMins = Math.round(diffMs / (1000 * 60));
   const diffHours = Math.round(diffMs / (1000 * 60 * 60));
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
@@ -27,7 +26,6 @@ const getRelativeTime = (dateStr: string): string => {
   }
 };
 
-// Định nghĩa lại type cho độc lập
 interface FeedbackItem {
   id: string | number;
   fullName?: string;
@@ -54,13 +52,13 @@ interface TypedPaginatedFeedbackResponse {
 interface RecentFeedbackProps {
   limit?: number;
   onViewAll?: () => void;
-  useMockData?: boolean; // For demo/development purpose
+  useMockData?: boolean;
 }
 
 const RecentFeedback: React.FC<RecentFeedbackProps> = ({
   limit = 5,
   onViewAll = () => {},
-  useMockData = true, // Default to mock data for development
+  useMockData = true,
 }) => {
   const [feedbacks, setFeedbacks] = useState<TypedPaginatedFeedbackResponse>({
     content: [],

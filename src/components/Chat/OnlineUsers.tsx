@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Drawer,
   List,
@@ -10,19 +10,19 @@ import {
   Space,
   Tooltip,
   Empty,
-} from 'antd';
+} from "antd";
 import {
   UserOutlined,
   SearchOutlined,
   MessageOutlined,
   CloseOutlined,
-} from '@ant-design/icons';
-import { useChat } from '../../contexts/ChatContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { UserConnectionResponse } from '../../api/chatApi';
-import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import './OnlineUsers.scss';
+} from "@ant-design/icons";
+import { useChat } from "../../contexts/ChatContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { UserConnectionResponse } from "../../api/chatApi";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import "./OnlineUsers.scss";
 
 const { Text, Title } = Typography;
 
@@ -39,7 +39,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
 }) => {
   const { userDetails } = useAuth();
   const { onlineUsers, refreshOnlineUsers } = useChat();
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [filteredUsers, setFilteredUsers] = useState<UserConnectionResponse[]>(
     []
   );
@@ -81,7 +81,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
   };
 
   const formatLastSeen = (timestamp?: string) => {
-    if (!timestamp) return 'Chưa xác định';
+    if (!timestamp) return "No last seen";
     return formatDistanceToNow(new Date(timestamp), {
       addSuffix: true,
       locale: vi,
@@ -105,7 +105,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
         key={user.userId}
         className="online-user-item"
         actions={[
-          <Tooltip title="Bắt đầu trò chuyện">
+          <Tooltip title="New Chat">
             <Button
               type="text"
               size="small"
@@ -117,11 +117,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
       >
         <List.Item.Meta
           avatar={
-            <Badge
-              dot
-              offset={[-8, 32]}
-              color={isOnline ? 'green' : 'gray'}
-            >
+            <Badge dot offset={[-8, 32]} color={isOnline ? "green" : "gray"}>
               <Avatar
                 src={user.imageProfile}
                 icon={<UserOutlined />}
@@ -137,10 +133,10 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
                 {user.fullName}
               </Text>
               <Text
-                type={isOnline ? 'success' : 'secondary'}
+                type={isOnline ? "success" : "secondary"}
                 className="user-status"
               >
-                {isOnline ? 'Đang hoạt động' : `Hoạt động ${lastSeen}`}
+                {isOnline ? "Online" : `Last seen ${lastSeen}`}
               </Text>
             </div>
           }
@@ -158,17 +154,13 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
         <div className="online-users-header">
           <div>
             <Title level={4} style={{ margin: 0 }}>
-              Người dùng
+              Users
             </Title>
             <Text type="secondary">
-              {onlineCount} đang online / {totalUsers} tổng
+              {onlineCount} online / {totalUsers} total
             </Text>
           </div>
-          <Button
-            type="text"
-            icon={<CloseOutlined />}
-            onClick={onClose}
-          />
+          <Button type="text" icon={<CloseOutlined />} onClick={onClose} />
         </div>
       }
       placement="right"
@@ -176,7 +168,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
       onClose={onClose}
       open={visible}
       styles={{ body: { padding: 0 } }}
-      headerStyle={{ padding: '16px 20px', background: '#fafafa' }}
+      headerStyle={{ padding: "16px 20px", background: "#fafafa" }}
       closable={false}
     >
       <div className="online-users-content">
@@ -184,7 +176,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
         <div className="search-section">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Tìm kiếm người dùng..."
+            placeholder="Search users..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             allowClear
@@ -194,8 +186,11 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
         {/* Statistics */}
         <div className="stats-section">
           <Space>
-            <Badge status="success" text={`${onlineCount} đang online`} />
-            <Badge status="default" text={`${totalUsers - onlineCount} offline`} />
+            <Badge status="success" text={`${onlineCount} online`} />
+            <Badge
+              status="default"
+              text={`${totalUsers - onlineCount} offline`}
+            />
           </Space>
         </div>
 
@@ -210,7 +205,7 @@ const OnlineUsers: React.FC<OnlineUsersProps> = ({
             />
           ) : (
             <Empty
-              description="Không tìm thấy người dùng nào"
+              description="No users found"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           )}

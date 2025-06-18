@@ -1,4 +1,3 @@
-// src/components/Admin/ProjectProgress/SendReportProjectUpdateModal.tsx
 import React, { useState, useEffect } from "react";
 import { Modal, Button, message, Table, Space, Avatar, Checkbox } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -68,7 +67,6 @@ const SendReportProjectUpdateModal: React.FC<
 
     setLoading(true);
     try {
-      // Gửi notification như cũ
       await Promise.all(
         selectedUserIds.map((userId) =>
           createNotification({
@@ -85,7 +83,6 @@ const SendReportProjectUpdateModal: React.FC<
         )
       );
 
-      // Gửi email report cho các user đã chọn
       const selectedUsers = users.filter((user) =>
         selectedUserIds.includes(user.id)
       );

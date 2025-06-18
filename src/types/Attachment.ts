@@ -7,44 +7,34 @@ export interface TreeNodeDto {
   size: number | null;
   lastModified: string | null;
   attachmentId: number | null;
-  fileType: string | null; // <<--- THÊM TRƯỜNG NÀY (quan trọng cho logic "xem file")
+  fileType: string | null;
 }
 
 export interface AttachmentResponseDto {
   id: number;
   projectUpdateId: number;
   fileName: string;
-  storagePath?: string; // Giữ lại optional nếu có trường hợp không trả về
-  fileType: string;    // MIME type của file
+  storagePath?: string;
+  fileType: string;
   fileSize: number;
   fileSizeFormatted?: string;
-  uploadedAt: string; // Instant sẽ là string ISO 8601
+  uploadedAt: string;
   logicalName: string;
   latestVersion: boolean;
   deleted: boolean;
 }
 
-// === DTO MỚI CHO LỊCH SỬ PROJECT UPDATE ===
 export interface ProjectUpdateSummaryDto {
-  id: number; // ID của ProjectUpdate
+  id: number;
   summary: string | null;
-  updateDate: string; // LocalDate từ backend sẽ là string dạng "YYYY-MM-DD"
-  // projectName?: string; // Tùy chọn nếu backend trả về
-  // createdAt?: string; // Tùy chọn nếu bạn dùng createdAt
+  updateDate: string;
 }
 
-
-// --- Các interface mà bạn có thể đã dùng hoặc sẽ dùng ---
-
-export interface FolderFileItem { // Đã có trong file api service, có thể chuyển vào đây
+export interface FolderFileItem {
   file: File;
   relativePath: string;
 }
 
-export interface PresignedUrlResponse { // Đã có trong file api service, có thể chuyển vào đây
+export interface PresignedUrlResponse {
   url: string;
 }
-
-// Ví dụ các DTO khác nếu bạn có
-// export interface ProjectResponseDto { /* ... */ }
-// export interface UserResponseDto { /* ... */ }

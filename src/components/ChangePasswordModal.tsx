@@ -1,8 +1,7 @@
-// src/components/Admin/ProjectProgress/ChangePasswordModal.tsx
 import React, { useEffect, useState } from "react";
 import { Modal, Input, Form } from "antd";
 import { LockOutlined } from "@ant-design/icons";
-import { resetPasswordApi } from "../api/authApi"; // Adjust path if needed
+import { resetPasswordApi } from "../api/authApi";
 import { useAuth } from "../contexts/AuthContext";
 import { useAlert } from "../contexts/AlertContext";
 

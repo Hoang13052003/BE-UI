@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createProjectApi } from "../api/projectApi";
-import { ProjectRequest } from "../types/ProjectRequest"; // Sử dụng ProjectRequest đã được cập nhật
+import { ProjectRequest } from "../types/ProjectRequest";
 import { message } from "antd";
 
 export const useAddProject = (onSuccess: () => void) => {
@@ -14,27 +14,25 @@ export const useAddProject = (onSuccess: () => void) => {
         description: values.description,
         type: values.type,
         status: values.status,
-        startDate: values.startDate, // Đã được format từ AddProjectModal
-        plannedEndDate: values.plannedEndDate, // Đã được format từ AddProjectModal
+        startDate: values.startDate,
+        plannedEndDate: values.plannedEndDate,
         totalBudget: values.totalBudget,
         totalEstimatedHours: values.totalEstimatedHours ?? null,
-        userIds: values.userIds || [], // Lấy từ values do AddProjectModal cung cấp
+        userIds: values.userIds || [],
       };
 
       if (!payload.startDate || !payload.plannedEndDate) {
-        throw new Error("Ngày bắt đầu hoặc ngày kết thúc không hợp lệ.");
+        throw new Error("Invalid start or end date.");
       }
-      // Optional: Validate userIds if it's mandatory
-      // if (!payload.userIds || payload.userIds.length === 0) {
-      //   throw new Error("Please assign at least one user to the project.");
-      // }
 
       await createProjectApi(payload);
       onSuccess();
-      message.success("Tạo dự án thành công!");
+      message.success("Project created successfully!");
     } catch (err: any) {
       console.error("Add project error:", err);
-      message.error(`Tạo dự án thất bại: ${err.message || "Lỗi không xác định"}`);
+      message.error(
+        `Failed to create project: ${err.message || "Unknown error"}`
+      );
     } finally {
       setSubmitting(false);
     }

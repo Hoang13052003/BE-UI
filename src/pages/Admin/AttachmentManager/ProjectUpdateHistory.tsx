@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom"; // Thêm Link
-import { Card, List, Typography, Spin, Alert, Button } from "antd"; // Sử dụng Ant Design components
-import attachmentApi from "../../../api/attachmentApi"; // Đường dẫn tới API service của bạn
-import { ProjectUpdateSummaryDto } from "../../../types/Attachment"; // Đường dẫn tới DTO types của bạn
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Card, List, Typography, Spin, Alert, Button } from "antd";
+import attachmentApi from "../../../api/attachmentApi";
+import { ProjectUpdateSummaryDto } from "../../../types/Attachment";
 
 const { Title, Text } = Typography;
 
-// Hàm helper để định dạng ngày (ví dụ)
 const formatDateOnly = (dateString: string | null): string => {
   if (!dateString) return "";
   try {
-    // Giả sử dateString là "YYYY-MM-DD"
-    const date = new Date(dateString + "T00:00:00"); // Thêm T00:00:00 để tránh vấn đề múi giờ khi chỉ có ngày
+    const date = new Date(dateString + "T00:00:00");
     return date.toLocaleDateString(undefined, {
       year: "numeric",
       month: "long",
@@ -31,7 +29,7 @@ const ProjectUpdateHistory: React.FC = () => {
   const [history, setHistory] = useState<ProjectUpdateSummaryDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [projectName, _setProjectName] = useState<string>(""); // Để lưu tên project nếu cần
+  const [projectName, _setProjectName] = useState<string>("");
 
   useEffect(() => {
     if (!projectId || isNaN(projectId)) {
@@ -44,10 +42,6 @@ const ProjectUpdateHistory: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Optional: Fetch project details để lấy tên project nếu cần hiển thị
-        // const projectDetails = await projectApi.getProjectById(projectId);
-        // setProjectName(projectDetails.name);
-
         const historyData = await attachmentApi.getProjectUpdateHistory(
           projectId
         );
@@ -69,8 +63,6 @@ const ProjectUpdateHistory: React.FC = () => {
 
   const handleGoBackToExplorer = () => {
     if (projectId) {
-      // Điều hướng trở lại Component A (ProjectFileExplorer)
-      // Giả sử route của ProjectFileExplorer là /admin/attachment-display/:projectId
       navigate(`/admin/attachment-display/${projectId}`);
     }
   };
@@ -132,7 +124,6 @@ const ProjectUpdateHistory: React.FC = () => {
           renderItem={(item: ProjectUpdateSummaryDto) => (
             <List.Item
               actions={[
-                // Link điều hướng đến Component C (ProjectSnapshotViewer)
                 <Link
                   to={`/admin/projects/${projectId}/updates/${item.id}/snapshot`}
                   key={`view-snapshot-${item.id}`}

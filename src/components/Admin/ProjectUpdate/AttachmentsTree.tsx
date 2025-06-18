@@ -110,15 +110,14 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
   projectName,
 }) => {
   const [treeData, setTreeData] = useState<DataNode[]>([]);
-  const [loadingKeys, setLoadingKeys] = useState<React.Key[]>([]); // Các key đang load
+  const [loadingKeys, setLoadingKeys] = useState<React.Key[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
 
-  // Load root level khi projectId thay đổi
   useEffect(() => {
     if (projectId) {
       const fetchRootNodes = async () => {
-        setLoadingKeys(["root-loading"]); // Key giả cho trạng thái loading ban đầu
-        setTreeData([]); // Xóa cây cũ
+        setLoadingKeys(["root-loading"]);
+        setTreeData([]);
         setExpandedKeys([]);
         try {
           const rootApiNodes = await attachmentApi.getCurrentProjectTreeRoot(
@@ -155,7 +154,7 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
       setTreeData([]);
       setExpandedKeys([]);
     }
-  }, [projectId, projectName]); // Chỉ chạy khi projectId, projectName thay đổi
+  }, [projectId, projectName]);
 
   const onLoadData = useCallback(
     (node: DataNode): Promise<void> => {
@@ -163,14 +162,12 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
 
       return new Promise(async (resolve) => {
         if (children || loaded || isLeaf || !projectId) {
-          // Đã có con, hoặc đã load, hoặc là file, hoặc không có projectId
           resolve();
           return;
         }
 
         setLoadingKeys((prev) => [...prev, nodePath]);
         try {
-          // nodePath ở đây chính là 'requestedPath' cho API
           const childrenApiNodes =
             await attachmentApi.getCurrentProjectTreeByPath(
               projectId,
@@ -181,7 +178,6 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
           setTreeData((origin) =>
             updateTreeDataRecursive(origin, nodePath, childrenDataNodes)
           );
-          // Tự động mở rộng node vừa được load
           setExpandedKeys((prevKeys) =>
             prevKeys.includes(nodePath) ? prevKeys : [...prevKeys, nodePath]
           );
@@ -191,7 +187,6 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
             error.response?.data?.error ||
               `Failed to load content for ${node.title}.`
           );
-          // Cập nhật node với thông báo lỗi
           const errorNodeChild: DataNode[] = [
             {
               title: "Error loading content",
@@ -210,7 +205,7 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
       });
     },
     [projectId]
-  ); // Dependency
+  );
 
   const handleFileView = async (attachmentNode: DataNode) => {
     if (!attachmentNode.apiData || !attachmentNode.apiData.attachmentId) return;
@@ -248,14 +243,12 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
     if (clickedNode.isLeaf && clickedNode.apiData?.attachmentId) {
       handleFileView(clickedNode);
     }
-    // Nếu click vào thư mục, nó sẽ tự expand (do loadData) hoặc collapse
   };
 
   const onTreeExpand = (newExpandedKeys: React.Key[]) => {
     setExpandedKeys(newExpandedKeys);
   };
 
-  // Function để render title với icon loading
   const renderTitle = (node: DataNode) => {
     if (loadingKeys.includes(node.key) && !node.loaded) {
       return (
@@ -272,11 +265,10 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
     );
   };
 
-  // Áp dụng renderTitle cho treeData
   const processedTreeData = (data: DataNode[]): any[] => {
     return data.map((node) => ({
       ...node,
-      title: renderTitle(node), // Sử dụng hàm renderTitle
+      title: renderTitle(node),
       children: node.children ? processedTreeData(node.children) : undefined,
     }));
   };
@@ -303,10 +295,9 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
     <Card title={`Project Files ${projectName ? `- ${projectName}` : ""}`}>
       {treeData.length > 0 ? (
         <Tree
-          loadData={onLoadData as any} // Antd Tree mong đợi (node: EventDataNode) => Promise<void>
-          treeData={processedTreeData(treeData)} // Sử dụng treeData đã xử lý title
+          loadData={onLoadData as any}
+          treeData={processedTreeData(treeData)}
           onSelect={handleSelect}
-          // showIcon // Không cần showIcon nếu title đã bao gồm icon
           expandedKeys={expandedKeys}
           onExpand={onTreeExpand}
         />

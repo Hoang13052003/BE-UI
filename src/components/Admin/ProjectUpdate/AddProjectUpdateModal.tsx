@@ -54,15 +54,12 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
-  // Thêm state lưu folder items
   const [folderItemsToUpload, setFolderItemsToUpload] = useState<
     FolderFileItem[]
   >([]);
 
-  // Sử dụng hook upload
   const { isUploading, uploadFilesIndividually, uploadFolderContents } =
     useAttachmentUpload();
-  // Fetch status options when modal opens
   useEffect(() => {
     if (visible) {
       const fetchStatuses = async () => {
@@ -76,14 +73,12 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
       };
 
       fetchStatuses();
-      // Reset form when modal opens instead of when it closes
       form.resetFields();
       setFileList([]);
       setFolderItemsToUpload([]);
     }
   }, [visible, form]);
 
-  // Hàm xử lý khi người dùng chọn thư mục bằng input webkitdirectory
   const handleNativeFolderSelection = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -92,7 +87,6 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
       const items: FolderFileItem[] = [];
       let rootDirName = "";
 
-      // Cố gắng xác định tên thư mục gốc từ file đầu tiên
       if (
         filesFromInput.length > 0 &&
         (filesFromInput[0] as any).webkitRelativePath
@@ -106,11 +100,9 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
       for (const file of filesFromInput) {
         let relativePath = (file as any).webkitRelativePath || file.name;
 
-        // Loại bỏ tên thư mục gốc khỏi relativePath nếu có
         if (rootDirName && relativePath.startsWith(rootDirName + "/")) {
           relativePath = relativePath.substring(rootDirName.length + 1);
         }
-        // Nếu sau khi loại bỏ, path rỗng (file nằm ngay thư mục gốc đã chọn), thì dùng tên file
         if (!relativePath) {
           relativePath = file.name;
         }
@@ -121,12 +113,11 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
         });
       }
       setFolderItemsToUpload(items);
-      setFileList([]); // Xóa fileList của Dragger nếu chọn folder
+      setFileList([]);
       message.info(`${items.length} files selected from folder.`);
     }
   };
 
-  // Handle form submission
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -143,7 +134,6 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
         internalNotes: values.internalNotes,
       };
 
-      // 1. Tạo ProjectUpdate trước
       const createdUpdate = await createProjectUpdateApi(updateData);
       const projectUpdateId = createdUpdate.id;
 
@@ -151,7 +141,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
         throw new Error("Failed to get ID from created project update.");
       }
 
-      // Ưu tiên upload folder nếu có
+      // Prioritize folder upload if available
       if (folderItemsToUpload.length > 0) {
         const folderUploadResult = await uploadFolderContents(
           projectUpdateId,

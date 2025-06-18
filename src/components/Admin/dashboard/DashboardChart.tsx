@@ -37,8 +37,8 @@ const DashboardChart: React.FC<DashboardChartProps> = ({ data, labels }) => {
                 "#FFADAD", // Pastel Red
               ],
               borderWidth: 2,
-              borderRadius: 16, // Bo góc
-              hoverOffset: 16, // Hiệu ứng nổi bật khi hover
+              borderRadius: 16,
+              hoverOffset: 16,
             },
           ],
         },

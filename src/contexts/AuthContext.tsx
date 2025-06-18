@@ -87,6 +87,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setRefreshToken(null);
     setUserDetails(null);
     setUserRole(null);
+    // Clear local storage
+    localStorage.removeItem("selectedKey");
 
     // Disconnect from WebSocket when logging out
     notificationService.disconnect();

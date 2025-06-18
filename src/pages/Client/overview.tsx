@@ -62,16 +62,13 @@ const Overview: React.FC = () => {
   const calculateSummaryStats = (projectList: Project[]): SummaryCardProps => {
     const stats = projectList.reduce(
       (acc, project) => {
-        // Tổng số projects
         acc.totalProjects += 1;
 
-        // Tổng milestones và completed milestones
         if (project.milestoneCount) {
           acc.totalMilestones += project.milestoneCount;
           acc.completedMilestones += project.totalMilestoneCompleted || 0;
         }
 
-        // Tổng giờ thực tế và dự kiến
         if (project.totalActualHours) {
           acc.totalActualHours += project.totalActualHours;
         }
@@ -104,7 +101,6 @@ const Overview: React.FC = () => {
       const data = await getProjectByUserIdApi(userDetails.id);
       const projectList = Array.isArray(data) ? data : [];
 
-      // Cập nhật projects và tính toán thống kê
       setProjects(projectList);
       const stats = calculateSummaryStats(projectList);
       setSummaryStats(stats);
@@ -136,7 +132,6 @@ const Overview: React.FC = () => {
     }
   };
 
-  // Grid View Component
   const GridView = () => (
     <Row gutter={[16, 16]}>
       {projects.map((project) => (
@@ -231,7 +226,7 @@ const Overview: React.FC = () => {
                 <Progress
                   strokeLinecap="butt"
                   type="dashboard"
-                  percent={project.progress}
+                  percent={project.overallProcess}
                 />
               </Space>
             }

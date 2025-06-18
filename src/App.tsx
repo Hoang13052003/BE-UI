@@ -24,7 +24,6 @@ import Messages from "./pages/Client/Messages";
 import PageSettings from "./pages/Client/PageSettings";
 import OverviewAdmin from "./pages/Admin/Overview";
 import Overview from "./pages/Client/overview";
-import ProjectProgressPage from "./pages/Admin/ProjectsUpdate/ProjectUpdatePage";
 import ProjectUpdateDetailsPage from "./pages/Admin/ProjectsUpdate/ProjectUpdateDetailsPage";
 
 import AttachmentDisplay from "./pages/Admin/AttachmentManager/AttachmentDisplay";
@@ -43,15 +42,15 @@ import AuthLogMonitor from "./pages/Admin/AuditLogDashboard/AuthLogMonitor";
 import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientPage";
 import LandingPage from "./pages/LandingPage";
 import AlertContainer from "./components/AlertContainer";
+import ProjectProgressList from "./pages/Admin/ProjectsUpdate/ProjectProgressList";
 
-// Component to handle auth logout events
 const AuthEventHandler: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleAuthLogout = () => {
       console.warn("Auth logout event received, redirecting to login");
-      navigate("/login");
+      navigate("/login", { replace: true });
     };
 
     window.addEventListener("auth:logout", handleAuthLogout);
@@ -100,8 +99,8 @@ function App() {
                       <Route path="updates" element={<ProjectManager />} />
                       <Route
                         path="project-progress"
-                        element={<ProjectProgressPage />}
-                      />{" "}
+                        element={<ProjectProgressList />}
+                      />
                       <Route
                         path="project-updates/:id"
                         element={<ProjectUpdateDetailsPage />}
