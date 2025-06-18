@@ -43,6 +43,7 @@ import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientP
 import LandingPage from "./pages/LandingPage";
 import AlertContainer from "./components/AlertContainer";
 import ProjectProgressList from "./pages/Admin/ProjectsUpdate/ProjectProgressList";
+import Error404 from "./pages/Error404";
 
 const AuthEventHandler: React.FC = () => {
   const navigate = useNavigate();
@@ -161,10 +162,12 @@ function App() {
                       <Route
                         path="projects/:projectId/details"
                         element={<ProjectDetailPage />}
-                      />
-                    </Route>
+                      />                    </Route>
                   </Route>
                 </Route>
+
+                {/* Catch-all route for 404 */}
+                <Route path="*" element={<Error404 />} />
               </Routes>
             </Router>
           </NotificationProvider>
