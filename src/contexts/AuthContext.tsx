@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     message.info("You have been logged out.");
   };
 
-  // Hàm cập nhật user details (tùy chọn)
+  // Optional: update user details
   const updateUserDetails = (details: UserDetails) => {
     setUserDetails(details);
   };

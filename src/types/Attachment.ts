@@ -1,5 +1,3 @@
-// src/types/dto.ts
-
 export interface TreeNodeDto {
   name: string;
   path: string;

@@ -47,7 +47,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
   const { addAlert } = useAlert();
   const { isUploading, uploadFilesIndividually } = useAttachmentUpload();
 
-  // Initialize form when modal opens
   useEffect(() => {
     if (visible) {
       form.setFieldsValue({
@@ -55,9 +54,8 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
         message: "",
       });
     } else {
-      // Reset form when modal closes
       form.resetFields();
-      setFileList([]); // Clear file list when modal closes
+      setFileList([]);
     }
   }, [visible, form, updateData]);
 
@@ -76,7 +74,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
     setFileList(newFileList);
   };
 
-  // Handle form submission
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -100,7 +97,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
         UpdateStatusEnum.FEEDBACK
       );
 
-      // Upload attachments if any
       if (fileList.length > 0) {
         const uploadResult = await uploadFilesIndividually(
           Number(feedbackResponse.updateId),
@@ -130,7 +126,7 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
 
       addAlert("Feedback sent successfully!", "success");
       form.resetFields();
-      setFileList([]); // Clear file list after success
+      setFileList([]);
       onSuccess();
     } catch (error) {
       console.error("Failed to send feedback:", error);
@@ -140,7 +136,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
     }
   };
 
-  // Handle cancel
   const handleCancel = () => {
     form.resetFields();
     onClose();
@@ -180,7 +175,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
       </div>
 
       <Form form={form} layout="vertical" requiredMark={false}>
-        {/* Project Selection - only show if projectId is not pre-selected */}
         {!updateData.projectId && (
           <Form.Item
             name="projectId"
@@ -194,7 +188,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
           ></Form.Item>
         )}
 
-        {/* Feedback Message */}
         <Form.Item
           name="message"
           label="Your Feedback"
@@ -221,7 +214,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
           />
         </Form.Item>
 
-        {/* File Attachments */}
         <Divider />
         <Form.Item label="Attachments (Optional)">
           <Dragger

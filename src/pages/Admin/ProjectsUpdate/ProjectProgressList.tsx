@@ -41,6 +41,7 @@ import AddProjectUpdateModal from "../../../components/Admin/ProjectUpdate/AddPr
 import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
 import dayjs from "dayjs";
 import { Project, ApiPage } from "../../../types/project";
+import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -105,6 +106,9 @@ const ProjectProgressList: React.FC = () => {
     pageSize: 10,
     total: 0,
   });
+
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   // Fetch project updates
   const fetchUpdates = useCallback(async () => {
@@ -374,6 +378,111 @@ const ProjectProgressList: React.FC = () => {
     },
   ];
 
+  // Mobile Card View
+  const renderMobileList = () => (
+    <Space direction="vertical" size={16} style={{ width: "100%" }}>
+      {(updatesPage?.content || []).map((item) => (
+        <Card
+          key={item.id}
+          style={{ borderRadius: 10, boxShadow: "0 2px 8px #f0f1f2" }}
+          bodyStyle={{ padding: 16 }}
+          onClick={() => navigate(`/admin/project-updates/${item.id}`)}
+        >
+          <Space direction="vertical" style={{ width: "100%" }} size={8}>
+            <Space style={{ justifyContent: "space-between", width: "100%" }}>
+              <Text strong>{item.projectName}</Text>
+              <Tag color={getTypeColor(item.projectType)}>
+                {item.projectType}
+              </Tag>
+            </Space>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {item.summary}
+            </Text>
+            <Row gutter={8}>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Date
+                </Text>
+                <div>{dayjs(item.updateDate).format("YYYY-MM-DD")}</div>
+              </Col>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Status
+                </Text>
+                <Tag
+                  color={getStatusColor(item.statusAtUpdate)}
+                  icon={getStatusIcon(item.statusAtUpdate)}
+                >
+                  {item.statusAtUpdate.replace(/_/g, " ")}
+                </Tag>
+              </Col>
+            </Row>
+            <Row gutter={8}>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Overall
+                </Text>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div
+                    style={{
+                      width: 50,
+                      height: 8,
+                      background: "#f0f0f0",
+                      borderRadius: 4,
+                      marginRight: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${item.overallProcess ?? 0}%`,
+                        height: "100%",
+                        background:
+                          (item.overallProcess ?? 0) >= 100
+                            ? "#52c41a"
+                            : "#1890ff",
+                        borderRadius: 4,
+                      }}
+                    />
+                  </div>
+                  <Text>{item.overallProcess ?? 0}%</Text>
+                </div>
+              </Col>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Actual
+                </Text>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div
+                    style={{
+                      width: 50,
+                      height: 8,
+                      background: "#f0f0f0",
+                      borderRadius: 4,
+                      marginRight: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${item.actualProcess ?? 0}%`,
+                        height: "100%",
+                        background:
+                          (item.actualProcess ?? 0) >= 100
+                            ? "#52c41a"
+                            : "#1890ff",
+                        borderRadius: 4,
+                      }}
+                    />
+                  </div>
+                  <Text>{item.actualProcess ?? 0}%</Text>
+                </div>
+              </Col>
+            </Row>
+          </Space>
+        </Card>
+      ))}
+    </Space>
+  );
+
   // Reset filters
   const handleResetFilters = () => {
     setSelectedProject(null);
@@ -487,22 +596,26 @@ const ProjectProgressList: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Updates Table */}
-      <Table
-        columns={columns}
-        dataSource={updatesPage?.content || []}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: tablePagination.current,
-          pageSize: tablePagination.pageSize,
-          total: tablePagination.total,
-          showSizeChanger: true,
-          showTotal: (total) => `Total ${total} updates`,
-          pageSizeOptions: ["5", "10", "20", "50"],
-        }}
-        onChange={handleTableChange}
-      />
+      {/* Updates Table or Mobile List */}
+      {isMobile ? (
+        renderMobileList()
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={updatesPage?.content || []}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: tablePagination.current,
+            pageSize: tablePagination.pageSize,
+            total: tablePagination.total,
+            showSizeChanger: true,
+            showTotal: (total) => `Total ${total} updates`,
+            pageSizeOptions: ["5", "10", "20", "50"],
+          }}
+          onChange={handleTableChange}
+        />
+      )}
 
       {/* Add Update Modal */}
       <AddProjectUpdateModal

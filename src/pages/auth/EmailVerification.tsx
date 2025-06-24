@@ -31,7 +31,7 @@ const EmailVerification: React.FC = () => {
     if (!token) {
       setVerificationState({
         status: "error",
-        message: "Token xác thực không hợp lệ",
+        message: "Invalid verification token",
       });
       return;
     }

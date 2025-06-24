@@ -351,7 +351,7 @@ const MyFeedbacks: React.FC = () => {
         <Col xs={24} sm={8}>
           <DatePicker
             style={{ width: "100%" }}
-            placeholder="Chọn ngày lọc"
+            placeholder="Select filter date"
             allowClear
             onChange={(date) => {
               if (date) {

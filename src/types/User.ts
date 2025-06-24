@@ -39,7 +39,6 @@ export interface UpdateUserPayload {
   fullName?: string;
   note?: string;
   role?: "ADMIN" | "USER";
-  // projects?: ProjectName[];
 }
 
 export interface UserIdAndEmailResponse {

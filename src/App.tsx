@@ -20,7 +20,7 @@ import UserManagement from "./pages/Admin/UserManagement";
 import ProjectManager from "./pages/Admin/ProjectManager";
 import Notifications from "./pages/Admin/Notifications";
 import DocumentsPage from "./pages/Client/DocumentsPage";
-import Messages from "./pages/Client/Messages";
+import Messages from "./pages/Client/Messages/Messages";
 import PageSettings from "./pages/Client/PageSettings";
 import OverviewAdmin from "./pages/Admin/Overview";
 import Overview from "./pages/Client/overview";

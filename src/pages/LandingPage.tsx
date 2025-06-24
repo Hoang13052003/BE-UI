@@ -276,6 +276,7 @@ const cardHover = {
 
 const LandingPage: React.FC = () => {
   const navigator = useNavigate();
+  const isMobile = window.innerWidth <= 600;
 
   return (
     <div style={{ overflowX: "hidden" }}>
@@ -288,7 +289,7 @@ const LandingPage: React.FC = () => {
             variants={fadeInUp}
             style={{
               background: "linear-gradient(135deg, #667EEA 0%, #764BA2 100%)",
-              padding: "100px 0 60px 0",
+              padding: isMobile ? "48px 0 32px 0" : "100px 0 60px 0",
               textAlign: "center",
             }}
           >
@@ -296,7 +297,7 @@ const LandingPage: React.FC = () => {
               style={{
                 color: "#fff",
                 fontWeight: 700,
-                fontSize: 44,
+                fontSize: isMobile ? 28 : 44,
                 marginBottom: 16,
                 lineHeight: 1.2,
               }}
@@ -306,7 +307,11 @@ const LandingPage: React.FC = () => {
               Made Simple
             </Title>
             <Paragraph
-              style={{ color: "#E2E8F0", fontSize: 18, marginBottom: 32 }}
+              style={{
+                color: "#E2E8F0",
+                fontSize: isMobile ? 15 : 18,
+                marginBottom: 32,
+              }}
             >
               Smart project management solution that keeps clients and teams
               updated with real-time progress tracking and automated reporting
@@ -314,16 +319,17 @@ const LandingPage: React.FC = () => {
             <motion.div whileHover={{ scale: 1.05 }}>
               <Button
                 type="primary"
-                size="large"
+                size={isMobile ? "middle" : "large"}
                 style={{
                   borderRadius: 8,
                   fontWeight: 600,
-                  height: 48,
-                  padding: "0 32px",
+                  height: isMobile ? 40 : 48,
+                  padding: isMobile ? "0 18px" : "0 32px",
                   background: "#fff",
                   color: "#3B82F6",
                   border: "none",
                   marginBottom: 32,
+                  fontSize: isMobile ? 15 : 18,
                 }}
                 onClick={() => {
                   navigator("/login");
@@ -339,12 +345,12 @@ const LandingPage: React.FC = () => {
                 margin: "0 auto",
                 marginTop: 24,
                 width: "100%",
-                maxWidth: 900,
+                maxWidth: isMobile ? 360 : 900,
                 background: "linear-gradient(180deg, #fff 80%, #f8fafc 100%)",
                 borderRadius: 16,
                 boxShadow: "0px 20px 60px 0px rgba(0,0,0,0.13)",
-                padding: 24,
-                display: "flex",
+                padding: isMobile ? 10 : 24,
+                display: isMobile ? "block" : "flex",
                 gap: 16,
                 justifyContent: "space-between",
                 alignItems: "flex-start",
@@ -352,7 +358,13 @@ const LandingPage: React.FC = () => {
               }}
             >
               {/* Left: Project Cards */}
-              <div style={{ flex: 1, minWidth: 260 }}>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: isMobile ? 0 : 260,
+                  marginBottom: isMobile ? 24 : 0,
+                }}
+              >
                 <div
                   style={{
                     fontWeight: 600,
@@ -520,7 +532,7 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
               {/* Right: Timeline */}
-              <div style={{ flex: 2, minWidth: 340 }}>
+              <div style={{ flex: 2, minWidth: isMobile ? 0 : 340 }}>
                 <div
                   style={{
                     fontWeight: 600,
@@ -700,14 +712,17 @@ const LandingPage: React.FC = () => {
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeInUp}
-            style={{ background: "#fff", padding: "100px 0" }}
+            style={{
+              background: "#fff",
+              padding: isMobile ? "48px 0" : "100px 0",
+            }}
           >
             <Title
               level={2}
               style={{
                 color: "#111827",
                 fontWeight: 700,
-                fontSize: 32,
+                fontSize: isMobile ? 22 : 32,
                 textAlign: "center",
                 marginBottom: 8,
               }}
@@ -717,9 +732,9 @@ const LandingPage: React.FC = () => {
             <Paragraph
               style={{
                 color: "#64748B",
-                fontSize: 18,
+                fontSize: isMobile ? 15 : 18,
                 textAlign: "center",
-                marginBottom: 48,
+                marginBottom: 32,
               }}
             >
               From progress tracking to document management, we've got you
@@ -727,8 +742,8 @@ const LandingPage: React.FC = () => {
             </Paragraph>
             <Row
               justify="center"
-              style={{ padding: "0 150px" }}
-              gutter={[32, 32]}
+              style={{ padding: isMobile ? "0 8px" : "0 150px" }}
+              gutter={[isMobile ? 12 : 32, isMobile ? 12 : 32]}
             >
               {features.map((f, idx) => (
                 <Col
@@ -749,11 +764,12 @@ const LandingPage: React.FC = () => {
                       style={{
                         borderRadius: 16,
                         boxShadow: "rgba(0, 0, 0, 0.1) 0px 4px 12px",
-                        padding: 32,
-                        minHeight: 260,
+                        padding: isMobile ? 16 : 32,
+                        minHeight: isMobile ? 180 : 260,
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
+                        width: isMobile ? "100%" : 320,
                       }}
                     >
                       {f.icon}
@@ -763,6 +779,7 @@ const LandingPage: React.FC = () => {
                           marginTop: 24,
                           fontWeight: 600,
                           textAlign: "center",
+                          fontSize: isMobile ? 16 : 20,
                         }}
                       >
                         {f.title}
@@ -770,7 +787,7 @@ const LandingPage: React.FC = () => {
                       <Paragraph
                         style={{
                           color: "#64748B",
-                          fontSize: 16,
+                          fontSize: isMobile ? 13 : 16,
                           textAlign: "center",
                         }}
                       >

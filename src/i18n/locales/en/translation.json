@@ -425,6 +425,8 @@
       "inProgress": "In Progress",
       "closed": "Closed"
     }
+  },
+  "messages":{
+    "fetchProjectsError": "Failed to load projects"
   }
-  
 }

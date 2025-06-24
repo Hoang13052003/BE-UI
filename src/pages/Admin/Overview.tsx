@@ -70,7 +70,7 @@ const Overview: React.FC = () => {
   return (
     <div className="dashboard-container">
       <Row gutter={[16, 16]} className="mb-4">
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="Total Projects"
@@ -83,7 +83,7 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="On Track"
@@ -94,7 +94,7 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="Delayed"
@@ -104,7 +104,7 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="At Risk"
@@ -118,12 +118,12 @@ const Overview: React.FC = () => {
 
       {/* Project Progress & Recent Feedback */}
       <Row gutter={[16, 16]} className="mb-4">
-        <Col span={16}>
+        <Col xs={24} lg={16} className="mb-3 mb-lg-0">
           <Card
             loading={loading}
             title="Project Progress"
             extra={
-              <Space>
+              <Space wrap>
                 <Button
                   type={selectedRange === "week" ? "primary" : "text"}
                   onClick={() => setSelectedRange("week")}
@@ -180,12 +180,11 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} lg={8}>
           <RecentFeedback limit={5} useMockData={false} />
         </Col>
       </Row>
 
-      {/* Milestones Table */}
       <Card title="Projects" className="mb-4">
         <ProjectList />
       </Card>
