@@ -35,6 +35,7 @@ import { Milestone, MilestoneStatus } from "../../../types/milestone";
 import { ApiPage } from "../../../types/project";
 import { getProjectMilestonesOverviewApi } from "../../../api/projectApi";
 import dayjs from "dayjs";
+import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
 
 const { Text, Title } = Typography;
 const { Search } = Input;
@@ -96,6 +97,9 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
   );
   const [currentWeekFilter, setCurrentWeekFilter] = useState<boolean>(true);
   const [uiPagination, setUiPagination] = useState({ current: 1, pageSize: 6 });
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const fetchMilestones = useCallback(
     async (pageToFetch: number, currentSize: number) => {
       if (!projectId || projectId <= 0) {
@@ -231,8 +235,9 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
     <Row
       gutter={[16, 16]}
       style={{
-        height: "500px",
-        overflowY: "auto",
+        height: isMobile ? "auto" : "500px",
+        overflowY: isMobile ? undefined : "auto",
+        paddingBottom: isMobile ? "20px" : undefined,
       }}
     >
       {paginatedMilestones?.map((milestone) => (
@@ -411,8 +416,9 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
       itemLayout="horizontal"
       dataSource={paginatedMilestones}
       style={{
-        height: "500px",
-        overflowY: "auto",
+        height: isMobile ? "auto" : "500px",
+        overflowY: isMobile ? undefined : "auto",
+        paddingBottom: isMobile ? "20px" : undefined,
       }}
       renderItem={(milestone) => (
         <List.Item
@@ -579,7 +585,7 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
         padding: "20px",
         borderRadius: "8px",
         boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
-        height: "800px",
+        height: isMobile ? "auto" : "800px",
       }}
     >
       <div style={{ marginBottom: 24 }}>

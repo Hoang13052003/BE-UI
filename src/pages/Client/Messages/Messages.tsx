@@ -24,7 +24,6 @@ import {
   PaperClipOutlined,
   MoreOutlined,
   SendOutlined,
-  InfoCircleOutlined,
   UserOutlined,
   TeamOutlined,
   ProjectOutlined,
@@ -33,24 +32,22 @@ import {
   DisconnectOutlined,
   MessageOutlined,
   DeleteOutlined,
-  FilePdfOutlined,
-  FileWordOutlined,
-  FileExcelOutlined,
-  FilePptOutlined,
 } from "@ant-design/icons";
-import { useChat } from "../../contexts/ChatContext";
-import { useAuth } from "../../contexts/AuthContext";
+import { useChat } from "../../../contexts/ChatContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import {
   ChatRoomResponse,
   createGroupChatRoom,
   ChatMessageRequest,
   ChatMessageType,
   ChatRoomType,
-} from "../../api/chatApi";
-import { useDebouncedCallback } from "use-debounce"; // Thêm import này
-import { useAttachmentUpload } from "../../hooks/useAttachmentUpload";
+} from "../../../api/chatApi";
+import { useDebouncedCallback } from "use-debounce";
+import { useAttachmentUpload } from "../../../hooks/useAttachmentUpload";
+import MessageList from "./components/MessageList";
+import TypingIndicator from "./components/TypingIndicator";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { Search } = Input;
 
 import type {
@@ -58,7 +55,6 @@ import type {
   UploadFileStatus,
   RcFile,
 } from "antd/es/upload/interface";
-// Component hiển thị dấu ba chấm động
 const TypingDots: React.FC = () => (
   <span className="typing-dots" style={{ marginLeft: "4px" }}>
     <span>.</span>
@@ -67,8 +63,8 @@ const TypingDots: React.FC = () => (
     <style>{`
       .typing-dots span {
         animation: blink 1.4s infinite both;
-        font-size: 20px; /* Điều chỉnh kích thước nếu cần */
-        line-height: 1; /* Căn chỉnh chiều cao */
+        font-size: 20px;
+        line-height: 1;
       }
       .typing-dots span:nth-child(2) {
         animation-delay: 0.2s;
@@ -91,7 +87,6 @@ const Messages: React.FC = () => {
     messages,
     chatRooms,
     activeChatRoom,
-    unreadCount,
     onlineUsers,
     isConnected,
     loading,
@@ -101,6 +96,7 @@ const Messages: React.FC = () => {
     refreshChatRooms,
     typingUsers,
     sendTypingActivity,
+    loadChatHistory,
   } = useChat();
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -115,6 +111,7 @@ const Messages: React.FC = () => {
   >([]);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesAreaRef = useRef<HTMLDivElement | null>(null);
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const { isUploading, uploadFilesIndividually } = useAttachmentUpload();
@@ -136,7 +133,6 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Filter chat rooms based on search term
   useEffect(() => {
     if (!searchTerm) {
       setFilteredChatRooms(chatRooms);
@@ -152,24 +148,23 @@ const Messages: React.FC = () => {
     }
   }, [chatRooms, searchTerm]);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messagesAreaRef.current && visibleMessages.length > 0) {
+      const area = messagesAreaRef.current;
+      area.scrollTop = area.scrollHeight;
+    }
+  }, [activeChatRoom]);
 
-  // Load chat rooms on component mount
   useEffect(() => {
     refreshChatRooms();
   }, [refreshChatRooms]);
 
-  // Mark messages as read when they become visible
   useEffect(() => {
     if (activeChatRoom && messages.length > 0) {
       const unreadMessages = messages.filter(
         (msg) =>
           !msg.isRead &&
           msg.senderId !== userDetails?.id &&
-          // Thêm điều kiện kiểm tra message thuộc active room
           (msg.receiverId === userDetails?.id ||
             msg.topic === activeChatRoom.roomName ||
             msg.projectId === activeChatRoom.projectId)
@@ -184,7 +179,6 @@ const Messages: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Handle sending message
   const handleSendMessage = async () => {
     if ((!messageInput.trim() && fileList.length === 0) || !activeChatRoom)
       return;
@@ -245,11 +239,10 @@ const Messages: React.FC = () => {
       scrollToBottom();
     } catch (error) {
       console.error("Failed to send message:", error);
-      antdMessage.error("Gửi tin nhắn thất bại");
+      antdMessage.error("Sending message failed");
     }
   };
 
-  // Handle Enter key for sending message
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -257,10 +250,9 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Handle creating new chat room
   const handleCreateRoom = async () => {
     if (!newRoomName.trim() || selectedParticipants.length === 0) {
-      antdMessage.error("Vui lòng nhập tên phòng và chọn người tham gia");
+      antdMessage.error("Please enter a room name and select participants");
       return;
     }
     try {
@@ -273,14 +265,13 @@ const Messages: React.FC = () => {
       setNewRoomName("");
       setSelectedParticipants([]);
       refreshChatRooms();
-      antdMessage.success("Tạo phòng chat thành công");
+      antdMessage.success("Chat room created successfully");
     } catch (error) {
       console.error("Failed to create chat room:", error);
-      antdMessage.error("Tạo phòng chat thất bại");
+      antdMessage.error("Failed to create chat room");
     }
   };
 
-  // Get chat room icon based on type
   const getChatRoomIcon = (room: ChatRoomResponse) => {
     switch (room.roomType) {
       case ChatRoomType.PRIVATE:
@@ -293,7 +284,6 @@ const Messages: React.FC = () => {
         return <UserOutlined />;
     }
   };
-  // Get message time display with better formatting
   const getMessageTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -310,7 +300,7 @@ const Messages: React.FC = () => {
       return `${hours}:${minutes}`;
     }
 
-    const day = date.getDay(); // 0 = CN, 1 = T2, ..., 6 = T7
+    const day = date.getDay();
     const dayStr = day === 0 ? "CN" : `T${day}`;
 
     return `${hours}:${minutes} ${dayStr}`;
@@ -332,13 +322,12 @@ const Messages: React.FC = () => {
       return `Today ${hours}:${minutes}`;
     }
 
-    const day = date.getDay(); // 0 = CN, 1 = T2, ..., 6 = T7
+    const day = date.getDay();
     const dayStr = day === 0 ? "CN" : day.toString();
 
     return `${hours}:${minutes} T${dayStr}`;
   };
 
-  // Get participant display name
   const getParticipantNames = (room: ChatRoomResponse) => {
     if (room.roomType === ChatRoomType.PRIVATE) {
       const otherParticipant = room.participants.find(
@@ -350,46 +339,107 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Hàm render icon/preview cho file đính kèm
-  function renderFileIconPreview(fileName?: string, fileUrl?: string) {
-    const ext = (fileName || "").split(".").pop()?.toLowerCase();
-    const imageExts = ["jpg", "jpeg", "png", "gif", "bmp", "webp"];
-    if (ext && imageExts.includes(ext) && fileUrl) {
-      return (
-        <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-          <img
-            src={fileUrl}
-            alt={fileName}
-            style={{
-              width: 48,
-              height: 48,
-              objectFit: "cover",
-              borderRadius: 6,
-              border: "1px solid #ddd",
-              background: "#fff",
-            }}
-          />
-        </a>
-      );
+  const [visibleMessages, setVisibleMessages] = useState<any[]>([]);
+
+  const filteredMessages = messages.filter((message) => {
+    if (!activeChatRoom) return false;
+    switch (activeChatRoom.roomType) {
+      case ChatRoomType.PRIVATE:
+        const otherUserId = activeChatRoom.participants.find(
+          (p) => p.userId !== userDetails?.id
+        )?.userId;
+        return (
+          (message.senderId === userDetails?.id &&
+            message.receiverId === otherUserId) ||
+          (message.receiverId === userDetails?.id &&
+            message.senderId === otherUserId)
+        );
+      case ChatRoomType.PROJECT_CHAT:
+        return message.projectId === activeChatRoom.projectId;
+      case ChatRoomType.GROUP:
+        return message.topic === activeChatRoom.roomName;
+      default:
+        return false;
     }
-    if (ext === "pdf") {
-      return <FilePdfOutlined style={{ fontSize: 32, color: "#e74c3c" }} />;
+  });
+
+  useEffect(() => {
+    setVisibleMessages(filteredMessages);
+  }, [activeChatRoom, messages]);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+  const previousScrollHeight = useRef(0);
+  const prevMessagesLength = useRef(0);
+
+  const scrollToPreservedPosition = () => {
+    const chatArea = messagesAreaRef.current;
+    if (!chatArea) return;
+    const scrollDiff = chatArea.scrollHeight - previousScrollHeight.current;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        chatArea.scrollTop = scrollDiff;
+      });
+    });
+  };
+
+  useEffect(() => {
+    if (!isFetchingHistory || currentPage === 0) return;
+    scrollToPreservedPosition();
+    const chatArea = messagesAreaRef.current;
+    if (chatArea) {
+      previousScrollHeight.current = chatArea.scrollHeight;
     }
-    if (["doc", "docx"].includes(ext || "")) {
-      return <FileWordOutlined style={{ fontSize: 32, color: "#2980b9" }} />;
+  }, [messages]);
+
+  useEffect(() => {
+    if (isFetchingHistory) return;
+    if (
+      currentPage === 0 &&
+      visibleMessages.length > prevMessagesLength.current
+    ) {
+      scrollToBottom();
     }
-    if (["xls", "xlsx"].includes(ext || "")) {
-      return <FileExcelOutlined style={{ fontSize: 32, color: "#27ae60" }} />;
-    }
-    if (["ppt", "pptx"].includes(ext || "")) {
-      return <FilePptOutlined style={{ fontSize: 32, color: "#e67e22" }} />;
-    }
-    return <FileOutlined style={{ fontSize: 32 }} />;
-  }
+    prevMessagesLength.current = visibleMessages.length;
+  }, [visibleMessages, isFetchingHistory, currentPage]);
+
+  const handleSelectChatRoom = (roomId: string) => {
+    setCurrentPage(0);
+    selectChatRoom(roomId, 0, 15);
+  };
+
+  useEffect(() => {
+    const chatArea = messagesAreaRef.current;
+    if (!chatArea) return;
+
+    const handleScroll = async () => {
+      if (
+        chatArea.scrollTop === 0 &&
+        !isFetchingHistory &&
+        activeChatRoom &&
+        visibleMessages.length > 0
+      ) {
+        previousScrollHeight.current = chatArea.scrollHeight;
+        setIsFetchingHistory(true);
+        const nextPage = currentPage + 1;
+        await loadChatHistory(activeChatRoom.id, nextPage);
+        setCurrentPage(nextPage);
+        setIsFetchingHistory(false);
+      }
+    };
+
+    chatArea.addEventListener("scroll", handleScroll);
+    return () => chatArea.removeEventListener("scroll", handleScroll);
+  }, [
+    activeChatRoom,
+    currentPage,
+    isFetchingHistory,
+    visibleMessages.length,
+    loadChatHistory,
+  ]);
 
   return (
     <>
-      {/* <ChatDebugComponent /> */}
       <Card
         style={{
           height: "100%",
@@ -399,7 +449,6 @@ const Messages: React.FC = () => {
         }}
       >
         <Row gutter={0}>
-          {/* Left Sidebar - Chat Rooms */}
           <Col
             span={6}
             style={{
@@ -421,7 +470,7 @@ const Messages: React.FC = () => {
               <Title level={4} style={{ margin: 0, fontWeight: "bold" }}>
                 Chat
                 {isConnected ? (
-                  <Tooltip title="Đã kết nối">
+                  <Tooltip title="Connected">
                     <WifiOutlined
                       style={{
                         color: "#52c41a",
@@ -431,7 +480,7 @@ const Messages: React.FC = () => {
                     />
                   </Tooltip>
                 ) : (
-                  <Tooltip title="Mất kết nối">
+                  <Tooltip title="Disconnected">
                     <DisconnectOutlined
                       style={{
                         color: "#ff4d4f",
@@ -453,37 +502,13 @@ const Messages: React.FC = () => {
 
             <div style={{ padding: "10px 15px" }}>
               <Search
-                placeholder="Tìm kiếm tin nhắn..."
+                placeholder="Search messages..."
                 prefix={<SearchOutlined style={{ color: "#8c8c8c" }} />}
                 style={{ marginBottom: 16, borderRadius: "20px" }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="chat-search-input"
               />
-
-              {/* Unread Count Summary */}
-              {unreadCount && unreadCount.totalUnreadCount > 0 && (
-                <div
-                  style={{
-                    marginBottom: 16,
-                    padding: "8px 12px",
-                    backgroundColor: "#E9F3FF",
-                    borderRadius: "10px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <Badge
-                    count={unreadCount.totalUnreadCount}
-                    style={{
-                      backgroundColor: "#0A7CFF",
-                      fontSize: "11px",
-                    }}
-                  />
-                  <Text style={{ fontWeight: 500 }}>Tin nhắn chưa đọc</Text>
-                </div>
-              )}
 
               <div
                 style={{
@@ -498,7 +523,6 @@ const Messages: React.FC = () => {
                   dataSource={filteredChatRooms}
                   renderItem={(room) => {
                     const isActive = activeChatRoom?.id === room.id;
-                    // Check if any participant is online
                     const hasOnlineParticipant = room.participants.some((p) =>
                       onlineUsers?.onlineUsers.some(
                         (u) => u.userId === p.userId.toString()
@@ -516,7 +540,7 @@ const Messages: React.FC = () => {
                           transition: "all 0.2s ease",
                           position: "relative",
                         }}
-                        onClick={() => selectChatRoom(room.id)}
+                        onClick={() => handleSelectChatRoom(room.id)}
                         className="chat-room-item"
                       >
                         <List.Item.Meta
@@ -619,7 +643,7 @@ const Messages: React.FC = () => {
                                   }}
                                 >
                                   {room.lastMessage?.content ||
-                                    "Chưa có tin nhắn"}
+                                    "No messages yet"}
                                 </Text>
                                 {room.unreadCount > 0 && (
                                   <Badge
@@ -647,7 +671,6 @@ const Messages: React.FC = () => {
             </div>
           </Col>
 
-          {/* Chat Area */}
           <Col span={18}>
             {activeChatRoom ? (
               <Card
@@ -668,7 +691,6 @@ const Messages: React.FC = () => {
                   },
                 }}
               >
-                {/* Header */}
                 <div
                   style={{
                     display: "flex",
@@ -694,7 +716,7 @@ const Messages: React.FC = () => {
                       </Title>
                       <div>
                         <Text type="secondary" style={{ fontSize: "13px" }}>
-                          {activeChatRoom.participants.length} thành viên
+                          {activeChatRoom.participants.length} members
                           {activeChatRoom.roomType !== ChatRoomType.PRIVATE &&
                             " • "}
                           {activeChatRoom.projectName && (
@@ -710,9 +732,9 @@ const Messages: React.FC = () => {
                     <Button type="text" icon={<PaperClipOutlined />} />
                     <Button type="text" icon={<MoreOutlined />} />
                   </Space>
-                </div>{" "}
-                {/* Messages area */}{" "}
+                </div>
                 <div
+                  ref={messagesAreaRef}
                   style={{
                     flexGrow: 1,
                     overflowY: "auto",
@@ -726,360 +748,30 @@ const Messages: React.FC = () => {
                     <div style={{ textAlign: "center", padding: "50px" }}>
                       <Spin size="large" />
                     </div>
-                  ) : messages.length === 0 ? (
+                  ) : visibleMessages.length === 0 ? (
                     <Empty
-                      description="Chưa có tin nhắn"
+                      description="No messages yet"
                       image={Empty.PRESENTED_IMAGE_SIMPLE}
                       style={{ marginTop: "100px" }}
                     />
                   ) : (
                     <>
-                      {messages
-                        .filter((message) => {
-                          if (!activeChatRoom) return false;
-
-                          switch (activeChatRoom.roomType) {
-                            case ChatRoomType.PRIVATE:
-                              const otherUserId =
-                                activeChatRoom.participants.find(
-                                  (p) => p.userId !== userDetails?.id
-                                )?.userId;
-                              return (
-                                (message.senderId === userDetails?.id &&
-                                  message.receiverId === otherUserId) ||
-                                (message.receiverId === userDetails?.id &&
-                                  message.senderId === otherUserId)
-                              );
-                            case ChatRoomType.PROJECT_CHAT:
-                              return (
-                                message.projectId === activeChatRoom.projectId
-                              );
-                            case ChatRoomType.GROUP:
-                              return message.topic === activeChatRoom.roomName;
-                            default:
-                              return false;
-                          }
-                        })
-                        .map((message, index, arr) => {
-                          const isMyMessage =
-                            message.senderId === userDetails?.id;
-                          const previousMessage = arr[index - 1];
-                          const nextMessage = arr[index + 1];
-
-                          const isFirstMessageInGroup = !(
-                            previousMessage &&
-                            previousMessage.senderId === message.senderId &&
-                            Math.abs(
-                              new Date(message.timestamp).getTime() -
-                                new Date(previousMessage.timestamp).getTime()
-                            ) <
-                              60 * 1000
-                          );
-
-                          const isLastMessageInGroup = !(
-                            nextMessage &&
-                            nextMessage.senderId === message.senderId &&
-                            Math.abs(
-                              new Date(nextMessage.timestamp).getTime() -
-                                new Date(message.timestamp).getTime()
-                            ) <
-                              60 * 1000
-                          );
-
-                          const shouldShowTimeLabel =
-                            index === 0 ||
-                            new Date(message.timestamp).getTime() -
-                              new Date(arr[index - 1].timestamp).getTime() >
-                              5 * 60 * 1000;
-
-                          return (
-                            <React.Fragment key={message.id}>
-                              {shouldShowTimeLabel && (
-                                <div
-                                  style={{
-                                    textAlign: "center",
-                                    margin: "16px 0 8px",
-                                    color: "#888",
-                                    fontSize: "13px",
-                                  }}
-                                >
-                                  {formatTimeLabel(message.timestamp)}
-                                </div>
-                              )}
-                              {!isMyMessage &&
-                                isFirstMessageInGroup &&
-                                activeChatRoom.roomType !==
-                                  ChatRoomType.PRIVATE && (
-                                  <div
-                                    style={{
-                                      textAlign: "left",
-                                      paddingLeft: 40,
-                                      marginBottom: 2,
-                                      marginTop: shouldShowTimeLabel ? 0 : 8,
-                                    }}
-                                  >
-                                    <Text
-                                      strong
-                                      style={{
-                                        fontSize: "13px",
-                                        color: "#65676B",
-                                      }}
-                                    >
-                                      {message.senderName}
-                                    </Text>
-                                  </div>
-                                )}{" "}
-                              <div
-                                style={{
-                                  marginBottom: isLastMessageInGroup ? 12 : 2,
-                                  display: "flex",
-                                  justifyContent: isMyMessage
-                                    ? "flex-end"
-                                    : "flex-start",
-                                  alignItems: "flex-end",
-                                  position: "relative",
-                                  padding: isMyMessage
-                                    ? "0 0 0 40px"
-                                    : "0 40px 0 0",
-                                }}
-                              >
-                                {" "}
-                                {!isMyMessage && (
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      flexDirection: "column",
-                                      alignItems: "center",
-                                      opacity: isLastMessageInGroup ? 1 : 0,
-                                    }}
-                                  >
-                                    <Avatar
-                                      src={message.senderImageProfile}
-                                      alt={message.senderName || "User"}
-                                      style={{
-                                        marginRight: 8,
-                                        width: 32,
-                                        height: 32,
-                                      }}
-                                    >
-                                      {(message.senderName &&
-                                        message.senderName[0]) ||
-                                        "U"}
-                                    </Avatar>
-                                  </div>
-                                )}
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: isMyMessage
-                                      ? "flex-end"
-                                      : "flex-start",
-                                    maxWidth: "65%",
-                                  }}
-                                >
-                                  {" "}
-                                  {message.content && (
-                                    <Tooltip
-                                      title={getMessageTime(message.timestamp)}
-                                    >
-                                      <Paragraph
-                                        style={{
-                                          margin: isFirstMessageInGroup
-                                            ? "4px 0 0"
-                                            : "0 0 4px",
-                                          padding: "8px 12px",
-                                          borderRadius: isMyMessage
-                                            ? isFirstMessageInGroup &&
-                                              isLastMessageInGroup
-                                              ? "18px 18px 4px 18px"
-                                              : isFirstMessageInGroup
-                                              ? "18px 18px 4px 18px"
-                                              : isLastMessageInGroup
-                                              ? "18px 4px 18px 18px"
-                                              : "18px 4px 4px 18px"
-                                            : isFirstMessageInGroup &&
-                                              isLastMessageInGroup
-                                            ? "18px 18px 18px 4px"
-                                            : isFirstMessageInGroup
-                                            ? "18px 18px 4px 4px"
-                                            : isLastMessageInGroup
-                                            ? "4px 18px 18px 4px"
-                                            : "4px 18px 4px 4px",
-                                          backgroundColor: isMyMessage
-                                            ? "#0A7CFF"
-                                            : "#E4E6EB",
-                                          color: isMyMessage
-                                            ? "#fff"
-                                            : "#050505",
-                                          wordBreak: "break-word",
-                                          boxShadow:
-                                            "0 1px 2px rgba(0, 0, 0, 0.05)",
-                                          position: "relative",
-                                          maxWidth: "100%",
-                                        }}
-                                      >
-                                        {" "}
-                                        {message.content}
-                                      </Paragraph>
-                                    </Tooltip>
-                                  )}{" "}
-                                  {message.fileUrl &&
-                                    message.messageType ===
-                                      ChatMessageType.FILE && (
-                                      <Card
-                                        size="small"
-                                        style={{
-                                          marginTop: 4,
-                                          width: "auto",
-                                          maxWidth: 320,
-                                          borderRadius: isMyMessage
-                                            ? "18px 18px 4px 18px"
-                                            : "18px 18px 18px 4px",
-                                          backgroundColor: isMyMessage
-                                            ? "#0A7CFF"
-                                            : "#E4E6EB",
-                                          borderColor: isMyMessage
-                                            ? "#0A7CFF"
-                                            : "#E4E6EB",
-                                          position: "relative",
-                                          boxShadow:
-                                            "0 1px 2px rgba(0, 0, 0, 0.05)",
-                                          padding: 8,
-                                        }}
-                                      >
-                                        <Space
-                                          align="start"
-                                          style={{ width: "100%" }}
-                                        >
-                                          {/* File preview/icon */}
-                                          {renderFileIconPreview(
-                                            message.fileName,
-                                            message.fileUrl
-                                          )}
-                                          <div style={{ flex: 1, minWidth: 0 }}>
-                                            <Tooltip
-                                              title={message.fileName}
-                                              placement="topLeft"
-                                            >
-                                              <div
-                                                style={{
-                                                  color: isMyMessage
-                                                    ? "#fff"
-                                                    : "#050505",
-                                                  fontWeight: 500,
-                                                  fontSize: 15,
-                                                  overflow: "hidden",
-                                                  textOverflow: "ellipsis",
-                                                  whiteSpace: "nowrap",
-                                                  maxWidth: 200,
-                                                }}
-                                              >
-                                                {message.fileName}
-                                              </div>
-                                            </Tooltip>
-                                            <div style={{ marginTop: 2 }}>
-                                              <a
-                                                href={message.fileUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                  color: isMyMessage
-                                                    ? "#fff"
-                                                    : "#0A7CFF",
-                                                  fontSize: 13,
-                                                  fontWeight: 500,
-                                                  textDecoration: "underline",
-                                                }}
-                                              >
-                                                Tải xuống
-                                              </a>
-                                            </div>
-                                          </div>
-                                        </Space>
-                                      </Card>
-                                    )}
-                                  {message.messageType ===
-                                    ChatMessageType.SYSTEM_NOTIFICATION && (
-                                    <Card
-                                      size="small"
-                                      style={{
-                                        marginTop: 4,
-                                        backgroundColor: "#fff7e6",
-                                        borderColor: "#ffd591",
-                                        borderRadius: "10px",
-                                        position: "relative",
-                                      }}
-                                    >
-                                      <Space>
-                                        <InfoCircleOutlined
-                                          style={{ color: "#fa8c16" }}
-                                        />
-                                        <Text>{message.content}</Text>
-                                      </Space>
-                                    </Card>
-                                  )}
-                                  {isMyMessage &&
-                                    message.isRead &&
-                                    isLastMessageInGroup && (
-                                      <Avatar
-                                        size={16}
-                                        alt="Read"
-                                        style={{
-                                          marginTop: 4,
-                                          alignSelf: "flex-end",
-                                          border: "2px solid #fff",
-                                          boxShadow:
-                                            "0 1px 3px rgba(0,0,0,0.1)",
-                                        }}
-                                      >
-                                        {
-                                          activeChatRoom.participants.find(
-                                            (p) => p.userId !== userDetails?.id
-                                          )?.fullName[0]
-                                        }
-                                      </Avatar>
-                                    )}
-                                </div>
-                              </div>
-                            </React.Fragment>
-                          );
-                        })}
-
-                      {/* Typing indicator: Hiển thị khi có người khác đang nhập */}
-                      {typingUsers &&
-                        typingUsers
-                          .filter((u) => u.userId !== userDetails?.id)
-                          .map((u) => (
-                            <div
-                              key={u.userId}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                margin: "8px 0 8px 8px",
-                                color: "#888",
-                                fontSize: 14,
-                              }}
-                            >
-                              <Avatar
-                                size={24}
-                                style={{ marginRight: 8 }}
-                                src={u.userAvatar}
-                              >
-                                {u.senderName ? u.senderName[0] : "U"}
-                              </Avatar>
-                              <span>
-                                <b>{u.senderName || "User"}</b>
-                              </span>
-                              <TypingDots />
-                            </div>
-                          ))}
-
+                      <MessageList
+                        messages={visibleMessages}
+                        userDetails={userDetails}
+                        activeChatRoom={activeChatRoom}
+                        getMessageTime={getMessageTime}
+                        formatTimeLabel={formatTimeLabel}
+                      />
+                      <TypingIndicator
+                        typingUsers={typingUsers || []}
+                        currentUserId={userDetails?.id ?? ""}
+                        TypingDots={TypingDots}
+                      />
                       <div ref={messagesEndRef} />
                     </>
                   )}
                 </div>
-                {/* Message input area */}
                 <div
                   style={{
                     display: "flex",
@@ -1097,7 +789,7 @@ const Messages: React.FC = () => {
                         marginBottom: 4,
                         display: "flex",
                         gap: 8,
-                        flexWrap: "wrap", // Allow wrapping to next line if needed
+                        flexWrap: "wrap",
                       }}
                     >
                       {fileList.map((file, index) => (
@@ -1175,7 +867,7 @@ const Messages: React.FC = () => {
                         !isConnected ||
                         isUploading
                       }
-                      title="Gửi tin nhắn (Enter)"
+                      title="Send message"
                       style={{ backgroundColor: "#0A7CFF" }}
                       loading={isUploading}
                     />
@@ -1216,7 +908,7 @@ const Messages: React.FC = () => {
                   justifyContent: "center",
                   flexDirection: "column",
                   padding: "40px",
-                  backgroundColor: "#f0f2f5",
+                  backgroundColor: "f0f2f5",
                 }}
               >
                 <div
@@ -1247,7 +939,6 @@ const Messages: React.FC = () => {
           </Col>
         </Row>
 
-        {/* Create Chat Room Modal */}
         <Modal
           title="Create New Chat Room"
           open={isCreateRoomModalVisible}

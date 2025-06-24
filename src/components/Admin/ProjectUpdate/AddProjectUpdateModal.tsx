@@ -1,4 +1,3 @@
-// src/components/Admin/ProjectProgress/AddProjectUpdateModal.tsx
 import React, { useState, useEffect } from "react";
 import {
   Modal,
@@ -429,7 +428,6 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           </Space>
         )}
 
-        {/* Thêm input chọn folder */}
         <Divider>Or Upload Entire Folder</Divider>
         <input
           type="file"

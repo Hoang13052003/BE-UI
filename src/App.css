@@ -17,3 +17,12 @@ html, body {
 .react-confirm-alert {
   z-index: 2100 !important;
 }
+
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-menu-icon {
+    display: block !important;
+  }
+}

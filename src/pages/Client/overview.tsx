@@ -26,11 +26,16 @@ import { Project } from "../../types/project";
 
 const { Title, Text } = Typography;
 
-const CardStyle = {
-  height: "350px",
-  padding: "16px",
-  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-};
+  // Responsive Card Style
+  const CardStyle = {
+    minHeight: "350px",
+    padding: "16px",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column" as const,
+    justifyContent: "space-between",
+  };
 
 interface SummaryCardProps {
   totalProjects: number;
@@ -135,11 +140,11 @@ const Overview: React.FC = () => {
   const GridView = () => (
     <Row gutter={[16, 16]}>
       {projects.map((project) => (
-        <Col span={8} key={project.id}>
+        <Col xs={24} sm={24} md={12} lg={8} xl={8} key={project.id}>
           <Card style={CardStyle}>
             <Space direction="vertical" style={{ width: "100%" }} size={16}>
-              <Space style={{ justifyContent: "space-between", width: "100%" }}>
-                <Title level={5} style={{ margin: 0 }}>
+              <Space style={{ justifyContent: "space-between", width: "100%", flexWrap: "wrap" }}>
+                <Title level={5} style={{ margin: 0, wordBreak: "break-word" }}>
                   {project.name}
                 </Title>
                 <Tag color={project.type === "FIXED_PRICE" ? "blue" : "green"}>
@@ -147,7 +152,7 @@ const Overview: React.FC = () => {
                 </Tag>
               </Space>
 
-              <Text type="secondary" ellipsis={true}>
+              <Text type="secondary" ellipsis={true} style={{ maxWidth: "100%" }}>
                 {project.description}
               </Text>
 
@@ -161,19 +166,19 @@ const Overview: React.FC = () => {
                 <Progress percent={project.overallProcess} />
               </div>
 
-              <Row gutter={16}>
-                <Col span={12}>
+              <Row gutter={8}>
+                <Col xs={12} sm={12} md={12} lg={12} xl={12}>
                   <Text type="secondary">Start Date</Text>
-                  <div>{project.startDate}</div>
+                  <div style={{ wordBreak: "break-word" }}>{project.startDate}</div>
                 </Col>
-                <Col span={12}>
+                <Col xs={12} sm={12} md={12} lg={12} xl={12}>
                   <Text type="secondary">End Date</Text>
-                  <div>{project.plannedEndDate}</div>
+                  <div style={{ wordBreak: "break-word" }}>{project.plannedEndDate}</div>
                 </Col>
               </Row>
 
-              <Row gutter={16}>
-                <Col span={12}>
+              <Row gutter={8} align="middle">
+                <Col xs={14} sm={14} md={14} lg={14} xl={14}>
                   <Text type="secondary">
                     {project.milestoneCount ? "Milestones" : "Hours"}
                   </Text>
@@ -183,10 +188,11 @@ const Overview: React.FC = () => {
                       : `${project.totalActualHours}/${project.totalEstimatedHours}`}
                   </div>
                 </Col>
-                <Col span={12} style={{ textAlign: "right" }}>
+                <Col xs={10} sm={10} md={10} lg={10} xl={10} style={{ textAlign: "right" }}>
                   <Button
                     type="primary"
                     size="small"
+                    style={{ width: "100%", minWidth: 90 }}
                     onClick={() => handleDetailsClick(project.id)}
                   >
                     View Details <ArrowRightOutlined />
@@ -207,18 +213,20 @@ const Overview: React.FC = () => {
   // List View Component
   const ListView = () => (
     <List
-      itemLayout="horizontal"
+      itemLayout="vertical"
       dataSource={projects}
       renderItem={(project) => (
         <List.Item
           actions={[
             <Button
               type="primary"
+              style={{ minWidth: 90 }}
               onClick={() => handleDetailsClick(project.id)}
             >
               View Details <ArrowRightOutlined />
             </Button>,
           ]}
+          style={{ flexWrap: "wrap" }}
         >
           <List.Item.Meta
             avatar={
@@ -227,12 +235,13 @@ const Overview: React.FC = () => {
                   strokeLinecap="butt"
                   type="dashboard"
                   percent={project.overallProcess}
+                  width={48}
                 />
               </Space>
             }
             title={
-              <Space>
-                <Title level={5} style={{ margin: 0 }}>
+              <Space wrap>
+                <Title level={5} style={{ margin: 0, wordBreak: "break-word" }}>
                   {project.name}
                 </Title>
                 <Tag color={project.type === "FIXED_PRICE" ? "blue" : "green"}>
@@ -246,8 +255,8 @@ const Overview: React.FC = () => {
             description={
               <Space direction="vertical" style={{ width: "100%" }}>
                 <Text type="secondary">{project.description}</Text>
-                <Row gutter={24}>
-                  <Col span={6}>
+                <Row gutter={[8, 8]}>
+                  <Col xs={12} sm={6} md={6} lg={6} xl={6}>
                     <Space direction="vertical" size={0}>
                       <Text type="secondary" style={{ fontSize: "12px" }}>
                         Start Date
@@ -255,7 +264,7 @@ const Overview: React.FC = () => {
                       <Text>{project.startDate}</Text>
                     </Space>
                   </Col>
-                  <Col span={6}>
+                  <Col xs={12} sm={6} md={6} lg={6} xl={6}>
                     <Space direction="vertical" size={0}>
                       <Text type="secondary" style={{ fontSize: "12px" }}>
                         End Date
@@ -263,7 +272,7 @@ const Overview: React.FC = () => {
                       <Text>{project.plannedEndDate}</Text>
                     </Space>
                   </Col>
-                  <Col span={6}>
+                  <Col xs={12} sm={6} md={6} lg={6} xl={6}>
                     <Space direction="vertical" size={0}>
                       <Text type="secondary" style={{ fontSize: "12px" }}>
                         Last Update
@@ -273,7 +282,7 @@ const Overview: React.FC = () => {
                       </Text>
                     </Space>
                   </Col>
-                  <Col span={6}>
+                  <Col xs={12} sm={6} md={6} lg={6} xl={6}>
                     <Space direction="vertical" size={0}>
                       <Text type="secondary" style={{ fontSize: "12px" }}>
                         {project.milestoneCount ? "Milestones" : "Est. Hours"}
@@ -297,8 +306,8 @@ const Overview: React.FC = () => {
   return (
     <React.Fragment>
       {/* Stats Cards */}
-      <Row gutter={16} style={{ marginBottom: 10 }}>
-        <Col span={8}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 10 }}>
+        <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <Card style={{ height: "100%" }}>
             <Statistic
               title="Total Projects"
@@ -311,7 +320,7 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <Card style={{ height: "100%" }}>
             <Statistic
               title="Total Hours"
@@ -326,7 +335,7 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={24} md={8} lg={8} xl={8}>
           <Card style={{ height: "100%" }}>
             <Statistic
               title="Completed Milestones"
@@ -339,18 +348,17 @@ const Overview: React.FC = () => {
                 />
               }
             />
-            <Progress percent={77} showInfo={false} />
+            <Progress percent={summaryStats.totalMilestones ? Math.round((summaryStats.completedMilestones / summaryStats.totalMilestones) * 100) : 0} showInfo={false} />
           </Card>
         </Col>
       </Row>
-
       {/* Projects Section */}
       <Card
         style={{
           height: "100%",
         }}
         title={
-          <Space style={{ width: "100%", justifyContent: "space-between" }}>
+          <Space style={{ width: "100%", justifyContent: "space-between", flexWrap: "wrap" }}>
             <Title level={5} style={{ margin: 0 }}>
               Your Projects ({projects.length})
             </Title>

@@ -159,7 +159,9 @@ export const updateProjectApi = async (
             "Planned end date must be in the present or future"
           )
         ) {
-          console.warn("Backend validation về planned end date đã được bỏ qua");
+          console.warn(
+            "Backend validation for planned end date has been skipped"
+          );
           return { ...projectData, id: projectId } as Project;
         }
         throw new Error(errorMessage);

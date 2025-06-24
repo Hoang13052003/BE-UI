@@ -111,7 +111,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ className }) => {
       setMessageInput("");
     } catch (error) {
       console.error("Failed to send message:", error);
-      antdMessage.error("Gửi tin nhắn thất bại");
+      antdMessage.error("Failed to send message");
     }
   };
 

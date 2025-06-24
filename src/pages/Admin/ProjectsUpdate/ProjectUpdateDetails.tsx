@@ -304,8 +304,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                     display: "block",
                   }}
                 >
-                  Overall Progress:{" "}
-                  {update?.overallProcess?.toFixed(2) || "0.00"}%
+                  Overall Progress: {update?.overallProcess?.toFixed(2)}%
                 </Text>
                 <Progress
                   percent={Number(update?.overallProcess)}

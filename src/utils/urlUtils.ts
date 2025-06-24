@@ -15,13 +15,11 @@ export const toWebSocketUrl = (httpUrl: string): string => {
 };
 
 export const isUrlSafe = (url: string): boolean => {
-  // Check for double slashes after protocol
   const protocolPattern = /^https?:\/\//;
   const urlWithoutProtocol = url.replace(protocolPattern, "");
   return !urlWithoutProtocol.includes("//");
 };
 
 export const fixDoubleSlashes = (url: string): string => {
-  // Preserve protocol slashes but fix any other double slashes
   return url.replace(/([^:])\/\/+/g, "$1/");
 };

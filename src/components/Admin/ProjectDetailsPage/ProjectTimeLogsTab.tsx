@@ -34,6 +34,7 @@ import localizedFormat from "dayjs/plugin/localizedFormat";
 dayjs.extend(localizedFormat);
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
+import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
 const { Text, Paragraph, Title } = Typography;
 const { Search } = Input;
 const { RangePicker } = DatePicker;
@@ -60,6 +61,8 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
     pageSize: 10,
   });
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
   const fetchTimeLogs = useCallback(
     async (pageToFetch: number, currentSize: number) => {
@@ -291,7 +294,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
         padding: "20px",
         borderRadius: "8px",
         boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
-        height: "800px",
+        height: isMobile ? "auto" : "800px",
       }}
     >
       {/* Header Section */}
@@ -428,8 +431,9 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
         <Row
           gutter={[20, 20]}
           style={{
-            height: "500px",
-            overflowY: "auto",
+            height: isMobile ? "auto" : "500px",
+            overflowY: isMobile ? undefined : "auto",
+            paddingBottom: isMobile ? "20px" : undefined,
           }}
         >
           {filteredTimeLogs?.map((timelog) => (

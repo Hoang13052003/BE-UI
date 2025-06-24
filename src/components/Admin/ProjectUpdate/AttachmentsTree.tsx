@@ -1,4 +1,4 @@
-// AttachmentsTree.tsx (Cây nhiều cấp, load động từng thư mục)
+// AttachmentsTree.tsx (Multi-level tree, dynamic loading for each folder)
 import React, { useState, useEffect, useCallback } from "react";
 import { Tree, Card, Typography, Spin, message } from "antd";
 import {
@@ -14,26 +14,26 @@ import {
   FileUnknownOutlined,
 } from "@ant-design/icons";
 import attachmentApi from "../../../api/attachmentApi";
-import { TreeNodeDto as ApiTreeNodeDto } from "../../../types/Attachment"; // Đổi tên DTO từ API để tránh trùng
+import { TreeNodeDto as ApiTreeNodeDto } from "../../../types/Attachment"; // Rename API DTO to avoid conflict
 
 const { Text } = Typography;
 
-// DataNode cho Ant Design Tree (khớp với cấu trúc TreeNodeDto từ API)
+// DataNode for Ant Design Tree (matches TreeNodeDto structure from API)
 interface DataNode {
-  title: string; // tên file hoặc thư mục
-  key: string; // path đầy đủ (logicalName hoặc path thư mục)
+  title: string; // file or folder name
+  key: string; // full path (logicalName or folder path)
   isLeaf: boolean;
   children?: DataNode[];
   icon?: React.ReactNode;
-  // Lưu trữ dữ liệu gốc từ API nếu cần
+  // Store original data from API if needed
   apiData?: ApiTreeNodeDto;
-  loaded?: boolean; // Để biết node thư mục đã load children chưa
+  loaded?: boolean; // To know if the folder node has loaded children
 }
 
-// Hàm chuyển đổi từ TreeNodeDto (API) sang DataNode (Ant Tree)
+// Function to convert from TreeNodeDto (API) to DataNode (Ant Tree)
 const mapApiNodeToDataNode = (apiNode: ApiTreeNodeDto): DataNode => ({
   title: apiNode.name,
-  key: apiNode.path, // Path là key duy nhất
+  key: apiNode.path, // Path is the unique key
   isLeaf: apiNode.type === "file",
   icon:
     apiNode.type === "directory" ? (
@@ -41,12 +41,12 @@ const mapApiNodeToDataNode = (apiNode: ApiTreeNodeDto): DataNode => ({
     ) : (
       getFileIconByExtension(apiNode.name)
     ),
-  children: apiNode.type === "directory" ? undefined : undefined, // Thư mục có thể load con
+  children: apiNode.type === "directory" ? undefined : undefined,
   apiData: apiNode,
-  loaded: apiNode.type === "file", // File coi như đã "loaded" children (không có)
+  loaded: apiNode.type === "file",
 });
 
-// Hàm helper để cập nhật treeData khi load children
+// Helper function to update treeData when loading children
 const updateTreeDataRecursive = (
   list: DataNode[],
   key: React.Key,
@@ -57,9 +57,7 @@ const updateTreeDataRecursive = (
       return {
         ...node,
         children,
-        loaded: true, // Đánh dấu đã load
-        // isLeaf không cần cập nhật ở đây vì mapApiNodeToDataNode đã set isLeaf ban đầu
-        // và Tree sẽ tự biết nếu có children
+        loaded: true,
       };
     }
     if (node.children) {
@@ -74,7 +72,7 @@ const updateTreeDataRecursive = (
 
 interface AttachmentsTreeProps {
   projectId?: number;
-  projectName?: string; // Để hiển thị tiêu đề
+  projectName?: string; // For displaying title
 }
 
 const getFileIconByExtension = (fileName: string): React.ReactNode => {
@@ -82,26 +80,26 @@ const getFileIconByExtension = (fileName: string): React.ReactNode => {
 
   switch (ext) {
     case "pdf":
-      return <FilePdfOutlined style={{ color: "#e74c3c" }} />; // Đỏ
+      return <FilePdfOutlined style={{ color: "#e74c3c" }} />; // Red
     case "doc":
     case "docx":
-      return <FileWordOutlined style={{ color: "#2e86de" }} />; // Xanh dương
+      return <FileWordOutlined style={{ color: "#2e86de" }} />; // Blue
     case "xls":
     case "xlsx":
-      return <FileExcelOutlined style={{ color: "#27ae60" }} />; // Xanh lá
+      return <FileExcelOutlined style={{ color: "#27ae60" }} />; // Green
     case "png":
     case "jpg":
     case "jpeg":
     case "gif":
-      return <FileImageOutlined style={{ color: "#f39c12" }} />; // Cam
+      return <FileImageOutlined style={{ color: "#f39c12" }} />; // Orange
     case "txt":
     case "md":
-      return <FileTextOutlined style={{ color: "#7f8c8d" }} />; // Xám
+      return <FileTextOutlined style={{ color: "#7f8c8d" }} />; // Gray
     case "zip":
     case "rar":
-      return <FileZipOutlined style={{ color: "#8e44ad" }} />; // Tím
+      return <FileZipOutlined style={{ color: "#8e44ad" }} />; // Purple
     default:
-      return <FileUnknownOutlined style={{ color: "#95a5a6" }} />; // Xám nhạt (mặc định)
+      return <FileUnknownOutlined style={{ color: "#95a5a6" }} />; // Light gray (default)
   }
 };
 

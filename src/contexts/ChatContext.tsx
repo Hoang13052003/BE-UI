@@ -42,7 +42,7 @@ export interface ChatContextType {
   sendChatMessage: (
     message: ChatMessageRequest
   ) => Promise<ChatMessageResponse>;
-  selectChatRoom: (roomId: string) => void;
+  selectChatRoom: (roomId: string, page: number, size: number) => void;
   markMessageRead: (messageId: string) => Promise<void>;
   loadChatHistory: (roomId: string, page?: number) => Promise<void>;
   refreshChatRooms: () => Promise<void>;
@@ -272,7 +272,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         });
 
         if (newMessage.senderId !== userDetails?.id) {
-          antdMessage.success(`Tin nhắn mới từ ${newMessage.senderName}`);
+          antdMessage.success(`New message from ${newMessage.senderName}`);
         }
 
         refreshUnreadCount();
@@ -435,7 +435,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const sendChatMessage = useCallback(
     async (msgRequest: ChatMessageRequest) => {
       if (!isAuthenticated || !userDetails) {
-        antdMessage.error("Bạn cần đăng nhập để gửi tin nhắn.");
+        antdMessage.error("You need to log in to send messages.");
         throw new Error("User not authenticated");
       }
 
@@ -499,7 +499,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     [isAuthenticated, userDetails]
   );
   const loadChatHistory = useCallback(
-    async (roomId: string, page = 0) => {
+    async (roomId: string, page = 0, size = 15) => {
       const room = chatRooms.find((r) => r.id === roomId);
       if (!room) {
         return;
@@ -517,16 +517,19 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           }
         } else if (room.roomType === "PROJECT_CHAT") {
           const { getProjectChatHistory } = await import("../api/chatApi");
-          history = await getProjectChatHistory(room.projectId!, page);
+          history = await getProjectChatHistory(room.projectId!, page, size);
         } else if (room.roomType === "GROUP") {
           const { getGroupChatHistory } = await import("../api/chatApi");
           history = await getGroupChatHistory(room.roomName, page);
         }
 
         if (history) {
-          setMessages((prev) =>
-            page === 0 ? history.messages : [...history.messages, ...prev]
-          );
+          const newMessages = history.messages.slice().reverse();
+          if (page === 0) {
+            setMessages(newMessages);
+          } else {
+            setMessages((prev) => [...newMessages, ...prev]);
+          }
         }
       } catch (err) {
         console.error("Load history error:", err);
@@ -538,11 +541,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     [chatRooms, userDetails?.id]
   );
   const selectChatRoom = useCallback(
-    (roomId: string) => {
+    (roomId: string, page: number, size: number) => {
       const room = chatRooms.find((r) => r.id === roomId);
       setActiveChatRoom(room || null);
       if (room) {
-        loadChatHistory(roomId);
+        loadChatHistory(roomId, page, size);
       }
     },
     [chatRooms, loadChatHistory]

@@ -161,7 +161,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       <List.Item
         key={room.id}
         className={`chat-room-item ${isActive ? "active" : ""}`}
-        onClick={() => selectChatRoom(room.id)}
+        onClick={() => selectChatRoom(room.id, 0, 15)}
       >
         <div className="room-avatar">
           <Badge dot={isOnline} offset={[-8, 32]} color="green">
@@ -195,7 +195,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 </Text>
               ) : (
                 <Text type="secondary" italic>
-                  Chưa có tin nhắn
+                  No messages yet
                 </Text>
               )}
             </div>
@@ -241,7 +241,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 className={`collapsed-room-item ${
                   activeChatRoom?.id === room.id ? "active" : ""
                 }`}
-                onClick={() => selectChatRoom(room.id)}
+                onClick={() => selectChatRoom(room.id, 0, 15)}
               >
                 <Avatar
                   src={getRoomAvatar(room)}
