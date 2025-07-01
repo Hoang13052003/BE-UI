@@ -67,7 +67,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           setStatusOptions(statuses);
         } catch (error) {
           console.error("Failed to fetch project statuses:", error);
-          setStatusOptions(["NEW", "PENDING", "PROGRESS", "CLOSED"]);
+          setStatusOptions(["NEW", "PENDING", "PROGRESS", "COMPLETED", "CLOSED"]);
         }
       };
 
@@ -198,7 +198,7 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
     setFileList(newFileList);
   };
 
-  const handleSelectProject = (value: number) => {
+  const handleSelectProject = (value: string) => {
     const project = projects.find((p) => p.id === value);
 
     form.setFieldsValue({

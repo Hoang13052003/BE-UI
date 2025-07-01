@@ -4,27 +4,36 @@ export interface ProjectUser {
 }
 
 export interface Project {
-  id: number;
+  id: string; // Changed to string to match backend UUID
   name: string;
   description: string;
-  type: "FIXED_PRICE" | "LABOR";
-  status: "NEW" | "PENDING" | "PROGRESS" | "CLOSED";
+  projectType: "LABOR" | "FIXED_PRICE";
+  status: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";
   startDate: string;
   plannedEndDate: string;
   actualEndDate: string | null;
   totalBudget: number;
-  totalActualHours: number;
   totalEstimatedHours: number | null;
-  progress: number;
-  overallProcess?: number;
-  actualProcess?: number;
-  users: ProjectUser[];
-  totalMilestoneCompleted: number;
-  milestoneCount: number;
-  newMilestoneCount: number;
-  sentMilestoneCount: number;
-  reviewedMilestoneCount: number;
-  updatedAt: Date;
+  overallProcess: number;
+  actualProcess: number;
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+  updatedBy: string | null;
+  completed: boolean;
+  overdue: boolean;
+  laborProject: boolean;
+  fixedPriceProject: boolean;
+  // Optional fields for compatibility
+  totalActualHours?: number;
+  progress?: number;
+  users?: ProjectUser[];
+  totalMilestoneCompleted?: number;
+  milestoneCount?: number;
+  newMilestoneCount?: number;
+  sentMilestoneCount?: number;
+  reviewedMilestoneCount?: number;
 }
 
 export interface UserSummary {
@@ -34,11 +43,11 @@ export interface UserSummary {
 }
 
 export interface ProjectDetail {
-  id: number;
+  id: string; // Changed to string for UUID
   name: string;
   description: string | null;
-  type: "FIXED_PRICE" | "LABOR";
-  status: "NEW" | "PENDING" | "PROGRESS" | "CLOSED";
+  projectType: "LABOR" | "FIXED_PRICE";
+  status: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";
   startDate: string;
   plannedEndDate: string;
   actualEndDate: string | null;
@@ -46,6 +55,8 @@ export interface ProjectDetail {
   totalEstimatedHours: number | null;
   overallProcess?: number;
   actualProcess?: number;
+  laborProject: boolean;
+  fixedPriceProject: boolean;
   users: UserSummary[];
 }
 

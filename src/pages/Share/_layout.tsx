@@ -14,7 +14,7 @@ import {
   FileSearchOutlined,
   UnorderedListOutlined,
   MenuOutlined,
-  MessageOutlined,
+  // MessageOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -123,11 +123,6 @@ const LayoutShare: React.FC = () => {
           label: <Link to="/admin/feedbacks">Feedbacks</Link>,
         },
         {
-          key: "messages",
-          icon: <MessageOutlined />,
-          label: <Link to="/admin/messages">Messages</Link>,
-        },
-        {
           key: "notifications",
           icon: <BellOutlined />,
           label: <Link to="/admin/notifications">Notifications</Link>,
@@ -156,11 +151,6 @@ const LayoutShare: React.FC = () => {
       key: "my-feedbacks",
       icon: <WechatWorkOutlined />,
       label: <Link to="/client/my-feedbacks">My Feedbacks</Link>,
-    },
-    {
-      key: "messages",
-      icon: <MessageOutlined />,
-      label: <Link to="/client/messages">Messages</Link>,
     },
     {
       key: "other",

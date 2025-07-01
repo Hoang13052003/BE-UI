@@ -60,7 +60,7 @@ const getUpdateStatusStyle = (
       return { ...baseStyle, color: theme === "dark" ? "#ffc53d" : "#d48806" };
     case "OFF_TRACK":
       return { ...baseStyle, color: theme === "dark" ? "#ff7875" : "#cf1322" };
-    case "ON_HOLD":
+    case "CLOSED":
       return { ...baseStyle, color: theme === "dark" ? "#b37feb" : "#531dab" };
     default:
       return { ...baseStyle, color: theme === "dark" ? "#a0a0a0" : "#8c8c8c" };

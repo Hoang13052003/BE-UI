@@ -12,19 +12,17 @@ export const useAddProject = (onSuccess: () => void) => {
       const payload: ProjectRequest = {
         name: values.name,
         description: values.description,
-        type: values.type,
+        type: values.projectType || values.type, // Map from projectType to type for API
         status: values.status,
         startDate: values.startDate,
         plannedEndDate: values.plannedEndDate,
         totalBudget: values.totalBudget,
         totalEstimatedHours: values.totalEstimatedHours ?? null,
         userIds: values.userIds || [],
+        isActive: values.isActive !== undefined ? values.isActive : true, // Default to true
       };
 
-      if (!payload.startDate || !payload.plannedEndDate) {
-        throw new Error("Invalid start or end date.");
-      }
-
+      // Validation is now handled in createProjectApi
       await createProjectApi(payload);
       onSuccess();
       message.success("Project created successfully!");

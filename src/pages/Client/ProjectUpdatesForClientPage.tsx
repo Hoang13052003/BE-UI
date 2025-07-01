@@ -107,9 +107,10 @@ const ProjectUpdatesForClientPage: React.FC = () => {
       render: (status: string) => {
         const color =
           {
-            NEW: "blue",
-            SENT: "orange",
-            FEEDBACK: "green",
+            TODO: "blue",
+            DOING: "processing",
+            PENDING: "orange",
+            COMPLETED: "green",
           }[status] || "default";
         return <Tag color={color}>{status}</Tag>;
       },
@@ -218,9 +219,10 @@ const ProjectUpdatesForClientPage: React.FC = () => {
                     style={{ marginLeft: 8 }}
                     color={
                       {
-                        NEW: "blue",
-                        SENT: "orange",
-                        FEEDBACK: "green",
+                        TODO: "blue",
+                        DOING: "processing",
+                        PENDING: "orange",
+                        COMPLETED: "green",
                       }[item.statusAtUpdate] || "default"
                     }
                   >

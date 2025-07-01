@@ -75,8 +75,8 @@ const isProjectDetail = (
 ): project is ProjectDetail => {
   return (
     (project as ProjectDetail).users !== undefined &&
-    (project.users.length === 0 ||
-      (project.users[0] as UserSummary).fullName !== undefined)
+    (project.users?.length === 0 ||
+      (project.users?.[0] as UserSummary).fullName !== undefined)
   );
 };
 
@@ -108,10 +108,10 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       target.closest(".project-card-clickable") ||
       e.target === e.currentTarget
     ) {
-      if (projectData.type === "FIXED_PRICE" && onToggleMilestoneDetail) {
-        onToggleMilestoneDetail(projectData.id);
-      } else if (projectData.type === "LABOR" && onToggleTimelogDetail) {
-        onToggleTimelogDetail(projectData.id);
+      if (projectData.projectType === "FIXED_PRICE" && onToggleMilestoneDetail) {
+        onToggleMilestoneDetail(parseInt(projectData.id));
+      } else if (projectData.projectType === "LABOR" && onToggleTimelogDetail) {
+        onToggleTimelogDetail(parseInt(projectData.id));
       }
     }
   };
@@ -124,16 +124,16 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       sentMilestoneCount !== undefined &&
       reviewedMilestoneCount !== undefined
     ) {
-      for (let i = 0; i < newMilestoneCount; i++) colors.push("#1890ff");
-      for (let i = 0; i < sentMilestoneCount; i++) colors.push("#faad14");
-      for (let i = 0; i < reviewedMilestoneCount; i++) colors.push("#52c41a");
+      for (let i = 0; i < newMilestoneCount; i++) colors.push("#1890ff"); // TODO
+      for (let i = 0; i < sentMilestoneCount; i++) colors.push("#faad14"); // PENDING  
+      for (let i = 0; i < reviewedMilestoneCount; i++) colors.push("#52c41a"); // COMPLETED
     }
     return colors;
   };
 
   const calculateLaborProgress = () => {
     if (
-      projectData.type !== "LABOR" ||
+      projectData.projectType !== "LABOR" ||
       !projectData.totalEstimatedHours ||
       !projectData.startDate
     ) {
@@ -175,25 +175,24 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
           maxCount={3}
           maxStyle={{ color: "#f56a00", backgroundColor: "#fde3cf" }}
         >
-          {visibleUsers.map((user) => (
-            <Tooltip
-              key={user.id}
-              title={
-                isProjectDetail(projectData)
-                  ? (user as UserSummary).fullName
-                  : (user as ProjectUser).email
-              }
-            >
-              <Avatar style={{ backgroundColor: "#87d068" }}>
-                {(isProjectDetail(projectData)
-                  ? (user as UserSummary).fullName
-                  : (user as ProjectUser).email
-                )
-                  .charAt(0)
-                  .toUpperCase()}
-              </Avatar>
-            </Tooltip>
-          ))}
+          {visibleUsers.map((user) => {
+            // Ưu tiên hiển thị fullName, fallback về email
+            const displayName = (user as UserSummary).fullName || (user as ProjectUser).email;
+            const tooltipText = (user as UserSummary).fullName 
+              ? `${(user as UserSummary).fullName} (${(user as UserSummary).email})`
+              : (user as ProjectUser).email;
+            
+            return (
+              <Tooltip
+                key={user.id}
+                title={tooltipText}
+              >
+                <Avatar style={{ backgroundColor: "#87d068" }}>
+                  {displayName.charAt(0).toUpperCase()}
+                </Avatar>
+              </Tooltip>
+            );
+          })}
         </Avatar.Group>
         {remainingCount > 0 && (
           <Text type="secondary">+{remainingCount} more</Text>
@@ -272,7 +271,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       );
     };
 
-    if (projectData.type === "LABOR" && projectData.totalEstimatedHours) {
+    if (projectData.projectType === "LABOR" && projectData.totalEstimatedHours) {
       const progress = calculateLaborProgress();
       return (
         <>
@@ -311,7 +310,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
 
     if (
       !isProjectDetail(projectData) &&
-      projectData.type === "FIXED_PRICE" &&
+      projectData.projectType === "FIXED_PRICE" &&
       typeof milestoneCount === "number" &&
       milestoneCount > 0
     ) {
@@ -399,10 +398,10 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                   }}
                 >
                   <FlagOutlined style={{ marginRight: "4px" }} />
-                  {projectData.type}
+                  {projectData.projectType}
                 </Tag>
                 {/* Expand Status Indicator */}
-                {projectData.type === "FIXED_PRICE" && (
+                {projectData.projectType === "FIXED_PRICE" && (
                   <Text
                     type="secondary"
                     style={{
@@ -415,7 +414,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                       : "📋 Click to view milestones"}
                   </Text>
                 )}
-                {projectData.type === "LABOR" && (
+                {projectData.projectType === "LABOR" && (
                   <Text
                     type="secondary"
                     style={{
@@ -423,7 +422,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                       fontStyle: "italic",
                     }}
                   >
-                    {expandedTimelogProjectId === projectData.id
+                    {expandedTimelogProjectId === parseInt(projectData.id)
                       ? "👇 Timelogs expanded"
                       : "⏰ Click to view timelogs"}
                   </Text>
@@ -519,7 +518,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       {/* Expanded Sections */}
       {isExpanded &&
         onToggleMilestoneDetail &&
-        projectData.type === "FIXED_PRICE" &&
+        projectData.projectType === "FIXED_PRICE" &&
         onAddMilestone &&
         onEditMilestone && (
           <div
@@ -533,10 +532,10 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             }}
           >
             <MilestoneDetailsDisplayInternal
-              projectId={projectData.id}
+              projectId={parseInt(projectData.id)}
               onAddMilestone={(refreshCallback) =>
                 currentUserIsAdmin &&
-                onAddMilestone(projectData.id, () =>
+                onAddMilestone(parseInt(projectData.id), () =>
                   handleRefreshWithProgress(refreshCallback)
                 )
               } // Chỉ cho admin
@@ -553,9 +552,9 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             />
           </div>
         )}
-      {expandedTimelogProjectId === projectData.id &&
+      {expandedTimelogProjectId === parseInt(projectData.id) &&
         onToggleTimelogDetail &&
-        projectData.type === "LABOR" && (
+        projectData.projectType === "LABOR" && (
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -567,7 +566,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             }}
           >
             <TimelogDetailsDisplayInternal
-              projectId={projectData.id}
+              projectId={parseInt(projectData.id)}
               theme={theme}
               isAdmin={currentUserIsAdmin}
               onRefreshProgress={onRefreshProgress}

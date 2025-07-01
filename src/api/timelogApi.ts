@@ -2,10 +2,10 @@ import axiosClient from "./axiosClient";
 import { SortConfig, fetchPaginatedData, PaginatedResult } from "./apiUtils";
 
 export type TimelogStatusType =
+  | "TODO"
+  | "DOING"
   | "PENDING"
-  | "IN_PROGRESS"
-  | "COMPLETED"
-  | "DELAYED";
+  | "COMPLETED";
 
 export interface TimeLogRequest {
   projectId: number;

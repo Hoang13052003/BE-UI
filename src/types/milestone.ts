@@ -1,4 +1,4 @@
-export type MilestoneStatus = "NEW" | "SENT" | "REVIEWED";
+export type MilestoneStatus = "TODO" | "DOING" | "PENDING" | "COMPLETED";
 
 export interface Milestone {
   id: number;

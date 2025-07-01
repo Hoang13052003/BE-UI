@@ -1,0 +1,87 @@
+Tôi sẽ hướng dẫn bạn cách sử dụng endpoint tạo project mới. Đầu tiên, hãy để tôi tìm hiểu về cấu trúc controller và entity để hiểu rõ hơn về API. Giờ hãy để tôi tìm xem có endpoint nào để tạo project mới không: Bây giờ hãy xem các DTO request để hiểu cấu trúc dữ liệu cần thiết: Bây giờ tôi đã hiểu rõ về cấu trúc API. Tôi sẽ hướng dẫn bạn cách sử dụng các endpoint tạo project mới.
+
+## Hướng dẫn sử dụng endpoint tạo project mới
+
+Hệ thống có 2 loại project khác nhau:
+
+### 1. ProjectLabor (Dự án theo giờ)
+**Endpoint:** `POST /api/projects/labor`
+
+**Quyền truy cập:** Cần role `ADMIN` hoặc `MANAGER`
+
+**Request Body (ProjectLaborRequestDto):**
+```json
+{
+  "name": "Tên dự án",
+  "description": "Mô tả dự án",
+  "status": "PLANNING",
+  "startDate": "2025-07-01",
+  "plannedEndDate": "2025-12-31",
+  "totalBudget": 50000.00,
+  "totalEstimatedHours": 1000.00,
+  "userIds": [1, 2, 3],
+  "isActive": true
+}
+```
+
+**Các trường bắt buộc:**
+- `name`: Tên dự án (tối đa 200 ký tự)
+- `status`: Trạng thái dự án (PLANNING, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED)
+- `totalEstimatedHours`: Tổng số giờ ước tính (bắt buộc và phải > 0)
+
+**Các trường tùy chọn:**
+- `description`: Mô tả dự án
+- `startDate`: Ngày bắt đầu
+- `plannedEndDate`: Ngày kết thúc dự kiến (phải >= ngày hiện tại)
+- `totalBudget`: Tổng ngân sách
+- `userIds`: Danh sách ID người dùng được gán vào dự án
+- `isActive`: Trạng thái hoạt động (mặc định: true)
+
+### 2. ProjectFixedPrice (Dự án theo cột mốc)
+**Endpoint:** `POST /api/projects/fixed-price`
+
+**Quyền truy cập:** Cần role `ADMIN` hoặc `MANAGER`
+
+**Request Body (ProjectFixedPriceRequestDto):**
+```json
+{
+  "name": "Tên dự án",
+  "description": "Mô tả dự án",
+  "status": "PLANNING",
+  "startDate": "2025-07-01",
+  "plannedEndDate": "2025-12-31",
+  "totalBudget": 100000.00,
+  "userIds": [1, 2, 3],
+  "isActive": true
+}
+```
+
+**Các trường bắt buộc:**
+- `name`: Tên dự án (tối đa 200 ký tự)
+- `status`: Trạng thái dự án
+- `totalBudget`: Tổng ngân sách (bắt buộc và phải > 0)
+
+**Các trường tùy chọn:**
+- `description`: Mô tả dự án
+- `startDate`: Ngày bắt đầu
+- `plannedEndDate`: Ngày kết thúc dự kiến (phải >= ngày hiện tại)
+- `userIds`: Danh sách ID người dùng được gán vào dự án
+- `isActive`: Trạng thái hoạt động (mặc định: true)
+
+### Response thành công:
+Cả hai endpoint đều trả về HTTP 201 Created với thông tin chi tiết của project vừa tạo.
+
+### Các enum status có thể sử dụng:
+- `PLANNING`: Đang lập kế hoạch
+- `IN_PROGRESS`: Đang thực hiện
+- `COMPLETED`: Đã hoàn thành
+- `ON_HOLD`: Tạm dừng
+- `CANCELLED`: Đã hủy
+
+### Lưu ý quan trọng:
+2. **Validation:** Hệ thống sẽ validate tất cả các trường theo quy tắc đã định
+3. **ProjectLabor:** Bắt buộc phải có `totalEstimatedHours` (quản lý theo giờ)
+4. **ProjectFixedPrice:** Bắt buộc phải có `totalBudget` (quản lý theo ngân sách và cột mốc)
+5. **Date validation:** Ngày kết thúc phải >= ngày bắt đầu
+
+Bạn có cần tôi giải thích thêm về bất kỳ phần nào không?

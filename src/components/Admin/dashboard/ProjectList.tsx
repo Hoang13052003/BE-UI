@@ -52,6 +52,7 @@ const ProjectList: React.FC = () => {
     NEW: "blue",
     PENDING: "orange",
     PROGRESS: "green",
+    COMPLETED: "success",
     CLOSED: "gray",
   };
 
@@ -71,7 +72,7 @@ const ProjectList: React.FC = () => {
     {
       title: "Type",
       key: "type",
-      render: (_, record) => <Tag color="blue">{record.type}</Tag>,
+      render: (_, record) => <Tag color="blue">{record.projectType}</Tag>,
     },
     {
       title: "Overall Process",
@@ -208,7 +209,7 @@ const ProjectList: React.FC = () => {
             >
               <b>Type:</b>{" "}
               <Tag color="blue" style={{ fontWeight: 500 }}>
-                {item.type}
+                {item.projectType}
               </Tag>
             </div>
             <div style={{ marginBottom: 12 }}>

@@ -27,6 +27,7 @@ import {
   CheckCircleOutlined,
   FileTextOutlined,
   FlagOutlined,
+  SyncOutlined,
   AppstoreOutlined,
   BarsOutlined,
   ClearOutlined,
@@ -48,11 +49,13 @@ interface ProjectMilestonesTabProps {
 const getMilestoneStatusColor = (status: MilestoneStatus | null): string => {
   if (!status) return "default";
   switch (status) {
-    case "NEW":
+    case "TODO":
+      return "blue";
+    case "DOING":
       return "processing";
-    case "SENT":
+    case "PENDING":
       return "warning";
-    case "REVIEWED":
+    case "COMPLETED":
       return "success";
     default:
       return "default";
@@ -61,11 +64,13 @@ const getMilestoneStatusColor = (status: MilestoneStatus | null): string => {
 
 const getMilestoneStatusIcon = (status: MilestoneStatus | null) => {
   switch (status) {
-    case "NEW":
+    case "TODO":
       return <ClockCircleOutlined />;
-    case "SENT":
+    case "DOING":
+      return <SyncOutlined spin />;
+    case "PENDING":
       return <FileTextOutlined />;
-    case "REVIEWED":
+    case "COMPLETED":
       return <CheckCircleOutlined />;
     default:
       return <FlagOutlined />;

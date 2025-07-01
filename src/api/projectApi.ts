@@ -28,15 +28,44 @@ export const fetchProjects = async (
   sortConfig?: SortConfig | SortConfig[]
 ): Promise<FetchProjectsResult> => {
   try {
-    const result = await fetchPaginatedData<Project>(
-      "/api/projects",
+    let sort: string[] = [];
+    if (Array.isArray(sortConfig)) {
+      sort = sortConfig.map((sCfg) => `${sCfg.property},${sCfg.direction}`);
+    } else if (sortConfig) {
+      sort = [`${sortConfig.property},${sortConfig.direction}`];
+    }
+
+    const params = {
       page,
       size,
-      sortConfig
-    );
+      ...(sort.length > 0 ? { sort } : {}),
+    };
+
+    const response = await axiosClient.get("/api/private/unified-projects/search", {
+      params,
+      paramsSerializer: (params) => {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach((v) => searchParams.append(key, v));
+          } else if (value !== undefined && value !== null) {
+            searchParams.append(key, String(value));
+          }
+        });
+        return searchParams.toString();
+      },
+    });
+
+    // Handle new response structure
+    const responseData = response.data;
+    const projects = responseData.projects || [];
+    const totalItems = responseData.totalProjects || 0;
+
     return {
-      ...result,
-      projects: result.items,
+      items: normalizeProjectsData(projects),
+      projects: normalizeProjectsData(projects),
+      totalItems,
+      navigationLinks: {}, // No navigation links in new response
     };
   } catch (error) {
     console.error("Error fetching projects:", error);
@@ -59,20 +88,20 @@ export const filterProjects = async (
   try {
     const params: Record<string, string | number> = {};
     if (criteria.name) params["name.contains"] = criteria.name;
-    if (criteria.status) params["status.equals"] = criteria.status;
+    if (criteria.status) params["status"] = criteria.status; // sửa lại đúng key
     if (criteria.type) params["type.equals"] = criteria.type;
     if (criteria.startDate) params["startDate.contains"] = criteria.startDate;
     if (criteria.endDate) params["endDate.contains"] = criteria.endDate;
 
-    const result = await fetchPaginatedData<Project>(
-      "/api/projects",
+    const result = await fetchPaginatedData<any>(
+      "/api/private/unified-projects/search",
       page,
       size,
       sortConfig,
       params
     );
     return {
-      projects: result.items,
+      projects: normalizeProjectsData(result.items),
       totalCount: result.totalItems,
       links: result.navigationLinks,
     };
@@ -84,8 +113,8 @@ export const filterProjects = async (
 
 export const getProjectByIdApi = async (id: number): Promise<Project> => {
   try {
-    const { data } = await axiosClient.get<Project>(`/api/projects/${id}`);
-    return data;
+    const { data } = await axiosClient.get<any>(`/api/projects/${id}`);
+    return normalizeProjectData(data);
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === "Project not found") throw error;
@@ -98,8 +127,27 @@ export const getProjectByIdApi = async (id: number): Promise<Project> => {
 export const createProjectApi = async (
   projectData: ProjectRequest
 ): Promise<Project> => {
-  const { data } = await axiosClient.post("/api/projects", projectData);
-  return data;
+  // Validate required fields based on project type
+  if (projectData.type === "LABOR") {
+    if (!projectData.totalEstimatedHours || projectData.totalEstimatedHours <= 0) {
+      throw new Error("Total estimated hours is required and must be greater than 0 for labor projects");
+    }
+  } else if (projectData.type === "FIXED_PRICE") {
+    if (!projectData.totalBudget || projectData.totalBudget <= 0) {
+      throw new Error("Total budget is required and must be greater than 0 for fixed price projects");
+    }
+  }
+
+  // Determine the correct endpoint based on project type
+  const endpoint = projectData.type === "LABOR" 
+    ? "/api/projects/labor" 
+    : "/api/projects/fixed-price";
+  
+  // Remove type field from request body as it's only used for endpoint selection
+  const { type, ...requestData } = projectData;
+  
+  const { data } = await axiosClient.post(endpoint, requestData);
+  return normalizeProjectData(data);
 };
 
 export const deleteProjectApi = async (projectId: number): Promise<void> => {
@@ -129,8 +177,8 @@ export const addMilestoneToProjectApi = async (
 export interface ProjectUpdateRequest {
   name?: string;
   description?: string;
-  type?: "FIXED_PRICE" | "LABOR";
-  status?: "NEW" | "PENDING" | "PROGRESS" | "CLOSED";
+  projectType?: "FIXED_PRICE" | "LABOR";
+  status?: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";
   startDate?: string;
   plannedEndDate?: string;
   totalBudget?: number;
@@ -162,7 +210,8 @@ export const updateProjectApi = async (
           console.warn(
             "Backend validation for planned end date has been skipped"
           );
-          return { ...projectData, id: projectId } as Project;
+          // Return the response data directly instead of casting
+          throw new Error(errorMessage);
         }
         throw new Error(errorMessage);
       }
@@ -360,4 +409,18 @@ export const getUsersByProjectId = async (
 ): Promise<User[]> => {
   const response = await axiosClient.get(`/api/projects/${projectId}/users`);
   return response.data;
+};
+
+// Helper function to normalize project data from backend response
+const normalizeProjectData = (project: any): Project => {
+  return {
+    ...project,
+    // Add backward compatibility field
+    type: project.projectType,
+  };
+};
+
+// Helper function to normalize project array
+const normalizeProjectsData = (projects: any[]): Project[] => {
+  return projects.map(normalizeProjectData);
 };

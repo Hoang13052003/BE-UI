@@ -64,14 +64,22 @@ export const createInlineEditColumns = ({
 
   const getStatusColorTag = (statusKey: string | undefined): string => {
     switch (statusKey?.toUpperCase()) {
+      // Project status
+      case "NEW":
+        return "blue";
       case "PENDING":
         return "orange";
-      case "IN_PROGRESS":
+      case "PROGRESS":
         return "processing";
       case "COMPLETED":
         return "success";
-      case "DELAYED":
-        return "error";
+      case "CLOSED":
+        return "default";
+      // Timelog & Milestone status
+      case "TODO":
+        return "blue";
+      case "DOING":
+        return "processing";
       default:
         return "default";
     }
@@ -299,10 +307,10 @@ export const createInlineEditColumns = ({
               disabled={batchSaving || batchDeleting}
               size="small"
             >
+              <Option value="TODO">To Do</Option>
+              <Option value="DOING">Doing</Option>
               <Option value="PENDING">Pending</Option>
-              <Option value="IN_PROGRESS">In Progress</Option>
               <Option value="COMPLETED">Completed</Option>
-              <Option value="DELAYED">Delayed</Option>
             </Select>
           );
         }

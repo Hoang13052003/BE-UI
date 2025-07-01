@@ -33,15 +33,15 @@ import {
   MessageOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
-import { useChat } from "../../../contexts/ChatContext";
-import { useAuth } from "../../../contexts/AuthContext";
-import {
-  ChatRoomResponse,
-  createGroupChatRoom,
-  ChatMessageRequest,
-  ChatMessageType,
-  ChatRoomType,
-} from "../../../api/chatApi";
+// import { useChat } from "../../../contexts/ChatContext";
+// import { useAuth } from "../../../contexts/AuthContext";
+// import {
+//   ChatRoomResponse,
+//   createGroupChatRoom,
+//   ChatMessageRequest,
+//   ChatMessageType,
+//   ChatRoomType,
+// } from "../../../api/chatApi";
 import { useDebouncedCallback } from "use-debounce";
 import { useAttachmentUpload } from "../../../hooks/useAttachmentUpload";
 import MessageList from "./components/MessageList";
@@ -82,22 +82,22 @@ const TypingDots: React.FC = () => (
 );
 
 const Messages: React.FC = () => {
-  const { userDetails } = useAuth();
-  const {
-    messages,
-    chatRooms,
-    activeChatRoom,
-    onlineUsers,
-    isConnected,
-    loading,
-    sendChatMessage,
-    selectChatRoom,
-    markMessageRead,
-    refreshChatRooms,
-    typingUsers,
-    sendTypingActivity,
-    loadChatHistory,
-  } = useChat();
+  // const { userDetails } = useAuth();
+  // const {
+  //   messages,
+  //   chatRooms,
+  //   activeChatRoom,
+  //   onlineUsers,
+  //   isConnected,
+  //   loading,
+  //   sendChatMessage,
+  //   selectChatRoom,
+  //   markMessageRead,
+  //   refreshChatRooms,
+  //   typingUsers,
+  //   sendTypingActivity,
+  //   loadChatHistory,
+  // } = useChat();
   const [messageInput, setMessageInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateRoomModalVisible, setIsCreateRoomModalVisible] =
@@ -140,7 +140,7 @@ const Messages: React.FC = () => {
       const filtered = chatRooms.filter(
         (room) =>
           room.roomName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          room.participants.some((p) =>
+          room.participants.some((p: any) =>
             p.fullName.toLowerCase().includes(searchTerm.toLowerCase())
           )
       );
@@ -162,14 +162,14 @@ const Messages: React.FC = () => {
   useEffect(() => {
     if (activeChatRoom && messages.length > 0) {
       const unreadMessages = messages.filter(
-        (msg) =>
+        (msg: any) =>
           !msg.isRead &&
           msg.senderId !== userDetails?.id &&
           (msg.receiverId === userDetails?.id ||
             msg.topic === activeChatRoom.roomName ||
             msg.projectId === activeChatRoom.projectId)
       );
-      unreadMessages.forEach((msg) => {
+      unreadMessages.forEach((msg: any) => {
         markMessageRead(msg.id);
       });
     }
@@ -191,7 +191,7 @@ const Messages: React.FC = () => {
         };
         if (activeChatRoom.roomType === ChatRoomType.PRIVATE) {
           const otherParticipant = activeChatRoom.participants.find(
-            (p) => p.userId !== userDetails?.id
+            (p: any) => p.userId !== userDetails?.id
           );
           if (otherParticipant) {
             messageRequest.receiverId = otherParticipant.userId;
@@ -220,7 +220,7 @@ const Messages: React.FC = () => {
           };
           if (activeChatRoom.roomType === ChatRoomType.PRIVATE) {
             const otherParticipant = activeChatRoom.participants.find(
-              (p) => p.userId !== userDetails?.id
+              (p: any) => p.userId !== userDetails?.id
             );
             if (otherParticipant) {
               fileMessage.receiverId = otherParticipant.userId;
@@ -331,7 +331,7 @@ const Messages: React.FC = () => {
   const getParticipantNames = (room: ChatRoomResponse) => {
     if (room.roomType === ChatRoomType.PRIVATE) {
       const otherParticipant = room.participants.find(
-        (p) => p.userId !== userDetails?.id
+        (p: any) => p.userId !== userDetails?.id
       );
       return otherParticipant?.fullName || "Private Chat";
     } else {
@@ -341,12 +341,12 @@ const Messages: React.FC = () => {
 
   const [visibleMessages, setVisibleMessages] = useState<any[]>([]);
 
-  const filteredMessages = messages.filter((message) => {
+  const filteredMessages = messages.filter((message: any) => {
     if (!activeChatRoom) return false;
     switch (activeChatRoom.roomType) {
       case ChatRoomType.PRIVATE:
         const otherUserId = activeChatRoom.participants.find(
-          (p) => p.userId !== userDetails?.id
+          (p: any) => p.userId !== userDetails?.id
         )?.userId;
         return (
           (message.senderId === userDetails?.id &&
@@ -523,9 +523,9 @@ const Messages: React.FC = () => {
                   dataSource={filteredChatRooms}
                   renderItem={(room) => {
                     const isActive = activeChatRoom?.id === room.id;
-                    const hasOnlineParticipant = room.participants.some((p) =>
+                    const hasOnlineParticipant = room.participants.some((p: any) =>
                       onlineUsers?.onlineUsers.some(
-                        (u) => u.userId === p.userId.toString()
+                        (u: any) => u.userId === p.userId.toString()
                       )
                     );
 
@@ -981,7 +981,7 @@ const Messages: React.FC = () => {
                     .includes(input.toLowerCase())
                 }
               >
-                {onlineUsers?.onlineUsers.map((user) => (
+                {onlineUsers?.onlineUsers.map((user: any) => (
                   <Select.Option
                     key={user.userId}
                     value={parseInt(user.userId)}

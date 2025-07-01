@@ -12,7 +12,7 @@ export interface BatchUpdateMilestoneItemDTO {
   description?: string;
   startDate?: string;
   deadlineDate?: string;
-  status?: "NEW" | "SENT" | "REVIEWED";
+  status?: "TODO" | "DOING" | "PENDING" | "COMPLETED";
   notes?: string;
   completionDate?: string;
   completionPercentage?: number;
