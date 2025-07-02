@@ -1,10 +1,23 @@
 import dayjs from "dayjs";
 import axiosClient from "./axiosClient";
 
+export interface CreateFeedbackRequest {
+  updateId?: number;
+  projectId: string;
+  userId: number;
+  content: string;
+}
+
+export interface UpdateFeedbackRequest {
+  projectId: string;
+  userId: number;
+  content: string;
+}
+
 export interface Feedback {
   id: string;
   updateId: number;
-  projectId: number;
+  projectId: string;
   userId: number;
   content: string;
   attachments?: FeedbackAttachment[];
@@ -15,7 +28,7 @@ export interface Feedback {
 export interface FeedbackResponse {
   id: string;
   updateId: number;
-  projectId: number;
+  projectId: string;
   projectName: string;
   userId: number;
   fullName: string;
@@ -33,19 +46,6 @@ export interface FeedbackAttachment {
   fileSize: number;
   url: string;
   uploadedAt: string;
-}
-
-export interface CreateFeedbackRequest {
-  updateId?: number;
-  projectId: number;
-  userId: number;
-  content: string;
-}
-
-export interface UpdateFeedbackRequest {
-  projectId: number;
-  userId: number;
-  content: string;
 }
 
 export interface PaginatedFeedbackResponse {
@@ -92,7 +92,7 @@ export const getFeedbackById = async (
 
 export const getFeedbacksByUserAndProject = async (
   userId: number,
-  projectId: number,
+  projectId: string,
   page: number = 0,
   size: number = 10,
   sort?: string

@@ -39,17 +39,21 @@ import {
   batchDeleteMilestonesApi,
 } from "../../api/milestoneApi";
 import { Milestone, MilestoneStatus } from "../../types/milestone";
+import {
+  getMilestoneStatusDisplayName,
+  getMilestoneStatusTagColor,
+} from "../../utils/milestoneUtils";
 import { useInlineEditMilestone } from "../../hooks/useInlineEditMilestone";
 import { createInlineEditMilestoneColumns } from "./InlineEditMilestoneColumns";
 
 const { Text, Title } = Typography;
 
 interface MilestoneDetailsDisplayProps {
-  projectId: number;
+  projectId: string;
   onAddMilestone: (onSuccessRefresh?: () => void) => void;
   onEditMilestone?: (
     milestoneId: number,
-    projectId: number,
+    projectId: string,
     onSuccessRefresh?: () => void
   ) => void;
   milestoneCount?: number;
@@ -164,10 +168,10 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
     const total = milestones.length;
     const completed = milestones.filter((m) => isMilestoneCompleted(m)).length;
     const inProgress = milestones.filter(
-      (m) => !isMilestoneCompleted(m) && m.status === "SENT"
+      (m) => !isMilestoneCompleted(m) && m.status === "DOING"
     ).length;
     const pending = milestones.filter(
-      (m) => !isMilestoneCompleted(m) && m.status === "NEW"
+      (m) => !isMilestoneCompleted(m) && m.status === "PENDING"
     ).length;
     const overdue = milestones.filter((m) => isOverdueMilestone(m)).length;
 
@@ -258,18 +262,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   const getMilestoneStatusColor = (
     status: MilestoneStatus | null | undefined
   ): string => {
-    if (!status) return "default";
-
-    switch (String(status).toUpperCase()) {
-      case "NEW":
-        return "blue";
-      case "SENT":
-        return "orange";
-      case "REVIEWED":
-        return "green";
-      default:
-        return "default";
-    }
+    return getMilestoneStatusTagColor(status || null);
   };
 
   if (loading && milestones.length === 0) {
@@ -749,7 +742,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                             margin: 0,
                           }}
                         >
-                          {status ? String(status).replace("_", " ") : "New"}
+                          {status ? getMilestoneStatusDisplayName(status) : "To Do"}
                         </Tag>
                         {isMilestoneCompleted(record) &&
                           !isOverdueMilestone(record) && (

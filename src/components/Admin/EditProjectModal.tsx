@@ -28,7 +28,7 @@ const { Option } = Select;
 
 interface EditProjectModalProps {
   visible: boolean;
-  projectId: number | null;
+  projectId: string | null;
   onClose: () => void;
   onSuccess: () => void;
   projectData?: Project;
@@ -194,7 +194,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
           ? values.plannedEndDate.format("YYYY-MM-DD")
           : undefined,
       };
-      await updateProjectApi(projectId, updateData);
+      await updateProjectApi(parseInt(projectId!), updateData);
       form.resetFields();
       onSuccess();
     } catch (error) {

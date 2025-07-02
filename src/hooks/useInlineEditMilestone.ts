@@ -101,7 +101,7 @@ export const useInlineEditMilestone = ({
           id: Number(key),
           completionDate: currentDate,
           completionPercentage: 100,
-          status: "REVIEWED" as const,
+          status: "COMPLETED" as const,
         })
       );
       setBatchSaving(true);

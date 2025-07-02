@@ -118,7 +118,7 @@ const Overview: React.FC = () => {
     }
   };
 
-  const handleDetailsClick = (id: number) => {
+  const handleDetailsClick = (id: string) => {
     navigate(`/client/projects/${id}/details`);
   };
 
@@ -147,8 +147,8 @@ const Overview: React.FC = () => {
                 <Title level={5} style={{ margin: 0, wordBreak: "break-word" }}>
                   {project.name}
                 </Title>
-                <Tag color={project.type === "FIXED_PRICE" ? "blue" : "green"}>
-                  {project.type === "FIXED_PRICE" ? "Fixed Price" : "Labor"}
+                <Tag color={project.projectType === "FIXED_PRICE" ? "blue" : "green"}>
+                  {project.projectType === "FIXED_PRICE" ? "Fixed Price" : "Labor"}
                 </Tag>
               </Space>
 
@@ -244,8 +244,8 @@ const Overview: React.FC = () => {
                 <Title level={5} style={{ margin: 0, wordBreak: "break-word" }}>
                   {project.name}
                 </Title>
-                <Tag color={project.type === "FIXED_PRICE" ? "blue" : "green"}>
-                  {project.type === "FIXED_PRICE" ? "Fixed Price" : "Labor"}
+                <Tag color={project.projectType === "FIXED_PRICE" ? "blue" : "green"}>
+                  {project.projectType === "FIXED_PRICE" ? "Fixed Price" : "Labor"}
                 </Tag>
                 <Tag color={getStatusColor(project.status)}>
                   {project.status}

@@ -55,12 +55,12 @@ const ProjectManager: React.FC = () => {
   const [isAddMilestoneModalVisible, setIsAddMilestoneModalVisible] =
     useState<boolean>(false);
   const [selectedProjectIdForMilestone, setSelectedProjectIdForMilestone] =
-    useState<number | null>(null);
-  const [expandedProjectId, setExpandedProjectId] = useState<number | null>(
+    useState<string | null>(null);
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(
     null
   );
   const [expandedTimelogProjectId, setExpandedTimelogProjectId] = useState<
-    number | null
+    string | null
   >(null);
 
   const [currentPage, setCurrentPage] = useState<number>(0);
@@ -79,7 +79,7 @@ const ProjectManager: React.FC = () => {
   const [isEditMilestoneModalVisible, setIsEditMilestoneModalVisible] =
     useState(false);
   const [editingMilestoneProjectId, setEditingMilestoneProjectId] = useState<
-    number | null
+    string | null
   >(null);
   const [currentMilestoneRefreshCallback, setCurrentMilestoneRefreshCallback] =
     useState<(() => void) | null>(null);
@@ -135,8 +135,8 @@ const ProjectManager: React.FC = () => {
     if (newPageSize) setPageSize(newPageSize);
   };
 
-  const handleDelete = async (id: number) => {
-    setDeletingId(id);
+  const handleDelete = async (id: string) => {
+    setDeletingId(parseInt(id));
     try {
       await deleteProjectApi(id);
       message.success("Project deleted successfully!");
@@ -160,7 +160,7 @@ const ProjectManager: React.FC = () => {
   };
 
   const handleAddMilestoneClick = (
-    projectId: number,
+    projectId: string,
     refreshCallback?: () => void
   ) => {
     setSelectedProjectIdForMilestone(projectId);
@@ -186,7 +186,7 @@ const ProjectManager: React.FC = () => {
 
   const handleEditMilestone = (
     milestoneId: number,
-    projectId: number,
+    projectId: string,
     refreshCallback?: () => void
   ) => {
     setSelectedMilestoneId(milestoneId);
@@ -214,13 +214,13 @@ const ProjectManager: React.FC = () => {
     }
   };
 
-  const toggleMilestoneDetail = (projectId: number) => {
+  const toggleMilestoneDetail = (projectId: string) => {
     setExpandedProjectId((prevId) => (prevId === projectId ? null : projectId));
     if (expandedTimelogProjectId === projectId)
       setExpandedTimelogProjectId(null);
   };
 
-  const toggleTimelogDetail = (projectId: number) => {
+  const toggleTimelogDetail = (projectId: string) => {
     setExpandedTimelogProjectId((prevId) =>
       prevId === projectId ? null : projectId
     );
@@ -228,8 +228,7 @@ const ProjectManager: React.FC = () => {
   };
 
   const handleRefreshProjectProgress = useCallback(
-    (projectId: number) => {
-      console.log(`Refreshing progress for project ${projectId}`);
+    (_projectId: string) => {
       loadProjects(false);
     },
     [loadProjects]
@@ -274,7 +273,7 @@ const ProjectManager: React.FC = () => {
 
   const hasActiveFilters = Object.values(filterCriteria).some((value) => value);
 
-  const handleNavigateToFullDetails = (projectId: number) => {
+  const handleNavigateToFullDetails = (projectId: string) => {
     navigate(`/admin/projects/${projectId}/details`);
   };
 
@@ -461,7 +460,7 @@ const ProjectManager: React.FC = () => {
                           type="text"
                           icon={<DeleteOutlined />}
                           danger
-                          loading={deletingId === item.id}
+                          loading={deletingId === parseInt(item.id)}
                         >
                           Delete
                         </Button>

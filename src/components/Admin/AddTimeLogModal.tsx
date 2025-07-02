@@ -21,7 +21,7 @@ interface AddTimeLogModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  projectId: number;
+  projectId: string;
   users?: { id: number; name: string }[];
 }
 
@@ -51,7 +51,7 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
       setLoading(true);
 
       const payload: TimeLogRequest = {
-        projectId: projectId,
+        projectLaborId: projectId,
         performerId: values.performerId,
         taskDate: values.taskDate.format("YYYY-MM-DD"),
         taskDescription: values.taskDescription,

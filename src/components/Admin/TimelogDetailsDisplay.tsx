@@ -44,7 +44,7 @@ import { UserIdAndEmailResponse } from "../../types/User";
 const { Text, Title } = Typography;
 
 interface TimelogDetailsDisplayProps {
-  projectId: number;
+  projectId: string;
   theme?: string;
   isAdmin?: boolean;
   onRefreshProgress?: () => void;
@@ -85,6 +85,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
       try {
         const { timelogs: timelogData, totalItems: newTotalItems } =
           await getTimeLogsByProjectIdApi(projectId, currentPage, pageSize);
+        
         setTimelogs(timelogData);
         setTotalItems(newTotalItems);
         setError(null);
@@ -96,9 +97,9 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         > = {};
         timelogData.forEach((tl) => {
           performersMap[tl.id] = {
-            id: tl.performer.id,
-            email: tl.performer.email,
-            fullName: tl.performer.fullName,
+            id: tl.performerId,
+            email: '', // Email not provided in new endpoint
+            fullName: tl.performerFullName,
           };
         });
         setCurrentPerformersMap(performersMap);
@@ -132,7 +133,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   });
 
   useEffect(() => {
-    if (projectId) {
+    if (projectId && projectId.trim() !== '') {
       fetchTimelogs();
     }
   }, [fetchTimelogs, projectId]);
@@ -182,7 +183,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
   const calculateStats = () => {
     const totalHours = timelogs.reduce((sum, log) => sum + log.hoursSpent, 0);
     const uniqueUsers = new Set(
-      timelogs.map((log) => log.performer?.fullName || "N/A")
+      timelogs.map((log) => log.performerFullName || "N/A")
     ).size;
     const thisWeekLogs = timelogs.filter((log) =>
       dayjs(log.taskDate).isAfter(dayjs().startOf("week"))

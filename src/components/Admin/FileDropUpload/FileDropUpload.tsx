@@ -10,7 +10,7 @@ import { useAlert } from "../../../contexts/AlertContext";
 import "../FileDropUpload/FileDropUpload.css";
 
 interface FileDropUploadProps {
-  projectId: number;
+  projectId: string;
   onUploadComplete?: () => void;
   onUploadError?: () => void;
   width?: string | number;

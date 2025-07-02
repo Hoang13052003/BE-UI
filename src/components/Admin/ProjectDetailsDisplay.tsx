@@ -32,14 +32,14 @@ interface ProjectDetailsDisplayProps {
   theme?: string;
 
   isExpanded?: boolean;
-  expandedTimelogProjectId?: number | null;
-  onToggleMilestoneDetail?: (id: number) => void;
-  onToggleTimelogDetail?: (id: number) => void;
+  expandedTimelogProjectId?: string | null;
+  onToggleMilestoneDetail?: (id: string) => void;
+  onToggleTimelogDetail?: (id: string) => void;
 
-  onAddMilestone?: (projectId: number, refreshCallback?: () => void) => void;
+  onAddMilestone?: (projectId: string, refreshCallback?: () => void) => void;
   onEditMilestone?: (
     milestoneId: number,
-    projectId: number,
+    projectId: string,
     refreshCallback?: () => void
   ) => void;
 
@@ -109,9 +109,9 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       e.target === e.currentTarget
     ) {
       if (projectData.projectType === "FIXED_PRICE" && onToggleMilestoneDetail) {
-        onToggleMilestoneDetail(parseInt(projectData.id));
+        onToggleMilestoneDetail(projectData.id);
       } else if (projectData.projectType === "LABOR" && onToggleTimelogDetail) {
-        onToggleTimelogDetail(parseInt(projectData.id));
+        onToggleTimelogDetail(projectData.id);
       }
     }
   };
@@ -422,7 +422,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
                       fontStyle: "italic",
                     }}
                   >
-                    {expandedTimelogProjectId === parseInt(projectData.id)
+                    {expandedTimelogProjectId === projectData.id
                       ? "👇 Timelogs expanded"
                       : "⏰ Click to view timelogs"}
                   </Text>
@@ -532,10 +532,10 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             }}
           >
             <MilestoneDetailsDisplayInternal
-              projectId={parseInt(projectData.id)}
+              projectId={projectData.id}
               onAddMilestone={(refreshCallback) =>
                 currentUserIsAdmin &&
-                onAddMilestone(parseInt(projectData.id), () =>
+                onAddMilestone(projectData.id, () =>
                   handleRefreshWithProgress(refreshCallback)
                 )
               } // Chỉ cho admin
@@ -552,7 +552,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             />
           </div>
         )}
-      {expandedTimelogProjectId === parseInt(projectData.id) &&
+      {expandedTimelogProjectId === projectData.id &&
         onToggleTimelogDetail &&
         projectData.projectType === "LABOR" && (
           <div
@@ -566,7 +566,7 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
             }}
           >
             <TimelogDetailsDisplayInternal
-              projectId={parseInt(projectData.id)}
+              projectId={projectData.id}
               theme={theme}
               isAdmin={currentUserIsAdmin}
               onRefreshProgress={onRefreshProgress}

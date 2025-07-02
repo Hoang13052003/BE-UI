@@ -8,7 +8,7 @@ export type TimelogStatusType =
   | "COMPLETED";
 
 export interface TimeLogRequest {
-  projectId: number;
+  projectLaborId: string;
   performerId: number;
   taskDate: string; // YYYY-MM-DD
   taskDescription: string;
@@ -17,19 +17,16 @@ export interface TimeLogRequest {
 
 export interface TimeLogResponse {
   id: number;
-
-  performer: {
-    id: number;
-    fullName: string;
-    email: string;
-  };
-
+  projectLaborId: string;
+  projectName: string;
+  performerId: number;
+  performerFullName: string;
   taskDate: string; // YYYY-MM-DD
   taskDescription: string;
   hoursSpent: number;
   createdAt?: string;
-  actualTimelogStatus?: TimelogStatusType;
   computedTimelogStatus?: string;
+  actualTimelogStatus?: TimelogStatusType;
   completionPercentage?: number;
 }
 
@@ -57,18 +54,19 @@ export interface BatchUpdateItem {
 }
 
 export const getTimeLogsByProjectIdApi = async (
-  projectId: number,
+  projectId: string,
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[]
 ): Promise<TimeLogFetchResult> => {
   try {
     const result = await fetchPaginatedData<TimeLogResponse>(
-      `/api/timelogs/project/${projectId}/details`,
+      `/api/timelogs/project-labor/${projectId}`,
       page,
       size,
       sortConfig
     );
+    
     return {
       ...result,
       timelogs: result.items,
@@ -174,7 +172,7 @@ export const putUpdateTimeLogApi = async (
 };
 
 export const uploadTimelogsExcelApi = async (
-  projectId: number,
+  projectId: string,
   file: File
 ): Promise<ExcelUploadResponseDTO> => {
   try {

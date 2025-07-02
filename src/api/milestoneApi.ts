@@ -21,7 +21,7 @@ export interface BatchUpdateMilestoneItemDTO {
 export interface BatchUpdateMilestoneItem extends BatchUpdateMilestoneItemDTO {}
 
 export const getMilestonesByProjectIdApi = async (
-  projectId: number,
+  projectId: string,
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[]

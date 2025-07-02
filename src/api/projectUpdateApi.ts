@@ -6,7 +6,7 @@ import { ApiPage } from "../types/project";
 // Project Update Types
 export interface ProjectUpdate {
   id: number;
-  projectId: number;
+  projectId: string;
   projectName: string;
   projectType: string;
   userId: number;
@@ -40,7 +40,7 @@ export interface Attachment {
 }
 
 export interface ProjectUpdateRequestPayload {
-  projectId: number;
+  projectId: string;
   updateDate: string;
   summary: string;
   details: string;
@@ -74,7 +74,7 @@ export interface ProjectUpdateEditRequest
 // If you want to change, do similarly to getAllProjectUpdatesApi.
 /*
 export const getProjectUpdatesApi = async (
-  projectId: number,
+  projectId: string,
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[]

@@ -150,7 +150,7 @@ export const createProjectApi = async (
   return normalizeProjectData(data);
 };
 
-export const deleteProjectApi = async (projectId: number): Promise<void> => {
+export const deleteProjectApi = async (projectId: string): Promise<void> => {
   await axiosClient.delete(`/api/projects/${projectId}`);
 };
 
@@ -165,7 +165,7 @@ export interface MilestoneRequest {
 }
 
 export const addMilestoneToProjectApi = async (
-  projectId: number,
+  projectId: string,
   milestoneData: MilestoneRequest
 ): Promise<void> => {
   await axiosClient.post(
@@ -187,7 +187,7 @@ export interface ProjectUpdateRequest {
 }
 
 export const updateProjectApi = async (
-  projectId: number,
+  projectId: string,
   projectData: ProjectUpdateRequest
 ): Promise<Project> => {
   try {
@@ -221,7 +221,7 @@ export const updateProjectApi = async (
 };
 
 export const getProjectDetailsApi = async (
-  projectId: number
+  projectId: string
 ): Promise<ProjectDetail> => {
   try {
     const { data } = await axiosClient.get<ProjectDetail>(
@@ -235,7 +235,7 @@ export const getProjectDetailsApi = async (
 };
 
 export const getProjectUpdatesTimelineApi = async (
-  projectId: number,
+  projectId: string,
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[]
@@ -288,7 +288,7 @@ export const getProjectUpdatesTimelineApi = async (
 };
 
 export const getProjectMilestonesOverviewApi = async (
-  projectId: number,
+  projectId: string,
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[],
@@ -343,7 +343,7 @@ export const getProjectMilestonesOverviewApi = async (
 };
 
 export const getProjectTimeLogsListApi = async (
-  projectId: number,
+  projectId: string,
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[],
@@ -405,7 +405,7 @@ export const getProjectTimeLogsListApi = async (
 };
 
 export const getUsersByProjectId = async (
-  projectId: number
+  projectId: string
 ): Promise<User[]> => {
   const response = await axiosClient.get(`/api/projects/${projectId}/users`);
   return response.data;

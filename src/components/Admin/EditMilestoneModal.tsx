@@ -16,6 +16,7 @@ import {
   MilestoneUpdateRequestData,
 } from "../../api/milestoneApi";
 import { Milestone, MilestoneStatus } from "../../types/milestone";
+import { getMilestoneStatusDisplayName } from "../../utils/milestoneUtils";
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -23,7 +24,7 @@ const { Option } = Select;
 interface EditMilestoneModalProps {
   visible: boolean;
   milestoneId: number | null;
-  projectId: number | null;
+  projectId: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -40,7 +41,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({
   const [initialMilestoneData, setInitialMilestoneData] =
     useState<Partial<Milestone> | null>(null);
 
-  const milestoneStatusOptions: MilestoneStatus[] = ["NEW", "SENT", "REVIEWED"];
+  const milestoneStatusOptions: MilestoneStatus[] = ["TODO", "DOING", "PENDING", "COMPLETED"];
 
   useEffect(() => {
     if (visible && milestoneId) {
@@ -197,7 +198,7 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({
             <Select placeholder="Select status">
               {milestoneStatusOptions.map((status) => (
                 <Option key={status} value={status}>
-                  {status.replace("_", " ")}
+                  {getMilestoneStatusDisplayName(status)}
                 </Option>
               ))}
             </Select>

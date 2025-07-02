@@ -13,11 +13,13 @@ import {
   addMilestoneToProjectApi,
   MilestoneRequest,
 } from "../../api/projectApi";
+import { MilestoneStatus } from "../../types/milestone";
+import { getMilestoneStatusDisplayName } from "../../utils/milestoneUtils";
 import TextArea from "antd/lib/input/TextArea";
 
 interface AddMilestoneModalProps {
   visible: boolean;
-  projectId: number;
+  projectId: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -30,7 +32,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [statusOptions, setStatusOptions] = useState<string[]>([]);
+  const [statusOptions, setStatusOptions] = useState<MilestoneStatus[]>([]);
 
   useEffect(() => {
     if (visible) {
@@ -43,7 +45,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
 
   const loadMilestoneStatuses = async () => {
     try {
-      setStatusOptions(["NEW", "SENT", "REVIEWED"]);
+      setStatusOptions(["TODO", "DOING", "PENDING", "COMPLETED"]);
     } catch (error) {
       console.error("Failed to load milestone statuses:", error);
       message.error("Failed to load milestone statuses");
@@ -145,12 +147,12 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
           name="status"
           label="Status"
           rules={[{ required: true, message: "Please select status" }]}
-          initialValue="NEW"
+          initialValue="TODO"
         >
           <Select placeholder="Select status">
             {statusOptions.map((status) => (
               <Select.Option key={status} value={status}>
-                {status.replace("_", " ")}
+                {getMilestoneStatusDisplayName(status)}
               </Select.Option>
             ))}
           </Select>
