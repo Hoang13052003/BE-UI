@@ -7,6 +7,8 @@ const PublicRoute = () => {
   if (userRole) {
     if (userRole === "ADMIN") return <Navigate to="/admin/overview" replace />;
     if (userRole === "USER") return <Navigate to="/client/overview" replace />;
+    if (userRole === "MANAGER")
+      return <Navigate to="/manager/overview" replace />;
   }
 
   return <Outlet />;

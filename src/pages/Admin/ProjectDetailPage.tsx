@@ -123,7 +123,7 @@ const ProjectDetailPage: React.FC = () => {
     );
   }
 
-  if (error && userRole === "ADMIN") {
+  if (error && (userRole === "ADMIN" || userRole === "MANAGER")) {
     return (
       <div style={{ padding: "20px" }}>
         <Button
@@ -138,7 +138,7 @@ const ProjectDetailPage: React.FC = () => {
     );
   }
 
-  if (!project && userRole === "ADMIN") {
+  if (!project && (userRole === "ADMIN" || userRole === "MANAGER")) {
     return (
       <div style={{ padding: "20px" }}>
         <Button
@@ -161,7 +161,7 @@ const ProjectDetailPage: React.FC = () => {
   return (
     <Card>
       {/* Header */}
-      {userRole === "ADMIN" ? (
+      {userRole === "ADMIN" || userRole === "MANAGER" ? (
         <Row
           justify="space-between"
           align="middle"

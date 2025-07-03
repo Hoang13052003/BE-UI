@@ -8,8 +8,9 @@ import { useAlert } from "../../../contexts/AlertContext";
 
 // Define role options as constants
 const ROLE_OPTIONS = [
-  { value: "ADMIN", label: "ADMIN" },
-  { value: "USER", label: "USER" },
+  { value: "ADMIN", label: "Admin" },
+  { value: "USER", label: "User" },
+  { value: "MANAGER", label: "Manager" },
 ];
 
 interface AddUserProps {

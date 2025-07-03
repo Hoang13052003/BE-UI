@@ -167,6 +167,37 @@ const LayoutShare: React.FC = () => {
     },
   ];
 
+  const itemsManager: MenuItem[] = [
+    {
+      key: "dashboard",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/manager/overview">Dashboard</Link>,
+    },
+    {
+      key: "project-progress",
+      icon: <LineChartOutlined />,
+      label: <Link to="/manager/project-progress">Reports</Link>,
+    },
+    {
+      key: "my-feedbacks",
+      icon: <WechatWorkOutlined />,
+      label: <Link to="/manager/my-feedbacks">My Feedbacks</Link>,
+    },
+    {
+      key: "other",
+      label: "Other",
+      style: { fontWeight: 600 },
+      icon: <UnorderedListOutlined />,
+      children: [
+        {
+          key: "notifications-v2",
+          icon: <BellOutlined />,
+          label: <Link to="/manager/notifications">Notifications</Link>,
+        },
+      ],
+    },
+  ];
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -249,7 +280,7 @@ const LayoutShare: React.FC = () => {
                 ]}
                 items={items}
               />
-            ) : (
+            ) : isAuthenticated && userDetails?.role === "USER" ? (
               userDetails?.role === "USER" && (
                 <Menu
                   onClick={onClick}
@@ -261,7 +292,17 @@ const LayoutShare: React.FC = () => {
                   items={itemsClient}
                 />
               )
-            )}
+            ) : isAuthenticated && userDetails?.role === "MANAGER" ? (
+              <Menu
+                onClick={onClick}
+                selectedKeys={[current]}
+                mode="horizontal"
+                defaultSelectedKeys={[
+                  localStorage.getItem("selectedKey") || "managerDashboard",
+                ]}
+                items={itemsManager}
+              />
+            ) : null}
           </div>
         </div>
         {isAuthenticated ? (

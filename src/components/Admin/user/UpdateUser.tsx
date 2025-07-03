@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Select, Spin, message } from 'antd';
-import { MailOutlined, UserOutlined } from '@ant-design/icons';
-import { getUser, updateUser } from '../../../api/userApi';
-import { UpdateUserPayload } from '../../../types/User';
-import { ApiError } from '../../../types/ApiError';
+import React, { useState, useEffect } from "react";
+import { Form, Input, Button, Select, Spin, message } from "antd";
+import { MailOutlined, UserOutlined } from "@ant-design/icons";
+import { getUser, updateUser } from "../../../api/userApi";
+import { UpdateUserPayload } from "../../../types/User";
+import { ApiError } from "../../../types/ApiError";
 
 interface UpdateUserProps {
   userId: number;
@@ -11,8 +11,9 @@ interface UpdateUserProps {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'ADMIN', label: 'Admin' },
-  { value: 'USER', label: 'User' }
+  { value: "ADMIN", label: "Admin" },
+  { value: "USER", label: "User" },
+  { value: "MANAGER", label: "Manager" },
 ];
 
 const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
@@ -28,18 +29,17 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
     try {
       setIsLoading(true);
       const userData = await getUser(userId);
-      
+
       form.setFieldsValue({
         fullName: userData.fullName,
         email: userData.email,
         role: userData.role,
-        note: userData.note
+        note: userData.note,
       });
-      
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      message.error('Failed to fetch user details');
-      console.error('Error fetching user:', apiError.message);
+      message.error("Failed to fetch user details");
+      console.error("Error fetching user:", apiError.message);
     } finally {
       setIsLoading(false);
     }
@@ -49,16 +49,16 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
     setIsSubmitting(true);
     try {
       await updateUser(userId, values);
-      message.success('User updated successfully');
+      message.success("User updated successfully");
       onSuccess();
     } catch (error: unknown) {
       const apiError = error as ApiError;
       if (apiError.response?.status === 409) {
-        message.error('Email already exists. Please use a different email.');
+        message.error("Email already exists. Please use a different email.");
       } else {
-        message.error('Failed to update user');
+        message.error("Failed to update user");
       }
-      console.error('Error updating user:', apiError.message);
+      console.error("Error updating user:", apiError.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -85,15 +85,15 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
           label="Full Name"
           name="fullName"
           rules={[
-            { required: true, message: 'Please enter full name' },
-            { min: 3, message: 'Name must be at least 3 characters' },
-            { max: 150, message: 'Name cannot exceed 150 characters' }
+            { required: true, message: "Please enter full name" },
+            { min: 3, message: "Name must be at least 3 characters" },
+            { max: 150, message: "Name cannot exceed 150 characters" },
           ]}
         >
-          <Input 
-            prefix={<UserOutlined className="text-gray-400" />} 
+          <Input
+            prefix={<UserOutlined className="text-gray-400" />}
             placeholder="Enter full name"
-            className="rounded-md" 
+            className="rounded-md"
           />
         </Form.Item>
 
@@ -101,21 +101,21 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
           label="Email"
           name="email"
           rules={[
-            { required: true, message: 'Please enter email address' },
-            { type: 'email', message: 'Please enter a valid email address' }
+            { required: true, message: "Please enter email address" },
+            { type: "email", message: "Please enter a valid email address" },
           ]}
         >
-          <Input 
-            prefix={<MailOutlined className="text-gray-400" />} 
+          <Input
+            prefix={<MailOutlined className="text-gray-400" />}
             placeholder="Enter email address"
-            className="rounded-md" 
+            className="rounded-md"
           />
         </Form.Item>
 
         <Form.Item
           label="Role"
           name="role"
-          rules={[{ required: true, message: 'Please select a role' }]}
+          rules={[{ required: true, message: "Please select a role" }]}
         >
           <Select
             placeholder="Select role"
@@ -124,31 +124,25 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
           />
         </Form.Item>
 
-        <Form.Item
-          label="Note"
-          name="note"
-        >
-          <Input.TextArea 
+        <Form.Item label="Note" name="note">
+          <Input.TextArea
             placeholder="Additional notes (optional)"
             rows={4}
-            className="rounded-md" 
+            className="rounded-md"
           />
         </Form.Item>
 
         <Form.Item className="mt-6">
           <div className="flex gap-4">
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               htmlType="submit"
               loading={isSubmitting}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Update User
             </Button>
-            <Button 
-              onClick={onSuccess}
-              className="border-gray-300"
-            >
+            <Button onClick={onSuccess} className="border-gray-300">
               Cancel
             </Button>
           </div>

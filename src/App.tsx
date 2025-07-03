@@ -19,8 +19,6 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import UserManagement from "./pages/Admin/UserManagement";
 import ProjectManager from "./pages/Admin/ProjectManager";
 import Notifications from "./pages/Admin/Notifications";
-import DocumentsPage from "./pages/Client/DocumentsPage";
-// import Messages from "./pages/Client/Messages/Messages";
 import PageSettings from "./pages/Client/PageSettings";
 import OverviewAdmin from "./pages/Admin/Overview";
 import Overview from "./pages/Client/overview";
@@ -83,10 +81,7 @@ function App() {
                   />
                   <Route path="register" element={<RegisterComponent />} />
                   <Route path="login" element={<LoginComponent />} />
-                  <Route
-                    path="verify-email"
-                    element={<EmailVerification />}
-                  />
+                  <Route path="verify-email" element={<EmailVerification />} />
                 </Route>
               </Route>
 
@@ -143,10 +138,6 @@ function App() {
                       <Route index element={<Settings />} />
                       <Route path="profile" element={<Profile />} />
                     </Route>
-                    <Route
-                      path="projects/documents"
-                      element={<DocumentsPage />}
-                    />
                     <Route path="notifications" element={<Notifications />} />
                     <Route
                       path="project-updates/:id"
@@ -156,6 +147,33 @@ function App() {
                     <Route
                       path="project-updates"
                       element={<ProjectUpdatesForClientPage />}
+                    />
+                    {/* <Route path="messages" element={<Messages />} /> */}
+                    <Route
+                      path="projects/:projectId/details"
+                      element={<ProjectDetailPage />}
+                    />
+                  </Route>
+                </Route>
+              </Route>
+
+              <Route element={<ProtectedRoute allowedRoles={["MANAGER"]} />}>
+                <Route path="/" element={<LayoutShare />}>
+                  <Route path="manager/" element={<DashboardClient />}>
+                    <Route path="overview" element={<Overview />} />
+                    <Route path="settings" element={<PageSettings />}>
+                      <Route index element={<Settings />} />
+                      <Route path="profile" element={<Profile />} />
+                    </Route>
+                    <Route path="notifications" element={<Notifications />} />
+                    <Route
+                      path="project-updates/:id"
+                      element={<ProjectUpdateDetailsPage />}
+                    />
+                    <Route path="my-feedbacks" element={<MyFeedbacks />} />
+                    <Route
+                      path="project-progress"
+                      element={<ProjectProgressList />}
                     />
                     {/* <Route path="messages" element={<Messages />} /> */}
                     <Route

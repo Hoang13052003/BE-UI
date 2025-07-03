@@ -38,7 +38,8 @@ const { Title, Text } = Typography;
 const ROLE_OPTIONS = [
   { value: "ALL", label: "All Roles" },
   { value: "ADMIN", label: "Administrator" },
-  { value: "USER", label: "Regular User" },
+  { value: "USER", label: "User" },
+  { value: "MANAGER", label: "Manager" },
 ];
 
 const UserManagement: React.FC = () => {

@@ -5,7 +5,7 @@ export interface ProjectName {
   name: string;
 }
 
-export type UserRole = "ADMIN" | "USER";
+export type UserRole = "ADMIN" | "MANAGER" | "USER";
 
 export interface User {
   id: number;
@@ -38,7 +38,7 @@ export interface UpdateUserPayload {
   email?: string;
   fullName?: string;
   note?: string;
-  role?: "ADMIN" | "USER";
+  role?: "ADMIN" | "MANAGER" | "USER";
 }
 
 export interface UserIdAndEmailResponse {
