@@ -10,7 +10,7 @@ import { useAlert } from "../../../contexts/AlertContext";
 import "../FileDropUpload/FileDropUpload.css";
 
 interface FileDropUploadProps {
-  projectId: string;
+  projectLaborId: string;
   onUploadComplete?: () => void;
   onUploadError?: () => void;
   width?: string | number;
@@ -18,7 +18,7 @@ interface FileDropUploadProps {
 }
 
 const FileDropUpload: React.FC<FileDropUploadProps> = ({
-  projectId,
+  projectLaborId,
   onUploadComplete,
   onUploadError,
   width = "100%",
@@ -37,7 +37,7 @@ const FileDropUpload: React.FC<FileDropUploadProps> = ({
         onProgress?.({ percent: 30 });
 
         const response: ExcelUploadResponseDTO = await uploadTimelogsExcelApi(
-          projectId,
+          projectLaborId,
           file as File
         );
         console.log("API Response in FileDropUpload:", response);

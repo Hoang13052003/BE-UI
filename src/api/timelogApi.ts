@@ -8,7 +8,6 @@ export type TimelogStatusType =
   | "COMPLETED";
 
 export interface TimeLogRequest {
-  projectLaborId: string;
   performerId: number;
   taskDate: string; // YYYY-MM-DD
   taskDescription: string;
@@ -78,10 +77,11 @@ export const getTimeLogsByProjectIdApi = async (
 };
 
 export const createTimeLogApi = async (
+  projectLaborId: string,
   payload: TimeLogRequest
 ): Promise<TimeLogResponse> => {
   const { data } = await axiosClient.post<TimeLogResponse>(
-    "/api/timelogs",
+    `/api/timelogs/project-labor/${projectLaborId}/timelogs`,
     payload
   );
   return data;
@@ -172,7 +172,7 @@ export const putUpdateTimeLogApi = async (
 };
 
 export const uploadTimelogsExcelApi = async (
-  projectId: string,
+  projectLaborId: string,
   file: File
 ): Promise<ExcelUploadResponseDTO> => {
   try {
@@ -188,7 +188,7 @@ export const uploadTimelogsExcelApi = async (
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("projectId", projectId.toString());
+    formData.append("projectLaborId", projectLaborId.toString());
 
     const { data } = await axiosClient.post(
       `/api/timelogs/upload-excel`,

@@ -44,7 +44,7 @@ import { UserIdAndEmailResponse } from "../../types/User";
 const { Text, Title } = Typography;
 
 interface TimelogDetailsDisplayProps {
-  projectId: string;
+  projectId: string; // This is actually projectLaborId from backend
   theme?: string;
   isAdmin?: boolean;
   onRefreshProgress?: () => void;
@@ -462,7 +462,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
             }}
           >
             <FileDropUpload
-              projectId={projectId}
+              projectLaborId={projectId}
               onUploadComplete={handleUploadComplete}
               onUploadError={handleUploadError}
               width="100%"

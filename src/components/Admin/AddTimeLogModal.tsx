@@ -51,14 +51,13 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
       setLoading(true);
 
       const payload: TimeLogRequest = {
-        projectLaborId: projectId,
         performerId: values.performerId,
         taskDate: values.taskDate.format("YYYY-MM-DD"),
         taskDescription: values.taskDescription,
         hoursSpent: values.hoursSpent,
       };
 
-      await createTimeLogApi(payload);
+      await createTimeLogApi(projectId, payload);
 
       message.success("Time log added successfully");
       form.resetFields();
