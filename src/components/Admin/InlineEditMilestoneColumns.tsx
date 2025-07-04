@@ -49,11 +49,13 @@ export const createInlineEditMilestoneColumns = ({
   };
   const getStatusColor = (status: string | null | undefined): string => {
     switch (status?.toUpperCase()) {
-      case "NEW":
+      case "TODO":
         return "blue";
-      case "SENT":
+      case "DOING":
         return "orange";
-      case "REVIEWED":
+      case "PENDING":
+        return "gold";
+      case "COMPLETED":
         return "green";
       default:
         return "default";
@@ -280,15 +282,16 @@ export const createInlineEditMilestoneColumns = ({
         if (isInBatchMode && isAdmin) {
           return (
             <Select
-              value={record.status || "NEW"}
+              value={record.status || "TODO"}
               onChange={(value) => onInlineEdit(record.id, "status", value)}
               size="small"
               disabled={batchSaving || batchDeleting}
               style={{ width: "100%" }}
             >
-              <Option value="NEW">New</Option>
-              <Option value="SENT">Sent</Option>
-              <Option value="REVIEWED">Reviewed</Option>
+              <Option value="TODO">To Do</Option>
+              <Option value="DOING">Doing</Option>
+              <Option value="PENDING">Pending</Option>
+              <Option value="COMPLETED">Completed</Option>
             </Select>
           );
         }
@@ -297,7 +300,25 @@ export const createInlineEditMilestoneColumns = ({
         let statusColor = getStatusColor(record.status);
         let statusText = record.status
           ? String(record.status).replace("_", " ")
-          : "New";
+          : "To Do";
+
+        // Map enum values to display names
+        switch (record.status?.toUpperCase()) {
+          case "TODO":
+            statusText = "To Do";
+            break;
+          case "DOING":
+            statusText = "Doing";
+            break;
+          case "PENDING":
+            statusText = "Pending";
+            break;
+          case "COMPLETED":
+            statusText = "Completed";
+            break;
+          default:
+            statusText = "To Do";
+        }
 
         // Keep the original status color mapping
         return (

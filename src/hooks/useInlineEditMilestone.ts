@@ -7,7 +7,6 @@ import {
 import { Milestone } from "../types/milestone";
 
 interface UseInlineEditMilestoneProps {
-  milestones: Milestone[];
   setMilestones: React.Dispatch<React.SetStateAction<Milestone[]>>;
   onRefreshData: () => void;
 }

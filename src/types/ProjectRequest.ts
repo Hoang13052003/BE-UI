@@ -1,5 +1,5 @@
 export interface ProjectRequest {
-  name: string;
+  projectName: string;
   description?: string;
   type: "FIXED_PRICE" | "LABOR";
   status: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";

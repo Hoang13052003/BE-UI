@@ -86,33 +86,31 @@ const EditMilestoneModal: React.FC<EditMilestoneModalProps> = ({
     setLoading(true);
     setError(null);
     try {
+      if (!initialMilestoneData?.projectFixedPriceId) {
+        throw new Error("Project Fixed Price ID is missing. Please reload the milestone data.");
+      }
+      
       const milestoneUpdateData: MilestoneUpdateRequestData = {
-        name: values.name,
-        description: values.description,
+        projectFixedPriceId: initialMilestoneData.projectFixedPriceId,
+        name: values.name || "",
+        description: values.description || "",
         startDate: values.startDate
           ? values.startDate.format("YYYY-MM-DD")
-          : null,
+          : undefined,
         deadlineDate: values.deadlineDate
           ? values.deadlineDate.format("YYYY-MM-DD")
-          : null,
+          : undefined,
         completionDate: values.completionDate
           ? values.completionDate.format("YYYY-MM-DD")
-          : null,
-        status: values.status,
-        notes: values.notes,
-        completionPercentage: values.completionPercentage,
+          : undefined,
+        status: values.status || "TODO",
+        notes: values.notes || "",
+        completionPercentage: values.completionPercentage || 0,
       };
-      const filteredUpdateData = Object.entries(milestoneUpdateData).reduce(
-        (acc, [key, value]) => {
-          if (value !== undefined) {
-            (acc as any)[key] = value;
-          }
-          return acc;
-        },
-        {} as MilestoneUpdateRequestData
-      );
 
-      await updateMilestoneApi(milestoneId, filteredUpdateData);
+      console.log("Sending milestone update data:", milestoneUpdateData);
+
+      await updateMilestoneApi(milestoneId, milestoneUpdateData);
       setLoading(false);
       onSuccess();
     } catch (err: any) {

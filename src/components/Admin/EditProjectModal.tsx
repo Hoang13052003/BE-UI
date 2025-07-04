@@ -10,14 +10,18 @@ import {
   notification,
   Spin,
 } from "antd";
-import { updateProjectApi, ProjectUpdateRequest } from "../../api/projectApi";
+import { 
+  updateProjectLaborApi,
+  updateProjectFixedPriceApi,
+  ProjectLaborUpdateRequest,
+  ProjectFixedPriceUpdateRequest
+} from "../../api/projectApi";
 import {
   searchUsersByEmailOrUsernameApi,
   UserSearchParams,
 } from "../../api/userApi";
 import { UserIdAndEmailResponse } from "../../types/User";
 import { Project } from "../../types/project";
-import { useTranslation } from "react-i18next";
 import debounce from "lodash/debounce";
 import dayjs from "dayjs";
 import { confirmAlert } from "react-confirm-alert";
@@ -41,11 +45,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isTypeChanged, setIsTypeChanged] = useState(false);
+  const [currentProjectType, setCurrentProjectType] = useState<string>("");
 
   const [users, setUsers] = useState<UserIdAndEmailResponse[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -59,8 +63,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
         } catch (error) {
           console.error("Failed to load project data:", error);
           notification.error({
-            message: t("project.edit.loadError"),
-            description: t("project.edit.loadErrorDesc"),
+            message: "Load Error",
+            description: "Failed to load project data. Please try again.",
           });
           onClose();
         } finally {
@@ -78,18 +82,20 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     return () => {
       setIsTypeChanged(false);
     };
-  }, [visible, projectId, projectData, form, t, onClose]);
+  }, [visible, projectId, projectData, form, onClose]);
 
   const fillFormWithData = (data: Project) => {
+    setCurrentProjectType(data.projectType);
     form.setFieldsValue({
-      name: data.name,
+      projectName: data.name,
       description: data.description,
-      type: data.type,
+      type: data.projectType, // Use projectType from Project interface
       status: data.status,
       startDate: data.startDate ? dayjs(data.startDate, "YYYY-MM-DD") : null,
       plannedEndDate: data.plannedEndDate
         ? dayjs(data.plannedEndDate, "YYYY-MM-DD")
         : null,
+      // actualEndDate removed - will be used in future
       totalBudget: data.totalBudget,
       totalEstimatedHours: data.totalEstimatedHours,
       userIds: data.users?.map((user) => user.id) || [],
@@ -105,7 +111,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   };
 
   const handleTypeChange = (value: string) => {
-    if (projectData && value !== projectData.type) {
+    setCurrentProjectType(value);
+    if (projectData && value !== projectData.projectType) { // Use projectType from Project interface
       setIsTypeChanged(true);
     } else {
       setIsTypeChanged(false);
@@ -140,8 +147,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     } catch (error) {
       console.error("Failed to search users:", error);
       notification.error({
-        message: t("project.edit.searchUserError"),
-        description: t("project.edit.searchUserErrorDesc"),
+        message: "Search Error",
+        description: "Failed to search users. Please try again.",
       });
     } finally {
       setSearchLoading(false);
@@ -159,15 +166,15 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
       if (isTypeChanged) {
         confirmAlert({
-          title: t("project.edit.typeChangeWarningTitle"),
-          message: t("project.edit.typeChangeWarningContent"),
+          title: "Project Type Change Warning",
+          message: "Changing the project type will affect the project structure. Are you sure you want to continue?",
           buttons: [
             {
-              label: t("common.continue"),
+              label: "Continue",
               onClick: () => submitForm(values),
             },
             {
-              label: t("common.cancel"),
+              label: "Cancel",
               onClick: () => {},
             },
           ],
@@ -185,24 +192,62 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
     setSubmitting(true);
     try {
-      const updateData: ProjectUpdateRequest = {
-        ...values,
-        startDate: values.startDate
-          ? values.startDate.format("YYYY-MM-DD")
-          : undefined,
-        plannedEndDate: values.plannedEndDate
-          ? values.plannedEndDate.format("YYYY-MM-DD")
-          : undefined,
-      };
-      await updateProjectApi(parseInt(projectId!), updateData);
+      // Use ORIGINAL project type to determine which API to call
+      const originalProjectType = projectData?.projectType;
+      const newProjectType = values.type || projectData?.projectType;
+      
+      console.log('Debug - Original projectType:', originalProjectType);
+      console.log('Debug - New projectType from form:', newProjectType);
+      console.log('Debug - Will call LABOR API?', originalProjectType === 'LABOR');
+      
+      if (originalProjectType === 'LABOR') {
+        // Use labor-specific endpoint even if changing to FIXED_PRICE
+        const updateData: ProjectLaborUpdateRequest = {
+          projectName: values.projectName || values.name,
+          description: values.description,
+          status: values.status,
+          startDate: values.startDate
+            ? values.startDate.format("YYYY-MM-DD")
+            : undefined,
+          plannedEndDate: values.plannedEndDate
+            ? values.plannedEndDate.format("YYYY-MM-DD")
+            : undefined,
+          // actualEndDate removed - will be used in future
+          totalBudget: values.totalBudget,
+          totalEstimatedHours: values.totalEstimatedHours,
+          userIds: values.userIds,
+          type: newProjectType, // Pass the new type to backend
+        };
+        console.log('Debug - Calling updateProjectLaborApi with data:', updateData);
+        await updateProjectLaborApi(projectId!, updateData);
+      } else {
+        // Use fixed-price-specific endpoint for originally FIXED_PRICE projects
+        const updateData: ProjectFixedPriceUpdateRequest = {
+          name: values.projectName || values.name,
+          description: values.description,
+          status: values.status,
+          startDate: values.startDate
+            ? values.startDate.format("YYYY-MM-DD")
+            : undefined,
+          plannedEndDate: values.plannedEndDate
+            ? values.plannedEndDate.format("YYYY-MM-DD")
+            : undefined,
+          totalBudget: values.totalBudget,
+          userIds: values.userIds,
+          type: newProjectType, // Pass the new type to backend
+        };
+        console.log('Debug - Calling updateProjectFixedPriceApi with data:', updateData);
+        await updateProjectFixedPriceApi(projectId!, updateData);
+      }
+      
       form.resetFields();
       onSuccess();
     } catch (error) {
       console.error("Failed to update project:", error);
       notification.error({
-        message: t("project.edit.error"),
+        message: "Update Failed",
         description:
-          error instanceof Error ? error.message : t("project.edit.errorDesc"),
+          error instanceof Error ? error.message : "Failed to update project. Please try again.",
       });
     } finally {
       setSubmitting(false);
@@ -216,13 +261,13 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
   return (
     <Modal
-      title={t("project.edit.title")}
+      title="Edit Project"
       open={visible}
       onCancel={handleCancel}
       width={700}
       footer={[
         <Button key="cancel" onClick={handleCancel}>
-          {t("common.cancel")}
+          Cancel
         </Button>,
         <Button
           key="submit"
@@ -230,7 +275,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
           loading={submitting}
           onClick={handleOk}
         >
-          {t("common.save")}
+          Save
         </Button>,
       ]}
     >
@@ -241,61 +286,65 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
       ) : (
         <Form form={form} layout="vertical">
           <Form.Item
-            name="name"
-            label={t("project.form.name")}
+            name="projectName"
+            label="Project Name"
             rules={[
-              { required: true, message: t("project.form.nameRequired") },
+              { required: true, message: "Project name is required" },
+              { max: 200, message: "Project name must be less than or equal to 200 characters" }
             ]}
           >
             <Input />
           </Form.Item>
 
-          <Form.Item name="description" label={t("project.form.description")}>
+          <Form.Item name="description" label="Description" rules={[
+            { max: 65535, message: "Description is too long (maximum 65535 characters)" }
+          ]}>
             <TextArea rows={4} />
           </Form.Item>
 
           <Form.Item
             name="type"
-            label={t("project.form.type")}
+            label="Project Type"
             rules={[
-              { required: true, message: t("project.form.typeRequired") },
+              { required: true, message: "Project type is required" },
             ]}
-            extra={isTypeChanged && t("project.edit.typeChangeNote")}
+            extra={isTypeChanged && "Changing project type will affect project structure"}
           >
             <Select onChange={handleTypeChange}>
               <Option value="FIXED_PRICE">
-                {t("project.type.fixedPrice")}
+                Fixed Price
               </Option>
-              <Option value="LABOR">{t("project.type.labor")}</Option>
+              <Option value="LABOR">Labor</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="status"
-            label={t("project.form.status")}
+            label="Status"
             rules={[
-              { required: true, message: t("project.form.statusRequired") },
+              { required: true, message: "Status is required" },
             ]}
           >
             <Select>
-              <Option value="NEW">{t("project.status.notStarted")}</Option>
-              <Option value="PENDING">{t("project.status.pending")}</Option>
-              <Option value="PROGRESS">{t("project.status.inProgress")}</Option>
-              <Option value="CLOSED">{t("project.status.closed")}</Option>
+              <Option value="NEW">New</Option>
+              <Option value="PENDING">Pending</Option>
+              <Option value="PROGRESS">Progress</Option>
+              <Option value="COMPLETED">Completed</Option>
+              <Option value="CLOSED">Closed</Option>
             </Select>
           </Form.Item>
 
           <div style={{ display: "flex", gap: "16px" }}>
             <Form.Item
               name="startDate"
-              label={t("project.form.startDate")}
+              label="Start Date"
               style={{ flex: 1 }}
             >
               <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
-            </Form.Item>{" "}
+            </Form.Item>
             <Form.Item
               name="plannedEndDate"
-              label={t("project.form.plannedEndDate")}
+              label="Planned End Date"
               style={{ flex: 1 }}
               rules={[
                 ({ getFieldValue }) => ({
@@ -312,7 +361,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                     }
                     return Promise.reject(
                       new Error(
-                        t("project.form.plannedEndDateMustBeAfterStartDate")
+                        "Planned end date must be after start date"
                       )
                     );
                   },
@@ -321,16 +370,30 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
             >
               <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
             </Form.Item>
+            {/* Actual End Date field is hidden for now - will be used in future */}
           </div>
 
           <div style={{ display: "flex", gap: "16px" }}>
             <Form.Item
               name="totalBudget"
-              label={t("project.form.totalBudget")}
+              label="Total Budget"
               style={{ flex: 1 }}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    const projectType = getFieldValue('type');
+                    if (projectType === 'FIXED_PRICE') {
+                      if (!value || value <= 0) {
+                        return Promise.reject(new Error('Total budget must be positive for fixed price projects'));
+                      }
+                    }
+                    return Promise.resolve();
+                  },
+                }),
+              ]}
             >
               <InputNumber
-                min={0}
+                min={0.01} // Must be positive
                 formatter={(value) =>
                   `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                 }
@@ -344,18 +407,45 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
             </Form.Item>
 
             <Form.Item
-              name="totalEstimatedHours"
-              label={t("project.form.totalEstimatedHours")}
-              style={{ flex: 1 }}
+              noStyle
+              shouldUpdate={(prevValues, currentValues) => 
+                prevValues.type !== currentValues.type
+              }
             >
-              <InputNumber min={0} step={0.5} style={{ width: "100%" }} />
+              {({ getFieldValue }) => {
+                const formProjectType = getFieldValue('type');
+                const showEstimatedHours = formProjectType === 'LABOR' || currentProjectType === 'LABOR';
+                
+                return showEstimatedHours ? (
+                  <Form.Item
+                    name="totalEstimatedHours"
+                    label="Total Estimated Hours"
+                    style={{ flex: 1 }}
+                    rules={[
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          const projectType = getFieldValue('type');
+                          if (projectType === 'LABOR') {
+                            if (!value || value <= 0) {
+                              return Promise.reject(new Error('Estimated hours must be greater than 0 for labor projects'));
+                            }
+                          }
+                          return Promise.resolve();
+                        },
+                      }),
+                    ]}
+                  >
+                    <InputNumber min={0.1} step={0.5} style={{ width: "100%" }} />
+                  </Form.Item>
+                ) : null;
+              }}
             </Form.Item>
           </div>
 
-          <Form.Item name="userIds" label={t("project.form.teamMembers")}>
+          <Form.Item name="userIds" label="Team Members">
             <Select
               mode="multiple"
-              placeholder={t("project.form.searchUsers")}
+              placeholder="Search users by email or username"
               filterOption={false}
               onSearch={handleSearchUser}
               notFoundContent={searchLoading ? <Spin size="small" /> : null}
@@ -371,7 +461,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
             </Select>
           </Form.Item>
           <div style={{ color: "#888", fontSize: "12px", marginTop: "-12px" }}>
-            {t("project.form.searchUsersHint")}
+            Type at least 2 characters to search for users
           </div>
         </Form>
       )}

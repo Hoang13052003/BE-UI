@@ -25,8 +25,11 @@ const ProjectList: React.FC = () => {
         {
           name: undefined,
           status: undefined,
-          startDate: undefined,
-          endDate: undefined,
+          projectType: undefined,
+          startDateFrom: undefined,
+          startDateTo: undefined,
+          endDateFrom: undefined,
+          endDateTo: undefined,
         },
         page,
         size

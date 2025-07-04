@@ -313,9 +313,12 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="name"
+              name="projectName"
               label="Project Name"
-              rules={[{ required: true, message: "Required" }]}
+              rules={[
+                { required: true, message: "Project name is required" },
+                { max: 200, message: "Project name must be less than or equal to 200 characters" }
+              ]}
             >
               <Input />
             </Form.Item>
@@ -347,7 +350,9 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         <Form.Item
           name="description"
           label="Description"
-          rules={[{ required: true, message: "Required" }]}
+          rules={[
+            { max: 65535, message: "Description is too long (maximum 65535 characters)" }
+          ]}
         >
           <Input.TextArea rows={3} />
         </Form.Item>
@@ -380,8 +385,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                 { required: true, message: "Please enter budget" },
                 {
                   type: "number",
-                  min: 0,
-                  message: "Budget must be a non-negative number",
+                  min: 0.01, // Must be positive
+                  message: "Budget must be a positive number",
                 },
               ]}
             >
@@ -463,16 +468,17 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
               },
               {
                 type: "number",
-                min: 0,
+                min: 0.1, // Must be positive (>0) for labor projects
                 max: MAX_ESTIMATED_HOURS_LIMIT,
-                message: `Estimated hours must be between 0 and ${MAX_ESTIMATED_HOURS_LIMIT.toLocaleString()}`,
+                message: `Estimated hours must be greater than 0 and less than ${MAX_ESTIMATED_HOURS_LIMIT.toLocaleString()}`,
               },
             ]}
           >
             <InputNumber
               style={{ width: "100%" }}
-              min={0}
+              min={0.1} // Must be positive
               max={MAX_ESTIMATED_HOURS_LIMIT}
+              step={0.5}
               formatter={(value) =>
                 `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
               }

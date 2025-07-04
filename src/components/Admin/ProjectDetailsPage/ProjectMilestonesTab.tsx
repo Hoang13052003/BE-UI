@@ -34,7 +34,7 @@ import {
 } from "@ant-design/icons";
 import { Milestone, MilestoneStatus } from "../../../types/milestone";
 import { ApiPage } from "../../../types/project";
-import { getProjectMilestonesOverviewApi } from "../../../api/projectApi";
+import { getProjectMilestonesOverviewApi } from "../../../api/milestoneApi";
 import dayjs from "dayjs";
 import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
 
@@ -160,14 +160,28 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
         }
 
         const data = await getProjectMilestonesOverviewApi(
-          projectId,
+          projectId.toString(),
           pageToFetch,
           currentSize,
           [{ property: "startDate", direction: "asc" }],
           filterParams
         );
 
-        setMilestonesPage(data);
+        // Convert response to match ApiPage structure
+        const apiPageData: ApiPage<Milestone> = {
+          ...data,
+          pageable: {
+            sort: { empty: true, sorted: false, unsorted: true },
+            offset: data.number * data.size,
+            pageSize: data.size,
+            pageNumber: data.number,
+            paged: true,
+            unpaged: false,
+          },
+          sort: { empty: true, sorted: false, unsorted: true },
+        };
+
+        setMilestonesPage(apiPageData);
         setUiPagination({
           current: data.number + 1,
           pageSize: data.size,

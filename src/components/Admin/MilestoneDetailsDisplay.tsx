@@ -34,7 +34,7 @@ import {
   DeleteFilled,
 } from "@ant-design/icons";
 import {
-  getMilestonesByProjectIdApi,
+  getMilestonesByProjectFixedPriceIdApi,
   deleteMilestoneApi,
   batchDeleteMilestonesApi,
 } from "../../api/milestoneApi";
@@ -90,7 +90,6 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
     handleMarkSelectedAsCompleted,
     resetEditedData,
   } = useInlineEditMilestone({
-    milestones,
     setMilestones,
     onRefreshData: () => {
       fetchMilestones();
@@ -138,7 +137,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
     setError(null);
     try {
       const { milestones: milestoneData, totalItems } =
-        await getMilestonesByProjectIdApi(projectId, currentPage, pageSize);
+        await getMilestonesByProjectFixedPriceIdApi(projectId, currentPage, pageSize);
       console.log("Milestone pagination data:", {
         milestoneData: milestoneData?.length || 0,
         totalItems,
@@ -168,7 +167,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
     const total = milestones.length;
     const completed = milestones.filter((m) => isMilestoneCompleted(m)).length;
     const inProgress = milestones.filter(
-      (m) => !isMilestoneCompleted(m) && m.status === "DOING"
+      (m) => !isMilestoneCompleted(m) && (m.status === "TODO" || m.status === "DOING")
     ).length;
     const pending = milestones.filter(
       (m) => !isMilestoneCompleted(m) && m.status === "PENDING"
@@ -731,7 +730,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                     title: "Status",
                     dataIndex: "status",
                     key: "status",
-                    width: 100,
+                    width: 130,
                     render: (status: MilestoneStatus, record: Milestone) => (
                       <Space direction="vertical" size={2}>
                         <Tag
@@ -754,7 +753,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                                 margin: 0,
                               }}
                             >
-                              Done
+                              Waiting Approval
                             </Tag>
                           )}
                         {isOverdueMilestone(record) && (

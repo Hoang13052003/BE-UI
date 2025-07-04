@@ -8,11 +8,9 @@ import {
   ProjectContextTimeLog,
   ApiPage,
 } from "../types/project";
-import { Milestone } from "../types/milestone";
 import { ProjectRequest } from "../types/ProjectRequest";
 import {
   SortConfig,
-  fetchPaginatedData,
   fetchSpringPageData,
   PaginatedResult,
 } from "./apiUtils";
@@ -77,33 +75,77 @@ export const filterProjects = async (
   criteria: {
     name?: string;
     status?: string;
-    type?: "FIXED_PRICE" | "LABOR";
-    startDate?: string;
-    endDate?: string;
+    projectType?: "FIXED_PRICE" | "LABOR";
+    startDateFrom?: string;
+    startDateTo?: string;
+    endDateFrom?: string;
+    endDateTo?: string;
+    minBudget?: number;
+    maxBudget?: number;
+    minProgress?: number;
+    maxProgress?: number;
+    isOverdue?: boolean;
+    isCompleted?: boolean;
   },
   page: number,
   size: number,
   sortConfig?: SortConfig | SortConfig[]
 ) => {
   try {
-    const params: Record<string, string | number> = {};
-    if (criteria.name) params["name.contains"] = criteria.name;
-    if (criteria.status) params["status"] = criteria.status; // sửa lại đúng key
-    if (criteria.type) params["type.equals"] = criteria.type;
-    if (criteria.startDate) params["startDate.contains"] = criteria.startDate;
-    if (criteria.endDate) params["endDate.contains"] = criteria.endDate;
+    let sort: string[] = [];
+    if (Array.isArray(sortConfig)) {
+      sort = sortConfig.map((sCfg) => `${sCfg.property},${sCfg.direction}`);
+    } else if (sortConfig) {
+      sort = [`${sortConfig.property},${sortConfig.direction}`];
+    }
 
-    const result = await fetchPaginatedData<any>(
-      "/api/private/unified-projects/search",
+    const params: Record<string, any> = {
       page,
       size,
-      sortConfig,
-      params
-    );
+      ...(sort.length > 0 ? { sort } : {}),
+    };
+
+    // Map criteria to new API parameters
+    if (criteria.name) params.name = criteria.name;
+    if (criteria.status) params.status = criteria.status;
+    if (criteria.projectType) params.projectType = criteria.projectType;
+    if (criteria.startDateFrom) params.startDateFrom = criteria.startDateFrom;
+    if (criteria.startDateTo) params.startDateTo = criteria.startDateTo;
+    if (criteria.endDateFrom) params.endDateFrom = criteria.endDateFrom;
+    if (criteria.endDateTo) params.endDateTo = criteria.endDateTo;
+    if (criteria.minBudget !== undefined) params.minBudget = criteria.minBudget;
+    if (criteria.maxBudget !== undefined) params.maxBudget = criteria.maxBudget;
+    if (criteria.minProgress !== undefined) params.minProgress = criteria.minProgress;
+    if (criteria.maxProgress !== undefined) params.maxProgress = criteria.maxProgress;
+    if (criteria.isOverdue !== undefined) params.isOverdue = criteria.isOverdue;
+    if (criteria.isCompleted !== undefined) params.isCompleted = criteria.isCompleted;
+
+    const response = await axiosClient.get("/api/private/unified-projects/search", {
+      params,
+      paramsSerializer: (params) => {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach((v) => searchParams.append(key, v));
+          } else if (value !== undefined && value !== null) {
+            searchParams.append(key, String(value));
+          }
+        });
+        return searchParams.toString();
+      },
+    });
+
+    // Handle new response structure from tutorial.md
+    const responseData = response.data;
+    const projects = responseData.projects || [];
+    const totalProjects = responseData.totalProjects || 0;
+
     return {
-      projects: normalizeProjectsData(result.items),
-      totalCount: result.totalItems,
-      links: result.navigationLinks,
+      projects: normalizeProjectsData(projects),
+      totalCount: totalProjects,
+      laborProjectsCount: responseData.laborProjectsCount || 0,
+      fixedPriceProjectsCount: responseData.fixedPriceProjectsCount || 0,
+      links: {}, // No navigation links in new response
     };
   } catch (error) {
     console.error("Error fetching filtered projects:", error);
@@ -138,44 +180,72 @@ export const createProjectApi = async (
     }
   }
 
+  // Validate project name
+  if (!projectData.projectName || projectData.projectName.trim().length === 0) {
+    throw new Error("Project name is required");
+  }
+
+  if (projectData.projectName.length > 200) {
+    throw new Error("Project name must be less than or equal to 200 characters");
+  }
+
+  // Validate description length
+  if (projectData.description && projectData.description.length > 65535) {
+    throw new Error("Description is too long");
+  }
+
+  // Validate dates
+  if (projectData.plannedEndDate) {
+    const plannedEndDate = new Date(projectData.plannedEndDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    
+    if (plannedEndDate < today) {
+      throw new Error("Planned end date must be in the present or future");
+    }
+  }
+
   // Determine the correct endpoint based on project type
   const endpoint = projectData.type === "LABOR" 
     ? "/api/projects/labor" 
     : "/api/projects/fixed-price";
   
   // Remove type field from request body as it's only used for endpoint selection
-  const { type, ...requestData } = projectData;
+  // Set isActive to true by default if not provided
+  const { type, ...requestData } = {
+    ...projectData,
+    isActive: projectData.isActive ?? true
+  };
   
   const { data } = await axiosClient.post(endpoint, requestData);
   return normalizeProjectData(data);
 };
 
-export const deleteProjectApi = async (projectId: string): Promise<void> => {
-  await axiosClient.delete(`/api/projects/${projectId}`);
+// Delete project using specific endpoints based on project type
+// DELETE /api/projects/labor/{id} - Delete labor project
+export const deleteProjectLaborApi = async (projectId: string): Promise<void> => {
+  await axiosClient.delete(`/api/projects/labor/${projectId}`);
 };
 
-export interface MilestoneRequest {
-  name: string;
-  description: string;
-  startDate: string;
-  deadlineDate: string;
-  status: string;
-  notes: string;
-  completionPercentage?: number;
-}
+// DELETE /api/projects/fixed-price/{id} - Delete fixed price project
+export const deleteProjectFixedPriceApi = async (projectId: string): Promise<void> => {
+  await axiosClient.delete(`/api/projects/fixed-price/${projectId}`);
+};
 
-export const addMilestoneToProjectApi = async (
-  projectId: string,
-  milestoneData: MilestoneRequest
-): Promise<void> => {
-  await axiosClient.post(
-    `/api/projects/${projectId}/milestones`,
-    milestoneData
-  );
+// Helper function to delete project based on its type
+// Automatically routes to the correct endpoint based on project type
+export const deleteProjectByTypeApi = async (projectId: string, projectType: "LABOR" | "FIXED_PRICE"): Promise<void> => {
+  if (projectType === "LABOR") {
+    await deleteProjectLaborApi(projectId);
+  } else if (projectType === "FIXED_PRICE") {
+    await deleteProjectFixedPriceApi(projectId);
+  } else {
+    throw new Error(`Unsupported project type: ${projectType}`);
+  }
 };
 
 export interface ProjectUpdateRequest {
-  name?: string;
+  projectName?: string;
   description?: string;
   projectType?: "FIXED_PRICE" | "LABOR";
   status?: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";
@@ -186,11 +256,39 @@ export interface ProjectUpdateRequest {
   userIds?: number[];
 }
 
+export interface ProjectLaborUpdateRequest {
+  projectName?: string;
+  description?: string;
+  status?: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";
+  startDate?: string;
+  plannedEndDate?: string;
+  actualEndDate?: string;
+  totalBudget?: number;
+  totalEstimatedHours?: number;
+  userIds?: number[];
+  type?: "LABOR" | "FIXED_PRICE";
+}
+
+export interface ProjectFixedPriceUpdateRequest {
+  name?: string;
+  description?: string;
+  status?: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";
+  startDate?: string;
+  plannedEndDate?: string;
+  actualEndDate?: string;
+  totalBudget?: number;
+  completionPercentage?: number;
+  userIds?: number[];
+  isActive?: boolean;
+  type?: "LABOR" | "FIXED_PRICE";
+}
+
 export const updateProjectApi = async (
   projectId: string,
   projectData: ProjectUpdateRequest
 ): Promise<Project> => {
   try {
+    console.log('Debug - updateProjectApi called with endpoint:', `/api/projects/${projectId}`);
     const { data } = await axiosClient.put(
       `/api/projects/${projectId}`,
       projectData
@@ -213,6 +311,54 @@ export const updateProjectApi = async (
           // Return the response data directly instead of casting
           throw new Error(errorMessage);
         }
+        throw new Error(errorMessage);
+      }
+    }
+    throw error;
+  }
+};
+
+export const updateProjectLaborApi = async (
+  projectId: string,
+  projectData: ProjectLaborUpdateRequest
+): Promise<Project> => {
+  try {
+    console.log('Debug - updateProjectLaborApi called with endpoint:', `/api/projects/labor/${projectId}`);
+    const { data } = await axiosClient.put(
+      `/api/projects/labor/${projectId}`,
+      projectData
+    );
+    return data;
+  } catch (error: any) {
+    if (error.response) {
+      if (error.response.status === 404) throw new Error("Project not found");
+      else if (error.response.status === 400) {
+        const errorMessage =
+          error.response.data.message || "Invalid project data";
+        throw new Error(errorMessage);
+      }
+    }
+    throw error;
+  }
+};
+
+export const updateProjectFixedPriceApi = async (
+  projectId: string,
+  projectData: ProjectFixedPriceUpdateRequest
+): Promise<Project> => {
+  try {
+    console.log('Debug - updateProjectFixedPriceApi called with endpoint:', `/api/projects/fixed-price/${projectId}`);
+    const { data } = await axiosClient.put(
+      `/api/projects/fixed-price/${projectId}`,
+      projectData
+    );
+    return normalizeProjectData(data);
+  } catch (error: any) {
+    if (error.response) {
+      if (error.response.status === 404) throw new Error("Project not found");
+      else if (error.response.status === 400) {
+        const errorMessage =
+          error.response.data.message || "Invalid project data";
         throw new Error(errorMessage);
       }
     }
@@ -284,61 +430,6 @@ export const getProjectUpdatesTimelineApi = async (
       numberOfElements: 0,
       empty: true,
     } as ApiPage<ProjectUpdateTimelineItem>;
-  }
-};
-
-export const getProjectMilestonesOverviewApi = async (
-  projectId: string,
-  page: number = 0,
-  size: number = 10,
-  sortConfig?: SortConfig | SortConfig[],
-  filterParams?: Record<string, any>
-): Promise<ApiPage<Milestone>> => {
-  try {
-    const defaultSort: SortConfig[] = [
-      { property: "deadlineDate", direction: "asc" },
-    ];
-    const currentSortConfig = sortConfig
-      ? Array.isArray(sortConfig)
-        ? sortConfig
-        : [sortConfig]
-      : defaultSort;
-
-    const result = await fetchSpringPageData<Milestone>(
-      `/api/projects/${projectId}/milestones-overview`,
-      page,
-      size,
-      currentSortConfig,
-      filterParams
-    );
-    return result;
-  } catch (error) {
-    console.error(
-      `Error fetching project milestones overview for project ID ${projectId}:`,
-      error
-    );
-    const defaultSortInfo = { sorted: false, unsorted: true, empty: true };
-    const defaultPageable = {
-      pageNumber: page,
-      pageSize: size,
-      offset: page * size,
-      paged: true,
-      unpaged: false,
-      sort: defaultSortInfo,
-    };
-    return {
-      content: [],
-      pageable: defaultPageable,
-      last: true,
-      totalPages: 0,
-      totalElements: 0,
-      size: size,
-      number: page,
-      sort: defaultSortInfo,
-      first: true,
-      numberOfElements: 0,
-      empty: true,
-    } as ApiPage<Milestone>;
   }
 };
 

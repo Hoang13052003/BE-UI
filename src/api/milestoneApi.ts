@@ -1,10 +1,10 @@
 import axiosClient from "./axiosClient";
-import { Milestone, MilestoneUpdateRequestData } from "../types/milestone";
-import { SortConfig, fetchPaginatedData, PaginatedResult } from "./apiUtils";
-
-export interface MilestoneFetchResult extends PaginatedResult<Milestone> {
-  milestones: Milestone[];
-}
+import {
+  Milestone,
+  MilestoneUpdateRequestData,
+  MilestoneCreateRequest,
+  MilestoneSummaryDto,
+} from "../types/milestone";
 
 export interface BatchUpdateMilestoneItemDTO {
   id: number;
@@ -20,90 +20,128 @@ export interface BatchUpdateMilestoneItemDTO {
 
 export interface BatchUpdateMilestoneItem extends BatchUpdateMilestoneItemDTO {}
 
-export const getMilestonesByProjectIdApi = async (
-  projectId: string,
-  page: number = 0,
-  size: number = 10,
-  sortConfig?: SortConfig | SortConfig[]
-): Promise<MilestoneFetchResult> => {
-  try {
-    const result = await fetchPaginatedData<Milestone>(
-      `/api/projects/${projectId}/milestones`,
-      page,
-      size,
-      sortConfig
-    );
+export interface MilestoneFilterParams {
+  name?: string;
+  status?: string;
+  statuses?: string[];
+  isCompleted?: boolean;
+  isCurrentWeek?: boolean;
+  fromDate?: string;
+  toDate?: string;
+  sortBy?: string;
+  sortDirection?: string;
+}
 
+export const getMilestonesByProjectFixedPriceIdApi = async (
+  projectFixedPriceId: string,
+  page: number = 0,
+  size: number = 10
+): Promise<{ milestones: Milestone[]; totalItems: number }> => {
+  try {
+    const { data } = await axiosClient.get(
+      `/api/milestones/project-fixed-price/${projectFixedPriceId}?page=${page}&size=${size}`
+    );
     return {
-      ...result,
-      milestones: result.items,
+      milestones: data.content || [],
+      totalItems: data.totalElements || 0,
     };
   } catch (error) {
-    console.error("Error fetching milestones:", error);
+    console.error("Error fetching milestones for fixed price project:", error);
     throw error;
   }
 };
 
-export const deleteMilestoneApi = async (
-  milestoneId: number
-): Promise<void> => {
+export const getMilestonesByProjectFixedPriceIdWithFiltersApi = async (
+  projectFixedPriceId: string,
+  page: number = 0,
+  size: number = 10,
+  sort?: Array<{ property: string; direction: string }>,
+  filters?: MilestoneFilterParams
+): Promise<{ content: Milestone[]; totalElements: number; totalPages: number; size: number; number: number; first: boolean; last: boolean; numberOfElements: number; empty: boolean }> => {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+
+    // Add filters if provided
+    if (filters) {
+      if (filters.name) params.append('name', filters.name);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.statuses?.length) {
+        filters.statuses.forEach(status => params.append('statuses', status));
+      }
+      if (filters.isCompleted !== undefined) params.append('isCompleted', filters.isCompleted.toString());
+      if (filters.isCurrentWeek !== undefined) params.append('isCurrentWeek', filters.isCurrentWeek.toString());
+      if (filters.fromDate) params.append('fromDate', filters.fromDate);
+      if (filters.toDate) params.append('toDate', filters.toDate);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortDirection) params.append('sortDirection', filters.sortDirection);
+    }
+
+    // Add sorting if provided
+    if (sort?.length) {
+      const sortParam = sort.map(s => `${s.property},${s.direction}`).join('&sort=');
+      params.append('sort', sortParam);
+    }
+
+    const { data } = await axiosClient.get(
+      `/api/milestones/project-fixed-price/${projectFixedPriceId}?${params.toString()}`
+    );
+    
+    return {
+      content: data.content || [],
+      totalElements: data.totalElements || 0,
+      totalPages: data.totalPages || 0,
+      size: data.size || size,
+      number: data.number || page,
+      first: data.first || false,
+      last: data.last || false,
+      numberOfElements: data.numberOfElements || 0,
+      empty: data.empty || false,
+    };
+  } catch (error) {
+    console.error("Error fetching milestones for fixed price project:", error);
+    throw error;
+  }
+};
+
+
+export const deleteMilestoneApi = async (milestoneId: number): Promise<void> => {
   try {
     await axiosClient.delete(`/api/milestones/${milestoneId}`);
   } catch (error) {
-    console.error(
-      `[milestoneApi.ts] axiosClient.delete failed for milestoneId: ${milestoneId}`,
-      error
-    ); // LOG 9
+    console.error("Error deleting milestone:", error);
     throw error;
   }
 };
 
-export const getMilestoneByIdApi = async (
-  milestoneId: number
+export const createMilestoneForFixedPriceProjectApi = async (
+  projectFixedPriceId: string,
+  milestoneData: MilestoneCreateRequest
 ): Promise<Milestone> => {
-  const { data } = await axiosClient.get(`/api/milestones/${milestoneId}`);
-  return data;
-};
-
-export const updateMilestoneApi = async (
-  milestoneId: number,
-  payload: MilestoneUpdateRequestData
-): Promise<Milestone> => {
-  const { data } = await axiosClient.patch(
-    `/api/milestones/${milestoneId}`,
-    payload
-  );
-  return data;
-};
-
-export const updateMilestoneCompletionStatusApi = async (
-  milestoneId: number,
-  completed: boolean,
-  completionPercentage?: number
-): Promise<Milestone> => {
-  const { data } = await axiosClient.patch(
-    `/api/milestones/${milestoneId}/complete`,
-    {
-      completed,
-      ...(completionPercentage !== undefined && { completionPercentage }),
-    }
-  );
-  return data;
-};
-
-export const isMilestoneCompletedApi = async (
-  milestoneId: number
-): Promise<boolean> => {
   try {
-    const { data } = await axiosClient.get<boolean>(
-      `/api/milestones/${milestoneId}/is-completed`
+    const { data } = await axiosClient.post<Milestone>(
+      `/api/milestones/project-fixed-price/${projectFixedPriceId}`,
+      milestoneData
     );
     return data;
   } catch (error) {
-    console.error(
-      `[milestoneApi.ts] Failed to fetch completion status for milestone ${milestoneId}:`,
-      error
+    console.error("Error creating milestone for fixed price project:", error);
+    throw error;
+  }
+};
+
+export const getMilestoneSummaryForFixedPriceProjectApi = async (
+  projectId: string
+): Promise<MilestoneSummaryDto> => {
+  try {
+    const { data } = await axiosClient.get<MilestoneSummaryDto>(
+      `/api/projects/fixed-price/${projectId}/milestone-summary`
     );
+    return data;
+  } catch (error) {
+    console.error("Error fetching milestone summary for fixed price project:", error);
     throw error;
   }
 };
@@ -162,4 +200,41 @@ export const batchDeleteMilestonesApi = async (
   }
 };
 
-export type { MilestoneUpdateRequestData };
+export const getMilestoneByIdApi = async (milestoneId: number): Promise<Milestone> => {
+  try {
+    const { data } = await axiosClient.get(`/api/milestones/${milestoneId}`);
+    return data;
+  } catch (error) {
+    console.error("Error fetching milestone by ID:", error);
+    throw error;
+  }
+};
+
+export const updateMilestoneApi = async (
+  milestoneId: number,
+  milestoneData: MilestoneUpdateRequestData
+): Promise<Milestone> => {
+  try {
+    const { data } = await axiosClient.patch(
+      `/api/milestones/${milestoneId}`,
+      milestoneData
+    );
+    return data;
+  } catch (error) {
+    console.error("Error updating milestone:", error);
+    throw error;
+  }
+};
+
+export type { MilestoneUpdateRequestData, MilestoneCreateRequest, MilestoneSummaryDto };
+
+// Alias for ProjectMilestonesTab compatibility
+export const getProjectMilestonesOverviewApi = async (
+  projectId: string,
+  page: number = 0,
+  size: number = 10,
+  sort?: Array<{ property: string; direction: string }>,
+  filters?: MilestoneFilterParams
+) => {
+  return getMilestonesByProjectFixedPriceIdWithFiltersApi(projectId, page, size, sort, filters);
+};

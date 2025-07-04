@@ -78,7 +78,7 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
       const values = await form.validateFields();
       setLoading(true);
 
-      await assignProjectToUser(userId, values.projectId);
+      await assignProjectToUser(userId, parseInt(values.projectId));
       addAlert("Project assigned successfully", "success");
 
       await createNotification({
@@ -116,8 +116,11 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
         {
           name: value,
           status: undefined,
-          startDate: undefined,
-          endDate: undefined,
+          projectType: undefined,
+          startDateFrom: undefined,
+          startDateTo: undefined,
+          endDateFrom: undefined,
+          endDateTo: undefined,
         },
         page,
         size
@@ -132,10 +135,10 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
     }
   };
 
-  const handleRemoveProject = async (projectId: number) => {
+  const handleRemoveProject = async (projectId: string) => {
     try {
       setLoading(true);
-      await removeProjectFromUser(userId, projectId);
+      await removeProjectFromUser(userId, parseInt(projectId));
       addAlert("Project removed successfully", "success");
 
       onClose();
@@ -151,7 +154,7 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
   };
 
   const renderProjectOptions = () => {
-    const renderedOptions = new Set<number>();
+    const renderedOptions = new Set<string>();
 
     assignedProjects.forEach((project) => renderedOptions.add(project.id));
 
@@ -234,10 +237,10 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
                       </Title>
                       <Tag
                         color={
-                          project.type === "FIXED_PRICE" ? "blue" : "green"
+                          project.projectType === "FIXED_PRICE" ? "blue" : "green"
                         }
                       >
-                        {project.type}
+                        {project.projectType}
                       </Tag>
                     </Space>
 

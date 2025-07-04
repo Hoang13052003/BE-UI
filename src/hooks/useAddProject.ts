@@ -10,7 +10,7 @@ export const useAddProject = (onSuccess: () => void) => {
     setSubmitting(true);
     try {
       const payload: ProjectRequest = {
-        name: values.name,
+        projectName: values.projectName || values.name, // Support both field names during transition
         description: values.description,
         type: values.projectType || values.type, // Map from projectType to type for API
         status: values.status,

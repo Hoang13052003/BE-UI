@@ -9,6 +9,7 @@ export enum ProjectStatusEnum {
   NEW = "NEW",
   PENDING = "PENDING",
   PROGRESS = "PROGRESS",
+  COMPLETED = "COMPLETED",
   CLOSED = "CLOSED",
 }
 

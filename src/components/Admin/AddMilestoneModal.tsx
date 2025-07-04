@@ -10,10 +10,9 @@ import {
   Slider,
 } from "antd";
 import {
-  addMilestoneToProjectApi,
-  MilestoneRequest,
-} from "../../api/projectApi";
-import { MilestoneStatus } from "../../types/milestone";
+  createMilestoneForFixedPriceProjectApi,
+} from "../../api/milestoneApi";
+import { MilestoneStatus, MilestoneCreateRequest } from "../../types/milestone";
 import { getMilestoneStatusDisplayName } from "../../utils/milestoneUtils";
 import TextArea from "antd/lib/input/TextArea";
 
@@ -56,7 +55,8 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
     try {
       setLoading(true);
       const values = await form.validateFields();
-      const milestoneData: MilestoneRequest = {
+      const milestoneData: MilestoneCreateRequest = {
+        projectFixedPriceId: projectId,
         name: values.name,
         description: values.description,
         startDate: values.startDate.format("YYYY-MM-DD"),
@@ -66,7 +66,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
         completionPercentage: values.completionPercentage,
       };
 
-      await addMilestoneToProjectApi(projectId, milestoneData);
+      await createMilestoneForFixedPriceProjectApi(projectId, milestoneData);
       message.success("Milestone added successfully");
       onSuccess();
     } catch (error) {

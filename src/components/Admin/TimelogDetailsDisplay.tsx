@@ -110,7 +110,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
         if (showLoadingSpinner && !initialLoadComplete) setLoading(false);
       }
     },
-    [projectId, currentPage, pageSize, initialLoadComplete]
+    [projectId, currentPage, pageSize] // Removed initialLoadComplete from dependencies
   );
   const {
     editedData,

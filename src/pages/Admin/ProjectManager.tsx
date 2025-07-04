@@ -25,7 +25,7 @@ import {
 import { Project } from "../../types/project";
 import {
   fetchProjects,
-  deleteProjectApi,
+  deleteProjectByTypeApi,
   filterProjects,
 } from "../../api/projectApi";
 import ProjectDetailsDisplay from "../../components/Admin/ProjectDetailsDisplay";
@@ -70,7 +70,17 @@ const ProjectManager: React.FC = () => {
   const [filterCriteria, setFilterCriteria] = useState<{
     name?: string;
     status?: string;
-    type?: "FIXED_PRICE" | "LABOR";
+    projectType?: "FIXED_PRICE" | "LABOR";
+    startDateFrom?: string;
+    startDateTo?: string;
+    endDateFrom?: string;
+    endDateTo?: string;
+    minBudget?: number;
+    maxBudget?: number;
+    minProgress?: number;
+    maxProgress?: number;
+    isOverdue?: boolean;
+    isCompleted?: boolean;
   }>({});
 
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(
@@ -138,11 +148,19 @@ const ProjectManager: React.FC = () => {
   const handleDelete = async (id: string) => {
     setDeletingId(parseInt(id));
     try {
-      await deleteProjectApi(id);
-      message.success("Project deleted successfully!");
-      loadProjects(false);
-      if (expandedProjectId === id) setExpandedProjectId(null);
-      if (expandedTimelogProjectId === id) setExpandedTimelogProjectId(null);
+      // Find the project to get its type
+      const project = projects.find(p => p.id.toString() === id);
+      
+      if (project && project.projectType) {
+        // Use type-specific endpoint
+        await deleteProjectByTypeApi(id, project.projectType as "LABOR" | "FIXED_PRICE");
+        message.success("Project deleted successfully!");
+        loadProjects(false);
+        if (expandedProjectId === id) setExpandedProjectId(null);
+        if (expandedTimelogProjectId === id) setExpandedTimelogProjectId(null);
+      } else {
+        throw new Error("Project type not found or not supported");
+      }
     } catch (err) {
       setError("Failed to delete project. Please try again later.");
       message.error("Failed to delete project: " + (err as Error).message);
@@ -257,7 +275,7 @@ const ProjectManager: React.FC = () => {
   };
 
   const handleTypeFilter = (value: "FIXED_PRICE" | "LABOR" | undefined) => {
-    setFilterCriteria((prev) => ({ ...prev, type: value }));
+    setFilterCriteria((prev) => ({ ...prev, projectType: value }));
     setCurrentPage(0);
   };
 
@@ -359,7 +377,7 @@ const ProjectManager: React.FC = () => {
               allowClear
               style={{ width: "100%" }}
               onChange={handleTypeFilter}
-              value={filterCriteria.type}
+              value={filterCriteria.projectType}
             >
               <Option value="FIXED_PRICE">Fixed Price</Option>
               <Option value="LABOR">Labor</Option>
@@ -376,6 +394,7 @@ const ProjectManager: React.FC = () => {
               <Option value="NEW">New</Option>
               <Option value="PENDING">Pending</Option>
               <Option value="PROGRESS">Progress</Option>
+              <Option value="COMPLETED">Completed</Option>
               <Option value="CLOSED">Closed</Option>
             </Select>
           </Col>
