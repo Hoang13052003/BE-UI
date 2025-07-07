@@ -111,6 +111,10 @@ function App() {
                       path="projects/fixed-price/:projectId/details"
                       element={<ProjectDetailPage />}
                     />{" "}
+                    <Route
+                      path="projects/labor/:projectId/details"
+                      element={<ProjectDetailPage />}
+                    />
                     <Route path="feedbacks" element={<Feedbacks />} />
                     <Route path="audit-logs" element={<AuthLogMonitor />} />
                     <Route
@@ -153,6 +157,10 @@ function App() {
                       path="projects/fixed-price/:projectId/details"
                       element={<ProjectDetailPage />}
                     />
+                    <Route
+                      path="projects/labor/:projectId/details"
+                      element={<ProjectDetailPage />}
+                    />
                   </Route>
                 </Route>
               </Route>
@@ -178,6 +186,10 @@ function App() {
                     {/* <Route path="messages" element={<Messages />} /> */}
                     <Route
                       path="projects/fixed-price/:projectId/details"
+                      element={<ProjectDetailPage />}
+                    />
+                    <Route
+                      path="projects/labor/:projectId/details"
                       element={<ProjectDetailPage />}
                     />
                   </Route>

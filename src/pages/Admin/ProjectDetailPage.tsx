@@ -1,18 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, Spin, Alert, Typography, Button, Row, Col, message } from "antd";
 import {
   ArrowLeftOutlined,
-  EditOutlined,
-  ProjectOutlined,
+  EditOutlined
 } from "@ant-design/icons";
 // removed react-grid-layout in favor of static Ant Design grid
 
 // --- Types ---
-import { Project, ProjectFixedPriceDetailsResponse } from "../../types/project";
+import {ProjectFixedPriceDetailsResponse, ProjectDetail } from "../../types/project";
 
 // --- API ---
-import { getProjectFixedPriceDetailsApi } from "../../api/projectApi";
+import { getProjectFixedPriceDetailsApi, getProjectDetailsApi } from "../../api/projectApi";
 
 // --- Components ---
 import EditProjectModal from "../../components/Admin/EditProjectModal";
@@ -26,13 +25,23 @@ import { useAuth } from "../../contexts/AuthContext";
 
 const { Title } = Typography;
 
+// Thêm type guard để kiểm tra loại project
+const isFixedPriceProject = (project: ProjectFixedPriceDetailsResponse | ProjectDetail | null): project is ProjectFixedPriceDetailsResponse => {
+  return project !== null && 'completionPercentage' in project;
+};
+
 const ProjectDetailPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { userRole } = useAuth();
+  const location = useLocation();
 
-  const [project, setProject] = useState<ProjectFixedPriceDetailsResponse | null>(null);
+  // Xác định loại project từ URL
+  const isLaborProject = location.pathname.includes('/labor/');
+  
+  // Sử dụng union type để có thể lưu cả 2 loại dữ liệu
+  const [project, setProject] = useState<ProjectFixedPriceDetailsResponse | ProjectDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] =
@@ -48,9 +57,15 @@ const ProjectDetailPage: React.FC = () => {
     setError(null);
     setProject(null);
     try {
-      // Use the new fixed price project details API (string ID)
-      const data = await getProjectFixedPriceDetailsApi(projectId);
-      setProject(data);
+      if (isLaborProject) {
+        // Gọi API cho project LABOR
+        const data = await getProjectDetailsApi(projectId);
+        setProject(data);
+      } else {
+        // Gọi API cho project FIXED_PRICE
+        const data = await getProjectFixedPriceDetailsApi(projectId);
+        setProject(data);
+      }
     } catch (err: any) {
       console.error("Failed to fetch project details:", err);
       setError(
@@ -60,7 +75,7 @@ const ProjectDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, isLaborProject]);
 
   useEffect(() => {
     fetchProjectData();
@@ -155,6 +170,7 @@ const ProjectDetailPage: React.FC = () => {
     );
   }
 
+  // Render khác nhau dựa trên loại project
   return (
     <Card>
       {/* Header */}
@@ -192,83 +208,119 @@ const ProjectDetailPage: React.FC = () => {
       {/* Top Metrics Display */}
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col span={24}>
-          <ProjectMetricsDisplay project={project} />
+          {/* Chỉ truyền project vào nếu nó là loại fixed price hoặc điều chỉnh component để xử lý cả 2 loại */}
+          {isFixedPriceProject(project) ? (
+            <ProjectMetricsDisplay project={project} />
+          ) : (
+            <CompactProjectInfo project={project} theme={theme} />
+          )}
         </Col>
       </Row>
 
       {/* Main Content Layout - 2 columns */}
       <Row gutter={[16, 16]}>
-        {/* Project Basic Info - Compact */}
-        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
+        {/* Left Column */}
+        <Col xs={24} lg={16}>
+          {/* Project Updates Tab */}
           <Card
-            title={
-              <span>
-                <ProjectOutlined style={{ marginRight: 8 }} />
-                Project Details
-              </span>
-            }
-            size="small"            >
-              <CompactProjectInfo
-                project={project}
-                theme={theme}
-              />
-            </Card>
+            title="Project Updates"
+            style={{ marginBottom: 16 }}
+            bodyStyle={{ padding: 0 }}
+          >
+            <ProjectUpdatesTab projectId={parseInt(projectId || "0")} />
+          </Card>
         </Col>
 
-        {/* Weekly Milestones */}
-        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
-          <WeeklyMilestonesDisplay milestones={project.milestoneInWeek} />
-        </Col>
-      </Row>
-      
-      {/* Project Updates - Full Width */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col span={24}>
-          <Card title="Project Updates Timeline">
-            <ProjectUpdatesTab projectId={Number(project.id)} theme={theme} />
+        {/* Right Column */}
+        <Col xs={24} lg={8}>
+          {/* Weekly Milestones */}
+          {isFixedPriceProject(project) && project.milestoneInWeek && (
+            <Card title="This Week's Milestones" style={{ marginBottom: 16 }}>
+              <WeeklyMilestonesDisplay milestones={project.milestoneInWeek} />
+            </Card>
+          )}
+
+          {/* Project Info */}
+          <Card title="Project Information">
+            <Row gutter={[0, 16]}>
+              <Col span={24}>
+                <Typography.Text strong>Status:</Typography.Text>{" "}
+                <Typography.Text>{project.status}</Typography.Text>
+              </Col>
+
+              <Col span={24}>
+                <Typography.Text strong>Start Date:</Typography.Text>{" "}
+                <Typography.Text>
+                  {project.startDate
+                    ? new Date(project.startDate).toLocaleDateString()
+                    : "Not set"}
+                </Typography.Text>
+              </Col>
+
+              <Col span={24}>
+                <Typography.Text strong>Planned End Date:</Typography.Text>{" "}
+                <Typography.Text>
+                  {project.plannedEndDate
+                    ? new Date(project.plannedEndDate).toLocaleDateString()
+                    : "Not set"}
+                </Typography.Text>
+              </Col>
+
+              {isFixedPriceProject(project) && (
+                <>
+                  <Col span={24}>
+                    <Typography.Text strong>Created:</Typography.Text>{" "}
+                    <Typography.Text>
+                      {project.createdAt
+                        ? new Date(project.createdAt).toLocaleString()
+                        : "N/A"}
+                    </Typography.Text>
+                  </Col>
+
+                  <Col span={24}>
+                    <Typography.Text strong>Last Updated:</Typography.Text>{" "}
+                    <Typography.Text>
+                      {project.updatedAt
+                        ? new Date(project.updatedAt).toLocaleString()
+                        : "N/A"}
+                    </Typography.Text>
+                  </Col>
+
+                  <Col span={24}>
+                    <Typography.Text strong>Overdue:</Typography.Text>{" "}
+                    <Typography.Text>
+                      {project.isOverdue ? "Yes" : "No"}
+                    </Typography.Text>
+                  </Col>
+
+                  <Col span={24}>
+                    <Typography.Text strong>Completion:</Typography.Text>{" "}
+                    <Typography.Text>
+                      {project.completionPercentage}%
+                    </Typography.Text>
+                  </Col>
+
+                  <Col span={24}>
+                    <Typography.Text strong>Total Milestones:</Typography.Text>{" "}
+                    <Typography.Text>{project.totalMilestoneCount}</Typography.Text>
+                  </Col>
+
+                  <Col span={24}>
+                    <Typography.Text strong>New Milestones:</Typography.Text>{" "}
+                    <Typography.Text>{project.newMilestones}</Typography.Text>
+                  </Col>
+                </>
+              )}
+            </Row>
           </Card>
         </Col>
       </Row>
 
-      {/* Edit Project Modal */}
       {isEditProjectModalVisible && project && (
         <EditProjectModal
           visible={isEditProjectModalVisible}
-          projectId={project.id}
-          projectData={
-            {
-              id: project.id,
-              name: project.name,
-              description: project.description || "",
-              projectType: "FIXED_PRICE" as const, // This API is for fixed price projects
-              status: project.status,
-              startDate: project.startDate || "",
-              plannedEndDate: project.plannedEndDate || "",
-              actualEndDate: project.actualEndDate,
-              totalBudget: project.totalBudget || 0,
-              totalEstimatedHours: null,
-              overallProcess: project.overallProcess || 0,
-              actualProcess: project.actualProcess || 0,
-              deleted: project.deleted,
-              createdAt: project.createdAt,
-              updatedAt: project.updatedAt,
-              createdBy: null,
-              updatedBy: null,
-              completed: project.status === "COMPLETED",
-              overdue: project.isOverdue || false,
-              laborProject: false,
-              fixedPriceProject: true,
-              progress: project.completionPercentage,
-              milestoneCount: project.totalMilestoneCount,
-              newMilestoneCount: project.newMilestones,
-              sentMilestoneCount: project.sentMilestones,
-              reviewedMilestoneCount: project.reviewedMilestones,
-              users: project.users.map((user) => ({
-                id: user.id,
-                email: user.email,
-              })),
-            } as Project
-          }
+          projectId={projectId || ""}
+          projectData={project as any} // Casting để tránh lỗi type
           onClose={() => setIsEditProjectModalVisible(false)}
           onSuccess={handleEditProjectSuccess}
         />

@@ -373,7 +373,7 @@ export const getProjectDetailsApi = async (
 ): Promise<ProjectDetail> => {
   try {
     const { data } = await axiosClient.get<ProjectDetail>(
-      `/api/projects/${projectId}/details`
+      `/api/project-labor/${projectId}/details`
     );
     return data;
   } catch (error) {

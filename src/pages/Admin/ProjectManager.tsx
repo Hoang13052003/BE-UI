@@ -292,7 +292,14 @@ const ProjectManager: React.FC = () => {
   const hasActiveFilters = Object.values(filterCriteria).some((value) => value);
 
   const handleNavigateToFullDetails = (projectId: string) => {
-    navigate(`/admin/projects/fixed-price/${projectId}/details`);
+    // Tìm project để xác định loại
+    const project = projects.find(p => p.id === projectId);
+    
+    if (project && project.projectType === "LABOR") {
+      navigate(`/admin/projects/labor/${projectId}/details`);
+    } else {
+      navigate(`/admin/projects/fixed-price/${projectId}/details`);
+    }
   };
 
   if (!initialLoadComplete && loading) {

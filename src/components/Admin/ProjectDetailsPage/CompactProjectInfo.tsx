@@ -7,12 +7,12 @@ import {
   DollarOutlined,
   CheckCircleOutlined
 } from "@ant-design/icons";
-import { ProjectFixedPriceDetailsResponse, UserBasicResponseDto } from "../../../types/project";
+import { ProjectFixedPriceDetailsResponse, ProjectDetail } from "../../../types/project";
 
 const { Text } = Typography;
 
 interface CompactProjectInfoProps {
-  project: ProjectFixedPriceDetailsResponse;
+  project: ProjectFixedPriceDetailsResponse | ProjectDetail;
   theme?: string;
 }
 
@@ -31,6 +31,11 @@ const getStatusColor = (status: string) => {
     default:
       return "default";
   }
+};
+
+// Type guard để kiểm tra loại project
+const isFixedPriceProject = (project: ProjectFixedPriceDetailsResponse | ProjectDetail): project is ProjectFixedPriceDetailsResponse => {
+  return 'completionPercentage' in project;
 };
 
 const CompactProjectInfo: React.FC<CompactProjectInfoProps> = ({
@@ -63,7 +68,7 @@ const CompactProjectInfo: React.FC<CompactProjectInfoProps> = ({
     return (
       <Space wrap>
         <Avatar.Group maxCount={4} size="small">
-          {visibleUsers.map((user: UserBasicResponseDto) => (
+          {visibleUsers.map((user: any) => (
             <Avatar
               key={user.id}
               size="small"
@@ -93,9 +98,9 @@ const CompactProjectInfo: React.FC<CompactProjectInfoProps> = ({
         </Tag>
         <Tag style={{ background: theme === "dark" ? "#262626" : "#f6f6f6" }}>
           <FlagOutlined style={{ marginRight: 4 }} />
-          FIXED PRICE
+          {isFixedPriceProject(project) ? "FIXED PRICE" : "LABOR"}
         </Tag>
-        {project.isActive && (
+        {isFixedPriceProject(project) && project.isActive && (
           <Tag color="green" style={{ fontSize: '11px' }}>
             ACTIVE
           </Tag>
@@ -105,7 +110,7 @@ const CompactProjectInfo: React.FC<CompactProjectInfoProps> = ({
       {/* Project Name & Description */}
       <div style={{ marginBottom: 16 }}>
         <Text strong style={{ fontSize: '16px', display: 'block', marginBottom: 4 }}>
-          {project.name}
+          {isFixedPriceProject(project) ? project.name : project.name}
         </Text>
         {project.description && (
           <Text type="secondary" style={{ fontSize: '13px' }}>
@@ -166,17 +171,19 @@ const CompactProjectInfo: React.FC<CompactProjectInfoProps> = ({
       <div>
         <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: 8 }}>
           <UserOutlined style={{ marginRight: 4 }} />
-          Team Members ({project.users.length})
+          Team Members ({project.users?.length || 0})
         </Text>
         {renderUserAvatars()}
       </div>
 
       {/* Footer info */}
-      <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}` }}>
-        <Text type="secondary" style={{ fontSize: '11px' }}>
-          Created: {formatDate(project.createdAt)} | Updated: {formatDate(project.updatedAt)}
-        </Text>
-      </div>
+      {isFixedPriceProject(project) && (
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}` }}>
+          <Text type="secondary" style={{ fontSize: '11px' }}>
+            Created: {formatDate(project.createdAt)} | Updated: {formatDate(project.updatedAt)}
+          </Text>
+        </div>
+      )}
     </div>
   );
 };
