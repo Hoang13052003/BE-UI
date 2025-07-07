@@ -9,17 +9,17 @@ import {
 // removed react-grid-layout in favor of static Ant Design grid
 
 // --- Types ---
-import { Project, ProjectDetail } from "../../types/project";
+import { Project, ProjectFixedPriceDetailsResponse } from "../../types/project";
 
 // --- API ---
-import { getProjectDetailsApi } from "../../api/projectApi";
+import { getProjectFixedPriceDetailsApi } from "../../api/projectApi";
 
 // --- Components ---
-import ProjectDetailsDisplay from "../../components/Admin/ProjectDetailsDisplay";
 import EditProjectModal from "../../components/Admin/EditProjectModal";
-import ProjectMilestonesTab from "../../components/Admin/ProjectDetailsPage/ProjectMilestonesTab";
-import ProjectTimeLogsTab from "../../components/Admin/ProjectDetailsPage/ProjectTimeLogsTab";
 import ProjectUpdatesTab from "../../components/Admin/ProjectDetailsPage/ProjectUpdatesTab";
+import ProjectMetricsDisplay from "../../components/Admin/ProjectDetailsPage/ProjectMetricsDisplay";
+import WeeklyMilestonesDisplay from "../../components/Admin/ProjectDetailsPage/WeeklyMilestonesDisplay";
+import CompactProjectInfo from "../../components/Admin/ProjectDetailsPage/CompactProjectInfo";
 
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -32,7 +32,7 @@ const ProjectDetailPage: React.FC = () => {
   const { theme } = useTheme();
   const { userRole } = useAuth();
 
-  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [project, setProject] = useState<ProjectFixedPriceDetailsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] =
@@ -48,11 +48,8 @@ const ProjectDetailPage: React.FC = () => {
     setError(null);
     setProject(null);
     try {
-      const numericProjectId = Number(projectId);
-      if (isNaN(numericProjectId)) {
-        throw new Error("Invalid Project ID format.");
-      }
-      const data = await getProjectDetailsApi(numericProjectId);
+      // Use the new fixed price project details API (string ID)
+      const data = await getProjectFixedPriceDetailsApi(projectId);
       setProject(data);
     } catch (err: any) {
       console.error("Failed to fetch project details:", err);
@@ -192,52 +189,43 @@ const ProjectDetailPage: React.FC = () => {
         </Row>
       )}
 
-      {/* Static Layout using Ant Design Grid */}
-      <Row gutter={[16, 16]}>
-        {/* Overview: full width on xs, sm, md; half width on lg and xl */}{" "}
-        <Col
-          xs={24}
-          sm={24}
-          md={24}
-          lg={12}
-          xl={12}
-          style={{
-            boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
-            borderRadius: "8px",
-            padding: "20px",
-          }}
-        >
-          <Title
-            level={3}
-            style={{
-              margin: 0,
-              color: "#1890ff",
-            }}
-          >
-            <ProjectOutlined
-              style={{ marginBottom: "20px", marginLeft: "8px" }}
-            />
-            Project overview
-          </Title>{" "}
-          <ProjectDetailsDisplay
-            project={project as any}
-            theme={theme}
-            onRefreshProgress={fetchProjectData} // Thêm callback để refresh project data
-          />
-        </Col>
-        {/* Milestones/Time Logs: full width on xs, sm, md; half width on lg and xl */}
-        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
-          {project.type === "FIXED_PRICE" ? (
-            <ProjectMilestonesTab projectId={project.id} />
-          ) : (
-            <ProjectTimeLogsTab projectId={project.id} />
-          )}
+      {/* Top Metrics Display */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col span={24}>
+          <ProjectMetricsDisplay project={project} />
         </Col>
       </Row>
+
+      {/* Main Content Layout - 2 columns */}
+      <Row gutter={[16, 16]}>
+        {/* Project Basic Info - Compact */}
+        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
+          <Card
+            title={
+              <span>
+                <ProjectOutlined style={{ marginRight: 8 }} />
+                Project Details
+              </span>
+            }
+            size="small"            >
+              <CompactProjectInfo
+                project={project}
+                theme={theme}
+              />
+            </Card>
+        </Col>
+
+        {/* Weekly Milestones */}
+        <Col xs={24} sm={24} md={24} lg={12} xl={12}>
+          <WeeklyMilestonesDisplay milestones={project.milestoneInWeek} />
+        </Col>
+      </Row>
+      
+      {/* Project Updates - Full Width */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
           <Card title="Project Updates Timeline">
-            <ProjectUpdatesTab projectId={project.id} theme={theme} />
+            <ProjectUpdatesTab projectId={Number(project.id)} theme={theme} />
           </Card>
         </Col>
       </Row>
@@ -252,18 +240,29 @@ const ProjectDetailPage: React.FC = () => {
               id: project.id,
               name: project.name,
               description: project.description || "",
-              type: project.type,
+              projectType: "FIXED_PRICE" as const, // This API is for fixed price projects
               status: project.status,
-              startDate: project.startDate,
-              plannedEndDate: project.plannedEndDate,
+              startDate: project.startDate || "",
+              plannedEndDate: project.plannedEndDate || "",
               actualEndDate: project.actualEndDate,
               totalBudget: project.totalBudget || 0,
-              totalEstimatedHours: project.totalEstimatedHours,
-              progress: 0,
-              milestoneCount: 0,
-              newMilestoneCount: 0,
-              sentMilestoneCount: 0,
-              reviewedMilestoneCount: 0,
+              totalEstimatedHours: null,
+              overallProcess: project.overallProcess || 0,
+              actualProcess: project.actualProcess || 0,
+              deleted: project.deleted,
+              createdAt: project.createdAt,
+              updatedAt: project.updatedAt,
+              createdBy: null,
+              updatedBy: null,
+              completed: project.status === "COMPLETED",
+              overdue: project.isOverdue || false,
+              laborProject: false,
+              fixedPriceProject: true,
+              progress: project.completionPercentage,
+              milestoneCount: project.totalMilestoneCount,
+              newMilestoneCount: project.newMilestones,
+              sentMilestoneCount: project.sentMilestones,
+              reviewedMilestoneCount: project.reviewedMilestones,
               users: project.users.map((user) => ({
                 id: user.id,
                 email: user.email,

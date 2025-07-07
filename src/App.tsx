@@ -108,7 +108,7 @@ function App() {
                       <Route path="profile" element={<Profile />} />
                     </Route>
                     <Route
-                      path="projects/:projectId/details"
+                      path="projects/fixed-price/:projectId/details"
                       element={<ProjectDetailPage />}
                     />{" "}
                     <Route path="feedbacks" element={<Feedbacks />} />
@@ -150,7 +150,7 @@ function App() {
                     />
                     {/* <Route path="messages" element={<Messages />} /> */}
                     <Route
-                      path="projects/:projectId/details"
+                      path="projects/fixed-price/:projectId/details"
                       element={<ProjectDetailPage />}
                     />
                   </Route>
@@ -177,7 +177,7 @@ function App() {
                     />
                     {/* <Route path="messages" element={<Messages />} /> */}
                     <Route
-                      path="projects/:projectId/details"
+                      path="projects/fixed-price/:projectId/details"
                       element={<ProjectDetailPage />}
                     />
                   </Route>

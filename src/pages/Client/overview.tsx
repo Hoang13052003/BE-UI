@@ -119,7 +119,7 @@ const Overview: React.FC = () => {
   };
 
   const handleDetailsClick = (id: string) => {
-    navigate(`/client/projects/${id}/details`);
+    navigate(`/client/projects/fixed-price/${id}/details`);
   };
 
   const getStatusColor = (status: string) => {

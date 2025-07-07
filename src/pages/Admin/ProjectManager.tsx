@@ -292,7 +292,7 @@ const ProjectManager: React.FC = () => {
   const hasActiveFilters = Object.values(filterCriteria).some((value) => value);
 
   const handleNavigateToFullDetails = (projectId: string) => {
-    navigate(`/admin/projects/${projectId}/details`);
+    navigate(`/admin/projects/fixed-price/${projectId}/details`);
   };
 
   if (!initialLoadComplete && loading) {

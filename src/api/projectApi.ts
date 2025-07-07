@@ -7,6 +7,7 @@ import {
   ProjectUpdateTimelineItem,
   ProjectContextTimeLog,
   ApiPage,
+  ProjectFixedPriceDetailsResponse,
 } from "../types/project";
 import { ProjectRequest } from "../types/ProjectRequest";
 import {
@@ -366,6 +367,7 @@ export const updateProjectFixedPriceApi = async (
   }
 };
 
+// Legacy project details API (old endpoint)
 export const getProjectDetailsApi = async (
   projectId: string
 ): Promise<ProjectDetail> => {
@@ -376,6 +378,21 @@ export const getProjectDetailsApi = async (
     return data;
   } catch (error) {
     console.error(`Error fetching project details for ID ${projectId}:`, error);
+    throw error;
+  }
+};
+
+// New project fixed price details API (from tutorial)
+export const getProjectFixedPriceDetailsApi = async (
+  projectId: string
+): Promise<ProjectFixedPriceDetailsResponse> => {
+  try {
+    const { data } = await axiosClient.get<ProjectFixedPriceDetailsResponse>(
+      `/api/projects/fixed-price/${projectId}/details`
+    );
+    return data;
+  } catch (error) {
+    console.error(`Error fetching fixed price project details for ID ${projectId}:`, error);
     throw error;
   }
 };

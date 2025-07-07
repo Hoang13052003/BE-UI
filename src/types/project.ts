@@ -107,3 +107,77 @@ export interface ApiPage<T> {
   numberOfElements: number;
   empty: boolean;
 }
+
+// New types for Project Fixed Price Details API (from tutorial)
+export interface UserBasicResponseDto {
+  id: number;
+  email: string;
+  fullName: string;
+  image: string | null;
+  note: string | null;
+  role: string;
+}
+
+export interface MilestoneResponseDto {
+  id: number;
+  projectFixedPriceId: string;
+  projectName: string;
+  name: string;
+  description: string | null;
+  startDate: string | null;
+  deadlineDate: string | null;
+  status: "TODO" | "DOING" | "PENDING" | "COMPLETED";
+  completionDate: string | null;
+  notes: string | null;
+  completionPercentage: number;
+}
+
+export interface UserSummaryDto {
+  id: number;
+  fullName: string;
+  email: string;
+}
+
+export interface ProjectUpdateTimelineDto {
+  id: number;
+  createdBy: UserSummaryDto;
+  updateDate: string;
+  summary: string;
+  details: string | null;
+  statusAtUpdate: "NEW" | "SENT" | "FEEDBACK";
+  overallProcess: number | null;
+  actualProcess: number | null;
+  published: boolean;
+}
+
+export interface ProjectFixedPriceDetailsResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  status: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";
+  startDate: string | null;
+  plannedEndDate: string | null;
+  actualEndDate: string | null;
+  totalBudget: number | null;
+  completionPercentage: number;
+  overallProcess: number | null;
+  actualProcess: number | null;
+  isActive: boolean;
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  users: UserBasicResponseDto[];
+  milestoneInWeek: MilestoneResponseDto[];
+  projectUpdates: ProjectUpdateTimelineDto[];
+  totalMilestoneCount: number;
+  totalProjectUpdateCount: number;
+  activeUserCount: number;
+  newMilestones: number;
+  sentMilestones: number;
+  reviewedMilestones: number;
+  completedMilestones: number;
+  daysUntilDeadline: number | null;
+  isOverdue: boolean | null;
+  averageMilestoneCompletionDays: number | null;
+  milestonesCompletedThisWeek: number;
+}

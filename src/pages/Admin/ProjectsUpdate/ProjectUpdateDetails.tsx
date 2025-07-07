@@ -403,9 +403,9 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                 type="primary"
                 onClick={() => {
                   if (userRole === "ADMIN") {
-                    navigate(`/admin/projects/${project.id}/details`);
+                    navigate(`/admin/projects/fixed-price/${project.id}/details`);
                   } else {
-                    navigate(`/client/projects/${project.id}/details`);
+                    navigate(`/client/projects/fixed-price/${project.id}/details`);
                   }
                 }}
                 style={{ padding: 10 }}
