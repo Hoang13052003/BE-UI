@@ -376,12 +376,12 @@ export const updateProjectFixedPriceApi = async (
 };
 
 // Legacy project details API (old endpoint)
-export const getProjectDetailsApi = async (
+export const getProjectLaborDetailsApi = async (
   projectId: string
 ): Promise<ProjectDetail> => {
   try {
     const { data } = await axiosClient.get<ProjectDetail>(
-      `/api/project-labor/${projectId}/details`
+      `/api/projects/labor/${projectId}/details`
     );
     return data;
   } catch (error) {

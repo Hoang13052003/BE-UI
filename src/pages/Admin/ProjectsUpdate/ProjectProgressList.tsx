@@ -385,7 +385,7 @@ const ProjectProgressList: React.FC = () => {
         <Card
           key={item.id}
           style={{ borderRadius: 10, boxShadow: "0 2px 8px #f0f1f2" }}
-          bodyStyle={{ padding: 16 }}
+          styles={{ body: { padding: 16 } }}
           onClick={() => navigate(`/admin/project-updates/${item.id}`)}
         >
           <Space direction="vertical" style={{ width: "100%" }} size={8}>

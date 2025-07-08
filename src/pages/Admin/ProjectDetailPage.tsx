@@ -12,12 +12,13 @@ import {
 import {
   ProjectFixedPriceDetailsResponse,
   ProjectDetail,
+  ProjectLaborDetailResponse,
 } from "../../types/project";
 
 // --- API ---
 import {
   getProjectFixedPriceDetailsApi,
-  getProjectDetailsApi,
+  getProjectLaborDetailsApi,
 } from "../../api/projectApi";
 
 // --- Components ---
@@ -26,6 +27,10 @@ import ProjectUpdatesTab from "../../components/Admin/ProjectDetailsPage/Project
 import ProjectMetricsDisplay from "../../components/Admin/ProjectDetailsPage/ProjectMetricsDisplay";
 import WeeklyMilestonesDisplay from "../../components/Admin/ProjectDetailsPage/WeeklyMilestonesDisplay";
 import CompactProjectInfo from "../../components/Admin/ProjectDetailsPage/CompactProjectInfo";
+import ProjectLaborMetricsDisplay from "../../components/Admin/ProjectDetailsPage/ProjectLaborMetricsDisplay";
+import ProjectLaborDetail from "../../components/Admin/ProjectDetailsPage/ProjectLaborDetail";
+import ProjectLaborRecentTimeLogs from "../../components/Admin/ProjectDetailsPage/ProjectLaborRecentTimeLogs";
+import ProjectLaborUpdatesTimeline from "../../components/Admin/ProjectDetailsPage/ProjectLaborUpdatesTimeline";
 
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -50,7 +55,7 @@ const ProjectDetailPage: React.FC = () => {
   const isLaborProject = location.pathname.includes("/labor/");
 
   const [project, setProject] =
-    useState<ProjectFixedPriceDetailsResponse | null>(null);
+    useState<ProjectFixedPriceDetailsResponse | ProjectDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] =
@@ -68,7 +73,7 @@ const ProjectDetailPage: React.FC = () => {
     try {
       if (isLaborProject) {
         // Gọi API cho project LABOR
-        const data = await getProjectDetailsApi(projectId);
+        const data = await getProjectLaborDetailsApi(projectId);
         setProject(data);
       } else {
         // Gọi API cho project FIXED_PRICE
@@ -123,7 +128,9 @@ const ProjectDetailPage: React.FC = () => {
           padding: "20px",
         }}
       >
-        <Spin size="large" tip="Loading project details..." />
+        <Spin size="large" tip="Loading project details...">
+          <div style={{ height: 40 }} />
+        </Spin>
       </div>
     );
   }
@@ -183,6 +190,84 @@ const ProjectDetailPage: React.FC = () => {
   }
 
   // Render khác nhau dựa trên loại project
+  if (isLaborProject && project) {
+    const laborProject = project as unknown as ProjectLaborDetailResponse;
+    return (
+      <Card>
+        {/* Header */}
+        {userRole === "ADMIN" ? (
+          <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
+            <Col>
+              <Button icon={<ArrowLeftOutlined />} onClick={handleBackToList}>
+                Back to Projects
+              </Button>
+            </Col>
+            <Col>
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={handleOpenEditProjectModal}
+              >
+                Edit Project
+              </Button>
+            </Col>
+          </Row>
+        ) : userRole === "MANAGER" ? (
+          <Row justify="space-between" align="middle" style={{ marginBottom: "20px" }}>
+            <Col>
+              <Button icon={<ArrowLeftOutlined />} onClick={handleBackToHomeManager}>
+                Back to Home
+              </Button>
+            </Col>
+            <Col>
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={handleOpenEditProjectModal}
+              >
+                Edit Project
+              </Button>
+            </Col>
+          </Row>
+        ) : (
+          <Row justify="start" align="middle" style={{ marginBottom: "20px" }}>
+            <Col>
+              <Button icon={<ArrowLeftOutlined />} onClick={handleBackToHome}>
+                Back to Home
+              </Button>
+            </Col>
+          </Row>
+        )}
+
+        {/* Metrics */}
+        <ProjectLaborMetricsDisplay project={laborProject} />
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24} lg={12}>
+            <ProjectLaborDetail project={laborProject} users={laborProject.users} />
+          </Col>
+        </Row>
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24} lg={12}>
+            <ProjectLaborRecentTimeLogs timeLogs={laborProject.recentTimeLogs} />
+          </Col>
+          <Col xs={24} lg={12}>
+            <ProjectLaborUpdatesTimeline updates={laborProject.projectUpdates} />
+          </Col>
+        </Row>
+        {isEditProjectModalVisible && project && (
+          <EditProjectModal
+            visible={isEditProjectModalVisible}
+            projectId={projectId || ""}
+            projectData={project as any}
+            onClose={() => setIsEditProjectModalVisible(false)}
+            onSuccess={handleEditProjectSuccess}
+          />
+        )}
+      </Card>
+    );
+  }
+
+  // Render khác nhau dựa trên loại project
   return (
     <Card>
       {/* Header */}
@@ -236,7 +321,7 @@ const ProjectDetailPage: React.FC = () => {
           <Col>
             <Button
               icon={<ArrowLeftOutlined />}
-              onClick={handleBackToHomeManager}
+              onClick={handleBackToHome}
             >
               Back to Home
             </Button>
@@ -276,7 +361,7 @@ const ProjectDetailPage: React.FC = () => {
 
         {/* Weekly Milestones */}
         <Col xs={24} lg={12}>
-          <WeeklyMilestonesDisplay milestones={project.milestoneInWeek} />
+          <WeeklyMilestonesDisplay milestones={isFixedPriceProject(project) ? project.milestoneInWeek : []} />
         </Col>
       </Row>
 

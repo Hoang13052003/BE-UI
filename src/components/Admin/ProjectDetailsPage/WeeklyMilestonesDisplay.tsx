@@ -55,7 +55,7 @@ const WeeklyMilestonesDisplay: React.FC<WeeklyMilestonesDisplayProps> = ({
     <Card 
       size="small" 
       style={{ height: '100%' }}
-      bodyStyle={{ padding: '12px' }}
+      styles={{ body: { padding: '12px' } }}
     >
       <div style={{ marginBottom: 8 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>

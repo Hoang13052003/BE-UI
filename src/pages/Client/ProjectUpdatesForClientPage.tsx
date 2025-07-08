@@ -210,7 +210,7 @@ const ProjectUpdatesForClientPage: React.FC = () => {
               onClick={() =>
                 (window.location.href = `/client/project-updates/${item.id}`)
               }
-              bodyStyle={{ padding: 16 }}
+              styles={{ body: { padding: 16 } }}
             >
               <Row gutter={[8, 8]}>
                 <Col span={24}>

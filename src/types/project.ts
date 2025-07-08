@@ -43,7 +43,7 @@ export interface UserSummary {
 }
 
 export interface ProjectDetail {
-  id: string; // Changed to string for UUID
+  id: string;
   name: string;
   description: string | null;
   projectType: "LABOR" | "FIXED_PRICE";
@@ -180,4 +180,42 @@ export interface ProjectFixedPriceDetailsResponse {
   isOverdue: boolean | null;
   averageMilestoneCompletionDays: number | null;
   milestonesCompletedThisWeek: number;
+}
+
+export interface ProjectLaborDetailResponse {
+  id: string;
+  projectName: string;
+  description: string | null;
+  status: "NEW" | "PENDING" | "PROGRESS" | "COMPLETED" | "CLOSED";
+  startDate: string | null;
+  plannedEndDate: string | null;
+  actualEndDate: string | null;
+  totalBudget: number | null;
+  totalActualHours: number | null;
+  totalEstimatedHours: number | null;
+  completionPercentage: number | null;
+  overallProcess: number | null;
+  actualProcess: number | null;
+  isActive: boolean;
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  users: UserBasicResponseDto[];
+  recentTimeLogs: TimeLogResponseDto[];
+  projectUpdates: ProjectUpdateTimelineDto[];
+  totalTimeLogCount: number;
+  totalProjectUpdateCount: number;
+  participantCount: number;
+  remainingHours: number | null;
+  daysUntilDeadline: number | null;
+}
+
+export interface TimeLogResponseDto {
+  id: number;
+  performer: UserSummaryDto;
+  taskDate: string;
+  taskDescription: string;
+  hoursSpent: number;
+  computedTimelogStatus?: string;
+  completionPercentage?: number;
 }

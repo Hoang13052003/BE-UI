@@ -158,12 +158,12 @@ const ProjectUpdateHistoryTimeLogsTab: React.FC<
         display: "flex",
         flexDirection: "column",
       }}
-      bodyStyle={{
+      styles={{ body: {
         padding: "20px",
         flex: 1,
         display: "flex",
         flexDirection: "column",
-      }}
+      } }}
     >
       <Space
         direction="vertical"
@@ -394,7 +394,7 @@ const ProjectUpdateHistoryTimeLogsTab: React.FC<
                   transition: "all 0.3s ease",
                 }}
                 hoverable
-                bodyStyle={{ padding: "20px" }}
+                styles={{ body: { padding: "20px" } }}
               >
                 <List.Item style={{ border: "none", padding: 0 }}>
                   <Row gutter={[16, 16]} align="top">

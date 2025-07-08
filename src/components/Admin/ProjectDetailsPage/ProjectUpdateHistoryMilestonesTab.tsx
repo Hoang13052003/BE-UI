@@ -215,7 +215,7 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<
               border: "1px solid #f0f0f0",
               height: "100%",
             }}
-            bodyStyle={{ padding: "20px" }}
+            styles={{ body: { padding: "20px" } }}
           >
             <div style={{ marginBottom: "12px" }}>
               <Badge
@@ -651,7 +651,9 @@ const ProjectUpdateHistoryMilestonesTab: React.FC<
       )}
       {loading && (
         <div style={{ textAlign: "center", padding: "20px" }}>
-          <Spin size="large" tip="Loading milestones..." />
+          <Spin size="large" tip="Loading milestones...">
+            <div style={{ height: 40 }} />
+          </Spin>
         </div>
       )}
       {filteredMilestones && (

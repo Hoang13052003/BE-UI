@@ -285,7 +285,9 @@ const ProjectUpdatesTab: React.FC<ProjectUpdatesTabProps> = ({
           marginTop: 40,
           marginBottom: 40,
         }}
-      />
+      >
+        <div style={{ height: 40 }} />
+      </Spin>
     );
   }
 

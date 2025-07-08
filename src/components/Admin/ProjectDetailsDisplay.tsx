@@ -5,25 +5,23 @@ import {
   Space,
   Row,
   Col,
-  Tooltip,
   Progress,
   Card,
-  Avatar,
 } from "antd";
 import {
   CalendarOutlined,
   ClockCircleOutlined,
   FlagOutlined,
-  TeamOutlined,
+  
 } from "@ant-design/icons";
 import {
   Project,
   ProjectDetail,
   UserSummary,
-  ProjectUser,
 } from "../../types/project";
 import MilestoneDetailsDisplayInternal from "./MilestoneDetailsDisplay";
 import TimelogDetailsDisplayInternal from "./TimelogDetailsDisplay";
+import { getTimeLogsByProjectIdApi, TimeLogResponse } from "../../api/timelogApi";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -51,6 +49,8 @@ interface ProjectDetailsDisplayProps {
   currentUserIsAdmin?: boolean;
 
   onRefreshProgress?: () => void;
+  // Thêm prop timelogs (tùy chọn)
+  timelogs?: TimeLogResponse[];
 }
 
 const getStatusColor = (
@@ -95,8 +95,20 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   reviewedMilestoneCount,
   currentUserIsAdmin = false,
   onRefreshProgress,
+  timelogs: propTimelogs,
 }) => {
   const projectData = project;
+
+  // State cho timelogs nếu không truyền prop
+  const [timelogs, setTimelogs] = React.useState<TimeLogResponse[] | undefined>(propTimelogs);
+  // Fetch timelogs nếu là LABOR và chưa có prop
+  React.useEffect(() => {
+    if (project.projectType === "LABOR" && !propTimelogs) {
+      getTimeLogsByProjectIdApi(project.id, 0, 1000)
+        .then((res) => setTimelogs(res.timelogs))
+        .catch(() => setTimelogs([]));
+    }
+  }, [project, propTimelogs]);
 
   const handleRefreshWithProgress = (callback?: () => void) => {
     if (callback) callback();
@@ -131,75 +143,28 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
     return colors;
   };
 
-  const calculateLaborProgress = () => {
-    if (
-      projectData.projectType !== "LABOR" ||
-      !projectData.totalEstimatedHours ||
-      !projectData.startDate
-    ) {
-      return { percent: 0, totalDays: 0, currentDay: 0 };
-    }
-
-    const HOURS_PER_DAY = 8;
-    const totalDays = Math.ceil(
-      projectData.totalEstimatedHours / HOURS_PER_DAY
-    );
-    const startDate = new Date(projectData.startDate);
-    const currentDate = new Date();
-
-    const timeDiff = currentDate.getTime() - startDate.getTime();
-    const daysPassed = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1;
-
-    if (currentDate < startDate) {
-      return { percent: 0, totalDays, currentDay: 0 };
-    }
-
-    const currentDay = Math.max(0, Math.min(daysPassed, totalDays));
-    const percent =
-      totalDays > 0 ? Math.round((currentDay / totalDays) * 100) : 0;
-
-    return { percent, totalDays, currentDay };
+  // Hàm tạo màu cho progress steps timelog
+  const createTimelogStatusColors = () => {
+    if (!timelogs || timelogs.length === 0) return [];
+    return timelogs.map((log) => {
+      const status = (log.computedTimelogStatus || log.actualTimelogStatus || "").toUpperCase();
+      switch (status) {
+        case "TO DO":
+        case "TODO":
+          return "#1890ff"; // blue
+        case "DOING":
+          return "#13c2c2"; // cyan (gần với processing)
+        case "PENDING":
+          return "#faad14"; // orange
+        case "COMPLETED":
+          return "#52c41a"; // green
+        default:
+          return "#d9d9d9"; // gray
+      }
+    });
   };
 
-  const renderUserAvatars = () => {
-    if (!projectData.users || projectData.users.length === 0) {
-      return <Text type="secondary">No users assigned</Text>;
-    }
 
-    const visibleUsers = projectData.users.slice(0, 3);
-    const remainingCount = projectData.users.length - 3;
-
-    return (
-      <Space>
-        <Avatar.Group
-          maxCount={3}
-          maxStyle={{ color: "#f56a00", backgroundColor: "#fde3cf" }}
-        >
-          {visibleUsers.map((user) => {
-            // Ưu tiên hiển thị fullName, fallback về email
-            const displayName = (user as UserSummary).fullName || (user as ProjectUser).email;
-            const tooltipText = (user as UserSummary).fullName 
-              ? `${(user as UserSummary).fullName} (${(user as UserSummary).email})`
-              : (user as ProjectUser).email;
-            
-            return (
-              <Tooltip
-                key={user.id}
-                title={tooltipText}
-              >
-                <Avatar style={{ backgroundColor: "#87d068" }}>
-                  {displayName.charAt(0).toUpperCase()}
-                </Avatar>
-              </Tooltip>
-            );
-          })}
-        </Avatar.Group>
-        {remainingCount > 0 && (
-          <Text type="secondary">+{remainingCount} more</Text>
-        )}
-      </Space>
-    );
-  };
 
   const renderProgressSection = () => {
     const commonProgressStyle = {
@@ -271,40 +236,22 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       );
     };
 
-    if (projectData.projectType === "LABOR" && projectData.totalEstimatedHours) {
-      const progress = calculateLaborProgress();
+    // Nếu là LABOR, render progress steps theo timelog
+    if (projectData.projectType === "LABOR") {
+      if (!timelogs) return null;
       return (
-        <>
-          {renderOverallActualProgress()}
-          <Card size="small" style={commonProgressStyle}>
-            <Row align="middle" gutter={16}>
-              <Col>
-                <Progress
-                  type="circle"
-                  size={60}
-                  percent={progress.percent}
-                  format={() => `${progress.currentDay}/${progress.totalDays}`}
-                  strokeColor={{
-                    "0%": "#108ee9",
-                    "100%": "#87d068",
-                  }}
-                  strokeWidth={6}
-                />
-              </Col>
-              <Col>
-                <Space direction="vertical" size={0}>
-                  <Text strong>Labor Progress</Text>
-                  <Text type="secondary" style={{ fontSize: "12px" }}>
-                    {progress.currentDay} of {progress.totalDays} days
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: "12px" }}>
-                    {projectData.totalEstimatedHours}h estimated
-                  </Text>
-                </Space>
-              </Col>
-            </Row>
-          </Card>
-        </>
+        <Card size="small" style={commonProgressStyle}>
+          <Space direction="vertical" size={4}>
+            <Progress
+              steps={timelogs.length}
+              percent={100}
+              strokeColor={createTimelogStatusColors()}
+              format={() => `${timelogs.length} timelogs`}
+              strokeWidth={12}
+              size="small"
+            />
+          </Space>
+        </Card>
       );
     }
 
@@ -464,20 +411,6 @@ const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
       )}
       {/* Info Section */}
       <Row gutter={[16, 8]} className="project-card-clickable">
-        <Col xs={24} sm={12} md={8}>
-          <Space align="center">
-            <TeamOutlined style={{ color: "#1890ff" }} />
-            <div>
-              <Text
-                type="secondary"
-                style={{ fontSize: "12px", display: "block" }}
-              >
-                Team Members
-              </Text>
-              {renderUserAvatars()}
-            </div>
-          </Space>
-        </Col>
         <Col xs={24} sm={12} md={8}>
           <Space align="center">
             <CalendarOutlined style={{ color: "#52c41a" }} />

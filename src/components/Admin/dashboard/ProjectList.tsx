@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Table, Tag, Typography, message, List, Card, Grid } from "antd";
-import { Link } from "react-router-dom";
+import { Table, Tag, Typography, message, List, Card, Grid, Button } from "antd";
+import { useNavigate } from "react-router-dom";
 import type { ColumnsType } from "antd/es/table";
-import { filterProjects } from "../../../api/projectApi";
+import {
+  filterProjects,
+  getProjectLaborDetailsApi,
+  getProjectFixedPriceDetailsApi,
+} from "../../../api/projectApi";
+import { getMilestoneSummaryForFixedPriceProjectApi } from "../../../api/milestoneApi";
+import { getTimeLogsByProjectIdApi } from "../../../api/timelogApi";
 import { Project } from "../../../types/project";
 import { useTranslation } from "react-i18next";
 
@@ -12,11 +18,13 @@ const { useBreakpoint } = Grid;
 const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingProjectId, setLoadingProjectId] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const screens = useBreakpoint();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const fetchProjects = async (page: number = 0, size: number = 10) => {
     try {
@@ -50,6 +58,38 @@ const ProjectList: React.FC = () => {
   useEffect(() => {
     fetchProjects(currentPage, pageSize);
   }, [currentPage, pageSize]);
+
+  /**
+   * Handle click on "View Details" – call 2 APIs based on project type then navigate
+   */
+  const handleViewDetails = async (project: Project) => {
+    try {
+      setLoadingProjectId(project.id);
+
+      // 1. Always fetch project detail first (different endpoint for each type)
+      if (project.projectType === "FIXED_PRICE") {
+        await Promise.all([
+          getProjectFixedPriceDetailsApi(project.id),
+          getMilestoneSummaryForFixedPriceProjectApi(project.id),
+        ]);
+      } else {
+        // LABOR
+        await Promise.all([
+          getProjectLaborDetailsApi(project.id),
+          getTimeLogsByProjectIdApi(project.id, 0, 1000),
+        ]);
+      }
+
+      // Determine route path
+      const typePath = project.projectType === "FIXED_PRICE" ? "fixed-price" : "labor";
+      navigate(`/admin/projects/${typePath}/${project.id}/details`);
+    } catch (error) {
+      console.error("Failed to fetch project details:", error);
+      message.error(t("messages.fetchProjectsError"));
+    } finally {
+      setLoadingProjectId(null);
+    }
+  };
 
   const statusColors: Record<string, string> = {
     NEW: "blue",
@@ -131,12 +171,13 @@ const ProjectList: React.FC = () => {
       title: "Action",
       key: "action",
       render: (_, record) => (
-        <Link
-          to={`/admin/projects/fixed-price/${record.id}/details`}
-          className="text-blue-600 hover:text-blue-700"
+        <Button
+          type="link"
+          loading={loadingProjectId === record.id}
+          onClick={() => handleViewDetails(record)}
         >
           View Details
-        </Link>
+        </Button>
       ),
     },
   ];
@@ -169,7 +210,7 @@ const ProjectList: React.FC = () => {
               border: "1px solid #f0f0f0",
               padding: 16,
             }}
-            bodyStyle={{ padding: 0 }}
+            styles={{ body: { padding: 0 } }}
             title={
               <div
                 style={{
@@ -263,12 +304,14 @@ const ProjectList: React.FC = () => {
                 marginTop: 8,
               }}
             >
-              <Link
-                to={`/admin/projects/fixed-price/${item.id}/details`}
+              <Button
+                type="link"
                 style={{ color: "#9254de", fontWeight: 500, fontSize: 14 }}
+                loading={loadingProjectId === item.id}
+                onClick={() => handleViewDetails(item)}
               >
                 View Details
-              </Link>
+              </Button>
             </div>
           </Card>
         )}

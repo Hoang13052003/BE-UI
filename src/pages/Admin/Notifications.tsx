@@ -289,7 +289,9 @@ const Notifications: React.FC = () => {
 
         {loading ? (
           <LoadingContainer>
-            <Spin tip="Loading notifications..." />
+            <Spin tip="Loading notifications...">
+              <div style={{ height: 40 }} />
+            </Spin>
           </LoadingContainer>
         ) : filteredNotifications.length > 0 ? (
           <>

@@ -283,7 +283,9 @@ const AttachmentsTree: React.FC<AttachmentsTreeProps> = ({
     return (
       <Card title={`Project Files ${projectName ? `- ${projectName}` : ""}`}>
         <div style={{ textAlign: "center", padding: "20px" }}>
-          <Spin tip="Loading project structure..." />
+          <Spin tip="Loading project structure...">
+            <div style={{ height: 40 }} />
+          </Spin>
         </div>
       </Card>
     );

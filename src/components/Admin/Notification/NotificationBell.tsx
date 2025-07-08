@@ -263,7 +263,9 @@ const NotificationBell: React.FC = () => {
 
       {loading ? (
         <LoadingContainer>
-          <Spin tip="Loading notifications..." />
+          <Spin tip="Loading notifications...">
+            <div style={{ height: 40 }} />
+          </Spin>
         </LoadingContainer>
       ) : filteredNotifications.length > 0 ? (
         <>
@@ -367,7 +369,7 @@ const NotificationBell: React.FC = () => {
   );
   return (
     <Dropdown
-      dropdownRender={() => content}
+      popupRender={() => content}
       trigger={["click"]}
       open={open}
       onOpenChange={setOpen}

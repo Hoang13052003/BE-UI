@@ -519,7 +519,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
               );
             }}
             style={{ width: "100%" }}
-            dropdownRender={(menu) => (
+            popupRender={(menu) => (
               <div>
                 {menu}
                 <div

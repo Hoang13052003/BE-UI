@@ -101,7 +101,6 @@ const ProjectManager: React.FC = () => {
   // Admin status check
   const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState<boolean>(false);
 
-  const [forceDeleteId, setForceDeleteId] = useState<string | null>(null);
   const [forceDeleteLoading, setForceDeleteLoading] = useState(false);
   const [showForceDeleteConfirmId, setShowForceDeleteConfirmId] = useState<string | null>(null);
 
