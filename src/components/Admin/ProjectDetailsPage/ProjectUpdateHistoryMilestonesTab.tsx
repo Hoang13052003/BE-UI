@@ -38,6 +38,7 @@ import localizedFormat from "dayjs/plugin/localizedFormat";
 dayjs.extend(localizedFormat);
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
+import { isMilestoneCompleted, isOverdueMilestone, calculateMilestoneStats } from "../../../utils/milestoneUtils";
 
 const { Text, Title } = Typography;
 const { Search } = Input;

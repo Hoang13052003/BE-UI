@@ -53,3 +53,38 @@ export const getMilestoneStatusTagColor = (status: MilestoneStatus | null): stri
       return "default";
   }
 };
+
+export const isMilestoneCompleted = (milestone: { completionDate?: string | null }): boolean => {
+  return (
+    milestone.completionDate !== null &&
+    milestone.completionDate !== undefined &&
+    milestone.completionDate !== ""
+  );
+};
+
+export const isOverdueMilestone = (milestone: { deadlineDate?: string | null, completionDate?: string | null }): boolean => {
+  if (!milestone.deadlineDate) return false;
+  const deadlineDate = new Date(milestone.deadlineDate);
+  const completed = isMilestoneCompleted(milestone);
+  if (completed) {
+    const completionDate = new Date(milestone.completionDate!);
+    const deadlineEndOfDay = new Date(deadlineDate);
+    deadlineEndOfDay.setHours(23, 59, 59, 999);
+    return completionDate > deadlineEndOfDay;
+  } else {
+    const currentDate = new Date();
+    const deadlineEndOfDay = new Date(deadlineDate);
+    deadlineEndOfDay.setHours(23, 59, 59, 999);
+    return currentDate > deadlineEndOfDay;
+  }
+};
+
+export const calculateMilestoneStats = (milestones: Array<{ status?: string, completionDate?: string | null, deadlineDate?: string | null }>) => {
+  const total = milestones.length;
+  const completed = milestones.filter((m) => isMilestoneCompleted(m)).length;
+  const inProgress = milestones.filter(
+    (m) => !isMilestoneCompleted(m) && (m.status === "TODO" || m.status === "DOING")
+  ).length;
+  const overdue = milestones.filter((m) => isOverdueMilestone(m)).length;
+  return { total, completed, inProgress, overdue };
+};

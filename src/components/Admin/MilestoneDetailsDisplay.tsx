@@ -45,6 +45,7 @@ import {
 } from "../../utils/milestoneUtils";
 import { useInlineEditMilestone } from "../../hooks/useInlineEditMilestone";
 import { createInlineEditMilestoneColumns } from "./InlineEditMilestoneColumns";
+import MilestoneExcelUpload from "./MilestoneDetailsDisplay/MilestoneExcelUpload";
 
 const { Text, Title } = Typography;
 
@@ -264,6 +265,9 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
     return getMilestoneStatusTagColor(status || null);
   };
 
+  // Thay thế sau bằng lấy từ context thực tế
+  const isAdminOrManager = true;
+
   if (loading && milestones.length === 0) {
     return (
       <Card
@@ -403,14 +407,23 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
 
               {/* NORMAL MODE ACTIONS */}
               {!isInBatchMode && (
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => onAddMilestone(fetchMilestones)}
-                  style={{ borderRadius: "6px" }}
-                >
-                  Add Milestone
-                </Button>
+                <>
+                  {isAdminOrManager && (
+                    <MilestoneExcelUpload
+                      projectId={projectId}
+                      onSuccess={fetchMilestones}
+                      disabled={loading}
+                    />
+                  )}
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => onAddMilestone(fetchMilestones)}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    Add Milestone
+                  </Button>
+                </>
               )}
 
               {selectedRowKeys.length > 0 && (

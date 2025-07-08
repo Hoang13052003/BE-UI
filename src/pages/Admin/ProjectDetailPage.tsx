@@ -241,19 +241,24 @@ const ProjectDetailPage: React.FC = () => {
 
         {/* Metrics */}
         <ProjectLaborMetricsDisplay project={laborProject} />
+
+        {/* Row: 2 cột, trái: ProjectLaborDetail, phải: ProjectLaborRecentTimeLogs */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} lg={12}>
             <ProjectLaborDetail project={laborProject} users={laborProject.users} />
           </Col>
-        </Row>
-        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} lg={12}>
             <ProjectLaborRecentTimeLogs timeLogs={laborProject.recentTimeLogs} />
           </Col>
-          <Col xs={24} lg={12}>
+        </Row>
+
+        {/* Row: 1 cột, ProjectLaborUpdatesTimeline */}
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col span={24}>
             <ProjectLaborUpdatesTimeline updates={laborProject.projectUpdates} />
           </Col>
         </Row>
+
         {isEditProjectModalVisible && project && (
           <EditProjectModal
             visible={isEditProjectModalVisible}

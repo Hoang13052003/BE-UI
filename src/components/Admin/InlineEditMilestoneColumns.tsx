@@ -16,6 +16,7 @@ import {
 import dayjs from "dayjs";
 import { Milestone } from "../../types/milestone";
 import { BatchUpdateMilestoneItemDTO } from "../../api/milestoneApi";
+import { isMilestoneCompleted } from "../../utils/milestoneUtils";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -62,13 +63,6 @@ export const createInlineEditMilestoneColumns = ({
     }
   };
 
-  const isMilestoneCompleted = (milestone: Milestone): boolean => {
-    return (
-      milestone.completionDate !== null &&
-      milestone.completionDate !== undefined &&
-      milestone.completionDate !== ""
-    );
-  };
   const columns = [
     {
       title: "Milestone",

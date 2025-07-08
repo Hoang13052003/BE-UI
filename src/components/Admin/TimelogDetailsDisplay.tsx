@@ -35,11 +35,12 @@ import {
   batchDeleteTimeLogsApi,
 } from "../../api/timelogApi";
 import AddTimeLogModal from "./AddTimeLogModal";
-import FileDropUpload from "../../components/Admin/FileDropUpload/FileDropUpload";
+import TimelogExcelUpload from "./TimelogDetailsDisplay/TimelogExcelUpload";
 import { useUserSearch } from "../../hooks/useUserSearch";
 import { useInlineEdit } from "../../hooks/useInlineEdit";
 import { createInlineEditColumns } from "./InlineEditColumns";
 import { UserIdAndEmailResponse } from "../../types/User";
+import { formatDuration, calculateTimelogStats } from "../../utils/timelogUtils";
 
 const { Text, Title } = Typography;
 
@@ -180,17 +181,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
     }
   };
 
-  const calculateStats = () => {
-    const totalHours = timelogs.reduce((sum, log) => sum + log.hoursSpent, 0);
-    const uniqueUsers = new Set(
-      timelogs.map((log) => log.performerFullName || "N/A")
-    ).size;
-    const thisWeekLogs = timelogs.filter((log) =>
-      dayjs(log.taskDate).isAfter(dayjs().startOf("week"))
-    ).length;
-    return { totalHours, uniqueUsers, thisWeekLogs };
-  };
-  const stats = calculateStats();
+  const stats = calculateTimelogStats(timelogs);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page - 1);
@@ -363,14 +354,11 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
               {/* NORMAL MODE ACTIONS */}
               {!isInBatchMode && (
                 <>
-                  <Button
-                    type="default"
-                    icon={<UploadOutlined />}
-                    onClick={() => setShowUploadArea(!showUploadArea)}
-                    style={{ borderRadius: "6px" }}
-                  >
-                    {showUploadArea ? "Hide Upload" : "Bulk Upload"}
-                  </Button>
+                  <TimelogExcelUpload
+                    projectLaborId={projectId}
+                    onSuccess={handleUploadComplete}
+                    disabled={loading}
+                  />
                   <Button
                     type="primary"
                     icon={<PlusOutlined />}
@@ -451,24 +439,7 @@ const TimelogDetailsDisplay: React.FC<TimelogDetailsDisplayProps> = ({
           </Row>
         )}
 
-        {showUploadArea && !isInBatchMode && (
-          <div
-            style={{
-              marginTop: "16px",
-              padding: "16px",
-              background: theme === "dark" ? "#262626" : "#f8f9fa",
-              borderRadius: "8px",
-              border: `1px dashed ${theme === "dark" ? "#595959" : "#d9d9d9"}`,
-            }}
-          >
-            <FileDropUpload
-              projectLaborId={projectId}
-              onUploadComplete={handleUploadComplete}
-              onUploadError={handleUploadError}
-              width="100%"
-            />
-          </div>
-        )}
+        {/* Đã xoá hoàn toàn vùng kéo-thả upload excel cũ */}
       </Card>
       {timelogs.length === 0 && initialLoadComplete && !loading ? (
         <Card

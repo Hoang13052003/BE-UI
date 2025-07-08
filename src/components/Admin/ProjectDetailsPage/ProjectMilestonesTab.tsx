@@ -37,6 +37,7 @@ import { ApiPage } from "../../../types/project";
 import { getProjectMilestonesOverviewApi } from "../../../api/milestoneApi";
 import dayjs from "dayjs";
 import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
+import { isMilestoneCompleted, isOverdueMilestone, calculateMilestoneStats } from "../../../utils/milestoneUtils";
 
 const { Text, Title } = Typography;
 const { Search } = Input;

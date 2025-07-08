@@ -35,6 +35,7 @@ dayjs.extend(localizedFormat);
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
+import { formatDuration } from "../../../utils/timelogUtils";
 const { Text, Paragraph, Title } = Typography;
 const { Search } = Input;
 const { RangePicker } = DatePicker;
@@ -149,20 +150,9 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
       timelog.taskDescription.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const formatDuration = (hours: number) => {
-    if (hours < 1) {
-      return `${Math.round(hours * 60)}m`;
-    } else if (hours === Math.floor(hours)) {
-      return `${hours}h`;
-    } else {
-      const h = Math.floor(hours);
-      const m = Math.round((hours - h) * 60);
-      return `${h}h ${m}m`;
-    }
-  }; // Calculate total hours from filtered data
   const totalHours =
-    filteredTimeLogs?.reduce((sum, timelog) => sum + timelog.hoursSpent, 0) ||
-    0;
+    filteredTimeLogs?.reduce((sum, timelog) => sum + timelog.hoursSpent, 0) || 0;
+
   // Grid Card Component
   const TimeLogGridCard: React.FC<{ timelog: ProjectContextTimeLog }> = ({
     timelog,

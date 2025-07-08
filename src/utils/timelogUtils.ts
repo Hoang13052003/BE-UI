@@ -1,4 +1,5 @@
 import { TimelogStatusType } from "../api/timelogApi";
+import dayjs from "dayjs";
 
 export const getTimelogStatusDisplayName = (status: TimelogStatusType): string => {
   switch (status) {
@@ -50,3 +51,26 @@ export const getTimelogStatusTagColor = (status: TimelogStatusType | null): stri
       return "default";
   }
 };
+
+export function formatDuration(hours: number): string {
+  if (hours < 1) {
+    return `${Math.round(hours * 60)}m`;
+  } else if (hours === Math.floor(hours)) {
+    return `${hours}h`;
+  } else {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m}m`;
+  }
+}
+
+export function calculateTimelogStats(timelogs: Array<{ hoursSpent: number; performerFullName?: string; taskDate?: string }>) {
+  const totalHours = timelogs.reduce((sum, log) => sum + log.hoursSpent, 0);
+  const uniqueUsers = new Set(
+    timelogs.map((log) => log.performerFullName || "N/A")
+  ).size;
+  const thisWeekLogs = timelogs.filter((log) =>
+    log.taskDate ? dayjs(log.taskDate).isAfter(dayjs().startOf("week")) : false
+  ).length;
+  return { totalHours, uniqueUsers, thisWeekLogs };
+}
