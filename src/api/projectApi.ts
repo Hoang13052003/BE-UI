@@ -224,22 +224,30 @@ export const createProjectApi = async (
 
 // Delete project using specific endpoints based on project type
 // DELETE /api/projects/labor/{id} - Delete labor project
-export const deleteProjectLaborApi = async (projectId: string): Promise<void> => {
-  await axiosClient.delete(`/api/projects/labor/${projectId}`);
+export const deleteProjectLaborApi = async (projectId: string, force: boolean = false): Promise<void> => {
+  await axiosClient.delete(`/api/projects/labor/${projectId}`, {
+    params: force ? { force: true } : undefined,
+  });
 };
 
 // DELETE /api/projects/fixed-price/{id} - Delete fixed price project
-export const deleteProjectFixedPriceApi = async (projectId: string): Promise<void> => {
-  await axiosClient.delete(`/api/projects/fixed-price/${projectId}`);
+export const deleteProjectFixedPriceApi = async (projectId: string, force: boolean = false): Promise<void> => {
+  await axiosClient.delete(`/api/projects/fixed-price/${projectId}`, {
+    params: force ? { force: true } : undefined,
+  });
 };
 
 // Helper function to delete project based on its type
 // Automatically routes to the correct endpoint based on project type
-export const deleteProjectByTypeApi = async (projectId: string, projectType: "LABOR" | "FIXED_PRICE"): Promise<void> => {
+export const deleteProjectByTypeApi = async (
+  projectId: string,
+  projectType: "LABOR" | "FIXED_PRICE",
+  force: boolean = false
+): Promise<void> => {
   if (projectType === "LABOR") {
-    await deleteProjectLaborApi(projectId);
+    await deleteProjectLaborApi(projectId, force);
   } else if (projectType === "FIXED_PRICE") {
-    await deleteProjectFixedPriceApi(projectId);
+    await deleteProjectFixedPriceApi(projectId, force);
   } else {
     throw new Error(`Unsupported project type: ${projectType}`);
   }

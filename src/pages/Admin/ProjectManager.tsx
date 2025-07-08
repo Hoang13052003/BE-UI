@@ -101,6 +101,10 @@ const ProjectManager: React.FC = () => {
   // Admin status check
   const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState<boolean>(false);
 
+  const [forceDeleteId, setForceDeleteId] = useState<string | null>(null);
+  const [forceDeleteLoading, setForceDeleteLoading] = useState(false);
+  const [showForceDeleteConfirmId, setShowForceDeleteConfirmId] = useState<string | null>(null);
+
   useEffect(() => {
     const checkAdminStatus = () => {
       console.log("ProjectManager: useEffect setting isAdmin to true");
@@ -145,15 +149,27 @@ const ProjectManager: React.FC = () => {
     if (newPageSize) setPageSize(newPageSize);
   };
 
-  const handleDelete = async (id: string) => {
-    setDeletingId(parseInt(id));
+  const handleDelete = async (id: string, force: boolean = false) => {
+    if (force) setForceDeleteLoading(true);
+    else setDeletingId(parseInt(id));
+    let isForceConfirm = false;
     try {
       // Find the project to get its type
       const project = projects.find(p => p.id.toString() === id);
       
       if (project && project.projectType) {
-        // Use type-specific endpoint
-        await deleteProjectByTypeApi(id, project.projectType as "LABOR" | "FIXED_PRICE");
+        try {
+          await deleteProjectByTypeApi(id, project.projectType as "LABOR" | "FIXED_PRICE", force);
+        } catch (err: any) {
+          // Nếu lỗi 400 thì show Popconfirm force delete
+          if (!force && err?.response?.status === 400) {
+            setShowForceDeleteConfirmId(id);
+            isForceConfirm = true;
+            return;
+          } else {
+            throw err;
+          }
+        }
         message.success("Project deleted successfully!");
         loadProjects(false);
         if (expandedProjectId === id) setExpandedProjectId(null);
@@ -165,7 +181,10 @@ const ProjectManager: React.FC = () => {
       setError("Failed to delete project. Please try again later.");
       message.error("Failed to delete project: " + (err as Error).message);
     } finally {
-      setDeletingId(null);
+      if (force) setForceDeleteLoading(false);
+      else setDeletingId(null);
+      // Chỉ reset showForceDeleteConfirmId nếu không phải đang chờ xác nhận force delete
+      if (!isForceConfirm) setShowForceDeleteConfirmId(null);
     }
   };
 
@@ -454,80 +473,102 @@ const ProjectManager: React.FC = () => {
               : "No projects available",
           }}
           renderItem={(item: Project) => (
-            <List.Item
-              key={item.id}
-              actions={
-                currentUserIsAdmin
-                  ? [
-                      <Button
-                        key="full-details"
-                        type="link"
-                        icon={<EyeOutlined />}
-                        onClick={() => handleNavigateToFullDetails(item.id)}
-                      >
-                        View Full Details
-                      </Button>,
-                      <Button
-                        key="edit-project-action"
-                        type="text"
-                        icon={<EditOutlined />}
-                        onClick={() => handleEditProject(item)}
-                      >
-                        Edit
-                      </Button>,
-                      <Popconfirm
-                        key="delete-project-action"
-                        title="Delete this project?"
-                        onConfirm={() => handleDelete(item.id)}
-                        okText="Yes"
-                        cancelText="No"
-                      >
+            <React.Fragment>
+              <List.Item
+                key={item.id}
+                actions={
+                  currentUserIsAdmin
+                    ? [
                         <Button
-                          type="text"
-                          icon={<DeleteOutlined />}
-                          danger
-                          loading={deletingId === parseInt(item.id)}
+                          key="full-details"
+                          type="link"
+                          icon={<EyeOutlined />}
+                          onClick={() => handleNavigateToFullDetails(item.id)}
                         >
-                          Delete
-                        </Button>
-                      </Popconfirm>,
-                    ]
-                  : [
-                      <Button
-                        key="full-details"
-                        type="link"
-                        icon={<EyeOutlined />}
-                        onClick={() => handleNavigateToFullDetails(item.id)}
-                      >
-                        View Full Details
-                      </Button>,
-                    ]
-              }
-            >
-              {" "}
-              <ProjectDetailsDisplay
-                project={item}
-                theme={theme}
-                milestoneCount={item.milestoneCount}
-                newMilestoneCount={item.newMilestoneCount}
-                sentMilestoneCount={item.sentMilestoneCount}
-                reviewedMilestoneCount={item.reviewedMilestoneCount}
-                isExpanded={expandedProjectId === item.id}
-                expandedTimelogProjectId={
-                  expandedTimelogProjectId === item.id ? item.id : null
+                          View Full Details
+                        </Button>,
+                        <Button
+                          key="edit-project-action"
+                          type="text"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEditProject(item)}
+                        >
+                          Edit
+                        </Button>,
+                        showForceDeleteConfirmId === item.id ? (
+                          <Popconfirm
+                            key="force-delete-project-action"
+                            title="Careful, this action will be a force delete"
+                            onConfirm={() => handleDelete(item.id, true)}
+                            onCancel={() => setShowForceDeleteConfirmId(null)}
+                            okText="Force Delete"
+                            cancelText="Hủy"
+                          >
+                            <Button
+                              type="text"
+                              icon={<DeleteOutlined />}
+                              danger
+                              loading={forceDeleteLoading}
+                            >
+                              Force Delete
+                            </Button>
+                          </Popconfirm>
+                        ) : (
+                          <Popconfirm
+                            key="delete-project-action"
+                            title="Delete this project?"
+                            onConfirm={() => handleDelete(item.id)}
+                            okText="Yes"
+                            cancelText="No"
+                          >
+                            <Button
+                              type="text"
+                              icon={<DeleteOutlined />}
+                              danger
+                              loading={deletingId === parseInt(item.id)}
+                            >
+                              Delete
+                            </Button>
+                          </Popconfirm>
+                        )
+                      ]
+                    : [
+                        <Button
+                          key="full-details"
+                          type="link"
+                          icon={<EyeOutlined />}
+                          onClick={() => handleNavigateToFullDetails(item.id)}
+                        >
+                          View Full Details
+                        </Button>,
+                      ]
                 }
-                onToggleMilestoneDetail={toggleMilestoneDetail}
-                onToggleTimelogDetail={toggleTimelogDetail}
-                onAddMilestone={
-                  currentUserIsAdmin ? handleAddMilestoneClick : undefined
-                }
-                onEditMilestone={
-                  currentUserIsAdmin ? handleEditMilestone : undefined
-                }
-                currentUserIsAdmin={currentUserIsAdmin}
-                onRefreshProgress={() => handleRefreshProjectProgress(item.id)}
-              />
-            </List.Item>
+              >
+                {" "}
+                <ProjectDetailsDisplay
+                  project={item}
+                  theme={theme}
+                  milestoneCount={item.milestoneCount}
+                  newMilestoneCount={item.newMilestoneCount}
+                  sentMilestoneCount={item.sentMilestoneCount}
+                  reviewedMilestoneCount={item.reviewedMilestoneCount}
+                  isExpanded={expandedProjectId === item.id}
+                  expandedTimelogProjectId={
+                    expandedTimelogProjectId === item.id ? item.id : null
+                  }
+                  onToggleMilestoneDetail={toggleMilestoneDetail}
+                  onToggleTimelogDetail={toggleTimelogDetail}
+                  onAddMilestone={
+                    currentUserIsAdmin ? handleAddMilestoneClick : undefined
+                  }
+                  onEditMilestone={
+                    currentUserIsAdmin ? handleEditMilestone : undefined
+                  }
+                  currentUserIsAdmin={currentUserIsAdmin}
+                  onRefreshProgress={() => handleRefreshProjectProgress(item.id)}
+                />
+              </List.Item>
+            </React.Fragment>
           )}
         />
 
