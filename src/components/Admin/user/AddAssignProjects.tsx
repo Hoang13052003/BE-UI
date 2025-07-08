@@ -78,7 +78,7 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
       const values = await form.validateFields();
       setLoading(true);
 
-      await assignProjectToUser(userId, parseInt(values.projectId));
+      await assignProjectToUser(userId, values.projectId);
       addAlert("Project assigned successfully", "success");
 
       await createNotification({
@@ -138,7 +138,7 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
   const handleRemoveProject = async (projectId: string) => {
     try {
       setLoading(true);
-      await removeProjectFromUser(userId, parseInt(projectId));
+      await removeProjectFromUser(userId, projectId);
       addAlert("Project removed successfully", "success");
 
       onClose();
@@ -237,10 +237,14 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
                       </Title>
                       <Tag
                         color={
-                          project.projectType === "FIXED_PRICE" ? "blue" : "green"
+                          project.projectType == "FIXED_PRICE"
+                            ? "blue"
+                            : "green"
                         }
                       >
-                        {project.projectType}
+                        {project.projectType == "FIXED_PRICE"
+                          ? "Fixed Price"
+                          : "Labor"}
                       </Tag>
                     </Space>
 

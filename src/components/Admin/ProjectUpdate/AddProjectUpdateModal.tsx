@@ -67,7 +67,13 @@ const AddProjectUpdateModal: React.FC<AddProjectUpdateModalProps> = ({
           setStatusOptions(statuses);
         } catch (error) {
           console.error("Failed to fetch project statuses:", error);
-          setStatusOptions(["NEW", "PENDING", "PROGRESS", "COMPLETED", "CLOSED"]);
+          setStatusOptions([
+            "NEW",
+            "PENDING",
+            "PROGRESS",
+            "COMPLETED",
+            "CLOSED",
+          ]);
         }
       };
 

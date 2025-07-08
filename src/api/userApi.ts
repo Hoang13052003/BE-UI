@@ -6,7 +6,6 @@ import {
 } from "../types/User";
 import axiosClient from "./axiosClient";
 import { UserIdAndEmailResponse } from "../types/User";
-import { Project } from "../types/project";
 
 export interface UserSearchParams {
   "searchTerm.contains"?: string;
@@ -73,7 +72,7 @@ export const createUser = (data: UserRegister): Promise<UserRegister> => {
 
 export const assignProjectToUser = async (
   userId: number,
-  projectId: number
+  projectId: string
 ): Promise<void> => {
   await axiosClient.post("/api/private/admin/assign-project", null, {
     params: {
@@ -86,7 +85,7 @@ export const assignProjectToUser = async (
 // Add new API function to remove project from user
 export const removeProjectFromUser = async (
   userId: number,
-  projectId: number
+  projectId: string
 ): Promise<void> => {
   await axiosClient.delete("/api/private/admin/remove-project-form-user", {
     params: {
@@ -151,9 +150,9 @@ export const searchUsersByEmailOrUsernameApi = async (
 
 // api public
 
-export const getProjectByUserIdApi = async (
-  userId: number
-): Promise<Project> => {
-  const { data } = await axiosClient.get<Project>(`/api/users/${userId}`);
+export const getProjectByUserIdApi = async (userId: number): Promise<any> => {
+  const { data } = await axiosClient.get<any>(
+    `/api/users/${userId}/projects/improved`
+  );
   return data;
 };

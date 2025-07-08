@@ -3,15 +3,22 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, Spin, Alert, Typography, Button, Row, Col, message } from "antd";
 import {
   ArrowLeftOutlined,
-  EditOutlined
+  EditOutlined,
+  ProjectOutlined,
 } from "@ant-design/icons";
 // removed react-grid-layout in favor of static Ant Design grid
 
 // --- Types ---
-import {ProjectFixedPriceDetailsResponse, ProjectDetail } from "../../types/project";
+import {
+  ProjectFixedPriceDetailsResponse,
+  ProjectDetail,
+} from "../../types/project";
 
 // --- API ---
-import { getProjectFixedPriceDetailsApi, getProjectDetailsApi } from "../../api/projectApi";
+import {
+  getProjectFixedPriceDetailsApi,
+  getProjectDetailsApi,
+} from "../../api/projectApi";
 
 // --- Components ---
 import EditProjectModal from "../../components/Admin/EditProjectModal";
@@ -26,8 +33,10 @@ import { useAuth } from "../../contexts/AuthContext";
 const { Title } = Typography;
 
 // Thêm type guard để kiểm tra loại project
-const isFixedPriceProject = (project: ProjectFixedPriceDetailsResponse | ProjectDetail | null): project is ProjectFixedPriceDetailsResponse => {
-  return project !== null && 'completionPercentage' in project;
+const isFixedPriceProject = (
+  project: ProjectFixedPriceDetailsResponse | ProjectDetail | null
+): project is ProjectFixedPriceDetailsResponse => {
+  return project !== null && "completionPercentage" in project;
 };
 
 const ProjectDetailPage: React.FC = () => {
@@ -38,10 +47,10 @@ const ProjectDetailPage: React.FC = () => {
   const location = useLocation();
 
   // Xác định loại project từ URL
-  const isLaborProject = location.pathname.includes('/labor/');
-  
-  // Sử dụng union type để có thể lưu cả 2 loại dữ liệu
-  const [project, setProject] = useState<ProjectFixedPriceDetailsResponse | ProjectDetail | null>(null);
+  const isLaborProject = location.pathname.includes("/labor/");
+
+  const [project, setProject] =
+    useState<ProjectFixedPriceDetailsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] =
@@ -86,6 +95,9 @@ const ProjectDetailPage: React.FC = () => {
   };
   const handleBackToHome = () => {
     navigate("/client/overview");
+  };
+  const handleBackToHomeManager = () => {
+    navigate("/manager/overview");
   };
 
   const handleOpenEditProjectModal = () => {
@@ -174,7 +186,7 @@ const ProjectDetailPage: React.FC = () => {
   return (
     <Card>
       {/* Header */}
-      {userRole === "ADMIN" || userRole === "MANAGER" ? (
+      {userRole === "ADMIN" ? (
         <Row
           justify="space-between"
           align="middle"
@@ -195,10 +207,37 @@ const ProjectDetailPage: React.FC = () => {
             </Button>
           </Col>
         </Row>
+      ) : userRole === "MANAGER" ? (
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: "20px" }}
+        >
+          <Col>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={handleBackToHomeManager}
+            >
+              Back to Home
+            </Button>
+          </Col>
+          <Col>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={handleOpenEditProjectModal}
+            >
+              Edit Project
+            </Button>
+          </Col>
+        </Row>
       ) : (
         <Row justify="start" align="middle" style={{ marginBottom: "20px" }}>
           <Col>
-            <Button icon={<ArrowLeftOutlined />} onClick={handleBackToHome}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={handleBackToHomeManager}
+            >
               Back to Home
             </Button>
           </Col>
@@ -220,98 +259,32 @@ const ProjectDetailPage: React.FC = () => {
       {/* Main Content Layout - 2 columns */}
       <Row gutter={[16, 16]}>
         {/* Left Column */}
-        <Col xs={24} lg={16}>
+        <Col xs={24} lg={12}>
           {/* Project Updates Tab */}
           <Card
-            title="Project Updates"
-            style={{ marginBottom: 16 }}
-            bodyStyle={{ padding: 0 }}
+            title={
+              <span>
+                <ProjectOutlined style={{ marginRight: 8 }} />
+                Project Details
+              </span>
+            }
+            size="small"
           >
-            <ProjectUpdatesTab projectId={parseInt(projectId || "0")} />
+            <CompactProjectInfo project={project} theme={theme} />
           </Card>
         </Col>
 
-        {/* Right Column */}
-        <Col xs={24} lg={8}>
-          {/* Weekly Milestones */}
-          {isFixedPriceProject(project) && project.milestoneInWeek && (
-            <Card title="This Week's Milestones" style={{ marginBottom: 16 }}>
-              <WeeklyMilestonesDisplay milestones={project.milestoneInWeek} />
-            </Card>
-          )}
+        {/* Weekly Milestones */}
+        <Col xs={24} lg={12}>
+          <WeeklyMilestonesDisplay milestones={project.milestoneInWeek} />
+        </Col>
+      </Row>
 
-          {/* Project Info */}
-          <Card title="Project Information">
-            <Row gutter={[0, 16]}>
-              <Col span={24}>
-                <Typography.Text strong>Status:</Typography.Text>{" "}
-                <Typography.Text>{project.status}</Typography.Text>
-              </Col>
-
-              <Col span={24}>
-                <Typography.Text strong>Start Date:</Typography.Text>{" "}
-                <Typography.Text>
-                  {project.startDate
-                    ? new Date(project.startDate).toLocaleDateString()
-                    : "Not set"}
-                </Typography.Text>
-              </Col>
-
-              <Col span={24}>
-                <Typography.Text strong>Planned End Date:</Typography.Text>{" "}
-                <Typography.Text>
-                  {project.plannedEndDate
-                    ? new Date(project.plannedEndDate).toLocaleDateString()
-                    : "Not set"}
-                </Typography.Text>
-              </Col>
-
-              {isFixedPriceProject(project) && (
-                <>
-                  <Col span={24}>
-                    <Typography.Text strong>Created:</Typography.Text>{" "}
-                    <Typography.Text>
-                      {project.createdAt
-                        ? new Date(project.createdAt).toLocaleString()
-                        : "N/A"}
-                    </Typography.Text>
-                  </Col>
-
-                  <Col span={24}>
-                    <Typography.Text strong>Last Updated:</Typography.Text>{" "}
-                    <Typography.Text>
-                      {project.updatedAt
-                        ? new Date(project.updatedAt).toLocaleString()
-                        : "N/A"}
-                    </Typography.Text>
-                  </Col>
-
-                  <Col span={24}>
-                    <Typography.Text strong>Overdue:</Typography.Text>{" "}
-                    <Typography.Text>
-                      {project.isOverdue ? "Yes" : "No"}
-                    </Typography.Text>
-                  </Col>
-
-                  <Col span={24}>
-                    <Typography.Text strong>Completion:</Typography.Text>{" "}
-                    <Typography.Text>
-                      {project.completionPercentage}%
-                    </Typography.Text>
-                  </Col>
-
-                  <Col span={24}>
-                    <Typography.Text strong>Total Milestones:</Typography.Text>{" "}
-                    <Typography.Text>{project.totalMilestoneCount}</Typography.Text>
-                  </Col>
-
-                  <Col span={24}>
-                    <Typography.Text strong>New Milestones:</Typography.Text>{" "}
-                    <Typography.Text>{project.newMilestones}</Typography.Text>
-                  </Col>
-                </>
-              )}
-            </Row>
+      {/* Project Updates - Full Width */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col span={24}>
+          <Card title="Project Updates Timeline">
+            <ProjectUpdatesTab projectId={Number(project.id)} theme={theme} />
           </Card>
         </Col>
       </Row>

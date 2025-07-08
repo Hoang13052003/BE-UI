@@ -26,16 +26,16 @@ import { Project } from "../../types/project";
 
 const { Title, Text } = Typography;
 
-  // Responsive Card Style
-  const CardStyle = {
-    minHeight: "350px",
-    padding: "16px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column" as const,
-    justifyContent: "space-between",
-  };
+// Responsive Card Style
+const CardStyle = {
+  minHeight: "350px",
+  padding: "16px",
+  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column" as const,
+  justifyContent: "space-between",
+};
 
 interface SummaryCardProps {
   totalProjects: number;
@@ -58,7 +58,7 @@ const Overview: React.FC = () => {
     totalEstimatedHours: 0,
   });
   const { addAlert } = useAlert();
-  const { userDetails } = useAuth();
+  const { userDetails, userRole } = useAuth();
 
   useEffect(() => {
     fetchProjects();
@@ -104,7 +104,8 @@ const Overview: React.FC = () => {
       }
 
       const data = await getProjectByUserIdApi(userDetails.id);
-      const projectList = Array.isArray(data) ? data : [];
+      const projectList = Array.isArray(data.projects) ? data.projects : [];
+      console.log("Fetched projects:", projectList);
 
       setProjects(projectList);
       const stats = calculateSummaryStats(projectList);
@@ -119,7 +120,11 @@ const Overview: React.FC = () => {
   };
 
   const handleDetailsClick = (id: string) => {
-    navigate(`/client/projects/fixed-price/${id}/details`);
+    if (userRole === "USER") {
+      navigate(`/client/projects/fixed-price/${id}/details`);
+    } else {
+      navigate(`/manager/projects/fixed-price/${id}/details`);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -143,16 +148,32 @@ const Overview: React.FC = () => {
         <Col xs={24} sm={24} md={12} lg={8} xl={8} key={project.id}>
           <Card style={CardStyle}>
             <Space direction="vertical" style={{ width: "100%" }} size={16}>
-              <Space style={{ justifyContent: "space-between", width: "100%", flexWrap: "wrap" }}>
+              <Space
+                style={{
+                  justifyContent: "space-between",
+                  width: "100%",
+                  flexWrap: "wrap",
+                }}
+              >
                 <Title level={5} style={{ margin: 0, wordBreak: "break-word" }}>
                   {project.name}
                 </Title>
-                <Tag color={project.projectType === "FIXED_PRICE" ? "blue" : "green"}>
-                  {project.projectType === "FIXED_PRICE" ? "Fixed Price" : "Labor"}
+                <Tag
+                  color={
+                    project.projectType === "FIXED_PRICE" ? "blue" : "green"
+                  }
+                >
+                  {project.projectType === "FIXED_PRICE"
+                    ? "Fixed Price"
+                    : "Labor"}
                 </Tag>
               </Space>
 
-              <Text type="secondary" ellipsis={true} style={{ maxWidth: "100%" }}>
+              <Text
+                type="secondary"
+                ellipsis={true}
+                style={{ maxWidth: "100%" }}
+              >
                 {project.description}
               </Text>
 
@@ -169,11 +190,15 @@ const Overview: React.FC = () => {
               <Row gutter={8}>
                 <Col xs={12} sm={12} md={12} lg={12} xl={12}>
                   <Text type="secondary">Start Date</Text>
-                  <div style={{ wordBreak: "break-word" }}>{project.startDate}</div>
+                  <div style={{ wordBreak: "break-word" }}>
+                    {project.startDate}
+                  </div>
                 </Col>
                 <Col xs={12} sm={12} md={12} lg={12} xl={12}>
                   <Text type="secondary">End Date</Text>
-                  <div style={{ wordBreak: "break-word" }}>{project.plannedEndDate}</div>
+                  <div style={{ wordBreak: "break-word" }}>
+                    {project.plannedEndDate}
+                  </div>
                 </Col>
               </Row>
 
@@ -188,7 +213,14 @@ const Overview: React.FC = () => {
                       : `${project.totalActualHours}/${project.totalEstimatedHours}`}
                   </div>
                 </Col>
-                <Col xs={10} sm={10} md={10} lg={10} xl={10} style={{ textAlign: "right" }}>
+                <Col
+                  xs={10}
+                  sm={10}
+                  md={10}
+                  lg={10}
+                  xl={10}
+                  style={{ textAlign: "right" }}
+                >
                   <Button
                     type="primary"
                     size="small"
@@ -244,8 +276,14 @@ const Overview: React.FC = () => {
                 <Title level={5} style={{ margin: 0, wordBreak: "break-word" }}>
                   {project.name}
                 </Title>
-                <Tag color={project.projectType === "FIXED_PRICE" ? "blue" : "green"}>
-                  {project.projectType === "FIXED_PRICE" ? "Fixed Price" : "Labor"}
+                <Tag
+                  color={
+                    project.projectType === "FIXED_PRICE" ? "blue" : "green"
+                  }
+                >
+                  {project.projectType === "FIXED_PRICE"
+                    ? "Fixed Price"
+                    : "Labor"}
                 </Tag>
                 <Tag color={getStatusColor(project.status)}>
                   {project.status}
@@ -348,7 +386,18 @@ const Overview: React.FC = () => {
                 />
               }
             />
-            <Progress percent={summaryStats.totalMilestones ? Math.round((summaryStats.completedMilestones / summaryStats.totalMilestones) * 100) : 0} showInfo={false} />
+            <Progress
+              percent={
+                summaryStats.totalMilestones
+                  ? Math.round(
+                      (summaryStats.completedMilestones /
+                        summaryStats.totalMilestones) *
+                        100
+                    )
+                  : 0
+              }
+              showInfo={false}
+            />
           </Card>
         </Col>
       </Row>
@@ -358,7 +407,13 @@ const Overview: React.FC = () => {
           height: "100%",
         }}
         title={
-          <Space style={{ width: "100%", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <Space
+            style={{
+              width: "100%",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+            }}
+          >
             <Title level={5} style={{ margin: 0 }}>
               Your Projects ({projects.length})
             </Title>
