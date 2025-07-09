@@ -54,8 +54,9 @@ const ProjectDetailPage: React.FC = () => {
   // Xác định loại project từ URL
   const isLaborProject = location.pathname.includes("/labor/");
 
-  const [project, setProject] =
-    useState<ProjectFixedPriceDetailsResponse | ProjectDetail | null>(null);
+  const [project, setProject] = useState<
+    ProjectFixedPriceDetailsResponse | ProjectDetail | null
+  >(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] =
@@ -196,7 +197,11 @@ const ProjectDetailPage: React.FC = () => {
       <Card>
         {/* Header */}
         {userRole === "ADMIN" ? (
-          <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
+          <Row
+            justify="space-between"
+            align="middle"
+            style={{ marginBottom: 20 }}
+          >
             <Col>
               <Button icon={<ArrowLeftOutlined />} onClick={handleBackToList}>
                 Back to Projects
@@ -213,9 +218,16 @@ const ProjectDetailPage: React.FC = () => {
             </Col>
           </Row>
         ) : userRole === "MANAGER" ? (
-          <Row justify="space-between" align="middle" style={{ marginBottom: "20px" }}>
+          <Row
+            justify="space-between"
+            align="middle"
+            style={{ marginBottom: "20px" }}
+          >
             <Col>
-              <Button icon={<ArrowLeftOutlined />} onClick={handleBackToHomeManager}>
+              <Button
+                icon={<ArrowLeftOutlined />}
+                onClick={handleBackToHomeManager}
+              >
                 Back to Home
               </Button>
             </Col>
@@ -245,17 +257,24 @@ const ProjectDetailPage: React.FC = () => {
         {/* Row: 2 cột, trái: ProjectLaborDetail, phải: ProjectLaborRecentTimeLogs */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} lg={12}>
-            <ProjectLaborDetail project={laborProject} users={laborProject.users} />
+            <ProjectLaborDetail
+              project={laborProject}
+              users={laborProject.users}
+            />
           </Col>
           <Col xs={24} lg={12}>
-            <ProjectLaborRecentTimeLogs timeLogs={laborProject.recentTimeLogs} />
+            <ProjectLaborRecentTimeLogs
+              timeLogs={laborProject.recentTimeLogs}
+            />
           </Col>
         </Row>
 
         {/* Row: 1 cột, ProjectLaborUpdatesTimeline */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col span={24}>
-            <ProjectLaborUpdatesTimeline updates={laborProject.projectUpdates} />
+            <ProjectLaborUpdatesTimeline
+              updates={laborProject.projectUpdates}
+            />
           </Col>
         </Row>
 
@@ -324,10 +343,7 @@ const ProjectDetailPage: React.FC = () => {
       ) : (
         <Row justify="start" align="middle" style={{ marginBottom: "20px" }}>
           <Col>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={handleBackToHome}
-            >
+            <Button icon={<ArrowLeftOutlined />} onClick={handleBackToHome}>
               Back to Home
             </Button>
           </Col>
@@ -366,7 +382,11 @@ const ProjectDetailPage: React.FC = () => {
 
         {/* Weekly Milestones */}
         <Col xs={24} lg={12}>
-          <WeeklyMilestonesDisplay milestones={isFixedPriceProject(project) ? project.milestoneInWeek : []} />
+          <WeeklyMilestonesDisplay
+            milestones={
+              isFixedPriceProject(project) ? project.milestoneInWeek : []
+            }
+          />
         </Col>
       </Row>
 

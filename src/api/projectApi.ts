@@ -10,11 +10,7 @@ import {
   ProjectFixedPriceDetailsResponse,
 } from "../types/project";
 import { ProjectRequest } from "../types/ProjectRequest";
-import {
-  SortConfig,
-  fetchSpringPageData,
-  PaginatedResult,
-} from "./apiUtils";
+import { SortConfig, fetchSpringPageData, PaginatedResult } from "./apiUtils";
 import { User } from "../types/User";
 
 export interface FetchProjectsResult extends PaginatedResult<Project> {
@@ -40,20 +36,23 @@ export const fetchProjects = async (
       ...(sort.length > 0 ? { sort } : {}),
     };
 
-    const response = await axiosClient.get("/api/private/unified-projects/search", {
-      params,
-      paramsSerializer: (params) => {
-        const searchParams = new URLSearchParams();
-        Object.entries(params).forEach(([key, value]) => {
-          if (Array.isArray(value)) {
-            value.forEach((v) => searchParams.append(key, v));
-          } else if (value !== undefined && value !== null) {
-            searchParams.append(key, String(value));
-          }
-        });
-        return searchParams.toString();
-      },
-    });
+    const response = await axiosClient.get(
+      "/api/private/unified-projects/search",
+      {
+        params,
+        paramsSerializer: (params) => {
+          const searchParams = new URLSearchParams();
+          Object.entries(params).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+              value.forEach((v) => searchParams.append(key, v));
+            } else if (value !== undefined && value !== null) {
+              searchParams.append(key, String(value));
+            }
+          });
+          return searchParams.toString();
+        },
+      }
+    );
 
     // Handle new response structure
     const responseData = response.data;
@@ -116,25 +115,31 @@ export const filterProjects = async (
     if (criteria.endDateTo) params.endDateTo = criteria.endDateTo;
     if (criteria.minBudget !== undefined) params.minBudget = criteria.minBudget;
     if (criteria.maxBudget !== undefined) params.maxBudget = criteria.maxBudget;
-    if (criteria.minProgress !== undefined) params.minProgress = criteria.minProgress;
-    if (criteria.maxProgress !== undefined) params.maxProgress = criteria.maxProgress;
+    if (criteria.minProgress !== undefined)
+      params.minProgress = criteria.minProgress;
+    if (criteria.maxProgress !== undefined)
+      params.maxProgress = criteria.maxProgress;
     if (criteria.isOverdue !== undefined) params.isOverdue = criteria.isOverdue;
-    if (criteria.isCompleted !== undefined) params.isCompleted = criteria.isCompleted;
+    if (criteria.isCompleted !== undefined)
+      params.isCompleted = criteria.isCompleted;
 
-    const response = await axiosClient.get("/api/private/unified-projects/search", {
-      params,
-      paramsSerializer: (params) => {
-        const searchParams = new URLSearchParams();
-        Object.entries(params).forEach(([key, value]) => {
-          if (Array.isArray(value)) {
-            value.forEach((v) => searchParams.append(key, v));
-          } else if (value !== undefined && value !== null) {
-            searchParams.append(key, String(value));
-          }
-        });
-        return searchParams.toString();
-      },
-    });
+    const response = await axiosClient.get(
+      "/api/private/unified-projects/search",
+      {
+        params,
+        paramsSerializer: (params) => {
+          const searchParams = new URLSearchParams();
+          Object.entries(params).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+              value.forEach((v) => searchParams.append(key, v));
+            } else if (value !== undefined && value !== null) {
+              searchParams.append(key, String(value));
+            }
+          });
+          return searchParams.toString();
+        },
+      }
+    );
 
     // Handle new response structure from tutorial.md
     const responseData = response.data;
@@ -172,12 +177,19 @@ export const createProjectApi = async (
 ): Promise<Project> => {
   // Validate required fields based on project type
   if (projectData.type === "LABOR") {
-    if (!projectData.totalEstimatedHours || projectData.totalEstimatedHours <= 0) {
-      throw new Error("Total estimated hours is required and must be greater than 0 for labor projects");
+    if (
+      !projectData.totalEstimatedHours ||
+      projectData.totalEstimatedHours <= 0
+    ) {
+      throw new Error(
+        "Total estimated hours is required and must be greater than 0 for labor projects"
+      );
     }
   } else if (projectData.type === "FIXED_PRICE") {
     if (!projectData.totalBudget || projectData.totalBudget <= 0) {
-      throw new Error("Total budget is required and must be greater than 0 for fixed price projects");
+      throw new Error(
+        "Total budget is required and must be greater than 0 for fixed price projects"
+      );
     }
   }
 
@@ -187,7 +199,9 @@ export const createProjectApi = async (
   }
 
   if (projectData.projectName.length > 200) {
-    throw new Error("Project name must be less than or equal to 200 characters");
+    throw new Error(
+      "Project name must be less than or equal to 200 characters"
+    );
   }
 
   // Validate description length
@@ -200,38 +214,45 @@ export const createProjectApi = async (
     const plannedEndDate = new Date(projectData.plannedEndDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Set to start of day for comparison
-    
+
     if (plannedEndDate < today) {
       throw new Error("Planned end date must be in the present or future");
     }
   }
 
   // Determine the correct endpoint based on project type
-  const endpoint = projectData.type === "LABOR" 
-    ? "/api/projects/labor" 
-    : "/api/projects/fixed-price";
-  
+  const endpoint =
+    projectData.type === "LABOR"
+      ? "/api/projects/labor"
+      : "/api/projects/fixed-price";
+
   // Remove type field from request body as it's only used for endpoint selection
   // Set isActive to true by default if not provided
   const { type, ...requestData } = {
     ...projectData,
-    isActive: projectData.isActive ?? true
+    isActive: projectData.isActive ?? true,
   };
-  
+
   const { data } = await axiosClient.post(endpoint, requestData);
   return normalizeProjectData(data);
 };
 
 // Delete project using specific endpoints based on project type
 // DELETE /api/projects/labor/{id} - Delete labor project
-export const deleteProjectLaborApi = async (projectId: string, force: boolean = false): Promise<void> => {
+export const deleteProjectLaborApi = async (
+  projectId: string,
+  force: boolean = false
+): Promise<void> => {
   await axiosClient.delete(`/api/projects/labor/${projectId}`, {
     params: force ? { force: true } : undefined,
   });
 };
 
 // DELETE /api/projects/fixed-price/{id} - Delete fixed price project
-export const deleteProjectFixedPriceApi = async (projectId: string, force: boolean = false): Promise<void> => {
+export const deleteProjectFixedPriceApi = async (
+  projectId: string,
+  force: boolean = false
+): Promise<void> => {
   await axiosClient.delete(`/api/projects/fixed-price/${projectId}`, {
     params: force ? { force: true } : undefined,
   });
@@ -297,7 +318,10 @@ export const updateProjectApi = async (
   projectData: ProjectUpdateRequest
 ): Promise<Project> => {
   try {
-    console.log('Debug - updateProjectApi called with endpoint:', `/api/projects/${projectId}`);
+    console.log(
+      "Debug - updateProjectApi called with endpoint:",
+      `/api/projects/${projectId}`
+    );
     const { data } = await axiosClient.put(
       `/api/projects/${projectId}`,
       projectData
@@ -332,7 +356,10 @@ export const updateProjectLaborApi = async (
   projectData: ProjectLaborUpdateRequest
 ): Promise<Project> => {
   try {
-    console.log('Debug - updateProjectLaborApi called with endpoint:', `/api/projects/labor/${projectId}`);
+    console.log(
+      "Debug - updateProjectLaborApi called with endpoint:",
+      `/api/projects/labor/${projectId}`
+    );
     const { data } = await axiosClient.put(
       `/api/projects/labor/${projectId}`,
       projectData
@@ -356,7 +383,10 @@ export const updateProjectFixedPriceApi = async (
   projectData: ProjectFixedPriceUpdateRequest
 ): Promise<Project> => {
   try {
-    console.log('Debug - updateProjectFixedPriceApi called with endpoint:', `/api/projects/fixed-price/${projectId}`);
+    console.log(
+      "Debug - updateProjectFixedPriceApi called with endpoint:",
+      `/api/projects/fixed-price/${projectId}`
+    );
     const { data } = await axiosClient.put(
       `/api/projects/fixed-price/${projectId}`,
       projectData
@@ -400,7 +430,10 @@ export const getProjectFixedPriceDetailsApi = async (
     );
     return data;
   } catch (error) {
-    console.error(`Error fetching fixed price project details for ID ${projectId}:`, error);
+    console.error(
+      `Error fetching fixed price project details for ID ${projectId}:`,
+      error
+    );
     throw error;
   }
 };
@@ -520,10 +553,21 @@ export const getProjectTimeLogsListApi = async (
   }
 };
 
-export const getUsersByProjectId = async (
+export const getUsersByProjectFixedPriceId = async (
   projectId: string
 ): Promise<User[]> => {
-  const response = await axiosClient.get(`/api/projects/${projectId}/users`);
+  const response = await axiosClient.get(
+    `/api/projects/fixed-price/${projectId}/users`
+  );
+  return response.data;
+};
+
+export const getUsersByProjectLaborId = async (
+  projectId: string
+): Promise<User[]> => {
+  const response = await axiosClient.get(
+    `/api/projects/labor/${projectId}/users`
+  );
   return response.data;
 };
 

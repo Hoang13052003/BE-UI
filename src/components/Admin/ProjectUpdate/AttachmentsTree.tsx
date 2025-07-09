@@ -71,7 +71,7 @@ const updateTreeDataRecursive = (
 };
 
 interface AttachmentsTreeProps {
-  projectId?: number;
+  projectId?: string;
   projectName?: string; // For displaying title
 }
 

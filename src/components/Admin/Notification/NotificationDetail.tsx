@@ -34,7 +34,7 @@ import { MessageType, NotificationResponse } from "../../../types/Notification";
 import { getNotificationById } from "../../../api/apiNotification";
 import { Project } from "../../../types/project";
 import dayjs from "dayjs";
-import { getProjectById } from "../../../api/apiNotification";
+// import { getProjectById } from "../../../api/apiNotification";
 import { useAuth } from "../../../contexts/AuthContext";
 import { Feedback, getFeedbackById } from "../../../api/feedbackApi";
 
@@ -110,21 +110,21 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
 
         // Parallel fetching of project and feedback data
         const fetchTasks = [];
-        const projectPromise = metadata.projectId
-          ? getProjectById(metadata.projectId as number)
-          : null;
+        // const projectPromise = metadata.projectId
+        //   ? getProjectById(metadata.projectId as number)
+        //   : null;
         const feedbackPromise = metadata.feedbackId
           ? getFeedbackById(metadata.feedbackId as string)
           : null;
 
-        if (projectPromise) fetchTasks.push(projectPromise);
+        // if (projectPromise) fetchTasks.push(projectPromise);
         if (feedbackPromise) fetchTasks.push(feedbackPromise);
 
         const results = await Promise.all(fetchTasks);
 
         // Set data based on what was actually fetched
         if (metadata.projectId) {
-          setProject(results[0] as Project);
+          // setProject(results[0] as Project);
           if (metadata.feedbackId) {
             setFeedback(results[1] as Feedback);
           }
@@ -291,7 +291,7 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
                 : "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Project Type">
-              {project.type}
+              {project.projectType}
             </Descriptions.Item>
           </Descriptions>
           <Divider />
@@ -303,7 +303,9 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
                 if (userRole === "ADMIN") {
                   navigate(`/admin/projects/fixed-price/${project.id}/details`);
                 } else {
-                  navigate(`/client/projects/fixed-price/${project.id}/details`);
+                  navigate(
+                    `/client/projects/fixed-price/${project.id}/details`
+                  );
                 }
               }}
             >

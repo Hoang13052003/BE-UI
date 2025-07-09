@@ -120,7 +120,7 @@ export const getAwsUrl = async (
 };
 
 export const getCurrentProjectTreeRoot = async (
-  projectId: number
+  projectId: string
 ): Promise<TreeNodeDto[]> => {
   const response = await axiosClient.get<TreeNodeDto[]>(
     `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/tree`
@@ -129,7 +129,7 @@ export const getCurrentProjectTreeRoot = async (
 };
 
 export const getCurrentProjectTreeByPath = async (
-  projectId: number,
+  projectId: string,
   path: string
 ): Promise<TreeNodeDto[]> => {
   if (!path || path === "/") {
@@ -143,7 +143,7 @@ export const getCurrentProjectTreeByPath = async (
 };
 
 export const getProjectUpdateHistory = async (
-  projectId: number
+  projectId: string
 ): Promise<ProjectUpdateSummaryDto[]> => {
   const response = await axiosClient.get<ProjectUpdateSummaryDto[]>(
     `${API_PROJECT_UPDATES_BASE_PATH}/projects/${projectId}/updates-history`

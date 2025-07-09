@@ -6,7 +6,10 @@ import {
   updateProjectUpdateStatusApi,
   UpdateStatusEnum,
 } from "../../../api/projectUpdateApi";
-import { getUsersByProjectId } from "../../../api/projectApi";
+import {
+  getUsersByProjectFixedPriceId,
+  getUsersByProjectLaborId,
+} from "../../../api/projectApi";
 import { User } from "../../../types/User";
 import {
   CreateNotificationRequestDto,
@@ -36,8 +39,16 @@ const SendReportProjectUpdateModal: React.FC<
     const fetchAssignedUsers = async () => {
       if (!updateData?.projectId) return;
       try {
-        const users = await getUsersByProjectId(updateData.projectId);
-        setUsers(users);
+        if (updateData.projectType === "FIXED_PRICE") {
+          const users = await getUsersByProjectFixedPriceId(
+            updateData.projectId
+          );
+          setUsers(users);
+        } else {
+          // For hourly projects, we can fetch all users assigned to the project
+          const users = await getUsersByProjectLaborId(updateData.projectId);
+          setUsers(users);
+        }
       } catch (error) {
         console.error("Failed to fetch users assigned to project:", error);
         message.error("Failed to load assigned users.");

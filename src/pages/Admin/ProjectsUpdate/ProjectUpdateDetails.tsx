@@ -30,8 +30,6 @@ import {
   deleteProjectUpdateApi,
 } from "../../../api/projectUpdateApi";
 
-import { getProjectById } from "../../../api/apiNotification";
-
 import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
 import AttachmentsTree from "../../../components/Admin/ProjectUpdate/AttachmentsTree";
 import dayjs from "dayjs";
@@ -108,9 +106,9 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
         setUpdate(updateData);
 
         if (updateData.projectId) {
-          const projectData = await getProjectById(updateData.projectId);
-          setProject(projectData); // project state được set ở đây
-          setAvailableProjects([projectData]);
+          // const projectData = await getProjectById(updateData.projectId);
+          // setProject(projectData); // project state được set ở đây
+          // setAvailableProjects([projectData]);
         }
       } catch (error) {
         console.error("Failed to fetch update details:", error);
@@ -395,7 +393,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                     : "N/A"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Project Type">
-                  {project.type}
+                  {project.projectType}
                 </Descriptions.Item>
               </Descriptions>
               <Divider />
@@ -403,9 +401,13 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
                 type="primary"
                 onClick={() => {
                   if (userRole === "ADMIN") {
-                    navigate(`/admin/projects/fixed-price/${project.id}/details`);
+                    navigate(
+                      `/admin/projects/fixed-price/${project.id}/details`
+                    );
                   } else {
-                    navigate(`/client/projects/fixed-price/${project.id}/details`);
+                    navigate(
+                      `/client/projects/fixed-price/${project.id}/details`
+                    );
                   }
                 }}
                 style={{ padding: 10 }}
@@ -425,7 +427,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             style={{ border: "none" }}
             styles={{ body: { padding: 16 } }}
           >
-            {project?.type === "FIXED_PRICE" ? (
+            {project?.projectType === "FIXED_PRICE" ? (
               <ProjectUpdateHistoryMilestonesTab
                 historyId={update?.historyKey!}
               />

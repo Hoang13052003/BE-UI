@@ -144,7 +144,7 @@ const EditProjectUpdateModal: React.FC<EditProjectUpdateModalProps> = ({
     }
   };
 
-  const handleSelectProject = (value: number) => {
+  const handleSelectProject = (value: string) => {
     const project = projects.find((p) => p.id === value);
 
     form.setFieldsValue({
