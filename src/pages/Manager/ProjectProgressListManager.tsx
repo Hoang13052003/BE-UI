@@ -32,15 +32,14 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import {
-  ProjectUpdate,
   getAllProjectUpdatesApi,
   deleteProjectUpdateApi,
-} from "../../../api/projectUpdateApi";
-import { fetchProjects } from "../../../api/projectApi";
-import AddProjectUpdateModal from "../../../components/Admin/ProjectUpdate/AddProjectUpdateModal";
-import EditProjectUpdateModal from "../../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
+} from "../../api/projectUpdateApi";
+import { fetchProjects } from "../../api/projectApi";
+import AddProjectUpdateModal from "../../components/Admin/ProjectUpdate/AddProjectUpdateModal";
+import EditProjectUpdateModal from "../../components/Admin/ProjectUpdate/EditProjectUpdateModal";
 import dayjs from "dayjs";
-import { Project, ApiPage } from "../../../types/project";
+import { Project, ApiPage } from "../../types/project";
 import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
 
 const { Title, Text } = Typography;
@@ -84,7 +83,7 @@ const getTypeColor = (type: string): string => {
 
 const ProjectProgressList: React.FC = () => {
   const navigate = useNavigate();
-  const [updatesPage, setUpdatesPage] = useState<ApiPage<ProjectUpdate> | null>(
+  const [updatesPage, setUpdatesPage] = useState<ApiPage<any> | null>(
     null
   );
   const [projects, setProjects] = useState<Project[]>([]);
@@ -97,7 +96,7 @@ const ProjectProgressList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState<boolean>(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
-  const [currentUpdate, setCurrentUpdate] = useState<ProjectUpdate | null>(
+  const [currentUpdate, setCurrentUpdate] = useState<any | null>(
     null
   );
 
@@ -204,7 +203,7 @@ const ProjectProgressList: React.FC = () => {
   };
 
   // Handle edit update
-  const handleEditUpdate = (update: ProjectUpdate) => {
+  const handleEditUpdate = (update: any) => {
     setCurrentUpdate(update);
     setIsEditModalVisible(true);
   };
@@ -215,7 +214,7 @@ const ProjectProgressList: React.FC = () => {
       title: "Project",
       dataIndex: "projectName",
       key: "projectName",
-      render: (text: string, record: ProjectUpdate) => (
+      render: (text: string, record: any) => (
         <Space direction="vertical" size={0}>
           <Button
             color="default"
@@ -321,7 +320,7 @@ const ProjectProgressList: React.FC = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: ProjectUpdate) => (
+      render: (_: any, record: any) => (
         <Dropdown
           menu={{
             items: [

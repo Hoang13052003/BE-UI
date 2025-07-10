@@ -7,7 +7,7 @@ import {
 } from "@ant-design/icons";
 import { Link, useParams } from "react-router-dom";
 import ProjectUpdateDetails from "./ProjectUpdateDetails";
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 const ProjectUpdateDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

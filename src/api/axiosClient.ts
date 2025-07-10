@@ -108,6 +108,12 @@ axiosClient.interceptors.response.use(
       }
     }
 
+    // Handle 403 Forbidden errors
+    if (error.response?.status === 403) {
+      console.error("Access forbidden:", error.response.data?.message || "You don't have permission to access this resource");
+      // You can add additional handling here like showing a toast notification
+    }
+
     return Promise.reject(error);
   }
 );

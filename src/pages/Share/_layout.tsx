@@ -14,6 +14,7 @@ import {
   FileSearchOutlined,
   UnorderedListOutlined,
   MenuOutlined,
+  ClockCircleOutlined,
   // MessageOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet, useNavigate } from "react-router-dom";
@@ -123,6 +124,11 @@ const LayoutShare: React.FC = () => {
           label: <Link to="/admin/feedbacks">Feedbacks</Link>,
         },
         {
+          key: "overtime-requests-admin",
+          icon: <ClockCircleOutlined />,
+          label: <Link to="/admin/overtime-requests">Overtime Requests</Link>,
+        },
+        {
           key: "notifications",
           icon: <BellOutlined />,
           label: <Link to="/admin/notifications">Notifications</Link>,
@@ -182,6 +188,11 @@ const LayoutShare: React.FC = () => {
       key: "my-feedbacks",
       icon: <WechatWorkOutlined />,
       label: <Link to="/manager/my-feedbacks">My Feedbacks</Link>,
+    },
+    {
+      key: "overtime-requests",
+      icon: <ClockCircleOutlined />,
+      label: <Link to="/manager/overtime-requests">Overtime Requests</Link>,
     },
     {
       key: "other",
@@ -420,8 +431,7 @@ const LayoutShare: React.FC = () => {
             items={items}
             style={{ border: "none" }}
           />
-        ) : (
-          userDetails?.role === "USER" && (
+        ) : isAuthenticated && userDetails?.role === "USER" ? (
             <Menu
               onClick={(e) => {
                 onClick(e);
@@ -435,20 +445,21 @@ const LayoutShare: React.FC = () => {
               items={itemsClient}
               style={{ border: "none" }}
             />
-          )
-        )}
+        ) : isAuthenticated && userDetails?.role === "MANAGER" ? (
         <Menu
           onClick={(e) => {
             onClick(e);
             setMobileMenuOpen(false);
           }}
+            selectedKeys={[current]}
           mode="inline"
           defaultSelectedKeys={[
-            localStorage.getItem("selectedKey") || "dashboard",
+              localStorage.getItem("selectedKey") || "managerDashboard",
           ]}
-          items={menuItems}
+            items={itemsManager}
           style={{ border: "none" }}
         />
+        ) : null}
       </Drawer>
       <Outlet />
     </Layout>
