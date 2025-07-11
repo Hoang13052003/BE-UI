@@ -8,7 +8,7 @@ const { Text, Title } = Typography;
 
 export interface FeedbackDetailModel {
   projectName: string;
-  projectId: number;
+  projectId: number; // Changed back to number to match actual API response
   content: string;
   createdAt: string;
   read: boolean;

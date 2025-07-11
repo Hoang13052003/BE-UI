@@ -148,11 +148,14 @@ const Overview: React.FC = () => {
     }
   };
 
-  const handleDetailsClick = (id: string) => {
+  const handleDetailsClick = (project: Project) => {
+    // Determine the correct route path based on project type
+    const typePath = project.projectType === "FIXED_PRICE" ? "fixed-price" : "labor";
+    
     if (userRole === "USER") {
-      navigate(`/client/projects/fixed-price/${id}/details`);
+      navigate(`/client/projects/${typePath}/${project.id}/details`);
     } else {
-      navigate(`/manager/projects/fixed-price/${id}/details`);
+      navigate(`/manager/projects/${typePath}/${project.id}/details`);
     }
   };
 
@@ -274,7 +277,7 @@ const Overview: React.FC = () => {
                   >
                     Request Overtime
                   </Button>
-                  <Button type="primary" size="middle" style={{ borderRadius: 8, fontWeight: 600, minWidth: 110 }} onClick={() => handleDetailsClick(project.id)}>
+                  <Button type="primary" size="middle" style={{ borderRadius: 8, fontWeight: 600, minWidth: 110 }} onClick={() => handleDetailsClick(project)}>
                     View Details <ArrowRightOutlined />
                   </Button>
                 </div>
@@ -379,7 +382,7 @@ const Overview: React.FC = () => {
                 >
                   Request Overtime
                 </Button>
-                <Button type="primary" size="middle" style={{ borderRadius: 8, fontWeight: 600, minWidth: 110 }} onClick={() => handleDetailsClick(project.id)}>
+                <Button type="primary" size="middle" style={{ borderRadius: 8, fontWeight: 600, minWidth: 110 }} onClick={() => handleDetailsClick(project)}>
                   View Details <ArrowRightOutlined />
                 </Button>
               </div>

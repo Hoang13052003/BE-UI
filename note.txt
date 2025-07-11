@@ -1,1 +1,166 @@
-thay endpoint lấy feedback
+
+# Hướng dẫn sử dụng endpoint getAllFeedbacks
+
+Dựa trên phân tích codebase, tôi sẽ hướng dẫn bạn cách sử dụng endpoint `getAllFeedbacks` một cách chi tiết.
+
+## 📋 Thông tin cơ bản
+
+- **URL**: `GET /api/feedbacks`
+- **Quyền truy cập**: Cần authentication (JWT token)
+- **Role-based access**: Có kiểm soát phân quyền theo role user
+- **Return type**: `Page<FeedbackResponseDto>`
+
+## 🔐 Bảo mật và Phân quyền
+
+Endpoint này có **role-based access control** quan trọng:
+- Hệ thống sẽ tự động lấy thông tin user từ JWT token
+- Dựa vào role của user để filter data phù hợp
+- Nếu không có JWT token hợp lệ → trả về `401 Unauthorized`
+
+## 📝 Tham số Request
+
+### Query Parameters
+
+#### 1. **Pagination Parameters**
+```
+page=0              // Trang hiện tại (mặc định: 0)
+size=10             // Số lượng items per page (mặc định: 10)
+sortBy=createdAt    // Field để sort (mặc định: createdAt)
+direction=desc      // Hướng sort: "asc" hoặc "desc" (mặc định: desc)
+```
+
+#### 2. **Filter Parameters (FeedbackCriteria)**
+```
+updateId.equals=123           // Filter theo update ID cụ thể
+projectId.equals=456          // Filter theo project ID cụ thể  
+read.equals=true              // Filter theo trạng thái đã đọc (true/false)
+createdAt.equals=2024-01-15   // Filter theo ngày tạo cụ thể
+```
+
+## 🚀 Ví dụ sử dụng
+
+### 1. **Get tất cả feedbacks (basic)**
+```bash
+GET /api/feedbacks
+Authorization: Bearer your_jwt_token
+```
+
+### 2. **Get feedbacks với pagination**
+```bash
+GET /api/feedbacks?page=0&size=20&sortBy=createdAt&direction=desc
+Authorization: Bearer your_jwt_token
+```
+
+### 3. **Filter feedbacks theo project**
+```bash
+GET /api/feedbacks?projectId.equals=123&page=0&size=10
+Authorization: Bearer your_jwt_token
+```
+
+### 4. **Filter feedbacks chưa đọc**
+```bash
+GET /api/feedbacks?read.equals=false&sortBy=createdAt&direction=desc
+Authorization: Bearer your_jwt_token
+```
+
+### 5. **Filter feedbacks theo ngày và project**
+```bash
+GET /api/feedbacks?projectId.equals=456&createdAt.equals=2024-01-15&page=0&size=50
+Authorization: Bearer your_jwt_token
+```
+
+## 📤 Response Format
+
+```json
+{
+  "content": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "userId": 123,
+      "fullName": "Nguyen Van A",
+      "email": "user@example.com", 
+      "updateId": 456,
+      "projectId": 789,
+      "projectName": "Project ABC",
+      "content": "Nội dung feedback...",
+      "createdBy": "Nguyen Van A",
+      "attachments": [],
+      "createdAt": "2024-01-15T10:30:00",
+      "read": false,
+      "deleted": false
+    }
+  ],
+  "pageable": {
+    "sort": {
+      "sorted": true,
+      "unsorted": false
+    },
+    "pageNumber": 0,
+    "pageSize": 10
+  },
+  "totalElements": 25,
+  "totalPages": 3,
+  "last": false,
+  "first": true,
+  "numberOfElements": 10
+}
+```
+
+## ⚠️ Lưu ý quan trọng về bảo mật
+
+1. **Role-based filtering**: Hệ thống tự động filter data dựa trên role của user
+   - `ADMIN`: Có thể xem tất cả feedbacks
+   - `MANAGER/USER`: Chỉ xem được feedbacks liên quan đến projects họ được assign
+
+2. **JWT Token**: Bắt buộc phải có trong header `Authorization: Bearer <token>`
+
+3. **Data protection**: Feedbacks đã bị soft delete (`deleted=true`) sẽ không hiển thị
+
+## 🔧 JavaScript/Frontend Usage Example
+
+```javascript
+// Async function để get feedbacks
+async function getAllFeedbacks(filters = {}) {
+  const params = new URLSearchParams({
+    page: filters.page || 0,
+    size: filters.size || 10,
+    sortBy: filters.sortBy || 'createdAt',
+    direction: filters.direction || 'desc',
+    ...filters.criteria
+  });
+
+  try {
+    const response = await fetch(`/api/feedbacks?${params}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      return await response.json();
+    } else if (response.status === 401) {
+      throw new Error('Unauthorized - Please login again');
+    } else {
+      throw new Error('Failed to fetch feedbacks');
+    }
+  } catch (error) {
+    console.error('Error fetching feedbacks:', error);
+    throw error;
+  }
+}
+
+// Usage examples
+getAllFeedbacks(); // Get tất cả với default params
+
+getAllFeedbacks({
+  page: 0,
+  size: 20,
+  criteria: {
+    'projectId.equals': 123,
+    'read.equals': false
+  }
+}); // Get feedbacks chưa đọc của project 123
+```
+Endpoint này được thiết kế với **security-first approach**, đảm bảo data được filter phù hợp với quyền truy cập của từng user role.

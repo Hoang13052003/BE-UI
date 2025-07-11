@@ -22,7 +22,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import {
-  filter,
+  getAllFeedbacks,
   type FeedbackCriteria,
   type PaginatedFeedbackResponse,
 } from "../../api/feedbackApi";
@@ -37,10 +37,14 @@ interface FeedbackItem {
   fullName?: string;
   email?: string;
   projectName: string;
-  projectId: number;
+  projectId: string; // Updated to match API response format
+  updateId?: number; // Added field from API response
+  userId?: number; // Added field from API response
   content: string;
   createdAt: string;
   read: boolean;
+  deleted?: boolean; // Added field for soft delete support
+  attachments?: any[]; // Added field for attachments
 }
 
 export interface TypedPaginatedFeedbackResponse
@@ -102,7 +106,7 @@ const Feedbacks: React.FC = () => {
   ) => {
     try {
       setLoading(true);
-      const response = await filter(
+      const response = await getAllFeedbacks(
         searchCriteria,
         page,
         size,
@@ -141,7 +145,7 @@ const Feedbacks: React.FC = () => {
     if (!feedbacks.content || feedbacks.content.length === 0) {
       return [];
     }
-    const uniqueProjects = new Map<number, { label: string; value: number }>();
+    const uniqueProjects = new Map<string, { label: string; value: string }>();
     feedbacks.content.forEach((feedback) => {
       if (feedback.projectId && feedback.projectName) {
         if (!uniqueProjects.has(feedback.projectId)) {

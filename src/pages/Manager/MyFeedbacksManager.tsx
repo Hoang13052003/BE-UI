@@ -21,7 +21,7 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
-  getFeedbacksByUser,
+  getAllFeedbacks,
   type FeedbackCriteria,
   type PaginatedFeedbackResponse,
 } from "../../api/feedbackApi";
@@ -35,7 +35,7 @@ interface FeedbackItem {
   fullName?: string;
   email?: string;
   projectName: string;
-  projectId: number;
+  projectId: number; // Changed back to number to match actual API response
   content: string;
   createdAt: string;
   read: boolean;
@@ -48,7 +48,7 @@ interface TypedPaginatedFeedbackResponse
 
 interface FeedbackDetailModel {
   projectName: string;
-  projectId: number;
+  projectId: number; // Changed back to number to match actual API response
   content: string;
   createdAt: string;
   read: boolean;
@@ -101,25 +101,17 @@ const MyFeedbacks: React.FC = () => {
   ) => {
     try {
       setLoading(true);
-      // Build params with dot notation for equals
-      const params: any = {
+      
+      // Use getAllFeedbacks with enhanced security and role-based access control
+      // The endpoint will automatically filter feedbacks for the current user based on their role and JWT token
+      const response = await getAllFeedbacks(
+        searchCriteria,
         page,
         size,
-        sort: "desc",
-      };
-      if (
-        searchCriteria.projectId &&
-        searchCriteria.projectId.equals !== undefined
-      ) {
-        params["projectId.equals"] = searchCriteria.projectId.equals;
-      }
-      if (searchCriteria.read && searchCriteria.read.equals !== undefined) {
-        params["read.equals"] = searchCriteria.read.equals;
-      }
-      if (searchCriteria.createdAt && searchCriteria.createdAt.equals) {
-        params["createdAt.equals"] = searchCriteria.createdAt.equals;
-      }
-      const response = await getFeedbacksByUser(userDetails?.id, params);
+        "createdAt",
+        "desc"
+      );
+      
       setFeedbacks(response as TypedPaginatedFeedbackResponse);
       setPagination((prev) => ({ ...prev, total: response.totalElements }));
     } catch (error) {
@@ -132,7 +124,7 @@ const MyFeedbacks: React.FC = () => {
   useEffect(() => {
     fetchFeedbacks(0, pagination.pageSize, criteria);
     setPagination((prev) => ({ ...prev, current: 1 }));
-  }, [userDetails, criteria]);
+  }, [criteria]); // Removed userDetails dependency as it's handled by JWT token in the new endpoint
 
   const handleViewDetails = (feedback: FeedbackItem) => {
     setSelectedFeedback({ ...feedback });
@@ -149,13 +141,13 @@ const MyFeedbacks: React.FC = () => {
     if (!feedbacks.content || feedbacks.content.length === 0) {
       return [];
     }
-    const uniqueProjects = new Map<number, { label: string; value: number }>();
+    const uniqueProjects = new Map<number, { label: string; value: string }>();
     feedbacks.content.forEach((feedback) => {
       if (feedback.projectId && feedback.projectName) {
         if (!uniqueProjects.has(feedback.projectId)) {
           uniqueProjects.set(feedback.projectId, {
             label: feedback.projectName,
-            value: feedback.projectId,
+            value: feedback.projectId.toString(),
           });
         }
       }
@@ -306,16 +298,16 @@ const MyFeedbacks: React.FC = () => {
                 projectId:
                   value === "" || value === undefined
                     ? undefined
-                    : { equals: Number(value) },
+                    : { equals: parseInt(value, 10) }, // Convert string to number
               }))
             }
             value={
-              criteria.projectId ? String(criteria.projectId.equals) : undefined
+              criteria.projectId ? criteria.projectId.equals?.toString() : undefined
             }
           >
             <Select.Option value="">All Projects</Select.Option>
             {derivedProjectOptions.map((p) => (
-              <Select.Option key={p.value} value={String(p.value)}>
+              <Select.Option key={p.value} value={p.value}>
                 {p.label}
               </Select.Option>
             ))}

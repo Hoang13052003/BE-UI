@@ -28,15 +28,17 @@ export interface Feedback {
 export interface FeedbackResponse {
   id: string;
   updateId: number;
-  projectId: string;
+  projectId: number; // Changed back to number to match actual API response
   projectName: string;
   userId: number;
   fullName: string;
   email: string;
   content: string;
+  createdBy?: string | null; // Added missing field from API response
   attachments?: FeedbackAttachment[];
   createdAt: string;
   read: boolean;
+  deleted?: boolean; // Added missing field from API response
 }
 
 export interface FeedbackAttachment {
@@ -109,15 +111,18 @@ export const getFeedbacksByUserAndProject = async (
   return data;
 };
 
-export const getFeedbacksByUser = async (
-  userId: number | undefined,
-  params: Record<string, any> = {}
-): Promise<PaginatedFeedbackResponse> => {
-  const { data } = await axiosClient.get(`/api/feedbacks/user/${userId}`, {
-    params,
-  });
-  return data;
-};
+/**
+ * @deprecated Use getAllFeedbacks instead for better security and role-based access control
+ * This function has been removed as part of migration to the new secure endpoint.
+ * The new getAllFeedbacks automatically filters based on user role and JWT token.
+ */
+// export const getFeedbacksByUser = async (
+//   userId: number | undefined,
+//   params: Record<string, any> = {}
+// ): Promise<PaginatedFeedbackResponse> => {
+//   console.warn("getFeedbacksByUser() is deprecated and has been removed. Please use getAllFeedbacks() instead for enhanced security.");
+//   throw new Error("getFeedbacksByUser has been deprecated. Use getAllFeedbacks instead.");
+// };
 
 export interface FeedbackCriteria {
   updateId?: {
@@ -125,7 +130,7 @@ export interface FeedbackCriteria {
     in?: number[];
   };
   projectId?: {
-    equals?: number;
+    equals?: number; // Changed back to number to match actual API response format
     in?: number[];
   };
   read?: {
@@ -137,7 +142,17 @@ export interface FeedbackCriteria {
   [key: string]: any;
 }
 
-export const filter = async (
+/**
+ * Get all feedbacks with enhanced security and role-based access control
+ * Uses the new unified endpoint with automatic role-based filtering
+ * @param criteria - Filter criteria for feedbacks
+ * @param page - Page number (default: 0)
+ * @param size - Page size (default: 10)
+ * @param sortBy - Sort field (default: "createdAt")
+ * @param direction - Sort direction (default: "desc")
+ * @returns Promise<PaginatedFeedbackResponse>
+ */
+export const getAllFeedbacks = async (
   criteria: FeedbackCriteria = {},
   page: number = 0,
   size: number = 10,
@@ -156,6 +171,21 @@ export const filter = async (
 
   const { data } = await axiosClient.get("/api/feedbacks", { params });
   return data;
+};
+
+/**
+ * @deprecated Use getAllFeedbacks instead for better security and role-based access control
+ * Legacy filter function - kept for backward compatibility
+ */
+export const filter = async (
+  criteria: FeedbackCriteria = {},
+  page: number = 0,
+  size: number = 10,
+  sortBy: string = "createdAt",
+  direction: "asc" | "desc" = "desc"
+): Promise<PaginatedFeedbackResponse> => {
+  console.warn("filter() is deprecated. Please use getAllFeedbacks() instead for enhanced security.");
+  return getAllFeedbacks(criteria, page, size, sortBy, direction);
 };
 
 function flattenCriteria(criteria: FeedbackCriteria): Record<string, any> {

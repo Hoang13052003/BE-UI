@@ -14,7 +14,6 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   ProjectOutlined,
-  MessageOutlined,
   EyeOutlined,
   CalendarOutlined,
   FlagOutlined,
@@ -26,14 +25,12 @@ const { Title, Text } = Typography;
 interface ProjectCardProps {
   project: Project;
   onViewDetails: (project: Project) => void;
-  onSendFeedback: (project: Project) => void;
   size?: "small" | "default";
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
   onViewDetails,
-  onSendFeedback,
   size = "default",
 }) => {
   const getStatusColor = (status: string) => {
@@ -153,14 +150,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           style={{ flex: 1, fontSize: '12px' }}
         >
           View Details
-        </Button>
-        <Button 
-          size="small" 
-          icon={<MessageOutlined />}
-          onClick={() => onSendFeedback(project)}
-          style={{ fontSize: '12px' }}
-        >
-          Feedback
         </Button>
       </div>
     </Card>

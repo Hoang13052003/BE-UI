@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, List, Typography, Skeleton, Divider, Empty } from "antd";
 import { Link } from "react-router-dom";
-import { FeedbackCriteria, filter } from "../../../api/feedbackApi";
+import { FeedbackCriteria, getAllFeedbacks } from "../../../api/feedbackApi";
 import { MessageOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -31,10 +31,14 @@ interface FeedbackItem {
   fullName?: string;
   email?: string;
   projectName: string;
-  projectId: number;
+  projectId: string; // Updated to match API response format
+  updateId?: number; // Added field from API response
+  userId?: number; // Added field from API response
   content: string;
   createdAt: string;
   read: boolean;
+  deleted?: boolean; // Added field for soft delete support
+  attachments?: any[]; // Added field for attachments
 }
 
 interface TypedPaginatedFeedbackResponse {
@@ -81,7 +85,7 @@ const RecentFeedback: React.FC<RecentFeedbackProps> = ({
     ) => {
       try {
         setLoading(true);
-        const response = await filter(
+        const response = await getAllFeedbacks(
           searchCriteria,
           page,
           size,
