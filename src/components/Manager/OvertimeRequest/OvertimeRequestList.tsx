@@ -11,6 +11,10 @@ import {
   Divider,
   Empty,
   Spin,
+  Input,
+  Select,
+  DatePicker,
+  Tooltip,
 } from "antd";
 import {
   CalendarOutlined,
@@ -21,17 +25,35 @@ import {
   UserOutlined,
   ProjectOutlined,
   EyeOutlined,
+  FilterOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { getOvertimeRequestsApi } from "../../../api/overtimeRequestApi";
+import { getOvertimeRequestsPaginatedApi, OvertimeRequestFilters } from "../../../api/overtimeRequestApi";
 import { useAlert } from "../../../contexts/AlertContext";
 import { OvertimeRequest, OvertimeRequestStatus } from "../../../types/overtimeRequest";
 
 const { Text, Title } = Typography;
+const { Search } = Input;
+const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 interface OvertimeRequestListProps {
   refreshTrigger?: number;
   onViewDetails?: (request: OvertimeRequest) => void;
+}
+
+interface FilterState {
+  search: string;
+  status: OvertimeRequestStatus | 'ALL';
+  projectType: 'LABOR' | 'FIXED_PRICE' | 'ALL';
+  dateRange: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null;
+}
+
+interface PaginationState {
+  current: number;
+  pageSize: number;
+  total: number;
 }
 
 const OvertimeRequestList: React.FC<OvertimeRequestListProps> = ({
@@ -40,22 +62,100 @@ const OvertimeRequestList: React.FC<OvertimeRequestListProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState<OvertimeRequest[]>([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [localRefreshTrigger, setLocalRefreshTrigger] = useState(0);
+  const [filters, setFilters] = useState<FilterState>({
+    search: '',
+    status: 'ALL',
+    projectType: 'ALL',
+    dateRange: null,
+  });
+  const [pagination, setPagination] = useState<PaginationState>({
+    current: 1,
+    pageSize: 5,
+    total: 0,
+  });
   const { addAlert } = useAlert();
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        handleFilterChange({ search: searchInput });
+      }
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
 
   useEffect(() => {
     fetchOvertimeRequests();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, localRefreshTrigger, filters, pagination.current, pagination.pageSize]);
 
   const fetchOvertimeRequests = async () => {
     setLoading(true);
     try {
-      const data = await getOvertimeRequestsApi();
-      setRequests(data);
+      // Build API filters
+      const apiFilters: OvertimeRequestFilters = {
+        page: pagination.current - 1, // Backend uses 0-based indexing
+        size: pagination.pageSize,
+        sort: ['requestedDate,desc'], // Default sort by requested date descending
+      };
+
+      // Add status filter
+      if (filters.status !== 'ALL') {
+        apiFilters.status = filters.status;
+      }
+
+      // Add project type filter
+      if (filters.projectType !== 'ALL') {
+        apiFilters.projectType = filters.projectType;
+      }
+
+      // Add project name filter for search
+      if (filters.search.trim()) {
+        apiFilters.projectName = filters.search.trim();
+      }
+
+      const response = await getOvertimeRequestsPaginatedApi(apiFilters);
+      
+      setRequests(response.content);
+      setPagination(prev => ({
+        ...prev,
+        total: response.totalElements,
+      }));
+
     } catch (error: any) {
       addAlert(error.response?.data?.message || "Failed to fetch overtime requests", "error");
+      setRequests([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (newFilters: Partial<FilterState>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, current: 1 })); // Reset to first page when filters change
+    setLocalRefreshTrigger(prev => prev + 1); // Trigger fetch
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      status: 'ALL',
+      projectType: 'ALL',
+      dateRange: null,
+    });
+    setSearchInput('');
+    setPagination(prev => ({ ...prev, current: 1 }));
+    setLocalRefreshTrigger(prev => prev + 1); // Trigger fetch
+  };
+
+  const handleTableChange = (pagination: any) => {
+    setPagination(prev => ({
+      ...prev,
+      current: pagination.current,
+      pageSize: pagination.pageSize,
+    }));
   };
 
   const getStatusColor = (status: OvertimeRequestStatus): string => {
@@ -131,10 +231,15 @@ const OvertimeRequestList: React.FC<OvertimeRequestListProps> = ({
           {/* Project Info */}
           <Row gutter={[16, 8]} style={{ marginBottom: 16 }}>
             <Col span={24}>
-              <Space>
-                <ProjectOutlined style={{ color: "#1890ff" }} />
-                <Text strong style={{ fontSize: 16 }}>
-                  Project: {request.projectId}
+              <Space direction="vertical" size={0}>
+                <Space>
+                  <ProjectOutlined style={{ color: "#1890ff" }} />
+                  <Text strong style={{ fontSize: 16 }}>
+                    Project: {request.projectName}
+                  </Text>
+                </Space>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  ID: {request.projectId}
                 </Text>
               </Space>
             </Col>
@@ -206,7 +311,7 @@ const OvertimeRequestList: React.FC<OvertimeRequestListProps> = ({
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     Requested by
                   </Text>
-                  <Text>{request.requestedBy}</Text>
+                  <Text>{request.requestedByName}</Text>
                 </Space>
               </Space>
             </Col>
@@ -282,59 +387,178 @@ const OvertimeRequestList: React.FC<OvertimeRequestListProps> = ({
 
   if (loading) {
     return (
-      <Card>
-        <div style={{ textAlign: "center", padding: "40px 0" }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 16 }}>
-            <Text>Loading overtime requests...</Text>
-          </div>
-        </div>
-      </Card>
-    );
-  }
+      <div>
+        {/* Filters - Always visible even when loading */}
+        <Card title="Filters" style={{ marginBottom: 24 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={6}>
+              <Search
+                placeholder="Search by project name"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                allowClear
+              />
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Status"
+                value={filters.status}
+                onChange={(value) => handleFilterChange({ status: value })}
+              >
+                <Option value="ALL">All Status</Option>
+                <Option value="PENDING">Pending</Option>
+                <Option value="APPROVED">Approved</Option>
+                <Option value="REJECTED">Rejected</Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Project Type"
+                value={filters.projectType}
+                onChange={(value) => handleFilterChange({ projectType: value })}
+              >
+                <Option value="ALL">All Types</Option>
+                <Option value="LABOR">Labor</Option>
+                <Option value="FIXED_PRICE">Fixed Price</Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <RangePicker
+                style={{ width: '100%' }}
+                value={filters.dateRange}
+                onChange={(dates) => handleFilterChange({ dateRange: dates })}
+                placeholder={['Start Date', 'End Date']}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={4}>
+              <Button
+                icon={<FilterOutlined />}
+                onClick={clearFilters}
+              >
+                Clear Filters
+              </Button>
+            </Col>
+          </Row>
+        </Card>
 
-  if (requests.length === 0) {
-    return (
-      <Card>
-        <Empty
-          description="No overtime requests found"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        >
-          <Text type="secondary">
-            You haven't created any overtime requests yet.
-          </Text>
-        </Empty>
-      </Card>
+        {/* Loading Results */}
+        <Card>
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>
+              <Text>Loading overtime requests...</Text>
+            </div>
+          </div>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card
-      title={
-        <Space>
-          <ClockCircleOutlined style={{ color: "#1890ff" }} />
-          <Title level={5} style={{ margin: 0 }}>
-            Overtime Requests ({requests.length})
-          </Title>
-        </Space>
-      }
-    >
-      <List
-        dataSource={requests}
-        renderItem={renderRequestItem}
-        pagination={
-          requests.length > 5
-            ? {
-                pageSize: 5,
-                showSizeChanger: false,
-                showQuickJumper: true,
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} requests`,
-              }
-            : false
+    <div>
+      {/* Filters - Always visible */}
+      <Card title="Filters" style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} md={6}>
+            <Search
+              placeholder="Search by project name"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              allowClear
+            />
+          </Col>
+          <Col xs={24} sm={12} md={4}>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Status"
+              value={filters.status}
+              onChange={(value) => handleFilterChange({ status: value })}
+            >
+              <Option value="ALL">All Status</Option>
+              <Option value="PENDING">Pending</Option>
+              <Option value="APPROVED">Approved</Option>
+              <Option value="REJECTED">Rejected</Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={4}>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Project Type"
+              value={filters.projectType}
+              onChange={(value) => handleFilterChange({ projectType: value })}
+            >
+              <Option value="ALL">All Types</Option>
+              <Option value="LABOR">Labor</Option>
+              <Option value="FIXED_PRICE">Fixed Price</Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <RangePicker
+              style={{ width: '100%' }}
+              value={filters.dateRange}
+              onChange={(dates) => handleFilterChange({ dateRange: dates })}
+              placeholder={['Start Date', 'End Date']}
+            />
+          </Col>
+          <Col xs={24} sm={12} md={4}>
+            <Button
+              icon={<FilterOutlined />}
+              onClick={clearFilters}
+            >
+              Clear Filters
+            </Button>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Results */}
+      <Card
+        title={
+          <Space>
+            <ClockCircleOutlined style={{ color: "#1890ff" }} />
+            <Title level={5} style={{ margin: 0 }}>
+              Overtime Requests ({requests.length})
+            </Title>
+          </Space>
         }
-      />
-    </Card>
+      >
+        <List
+          dataSource={requests}
+          renderItem={renderRequestItem}
+          pagination={
+            requests.length > 0
+              ? {
+                  current: pagination.current,
+                  pageSize: pagination.pageSize,
+                  total: pagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} of ${total} requests`,
+                  pageSizeOptions: ['5', '10', '20', '50'],
+                  onChange: handleTableChange,
+                }
+              : false
+          }
+          locale={{
+            emptyText: (
+              <Empty
+                description="No overtime requests found"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              >
+                <Text type="secondary">
+                  {filters.search || filters.status !== 'ALL' || filters.projectType !== 'ALL' || filters.dateRange
+                    ? "Try adjusting your filters or project name search"
+                    : "You haven't created any overtime requests yet"}
+                </Text>
+              </Empty>
+            ),
+          }}
+        />
+      </Card>
+    </div>
   );
 };
 

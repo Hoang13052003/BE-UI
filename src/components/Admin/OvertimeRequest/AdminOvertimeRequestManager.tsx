@@ -27,7 +27,7 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from "dayjs";
-import { getOvertimeRequestsApi } from "../../../api/overtimeRequestApi";
+import { getOvertimeRequestsPaginatedApi, OvertimeRequestFilters } from "../../../api/overtimeRequestApi";
 import { useAlert } from "../../../contexts/AlertContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { OvertimeRequest, OvertimeRequestStatus } from "../../../types/overtimeRequest";
@@ -46,11 +46,16 @@ interface FilterState {
   dateRange: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null;
 }
 
+interface PaginationState {
+  current: number;
+  pageSize: number;
+  total: number;
+}
+
 const AdminOvertimeRequestManager: React.FC = () => {
   const { userRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState<OvertimeRequest[]>([]);
-  const [filteredRequests, setFilteredRequests] = useState<OvertimeRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<OvertimeRequest | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isViewOnlyMode, setIsViewOnlyMode] = useState(false);
@@ -61,6 +66,19 @@ const AdminOvertimeRequestManager: React.FC = () => {
     projectType: 'ALL',
     dateRange: null,
   });
+  // Thêm state cho debounce search input
+  const [searchInput, setSearchInput] = useState(filters.search);
+  const [pagination, setPagination] = useState<PaginationState>({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
   const { addAlert } = useAlert();
 
   // Security: Only ADMIN can access this component
@@ -70,60 +88,67 @@ const AdminOvertimeRequestManager: React.FC = () => {
 
   useEffect(() => {
     fetchOvertimeRequests();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, filters, pagination.current, pagination.pageSize]);
 
+  // Debounce search input
   useEffect(() => {
-    applyFilters();
-  }, [requests, filters]);
+    const handler = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        handleFilterChange({ search: searchInput });
+        setRefreshTrigger(prev => prev + 1);
+      }
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
 
   const fetchOvertimeRequests = async () => {
     setLoading(true);
     try {
-      const data = await getOvertimeRequestsApi();
-      setRequests(data);
+      // Build API filters
+      const apiFilters: OvertimeRequestFilters = {
+        page: pagination.current - 1, // Backend uses 0-based indexing
+        size: pagination.pageSize,
+        sort: ['requestedDate,desc'], // Default sort by requested date descending
+      };
+
+      // Add status filter
+      if (filters.status !== 'ALL') {
+        apiFilters.status = filters.status;
+      }
+
+      // Add project type filter
+      if (filters.projectType !== 'ALL') {
+        apiFilters.projectType = filters.projectType;
+      }
+
+      // Add project name filter for search
+      if (filters.search.trim()) {
+        apiFilters.projectName = filters.search.trim();
+      }
+
+      const response = await getOvertimeRequestsPaginatedApi(apiFilters);
+      
+      setRequests(response.content);
+      setPagination(prev => ({
+        ...prev,
+        total: response.totalElements,
+      }));
+
+      // Calculate stats from current page data
+      // Note: For accurate stats, you might want a separate API endpoint
+      const currentStats = {
+        total: response.totalElements,
+        pending: response.content.filter(r => r.status === 'PENDING').length,
+        approved: response.content.filter(r => r.status === 'APPROVED').length,
+        rejected: response.content.filter(r => r.status === 'REJECTED').length,
+      };
+      setStats(currentStats);
+
     } catch (error: any) {
       addAlert(error.response?.data?.message || "Failed to fetch overtime requests", "error");
     } finally {
       setLoading(false);
     }
-  };
-
-  const applyFilters = () => {
-    let filtered = [...requests];
-
-    // Search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        req =>
-          req.projectId.toLowerCase().includes(searchLower) ||
-          req.requestedBy.toLowerCase().includes(searchLower) ||
-          req.reason.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Status filter
-    if (filters.status !== 'ALL') {
-      filtered = filtered.filter(req => req.status === filters.status);
-    }
-
-    // Project type filter
-    if (filters.projectType !== 'ALL') {
-      filtered = filtered.filter(req => req.projectType === filters.projectType);
-    }
-
-    // Date range filter
-    if (filters.dateRange) {
-      const [start, end] = filters.dateRange;
-      if (start && end) {
-        filtered = filtered.filter(req => {
-          const requestDate = dayjs(req.requestedDate);
-          return requestDate.isAfter(start.startOf('day')) && requestDate.isBefore(end.endOf('day'));
-        });
-      }
-    }
-
-    setFilteredRequests(filtered);
   };
 
   const handleViewDetails = (request: OvertimeRequest) => {
@@ -155,6 +180,29 @@ const AdminOvertimeRequestManager: React.FC = () => {
     setIsViewOnlyMode(false);
   };
 
+  const handleTableChange = (pagination: any) => {
+    setPagination(prev => ({
+      ...prev,
+      current: pagination.current,
+      pageSize: pagination.pageSize,
+    }));
+  };
+
+  const handleFilterChange = (newFilters: Partial<FilterState>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, current: 1 })); // Reset to first page when filters change
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      status: 'ALL',
+      projectType: 'ALL',
+      dateRange: null,
+    });
+    setPagination(prev => ({ ...prev, current: 1 }));
+  };
+
   const getStatusColor = (status: OvertimeRequestStatus): string => {
     switch (status) {
       case "PENDING":
@@ -181,17 +229,6 @@ const AdminOvertimeRequestManager: React.FC = () => {
     }
   };
 
-  const calculateStats = () => {
-    const total = requests.length;
-    const pending = requests.filter(r => r.status === 'PENDING').length;
-    const approved = requests.filter(r => r.status === 'APPROVED').length;
-    const rejected = requests.filter(r => r.status === 'REJECTED').length;
-
-    return { total, pending, approved, rejected };
-  };
-
-  const stats = calculateStats();
-
   const columns: ColumnsType<OvertimeRequest> = [
     {
       title: 'Request ID',
@@ -204,12 +241,12 @@ const AdminOvertimeRequestManager: React.FC = () => {
     },
     {
       title: 'Project',
-      dataIndex: 'projectId',
-      key: 'projectId',
-      width: 150,
-      render: (projectId: string, record: OvertimeRequest) => (
+      dataIndex: 'projectName',
+      key: 'projectName',
+      width: 200,
+      render: (projectName: string, record: OvertimeRequest) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{projectId}</Text>
+          <Text strong>{projectName}</Text>
           <Tag color="blue">
             {record.projectType}
           </Tag>
@@ -218,8 +255,8 @@ const AdminOvertimeRequestManager: React.FC = () => {
     },
     {
       title: 'Requested By',
-      dataIndex: 'requestedBy',
-      key: 'requestedBy',
+      dataIndex: 'requestedByName',
+      key: 'requestedByName',
       width: 120,
       render: (name: string) => (
         <Space>
@@ -381,9 +418,9 @@ const AdminOvertimeRequestManager: React.FC = () => {
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} md={6}>
             <Search
-              placeholder="Search by project, requester, or reason"
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              placeholder="Search by project name"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               allowClear
             />
           </Col>
@@ -392,7 +429,7 @@ const AdminOvertimeRequestManager: React.FC = () => {
               style={{ width: '100%' }}
               placeholder="Status"
               value={filters.status}
-              onChange={(value) => setFilters({ ...filters, status: value })}
+              onChange={(value) => handleFilterChange({ status: value })}
             >
               <Option value="ALL">All Status</Option>
               <Option value="PENDING">Pending</Option>
@@ -405,7 +442,7 @@ const AdminOvertimeRequestManager: React.FC = () => {
               style={{ width: '100%' }}
               placeholder="Project Type"
               value={filters.projectType}
-              onChange={(value) => setFilters({ ...filters, projectType: value })}
+              onChange={(value) => handleFilterChange({ projectType: value })}
             >
               <Option value="ALL">All Types</Option>
               <Option value="LABOR">Labor</Option>
@@ -416,19 +453,14 @@ const AdminOvertimeRequestManager: React.FC = () => {
             <RangePicker
               style={{ width: '100%' }}
               value={filters.dateRange}
-              onChange={(dates) => setFilters({ ...filters, dateRange: dates })}
+              onChange={(dates) => handleFilterChange({ dateRange: dates })}
               placeholder={['Start Date', 'End Date']}
             />
           </Col>
           <Col xs={24} sm={12} md={4}>
             <Button
               icon={<FilterOutlined />}
-              onClick={() => setFilters({
-                search: '',
-                status: 'ALL',
-                projectType: 'ALL',
-                dateRange: null,
-              })}
+              onClick={clearFilters}
             >
               Clear Filters
             </Button>
@@ -453,10 +485,21 @@ const AdminOvertimeRequestManager: React.FC = () => {
       >
         <Table
           columns={columns}
-          dataSource={filteredRequests}
+          dataSource={requests}
           rowKey="id"
           loading={loading}
           scroll={{ x: 1000 }}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} requests`,
+            pageSizeOptions: ['10', '20', '50', '100'],
+          }}
+          onChange={handleTableChange}
           locale={{
             emptyText: (
               <Empty
@@ -465,18 +508,11 @@ const AdminOvertimeRequestManager: React.FC = () => {
               >
                 <Text type="secondary">
                   {filters.search || filters.status !== 'ALL' || filters.projectType !== 'ALL' || filters.dateRange
-                    ? "Try adjusting your filters"
+                    ? "Try adjusting your filters or project name search"
                     : "No overtime requests have been submitted yet"}
                 </Text>
               </Empty>
             ),
-          }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} requests`,
           }}
         />
       </Card>

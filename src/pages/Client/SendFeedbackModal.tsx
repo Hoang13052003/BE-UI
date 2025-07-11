@@ -167,12 +167,6 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
         </Button>,
       ]}
     >
-      <div style={{ marginBottom: 16 }}>
-        <Text type="secondary">
-          Share your thoughts, suggestions, or concerns about the project. Your
-          feedback helps us improve and deliver better results.
-        </Text>
-      </div>
 
       <Form form={form} layout="vertical" requiredMark={false}>
         {!updateData.projectId && (
@@ -229,20 +223,9 @@ const SendFeedbackModal: React.FC<SendFeedbackModalProps> = ({
             <p className="ant-upload-text">
               Click or drag files to attach to your feedback
             </p>
-            <p className="ant-upload-hint">
-              Support for single or bulk upload. You can attach documents,
-              images, or other relevant files.
-            </p>
           </Dragger>
         </Form.Item>
       </Form>
-
-      <div style={{ marginTop: 16 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          Your feedback will be reviewed by the project team. Please be
-          constructive and specific in your comments.
-        </Text>
-      </div>
     </Modal>
   );
 };

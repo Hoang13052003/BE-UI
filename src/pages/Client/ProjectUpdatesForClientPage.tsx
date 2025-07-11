@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Card, Table, Row, Col, Input, Typography, Tag, List } from "antd";
 import {
-  getProjectUpdatesForUserApi,
+  getAllProjectUpdatesApi,
   ProjectUpdate,
 } from "../../api/projectUpdateApi";
-import { fetchProjects } from "../../api/projectApi";
 import { useAuth } from "../../contexts/AuthContext";
 import dayjs from "dayjs";
 import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
@@ -15,54 +14,31 @@ const ProjectUpdatesForClientPage: React.FC = () => {
   const { userDetails } = useAuth();
   const [loading, setLoading] = useState(false);
   const [updates, setUpdates] = useState<ProjectUpdate[]>([]);
-  const [_projects, setProjects] = useState<any[]>([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
   });
-  const [selectedProject, _setSelectedProject] = useState<string | undefined>(
-    undefined
-  );
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
-  useEffect(() => {
-    const fetchUserProjects = async () => {
-      setLoading(true);
-      try {
-        const res = await fetchProjects(0, 100);
-        const filtered = res.projects.filter((p: any) =>
-          p.members?.some((m: any) => m.id === userDetails?.id)
-        );
-        setProjects(filtered);
-      } catch {
-        setProjects([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (userDetails?.id) fetchUserProjects();
-  }, [userDetails]);
-
   const fetchUpdates = async (
     page = 1,
     pageSize = 10,
-    projectId?: string,
     searchText?: string
   ) => {
     setLoading(true);
     try {
       const filters: any = {};
-      if (projectId) filters["projectId.equals"] = projectId;
-      if (searchText) filters["summary.contains"] = searchText;
-      const res = await getProjectUpdatesForUserApi(
-        userDetails!.id,
+      if (searchText) filters["search.contains"] = searchText;
+      
+      const res = await getAllProjectUpdatesApi(
         page - 1,
         pageSize,
+        { property: "updateDate", direction: "desc" },
         filters
       );
       setUpdates(res.content);
@@ -76,10 +52,9 @@ const ProjectUpdatesForClientPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (userDetails?.id)
-      fetchUpdates(1, pagination.pageSize, selectedProject, search);
+    fetchUpdates(1, pagination.pageSize, search);
     setPagination((prev) => ({ ...prev, current: 1 })); // Reset to page 1 when search/filter
-  }, [selectedProject, search, userDetails]);
+  }, [search]);
 
   const columns = [
     {
@@ -308,7 +283,7 @@ const ProjectUpdatesForClientPage: React.FC = () => {
           pagination={{
             ...pagination,
             onChange: (page, pageSize) =>
-              fetchUpdates(page, pageSize, selectedProject, search),
+              fetchUpdates(page, pageSize, search),
           }}
         />
       )}

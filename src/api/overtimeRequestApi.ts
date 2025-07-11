@@ -37,10 +37,20 @@ export const getOvertimeRequestByIdApi = async (
   return response.data;
 };
 
-// Get overtime requests with pagination (if needed in future)
+// Interface for pagination and filter parameters
+export interface OvertimeRequestFilters {
+  page?: number;
+  size?: number;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  projectType?: 'LABOR' | 'FIXED_PRICE';
+  projectName?: string; // Filter by project name
+  search?: string;
+  sort?: string[];
+}
+
+// Get overtime requests with pagination and filters
 export const getOvertimeRequestsPaginatedApi = async (
-  page: number = 0,
-  size: number = 10
+  filters: OvertimeRequestFilters = {}
 ): Promise<{
   content: OvertimeRequest[];
   totalElements: number;
@@ -48,8 +58,23 @@ export const getOvertimeRequestsPaginatedApi = async (
   number: number;
   size: number;
 }> => {
-  const response = await axiosClient.get(BASE_URL, {
-    params: { page, size },
-  });
+  const params = new URLSearchParams();
+  
+  // Pagination
+  if (filters.page !== undefined) params.append('page', filters.page.toString());
+  if (filters.size !== undefined) params.append('size', filters.size.toString());
+  
+  // Filters
+  if (filters.status) params.append('status', filters.status);
+  if (filters.projectType) params.append('projectType', filters.projectType);
+  if (filters.projectName) params.append('projectName', filters.projectName);
+  if (filters.search) params.append('search', filters.search);
+  
+  // Sort
+  if (filters.sort) {
+    filters.sort.forEach(sort => params.append('sort', sort));
+  }
+  
+  const response = await axiosClient.get(BASE_URL, { params });
   return response.data;
 }; 

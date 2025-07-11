@@ -29,7 +29,7 @@ import Profile from "./pages/Client/Profile";
 import Settings from "./pages/Client/Settings";
 import Feedbacks from "./pages/Admin/Feedbacks";
 import AuthLogMonitor from "./pages/Admin/AuditLogDashboard/AuthLogMonitor";
-// import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientPage";
+import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientPage";
 import LandingPage from "./pages/LandingPage";
 import AlertContainer from "./components/AlertContainer";
 import DashboardManager from "./pages/Manager/DashboardManager";
@@ -42,6 +42,8 @@ import ProjectUpdateDetailsPageManager from "./pages/Manager/ProjectUpdateDetail
 import ProjectDetailPageManager from "./pages/Manager/ProjectDetailPageManager";
 import OvertimeRequestPageAdmin from "./pages/Admin/OvertimeRequestPageAdmin";
 import OvertimeRequestPageManager from "./pages/Manager/OvertimeRequestPageManager";
+import DashboardClient from "./pages/Client/DashboardClient";
+import OverviewClient from "./pages/Client/OverviewClient";
 
 const AuthEventHandler: React.FC = () => {
   const navigate = useNavigate();
@@ -138,8 +140,17 @@ function App() {
               {/* Route cho Client */}
               <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
                 <Route path="/" element={<LayoutShare />}>
-                  {/* Bạn cần tạo lại DashboardClient, Overview, PageSettings, Notifications, ProjectUpdateDetailsPage, MyFeedbacks, ProjectProgressList, ProjectDetailPage cho CLIENT nếu cần. */}
-                  {/* Tạm thời xóa các route lỗi để không bị linter error */}
+                  <Route path="client/" element={<DashboardClient />}>
+                    <Route path="overview" element={<OverviewClient />} />
+                    <Route path="project-updates" element={<ProjectUpdatesForClientPage />} />
+                    <Route path="project-updates/:id" element={<ProjectUpdateDetailsPageManager />} />
+                    <Route path="settings" element={<PageSettingsManager />}>
+                      <Route index element={<Settings />} />
+                      <Route path="profile" element={<Profile />} />
+                    </Route>
+                    <Route path="projects/fixed-price/:projectId/details" element={<ProjectDetailPageManager />} />
+                    <Route path="projects/labor/:projectId/details" element={<ProjectDetailPageManager />} />
+                  </Route>
                 </Route>
               </Route>
 
