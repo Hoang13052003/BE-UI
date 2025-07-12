@@ -6,7 +6,8 @@ import {
   ExclamationCircleOutlined,
   PlayCircleOutlined,
   AppstoreOutlined,
-  UnorderedListOutlined
+  UnorderedListOutlined,
+  EyeOutlined
 } from "@ant-design/icons";
 import { MilestoneResponseDto } from "../../../types/project";
 
@@ -14,6 +15,8 @@ const { Text } = Typography;
 
 interface WeeklyMilestonesDisplayProps {
   milestones: MilestoneResponseDto[];
+  onViewAll?: () => void;
+  showViewAllButton?: boolean;
 }
 
 const getStatusColor = (status: string) => {
@@ -48,6 +51,8 @@ const getStatusIcon = (status: string) => {
 
 const WeeklyMilestonesDisplay: React.FC<WeeklyMilestonesDisplayProps> = ({
   milestones,
+  onViewAll,
+  showViewAllButton = false,
 }) => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
@@ -155,6 +160,16 @@ const WeeklyMilestonesDisplay: React.FC<WeeklyMilestonesDisplayProps> = ({
         size="small"
         extra={
           <Space>
+            {showViewAllButton && (
+              <Button
+                type="default"
+                icon={<EyeOutlined />}
+                onClick={onViewAll}
+                size="small"
+              >
+                View All
+              </Button>
+            )}
             <Button
               type={viewMode === 'list' ? 'primary' : 'default'}
               icon={<UnorderedListOutlined />}
@@ -184,6 +199,16 @@ const WeeklyMilestonesDisplay: React.FC<WeeklyMilestonesDisplayProps> = ({
       size="small"
       extra={
         <Space>
+          {showViewAllButton && (
+            <Button
+              type="default"
+              icon={<EyeOutlined />}
+              onClick={onViewAll}
+              size="small"
+            >
+              View All
+            </Button>
+          )}
           <Button
             type={viewMode === 'list' ? 'primary' : 'default'}
             icon={<UnorderedListOutlined />}

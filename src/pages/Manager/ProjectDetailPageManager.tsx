@@ -23,7 +23,6 @@ import {
 
 // --- Components ---
 import EditProjectModal from "../../components/Admin/EditProjectModal";
-import ProjectUpdatesTab from "../../components/Admin/ProjectDetailsPage/ProjectUpdatesTab";
 import ProjectMetricsDisplay from "../../components/Admin/ProjectDetailsPage/ProjectMetricsDisplay";
 import WeeklyMilestonesDisplay from "../../components/Admin/ProjectDetailsPage/WeeklyMilestonesDisplay";
 import CompactProjectInfo from "../../components/Admin/ProjectDetailsPage/CompactProjectInfo";
@@ -31,6 +30,9 @@ import ProjectLaborMetricsDisplay from "../../components/Admin/ProjectDetailsPag
 import ProjectLaborDetail from "../../components/Admin/ProjectDetailsPage/ProjectLaborDetail";
 import ProjectLaborRecentTimeLogs from "../../components/Admin/ProjectDetailsPage/ProjectLaborRecentTimeLogs";
 import ProjectLaborUpdatesTimeline from "../../components/Admin/ProjectDetailsPage/ProjectLaborUpdatesTimeline";
+import ProjectFixedPriceUpdatesTimeline from "../../components/Admin/ProjectDetailsPage/ProjectFixedPriceUpdatesTimeline";
+import MilestoneDetailsModal from "../../components/Manager/MilestoneDetailsModal";
+import TimelogDetailsModal from "../../components/Manager/TimelogDetailsModal";
 
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -61,6 +63,8 @@ const ProjectDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditProjectModalVisible, setIsEditProjectModalVisible] =
     useState<boolean>(false);
+  const [isMilestoneModalVisible, setIsMilestoneModalVisible] = useState<boolean>(false);
+  const [isTimelogModalVisible, setIsTimelogModalVisible] = useState<boolean>(false);
 
   const fetchProjectData = useCallback(async () => {
     if (!projectId) {
@@ -75,11 +79,21 @@ const ProjectDetailPage: React.FC = () => {
       if (isLaborProject) {
         // Gọi API cho project LABOR
         const data = await getProjectLaborDetailsApi(projectId);
-        setProject(data);
+        // Add projectType to labor project data for EditProjectModal compatibility
+        const laborProjectWithType = {
+          ...data,
+          projectType: "LABOR" as const
+        };
+        setProject(laborProjectWithType as any);
       } else {
         // Gọi API cho project FIXED_PRICE
         const data = await getProjectFixedPriceDetailsApi(projectId);
-        setProject(data);
+        // Add projectType to fixed price project data for EditProjectModal compatibility
+        const fixedPriceProjectWithType = {
+          ...data,
+          projectType: "FIXED_PRICE" as const
+        };
+        setProject(fixedPriceProjectWithType as any);
       }
     } catch (err: any) {
       console.error("Failed to fetch project details:", err);
@@ -116,6 +130,22 @@ const ProjectDetailPage: React.FC = () => {
     setIsEditProjectModalVisible(false);
     message.success("Project updated successfully!");
     fetchProjectData();
+  };
+
+  const handleOpenMilestoneModal = () => {
+    setIsMilestoneModalVisible(true);
+  };
+
+  const handleCloseMilestoneModal = () => {
+    setIsMilestoneModalVisible(false);
+  };
+
+  const handleOpenTimelogModal = () => {
+    setIsTimelogModalVisible(true);
+  };
+
+  const handleCloseTimelogModal = () => {
+    setIsTimelogModalVisible(false);
   };
 
   if (loading) {
@@ -265,6 +295,8 @@ const ProjectDetailPage: React.FC = () => {
           <Col xs={24} lg={12}>
             <ProjectLaborRecentTimeLogs
               timeLogs={laborProject.recentTimeLogs}
+              onViewAll={handleOpenTimelogModal}
+              showViewAllButton={userRole === "MANAGER"}
             />
           </Col>
         </Row>
@@ -285,6 +317,30 @@ const ProjectDetailPage: React.FC = () => {
             projectData={project as any}
             onClose={() => setIsEditProjectModalVisible(false)}
             onSuccess={handleEditProjectSuccess}
+          />
+        )}
+
+        {/* Milestone Details Modal */}
+        {isMilestoneModalVisible && project && (
+          <MilestoneDetailsModal
+            visible={isMilestoneModalVisible}
+            onClose={handleCloseMilestoneModal}
+            projectId={projectId || ""}
+            projectName={(project as any).projectName || (project as any).name || "project"}
+            onRefreshProgress={fetchProjectData}
+            theme={theme}
+          />
+        )}
+
+        {/* Timelog Details Modal */}
+        {isTimelogModalVisible && project && isLaborProject && (
+          <TimelogDetailsModal
+            visible={isTimelogModalVisible}
+            onClose={handleCloseTimelogModal}
+            projectId={projectId || ""}
+            projectName={(project as any).projectName || (project as any).name || "project"}
+            onRefreshProgress={fetchProjectData}
+            theme={theme}
           />
         )}
       </Card>
@@ -386,6 +442,8 @@ const ProjectDetailPage: React.FC = () => {
             milestones={
               isFixedPriceProject(project) ? project.milestoneInWeek : []
             }
+            onViewAll={handleOpenMilestoneModal}
+            showViewAllButton={userRole === "MANAGER"}
           />
         </Col>
       </Row>
@@ -393,9 +451,9 @@ const ProjectDetailPage: React.FC = () => {
       {/* Project Updates - Full Width */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
-          <Card title="Project Updates Timeline">
-            <ProjectUpdatesTab projectId={Number(project.id)} theme={theme} />
-          </Card>
+          <ProjectFixedPriceUpdatesTimeline
+            updates={isFixedPriceProject(project) ? project.projectUpdates : []}
+          />
         </Col>
       </Row>
 
@@ -406,6 +464,30 @@ const ProjectDetailPage: React.FC = () => {
           projectData={project as any} // Casting để tránh lỗi type
           onClose={() => setIsEditProjectModalVisible(false)}
           onSuccess={handleEditProjectSuccess}
+        />
+      )}
+
+      {/* Milestone Details Modal */}
+      {isMilestoneModalVisible && project && (
+        <MilestoneDetailsModal
+          visible={isMilestoneModalVisible}
+          onClose={handleCloseMilestoneModal}
+          projectId={projectId || ""}
+          projectName={isFixedPriceProject(project) ? project.name : (project as any).projectName || "project"}
+          onRefreshProgress={fetchProjectData}
+          theme={theme}
+        />
+      )}
+
+      {/* Timelog Details Modal */}
+      {isTimelogModalVisible && project && isLaborProject && (
+        <TimelogDetailsModal
+          visible={isTimelogModalVisible}
+          onClose={handleCloseTimelogModal}
+          projectId={projectId || ""}
+          projectName={isFixedPriceProject(project) ? project.name : (project as any).projectName || "project"}
+          onRefreshProgress={fetchProjectData}
+          theme={theme}
         />
       )}
     </Card>

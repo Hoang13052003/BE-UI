@@ -35,7 +35,7 @@ interface EditProjectModalProps {
   projectId: string | null;
   onClose: () => void;
   onSuccess: () => void;
-  projectData?: Project;
+  projectData?: any; // Support both Project and ProjectLaborDetailResponse
 }
 
 const EditProjectModal: React.FC<EditProjectModalProps> = ({
@@ -84,12 +84,17 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     };
   }, [visible, projectId, projectData, form, onClose]);
 
-  const fillFormWithData = (data: Project) => {
-    setCurrentProjectType(data.projectType);
+  const fillFormWithData = (data: any) => {
+    setCurrentProjectType(data.projectType || data.type);
+    
+    // Handle different data structures for labor vs fixed price projects
+    const projectName = data.projectName || data.name;
+    const projectType = data.projectType || data.type;
+    
     form.setFieldsValue({
-      projectName: data.name,
+      projectName: projectName,
       description: data.description,
-      type: data.projectType, // Use projectType from Project interface
+      type: projectType,
       status: data.status,
       startDate: data.startDate ? dayjs(data.startDate, "YYYY-MM-DD") : null,
       plannedEndDate: data.plannedEndDate
@@ -98,11 +103,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
       // actualEndDate removed - will be used in future
       totalBudget: data.totalBudget,
       totalEstimatedHours: data.totalEstimatedHours,
-      userIds: data.users?.map((user) => user.id) || [],
+      userIds: data.users?.map((user: any) => user.id) || [],
     });
 
     if (data.users && data.users.length > 0) {
-      const initialUsers = data.users.map((user) => ({
+      const initialUsers = data.users.map((user: any) => ({
         id: user.id,
         email: user.email,
       }));
@@ -112,7 +117,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
   const handleTypeChange = (value: string) => {
     setCurrentProjectType(value);
-    if (projectData && value !== projectData.projectType) { // Use projectType from Project interface
+    const originalProjectType = (projectData as any)?.projectType || (projectData as any)?.type;
+    if (projectData && value !== originalProjectType) {
       setIsTypeChanged(true);
     } else {
       setIsTypeChanged(false);
@@ -193,12 +199,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     setSubmitting(true);
     try {
       // Use ORIGINAL project type to determine which API to call
-      const originalProjectType = projectData?.projectType;
-      const newProjectType = values.type || projectData?.projectType;
-      
-      console.log('Debug - Original projectType:', originalProjectType);
-      console.log('Debug - New projectType from form:', newProjectType);
-      console.log('Debug - Will call LABOR API?', originalProjectType === 'LABOR');
+      const originalProjectType = (projectData as any)?.projectType || (projectData as any)?.type;
+      const newProjectType = values.type || originalProjectType;
       
       if (originalProjectType === 'LABOR') {
         // Use labor-specific endpoint even if changing to FIXED_PRICE
@@ -218,7 +220,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
           userIds: values.userIds,
           type: newProjectType, // Pass the new type to backend
         };
-        console.log('Debug - Calling updateProjectLaborApi with data:', updateData);
         await updateProjectLaborApi(projectId!, updateData);
       } else {
         // Use fixed-price-specific endpoint for originally FIXED_PRICE projects
@@ -236,7 +237,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
           userIds: values.userIds,
           type: newProjectType, // Pass the new type to backend
         };
-        console.log('Debug - Calling updateProjectFixedPriceApi with data:', updateData);
         await updateProjectFixedPriceApi(projectId!, updateData);
       }
       

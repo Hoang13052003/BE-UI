@@ -145,6 +145,7 @@ function App() {
                     <Route path="project-updates" element={<ProjectUpdatesForClientPage />} />
                     <Route path="project-updates/:id" element={<ProjectUpdateDetailsPageManager />} />
                     <Route path="my-feedbacks" element={<MyFeedbacksManager />} />
+                    <Route path="notifications" element={<NotificationsManager />} />
                     <Route path="settings" element={<PageSettingsManager />}>
                       <Route index element={<Settings />} />
                       <Route path="profile" element={<Profile />} />

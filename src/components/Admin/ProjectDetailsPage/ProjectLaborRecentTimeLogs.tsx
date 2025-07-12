@@ -1,15 +1,21 @@
 import React, { useState } from "react";
 import { Card, List, Avatar, Row, Col, Tag, Tooltip, Space, Typography, Button, Progress } from "antd";
-import { AppstoreOutlined, BarsOutlined, ClockCircleOutlined, UserOutlined, CalendarOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, BarsOutlined, ClockCircleOutlined, UserOutlined, CalendarOutlined, EyeOutlined } from "@ant-design/icons";
 import { TimeLogResponseDto } from "../../../types/project";
 
 const { Text, Title } = Typography;
 
 interface Props {
   timeLogs: TimeLogResponseDto[];
+  onViewAll?: () => void;
+  showViewAllButton?: boolean;
 }
 
-const ProjectLaborRecentTimeLogs: React.FC<Props> = ({ timeLogs }) => {
+const ProjectLaborRecentTimeLogs: React.FC<Props> = ({ 
+  timeLogs, 
+  onViewAll, 
+  showViewAllButton = false 
+}) => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const getStatusColor = (status: string) => {
@@ -205,6 +211,16 @@ const ProjectLaborRecentTimeLogs: React.FC<Props> = ({ timeLogs }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Title level={4} style={{ margin: 0 }}>Recent Time Logs</Title>
           <Space>
+            {showViewAllButton && (
+              <Button
+                type="default"
+                icon={<EyeOutlined />}
+                onClick={onViewAll}
+                size="small"
+              >
+                View All
+              </Button>
+            )}
             <Button
               type={viewMode === 'list' ? 'primary' : 'default'}
               icon={<BarsOutlined />}

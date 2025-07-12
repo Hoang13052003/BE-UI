@@ -12,6 +12,7 @@ import {
   Tooltip,
   Select,
   DatePicker,
+  message,
 } from "antd";
 import {
   EyeOutlined,
@@ -22,6 +23,7 @@ import {
 import dayjs from "dayjs";
 import {
   getAllFeedbacks,
+  markFeedbackAsRead,
   type FeedbackCriteria,
   type PaginatedFeedbackResponse,
 } from "../../api/feedbackApi";
@@ -126,9 +128,38 @@ const MyFeedbacks: React.FC = () => {
     setPagination((prev) => ({ ...prev, current: 1 }));
   }, [criteria]); // Removed userDetails dependency as it's handled by JWT token in the new endpoint
 
-  const handleViewDetails = (feedback: FeedbackItem) => {
-    setSelectedFeedback({ ...feedback });
-    setIsDetailModalVisible(true);
+  const handleViewDetails = async (feedback: FeedbackItem) => {
+    try {
+      // Mark feedback as read if not already read and user is not USER role
+      if (!feedback.read && userDetails?.role !== "USER") {
+        await markFeedbackAsRead(feedback.id.toString());
+        
+        // Update local state to reflect the change immediately
+        setFeedbacks(prev => ({
+          ...prev,
+          content: prev.content.map(item => 
+            item.id === feedback.id ? { ...item, read: true } : item
+          )
+        }));
+        
+        // Show success message
+        message.success("Feedback marked as read successfully");
+      }
+      
+      // Set feedback status based on whether it was marked as read
+      const updatedFeedback = { 
+        ...feedback, 
+        read: !feedback.read && userDetails?.role !== "USER" ? true : feedback.read 
+      };
+      setSelectedFeedback(updatedFeedback);
+      setIsDetailModalVisible(true);
+    } catch (error) {
+      console.error("Error marking feedback as read:", error);
+      message.error("Failed to mark feedback as read");
+      // Still show the modal even if marking as read fails
+      setSelectedFeedback({ ...feedback });
+      setIsDetailModalVisible(true);
+    }
   };
 
   const handleCloseDetailModal = () => {
@@ -189,7 +220,7 @@ const MyFeedbacks: React.FC = () => {
         <Space direction="vertical">
           <Text strong>{record.projectName}</Text>
           {record.projectId && (
-            <Text type="secondary">PRJ-{record.projectId}</Text>
+            <Text type="secondary">{record.projectId}</Text>
           )}
         </Space>
       ),

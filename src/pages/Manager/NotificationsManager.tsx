@@ -221,7 +221,7 @@ const Notifications: React.FC = () => {
 
   useEffect(() => {
     fetchNotifications();
-  }, [open, fetchNotifications]);
+  }, [fetchNotifications]);
 
   return (
     <React.Fragment>

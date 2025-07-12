@@ -129,8 +129,35 @@ const OverviewClient: React.FC = () => {
       const data = await getProjectByUserIdApi(userDetails.id);
       const projectList = Array.isArray(data.projects) ? data.projects : [];
       
-      setProjects(projectList);
-      const stats = calculateSummaryStats(projectList);
+      // Sort projects by priority: in progress first, then by creation date descending
+      const sortedProjects = projectList.sort((a: Project, b: Project) => {
+        // First priority: status (in progress/doing first)
+        const statusPriority = (status: string) => {
+          switch (status?.toLowerCase()) {
+            case 'progress':
+            case 'doing':
+              return 0; // Highest priority
+            case 'new':
+            case 'pending':
+              return 1;
+            case 'completed':
+              return 2;
+            default:
+              return 3;
+          }
+        };
+        
+        const statusDiff = statusPriority(a.status) - statusPriority(b.status);
+        if (statusDiff !== 0) return statusDiff;
+        
+        // Second priority: creation date (newest first)
+        const dateA = new Date(a.createdAt || a.startDate || 0);
+        const dateB = new Date(b.createdAt || b.startDate || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      setProjects(sortedProjects);
+      const stats = calculateSummaryStats(sortedProjects);
       setSummaryStats(stats);
 
       addAlert("Projects loaded successfully", "success");
@@ -259,11 +286,6 @@ const OverviewClient: React.FC = () => {
                 <span>My Projects</span>
               </div>
             }
-            extra={
-              <Button type="primary" onClick={() => navigate('/client/project-progress')}>
-                View All Projects
-              </Button>
-            }
           >
             {projects.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0' }}>
@@ -274,18 +296,33 @@ const OverviewClient: React.FC = () => {
                 </Text>
               </div>
             ) : (
-              <Row gutter={[16, 16]}>
-                {projects.slice(0, 6).map((project) => (
-                  <Col xs={24} sm={12} lg={8} key={project.id}>
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  gap: '16px', 
+                  overflowX: 'auto',
+                  paddingBottom: '8px',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#bfbfbf #f0f0f0'
+                }}
+              >
+                {projects.map((project) => (
+                  <div 
+                    key={project.id}
+                    style={{ 
+                      minWidth: '280px', 
+                      maxWidth: '280px',
+                      flexShrink: 0
+                    }}
+                  >
                     <ProjectCard
                       project={project}
                       onViewDetails={handleViewDetails}
-                      onSendFeedback={handleSendFeedback}
                       size="small"
                     />
-                  </Col>
+                  </div>
                 ))}
-              </Row>
+              </div>
             )}
           </Card>
         </Col>
