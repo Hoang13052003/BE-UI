@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Select, Spin, message } from "antd";
+import { Form, Input, Button, Select, Spin } from "antd";
+import { showNotification, showError } from "../../../utils/notificationUtils";
 import { MailOutlined, UserOutlined } from "@ant-design/icons";
 import { getUser, updateUser } from "../../../api/userApi";
 import { UpdateUserPayload } from "../../../types/User";
@@ -38,7 +39,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
       });
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      message.error("Failed to fetch user details");
+      showError(error, "USER_LOAD_FAILED");
       console.error("Error fetching user:", apiError.message);
     } finally {
       setIsLoading(false);
@@ -49,14 +50,14 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess }) => {
     setIsSubmitting(true);
     try {
       await updateUser(userId, values);
-      message.success("User updated successfully");
+      showNotification.success("USER_UPDATED");
       onSuccess();
     } catch (error: unknown) {
       const apiError = error as ApiError;
       if (apiError.response?.status === 409) {
-        message.error("Email already exists. Please use a different email.");
+        showNotification.error("EMAIL_EXISTS");
       } else {
-        message.error("Failed to update user");
+        showError(error, "USER_UPDATE_FAILED");
       }
       console.error("Error updating user:", apiError.message);
     } finally {

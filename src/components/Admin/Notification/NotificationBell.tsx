@@ -10,8 +10,8 @@ import {
   Tooltip,
   Empty,
   Spin,
-  message,
 } from "antd";
+import { showNotification, showError } from "../../../utils/notificationUtils";
 import {
   BellOutlined,
   CheckOutlined,
@@ -191,9 +191,9 @@ const NotificationBell: React.FC = () => {
     setRefreshing(true);
     try {
       await fetchNotifications();
-      message.success("Notifications refreshed");
+      showNotification.success("NOTIFICATIONS_REFRESHED");
     } catch (error) {
-      message.error("Failed to refresh notifications");
+      showError(error, "NOTIFICATIONS_REFRESH_FAILED");
     } finally {
       setRefreshing(false);
     }
@@ -201,16 +201,16 @@ const NotificationBell: React.FC = () => {
 
   const handleMarkAllRead = async () => {
     await markAllAsRead();
-    message.success("All notifications marked as read");
+    showNotification.success("ALL_MARKED_AS_READ");
   };
 
   const handleDeleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening the notification detail
     try {
       await deleteNotification(id);
-      message.success("Notification deleted");
+      showNotification.success("NOTIFICATION_DELETED");
     } catch (error) {
-      message.error("Failed to delete notification");
+      showError(error, "NOTIFICATION_DELETE_FAILED");
     }
   };
 

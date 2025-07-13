@@ -6,9 +6,9 @@ import {
   DatePicker,
   Select,
   Button,
-  message,
   Slider,
 } from "antd";
+import { showNotification, showError } from "../../utils/notificationUtils";
 import {
   createMilestoneForFixedPriceProjectApi,
 } from "../../api/milestoneApi";
@@ -47,7 +47,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
       setStatusOptions(["TODO", "DOING", "PENDING", "COMPLETED"]);
     } catch (error) {
       console.error("Failed to load milestone statuses:", error);
-      message.error("Failed to load milestone statuses");
+      showError(error, "MILESTONE_LOAD_FAILED");
     }
   };
 
@@ -67,13 +67,13 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
       };
 
       await createMilestoneForFixedPriceProjectApi(projectId, milestoneData);
-      message.success("Milestone added successfully");
+      showNotification.success("MILESTONE_CREATED");
       onSuccess();
     } catch (error) {
       console.error("Failed to add milestone:", error);
       const errorMessage =
         (error as any)?.response?.data?.message || "Failed to add milestone";
-      message.error(errorMessage);
+      showNotification.custom.error(errorMessage);
     } finally {
       setLoading(false);
     }

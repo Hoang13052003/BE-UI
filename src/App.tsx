@@ -122,15 +122,15 @@ function App() {
                   <Route path="audit-logs" element={<AuthLogMonitor />} />
                   <Route path="overtime-requests" element={<OvertimeRequestPageAdmin />} />
                   <Route
-                    path="projects/:projectId/history"
+                    path="projects/:projectType/:projectId/history"
                     element={<ProjectUpdateHistory />}
                   />
                   <Route
-                    path="projects/:projectId/updates/:projectUpdateId/snapshot"
+                    path="projects/:projectType/:projectId/updates/:projectUpdateId/snapshot"
                     element={<ProjectSnapshotViewer />}
                   />
                   <Route
-                    path="attachment-display/:projectId"
+                    path="attachment-display/:projectType/:projectId"
                     element={<AttachmentDisplay />}
                   />
                 </Route>

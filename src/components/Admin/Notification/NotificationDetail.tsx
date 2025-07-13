@@ -37,6 +37,7 @@ import dayjs from "dayjs";
 // import { getProjectById } from "../../../api/apiNotification";
 import { useAuth } from "../../../contexts/AuthContext";
 import { Feedback, getFeedbackById } from "../../../api/feedbackApi";
+import { useAttachmentDownload } from "../../../hooks/useAttachmentDownload";
 
 // Styled components
 const { Text } = Typography;
@@ -78,6 +79,7 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
   const [project, setProject] = useState<Project | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [metadata, setMetadata] = useState<any>(null);
+  const { downloadAttachment, loading: downloadLoading } = useAttachmentDownload();
   const { userRole } = useAuth();
 
   const resetData = () => {
@@ -231,16 +233,21 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
                               <List.Item
                                 style={{ paddingLeft: 0 }}
                                 actions={[
-                                  <a
-                                    key="download"
-                                    href={item.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <Tooltip
+                                    title="Download or view"
+                                    key={`download-${item.fileName}`}
                                   >
-                                    <Tooltip title="Download or view">
-                                      <DownloadOutlined />
-                                    </Tooltip>
-                                  </a>,
+                                    <Button
+                                      icon={<DownloadOutlined />}
+                                      type="text"
+                                      loading={downloadLoading}
+                                      onClick={() => {
+                                        if (feedback?.id) {
+                                          downloadAttachment(feedback.id, feedback.attachments?.indexOf(item) || 0, item.fileName);
+                                        }
+                                      }}
+                                    />
+                                  </Tooltip>,
                                 ]}
                               >
                                 <List.Item.Meta

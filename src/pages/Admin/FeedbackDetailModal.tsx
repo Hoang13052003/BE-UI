@@ -34,6 +34,7 @@ import {
   getFeedbackById,
   markFeedbackAsRead,
 } from "../../api/feedbackApi";
+import { useAttachmentDownload } from "../../hooks/useAttachmentDownload";
 
 const { Text, Paragraph } = Typography;
 
@@ -96,6 +97,7 @@ const FeedbackDetailModal: React.FC<FeedbackDetailModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackResponse | null>(null);
+  const { downloadAttachment, loading: downloadLoading } = useAttachmentDownload();
 
   const resetModalState = () => {
     setLoading(false);
@@ -252,9 +254,8 @@ const FeedbackDetailModal: React.FC<FeedbackDetailModalProps> = ({
                         <Button
                           icon={<DownloadOutlined />}
                           type="text"
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          loading={downloadLoading}
+                          onClick={() => downloadAttachment(feedback.id, feedback.attachments?.indexOf(item) || 0, item.fileName)}
                         />
                       </Tooltip>,
                     ]}

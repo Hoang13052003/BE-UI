@@ -1,7 +1,8 @@
 // src/pages/EmailVerification.tsx
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Card, Spin, Result, Button, Typography, Space, message } from "antd";
+import { Card, Spin, Result, Button, Typography, Space } from "antd";
+import { showNotification, showError } from "../../utils/notificationUtils";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -65,7 +66,7 @@ const EmailVerification: React.FC = () => {
         message: response.message || "Email has been successfully verified!",
       });
 
-      message.success("Email verification successful!");
+      showNotification.success("EMAIL_VERIFICATION_SUCCESS");
     } catch (error: any) {
       console.error("Email verification error:", error);
 
@@ -79,7 +80,7 @@ const EmailVerification: React.FC = () => {
         message: errorMessage,
       });
 
-      message.error("Email verification failed");
+      showError(error, "EMAIL_VERIFICATION_FAILED");
     }
   };
 

@@ -5,20 +5,19 @@ import ProjectFileExplorer from "./ProjectFileExplorer";
 const { Title } = Typography;
 
 const AttachmentDisplay: React.FC = () => {
-  const { projectId: projectIdString } = useParams<{ projectId: string }>();
-  const projectId = projectIdString ? parseInt(projectIdString, 10) : undefined;
+  const { projectId, projectType } = useParams<{ projectId: string; projectType: string }>();
 
   return (
     <Card style={{ width: "100%" }}>
       <Title level={3} style={{ marginBottom: "20px" }}>
-        File Explorer for Project
+        File Explorer for Project ({projectType === "labor" ? "Labor" : "Fixed Price"})
       </Title>
 
-      {projectId && !isNaN(projectId) ? (
-        <ProjectFileExplorer projectId={projectId} />
+      {projectId && projectType ? (
+        <ProjectFileExplorer projectId={projectId} projectType={projectType} />
       ) : (
         <Typography.Text type="danger">
-          Invalid or missing Project ID. Cannot display file explorer.
+          Invalid or missing Project ID or Project Type. Cannot display file explorer.
         </Typography.Text>
       )}
     </Card>

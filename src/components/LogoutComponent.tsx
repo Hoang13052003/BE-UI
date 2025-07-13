@@ -1,4 +1,4 @@
-import { message } from "antd";
+import { showError } from "../utils/notificationUtils";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { logoutApi } from "../api/authApi";
@@ -21,7 +21,7 @@ const Logout = () => {
       navigate("/", { replace: true });
     } catch (error) {
       console.error("Error during logout:", error);
-      message.error("An error occurred during logout. Please try again later.");
+      showError(error, "OPERATION_FAILED");
     }
   };
 

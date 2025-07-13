@@ -2,6 +2,7 @@
 import axiosClient from "./axiosClient";
 import { SortConfig, fetchSpringPageData } from "./apiUtils";
 import { ApiPage } from "../types/project";
+import { getProjectLaborDetailsApi, getProjectFixedPriceDetailsApi } from "./projectApi";
 
 // Project Update Types
 export interface ProjectUpdate {
@@ -83,6 +84,28 @@ export const getProjectUpdatesApi = async (
 };
 */
 
+// Add new API function to get project updates by projectId
+export const getProjectUpdatesByProjectIdApi = async (
+  projectId: string,
+  page: number = 0,
+  size: number = 10,
+  sortConfig?: SortConfig | SortConfig[]
+): Promise<ApiPage<ProjectUpdate>> => {
+  try {
+    const result = await fetchSpringPageData<ProjectUpdate>(
+      "/api/private/admin/project-updates/by-project",
+      page,
+      size,
+      sortConfig,
+      { projectId }
+    );
+    return result;
+  } catch (error) {
+    console.error("Failed to fetch project updates by project ID:", error);
+    throw error;
+  }
+};
+
 // Get all updates (admin only) - FIX THIS FUNCTION
 export const getAllProjectUpdatesApi = async (
   page: number = 0,
@@ -156,17 +179,68 @@ export const getProjectUpdateByIdApi = async (
   }
 };
 
-// Create a new project update
+// Helper function to get project type by projectId
+const getProjectTypeById = async (projectId: string): Promise<"LABOR" | "FIXED_PRICE"> => {
+  try {
+    // Try to get project details from both endpoints to determine type
+    try {
+      await getProjectLaborDetailsApi(projectId);
+      return "LABOR";
+    } catch (error) {
+      // If labor endpoint fails, try fixed price
+      try {
+        await getProjectFixedPriceDetailsApi(projectId);
+        return "FIXED_PRICE";
+      } catch (fixedPriceError) {
+        throw new Error(`Project with ID ${projectId} not found in either labor or fixed price projects`);
+      }
+    }
+  } catch (error) {
+    console.error(`Error determining project type for ID ${projectId}:`, error);
+    throw error;
+  }
+};
+
+// Create a new project update - Updated to use new endpoints based on project type
+// Note: Only the POST endpoint for creating project updates has been updated to use new endpoints
+// Other endpoints (PUT, DELETE, PATCH) still use the old endpoint structure
 export const createProjectUpdateApi = async (
   updateData: ProjectUpdateRequestPayload
 ): Promise<ProjectUpdate> => {
   try {
-    console.log("data request: " + updateData);
+    console.log("Creating project update with data:", updateData);
 
-    const { data } = await axiosClient.post(
-      "api/private/admin/project-updates",
-      updateData
-    );
+    // Validate required fields based on note.txt
+    if (!updateData.projectId) {
+      throw new Error("Project ID is required");
+    }
+    if (!updateData.updateDate) {
+      throw new Error("Update date is required");
+    }
+    if (!updateData.statusAtUpdate) {
+      throw new Error("Status at update is required");
+    }
+    
+    // Validate details length if provided (10-2000 characters as per note.txt)
+    if (updateData.details && (updateData.details.length < 10 || updateData.details.length > 2000)) {
+      throw new Error("Details must be between 10 and 2000 characters");
+    }
+
+    // Determine project type first
+    const projectType = await getProjectTypeById(updateData.projectId);
+    
+    let endpoint: string;
+    if (projectType === "LABOR") {
+      // For Labor projects: POST /api/private/admin/project-labor/{projectLaborId}/updates
+      endpoint = `/api/private/admin/project-labor/${updateData.projectId}/updates`;
+    } else {
+      // For Fixed Price projects: POST /api/private/admin/project-fixed-price/{projectFixedPriceId}/updates
+      endpoint = `/api/private/admin/project-fixed-price/${updateData.projectId}/updates`;
+    }
+
+    console.log(`Using endpoint for ${projectType} project:`, endpoint);
+
+    const { data } = await axiosClient.post(endpoint, updateData);
     return data;
   } catch (error) {
     console.error("Error creating project update:", error);

@@ -8,6 +8,8 @@ import {
   ProjectContextTimeLog,
   ApiPage,
   ProjectFixedPriceDetailsResponse,
+  ProjectUpdateHistoryItem,
+  ProjectUpdateHistoryMilestoneItem,
 } from "../types/project";
 import { ProjectRequest } from "../types/ProjectRequest";
 import { SortConfig, fetchSpringPageData, PaginatedResult } from "./apiUtils";
@@ -318,10 +320,6 @@ export const updateProjectApi = async (
   projectData: ProjectUpdateRequest
 ): Promise<Project> => {
   try {
-    console.log(
-      "Debug - updateProjectApi called with endpoint:",
-      `/api/projects/${projectId}`
-    );
     const { data } = await axiosClient.put(
       `/api/projects/${projectId}`,
       projectData
@@ -356,10 +354,6 @@ export const updateProjectLaborApi = async (
   projectData: ProjectLaborUpdateRequest
 ): Promise<Project> => {
   try {
-    console.log(
-      "Debug - updateProjectLaborApi called with endpoint:",
-      `/api/projects/labor/${projectId}`
-    );
     const { data } = await axiosClient.put(
       `/api/projects/labor/${projectId}`,
       projectData
@@ -383,10 +377,6 @@ export const updateProjectFixedPriceApi = async (
   projectData: ProjectFixedPriceUpdateRequest
 ): Promise<Project> => {
   try {
-    console.log(
-      "Debug - updateProjectFixedPriceApi called with endpoint:",
-      `/api/projects/fixed-price/${projectId}`
-    );
     const { data } = await axiosClient.put(
       `/api/projects/fixed-price/${projectId}`,
       projectData
@@ -566,9 +556,31 @@ export const getUsersByProjectLaborId = async (
   projectId: string
 ): Promise<User[]> => {
   const response = await axiosClient.get(
-    `/api/projects/labor/${projectId}/users`
+    `/api/private/admin/projects/labor/${projectId}/users`
   );
   return response.data;
+};
+
+// Add new API function for Project Update History
+export const getProjectUpdateHistoryApi = async (
+  historyId: string,
+  page: number = 0,
+  size: number = 20,
+  sortConfig?: SortConfig | SortConfig[]
+): Promise<ApiPage<ProjectUpdateHistoryItem | ProjectUpdateHistoryMilestoneItem>> => {
+  try {
+    const result = await fetchSpringPageData<ProjectUpdateHistoryItem | ProjectUpdateHistoryMilestoneItem>(
+      "/api/projects/project-update-history",
+      page,
+      size,
+      sortConfig,
+      { id: historyId }
+    );
+    return result;
+  } catch (error) {
+    console.error("Failed to fetch project update history:", error);
+    throw error;
+  }
 };
 
 // Helper function to normalize project data from backend response

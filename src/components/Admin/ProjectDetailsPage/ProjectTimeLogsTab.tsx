@@ -41,7 +41,7 @@ const { Search } = Input;
 const { RangePicker } = DatePicker;
 
 interface ProjectTimeLogsTabProps {
-  projectId: number;
+  projectId: string;
 }
 
 const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
@@ -67,7 +67,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
 
   const fetchTimeLogs = useCallback(
     async (pageToFetch: number, currentSize: number) => {
-      if (!projectId || projectId <= 0) {
+      if (!projectId || projectId === "") {
         setLoading(false);
         setTimeLogsPage({
           content: [],
@@ -122,7 +122,7 @@ const ProjectTimeLogsTab: React.FC<ProjectTimeLogsTabProps> = ({
   );
 
   useEffect(() => {
-    if (projectId && projectId > 0) {
+    if (projectId && projectId !== "") {
       fetchTimeLogs(uiPagination.current - 1, uiPagination.pageSize);
     }
   }, [

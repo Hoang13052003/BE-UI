@@ -36,7 +36,7 @@ dayjs.extend(localizedFormat);
 const { Title, Text, Paragraph } = Typography;
 
 interface ProjectUpdatesTabProps {
-  projectId: number;
+  projectId: string;
   theme?: string;
 }
 
@@ -148,7 +148,7 @@ const ProjectUpdatesTab: React.FC<ProjectUpdatesTabProps> = ({
 
   const fetchUpdates = useCallback(
     async (pageToFetch: number, currentSize: number, append = false) => {
-      if (!projectId || projectId <= 0) {
+      if (!projectId) {
         setLoading(false);
         setUpdatesPage({
           content: [],
@@ -220,7 +220,7 @@ const ProjectUpdatesTab: React.FC<ProjectUpdatesTabProps> = ({
     setUpdatesPage(null);
     setCurrentPage(0);
     setAllUpdatesLoaded(false);
-    if (projectId && projectId > 0) {
+    if (projectId) {
       fetchUpdates(0, pageSize, false);
     } else {
       setLoading(false);

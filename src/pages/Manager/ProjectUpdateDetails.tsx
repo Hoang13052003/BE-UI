@@ -40,8 +40,7 @@ import { Project } from "../../types/project";
 import SendReportProjectUpdateModal from "../../components/Admin/ProjectUpdate/SendReportProjectUpdateModal";
 import { useAuth } from "../../contexts/AuthContext";
 import SendFeedbackModal from "../Client/SendFeedbackModal";
-import ProjectUpdateHistoryTimeLogsTab from "../../components/Admin/ProjectDetailsPage/ProjectUpdateHistoryTimeLogsTab";
-import ProjectUpdateHistoryMilestonesTab from "../../components/Admin/ProjectDetailsPage/ProjectUpdateHistoryMilestonesTab";
+import ProjectHistoryTab from "../../components/Admin/ProjectDetailsPage/ProjectHistoryTab";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -102,7 +101,6 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
       try {
         setLoading(true);
         const updateData = await getProjectUpdateByIdApi(id);
-        console.log("Fetched update data:", updateData);
         setUpdate(updateData);
 
         if (updateData.projectId) {
@@ -417,27 +415,15 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             </Card>
           )}
         </Col>
-        <Col span={24} style={{ marginTop: 16 }}>
-          <Card
-            // title={
-            //   project?.type === "FIXED_PRICE"
-            //     ? "Project Milestones"
-            //     : "Time Logs"
-            // }
-            style={{ border: "none" }}
-            styles={{ body: { padding: 16 } }}
-          >
-            {project?.projectType === "FIXED_PRICE" ? (
-              <ProjectUpdateHistoryMilestonesTab
-                historyId={update?.historyKey!}
-              />
-            ) : (
-              <ProjectUpdateHistoryTimeLogsTab
-                historyId={update?.historyKey!}
-              />
-            )}
-          </Card>
-        </Col>
+        {/* Project History Tab with Current Update Snapshot */}
+        {update && update.historyKey && (
+          <Col span={24} style={{ marginTop: 16 }}>
+            <ProjectHistoryTab
+              projectType={update.projectType as "LABOR" | "FIXED_PRICE"}
+              historyKey={update.historyKey}
+            />
+          </Col>
+        )}
       </Row>
 
       {update && isEditModalVisible && (

@@ -1,14 +1,16 @@
 import React from "react";
-import { Modal, Typography, Tag, Space, Divider } from "antd";
+import { Modal, Typography, Tag, Space, Divider, Button, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { PaperClipOutlined, DownloadOutlined } from "@ant-design/icons";
 import { List } from "antd";
+import { useAttachmentDownload } from "../../hooks/useAttachmentDownload";
 
 const { Text, Title } = Typography;
 
 export interface FeedbackDetailModel {
+  id: string; // Add feedback ID for download functionality
   projectName: string;
-  projectId: number; // Changed back to number to match actual API response
+  projectId: string; // Changed from number to string to match backend DTO
   content: string;
   createdAt: string;
   read: boolean;
@@ -31,6 +33,8 @@ const ClientFeedbackDetailModal: React.FC<ClientFeedbackDetailModalProps> = ({
   visible,
   onClose,
 }) => {
+  const { downloadAttachment, loading: downloadLoading } = useAttachmentDownload();
+  
   if (!feedback) return null;
   return (
     <Modal
@@ -69,14 +73,17 @@ const ClientFeedbackDetailModal: React.FC<ClientFeedbackDetailModalProps> = ({
               renderItem={(item) => (
                 <List.Item
                   actions={[
-                    <a
-                      key="download"
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Tooltip
+                      title="Download/View Attachment"
+                      key={`download-${item.fileName}`}
                     >
-                      <DownloadOutlined />
-                    </a>,
+                      <Button
+                        icon={<DownloadOutlined />}
+                        type="text"
+                        loading={downloadLoading}
+                        onClick={() => downloadAttachment(feedback.id, feedback.attachments?.indexOf(item) || 0, item.fileName)}
+                      />
+                    </Tooltip>,
                   ]}
                 >
                   <List.Item.Meta

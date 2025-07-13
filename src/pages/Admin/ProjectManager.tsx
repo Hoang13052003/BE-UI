@@ -6,7 +6,6 @@ import {
   Row,
   Col,
   Typography,
-  message,
   Spin,
   Alert,
   Popconfirm,
@@ -14,6 +13,7 @@ import {
   Select,
   Input,
 } from "antd";
+import { showNotification, showError } from "../../utils/notificationUtils";
 import {
   DeleteOutlined,
   PlusOutlined,
@@ -169,7 +169,7 @@ const ProjectManager: React.FC = () => {
             throw err;
           }
         }
-        message.success("Project deleted successfully!");
+        showNotification.success("PROJECT_DELETED");
         loadProjects(false);
         if (expandedProjectId === id) setExpandedProjectId(null);
         if (expandedTimelogProjectId === id) setExpandedTimelogProjectId(null);
@@ -178,7 +178,7 @@ const ProjectManager: React.FC = () => {
       }
     } catch (err) {
       setError("Failed to delete project. Please try again later.");
-      message.error("Failed to delete project: " + (err as Error).message);
+      showError(err, "PROJECT_DELETE_FAILED");
     } finally {
       if (force) setForceDeleteLoading(false);
       else setDeletingId(null);
@@ -191,7 +191,7 @@ const ProjectManager: React.FC = () => {
   const handleAddProjectModalClose = () => setIsAddProjectModalVisible(false);
   const handleAddProjectSuccess = () => {
     setIsAddProjectModalVisible(false);
-    message.success("Project added successfully!");
+    showNotification.success("PROJECT_CREATED");
     loadProjects(false);
   };
 
@@ -243,7 +243,7 @@ const ProjectManager: React.FC = () => {
     setIsEditMilestoneModalVisible(false);
     setSelectedMilestoneId(null);
     setEditingMilestoneProjectId(null);
-    message.success("Milestone updated successfully!");
+    showNotification.success("MILESTONE_UPDATED");
     if (currentMilestoneRefreshCallback) {
       currentMilestoneRefreshCallback();
       setCurrentMilestoneRefreshCallback(null);
@@ -283,7 +283,7 @@ const ProjectManager: React.FC = () => {
   const handleEditProjectSuccess = () => {
     setIsEditProjectModalVisible(false);
     setSelectedProjectForEdit(null);
-    message.success("Project updated successfully!");
+    showNotification.success("PROJECT_UPDATED");
     loadProjects(false);
   };
 

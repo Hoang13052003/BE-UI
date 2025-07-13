@@ -72,7 +72,7 @@ export const getLatestAttachmentsForProjectUpdate = async (
 };
 
 export const getLatestAttachmentsForProject = async (
-  projectId: number
+  projectId: string
 ): Promise<AttachmentResponseDto[]> => {
   const response = await axiosClient.get<AttachmentResponseDto[]>(
     `${API_ATTACHMENTS_BASE_PATH}/project/${projectId}/latest`
@@ -81,7 +81,7 @@ export const getLatestAttachmentsForProject = async (
 };
 
 export const softDeleteAttachmentsByLogicalName = async (
-  projectId: number,
+  projectId: string,
   logicalName: string
 ): Promise<void> => {
   const encodedLogicalName = encodeURIComponent(logicalName);
@@ -151,6 +151,38 @@ export const getProjectUpdateHistory = async (
   return response.data;
 };
 
+// New endpoint for Project Labor (dự án tính theo thời gian)
+export const getProjectLaborUpdateHistory = async (
+  projectLaborId: string
+): Promise<ProjectUpdateSummaryDto[]> => {
+  const response = await axiosClient.get<ProjectUpdateSummaryDto[]>(
+    `${API_PROJECT_UPDATES_BASE_PATH}/project-labor/${projectLaborId}/updates-history`
+  );
+  return response.data;
+};
+
+// New endpoint for Project Fixed Price (dự án tính theo milestone)
+export const getProjectFixedPriceUpdateHistory = async (
+  projectFixedPriceId: string
+): Promise<ProjectUpdateSummaryDto[]> => {
+  const response = await axiosClient.get<ProjectUpdateSummaryDto[]>(
+    `${API_PROJECT_UPDATES_BASE_PATH}/project-fixed-price/${projectFixedPriceId}/updates-history`
+  );
+  return response.data;
+};
+
+// Generic function to get project update history based on project type
+export const getProjectUpdateHistoryByType = async (
+  projectId: string,
+  projectType: "LABOR" | "FIXED_PRICE"
+): Promise<ProjectUpdateSummaryDto[]> => {
+  if (projectType === "LABOR") {
+    return getProjectLaborUpdateHistory(projectId);
+  } else {
+    return getProjectFixedPriceUpdateHistory(projectId);
+  }
+};
+
 export const getProjectUpdateSnapshotTreeRoot = async (
   projectUpdateId: number
 ): Promise<TreeNodeDto[]> => {
@@ -184,6 +216,9 @@ const attachmentApi = {
   getCurrentProjectTreeRoot,
   getCurrentProjectTreeByPath,
   getProjectUpdateHistory,
+  getProjectLaborUpdateHistory,
+  getProjectFixedPriceUpdateHistory,
+  getProjectUpdateHistoryByType,
   getProjectUpdateSnapshotTreeRoot,
   getProjectUpdateSnapshotTreeByPath,
 };

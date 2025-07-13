@@ -220,7 +220,7 @@ const ProjectProgressList: React.FC = () => {
             color="default"
             variant="link"
             onClick={() =>
-              navigate(`/admin/attachment-display/${record.projectId}`)
+              navigate(`/admin/attachment-display/${record.projectType?.toLowerCase() === "labor" ? "labor" : "fixed-price"}/${record.projectId}`)
             }
             style={{ padding: 0, height: "auto", fontWeight: "bold" }}
           >

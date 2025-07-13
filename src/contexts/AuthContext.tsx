@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import useLocalStorage from "../hooks/useLocalStorage";
-import { message } from "antd";
+import { showNotification, showError } from "../utils/notificationUtils";
 import notificationService from "../services/NotificationService";
 
 interface UserDetails {
@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         clearAuthState();
-        message.error("Session expired. Please login again.");
+        showError(error, "SESSION_EXPIRED");
       } finally {
         setLoading(false);
         setInitialized(true);
@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Clear auth state
     clearAuthState();
 
-    message.info("You have been logged out.");
+    showNotification.info("LOGOUT_SUCCESS");
   };
 
   // Optional: update user details

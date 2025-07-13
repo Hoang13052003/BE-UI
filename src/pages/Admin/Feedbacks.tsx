@@ -37,7 +37,7 @@ interface FeedbackItem {
   fullName?: string;
   email?: string;
   projectName: string;
-  projectId: string; // Updated to match API response format
+  projectId: string; // Changed back to string to match actual backend DTO
   updateId?: number; // Added field from API response
   userId?: number; // Added field from API response
   content: string;
@@ -190,7 +190,7 @@ const Feedbacks: React.FC = () => {
         <Space direction="vertical">
           <Text strong>{record.projectName}</Text>
           {record.projectId && (
-            <Text type="secondary">PRJ-{record.projectId}</Text>
+            <Text type="secondary">{record.projectId}</Text>
           )}
         </Space>
       ),
@@ -300,16 +300,16 @@ const Feedbacks: React.FC = () => {
                 projectId:
                   value === "" || value === undefined
                     ? undefined
-                    : { equals: Number(value) },
+                    : { equals: value },
               }))
             }
             value={
-              criteria.projectId ? String(criteria.projectId.equals) : undefined
+              criteria.projectId ? criteria.projectId.equals : undefined
             }
           >
             <Option value="">All Projects</Option>
             {derivedProjectOptions.map((p) => (
-              <Option key={p.value} value={String(p.value)}>
+              <Option key={p.value} value={p.value}>
                 {p.label}
               </Option>
             ))}

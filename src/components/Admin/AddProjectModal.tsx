@@ -9,10 +9,10 @@ import {
   Button,
   Spin,
   Tag,
-  message as antdMessage,
   Row,
   Col,
 } from "antd";
+import { showNotification } from "../../utils/notificationUtils";
 import { useAddProject } from "../../hooks/useAddProject";
 import { useProjectEnums } from "../../hooks/useProjectEnums";
 import { useUserSearch } from "../../hooks/useUserSearch";
@@ -138,9 +138,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         totalEstimatedHours >= 0
       ) {
         if (totalEstimatedHours > MAX_ESTIMATED_HOURS_LIMIT) {
-          antdMessage.warning(
-            `Estimated hours too high (maximum ${MAX_ESTIMATED_HOURS_LIMIT.toLocaleString()} hours). Please enter a reasonable number of hours.`
-          );
+          showNotification.warning("VALIDATION_ERROR", `Estimated hours too high (maximum ${MAX_ESTIMATED_HOURS_LIMIT.toLocaleString()} hours). Please enter a reasonable number of hours.`);
           form.setFieldsValue({ plannedEndDate: null });
           return;
         }
@@ -158,9 +156,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         }
 
         if (workDaysRequired > MAX_WORKING_DAYS_LIMIT) {
-          antdMessage.warning(
-            `Required working days too high (${workDaysRequired} days). Please reduce estimated hours.`
-          );
+          showNotification.warning("VALIDATION_ERROR", `Required working days too high (${workDaysRequired} days). Please reduce estimated hours.`);
           form.setFieldsValue({ plannedEndDate: null });
           return;
         }
@@ -193,9 +189,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
           }
 
           if (workDaysCounted < workDaysRequired) {
-            antdMessage.error(
-              "Unable to calculate exact end date. Please check estimated hours."
-            );
+            showNotification.error("VALIDATION_ERROR", "Unable to calculate exact end date. Please check estimated hours.");
             form.setFieldsValue({ plannedEndDate: null });
             return;
           }
@@ -285,14 +279,12 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
   const handleAddParticipant = (user: UserIdAndEmailResponse) => {
     if (participants.some((p) => p.id === user.id)) {
-      antdMessage.warning(
-        `User with email ${user.email} has already been added to the list.`
-      );
+      showNotification.warning("VALIDATION_ERROR", `User with email ${user.email} has already been added to the list.`);
       return;
     }
 
     setParticipants((prev) => [...prev, { id: user.id, email: user.email }]);
-    antdMessage.success(`Added user: ${user.email}`);
+    showNotification.custom.success(`Added user: ${user.email}`);
   };
 
   return (

@@ -1,58 +1,171 @@
+Tôi sẽ hướng dẫn bạn sử dụng các API để tạo project updates cho cả Labor Project và Fixed Price Project. Hãy để tôi tìm hiểu cấu trúc và cách sử dụng của các API này.
 
-## 📋 **ENDPOINT ĐÁNH DẤU FEEDBACK ĐÃ ĐỌC**
+Search files...
+Search files...
+Read file: src/main/java/net/sparkminds/company/service/dto/request/ProjectProgressRequestDto.java
+Read file: src/main/java/net/sparkminds/company/service/dto/request/ProjectUpdate/ProjectProgressRequestDto.java
+Bây giờ tôi sẽ tìm hiểu thêm về cấu trúc response để hiểu rõ hơn về API này.
 
-### **🔗 URL & Method:**
-```http
-PATCH /api/feedbacks/{feedbackId}/read
+Search files...
+Bây giờ tôi đã có đủ thông tin để hướng dẫn bạn sử dụng các API này. Hãy để tôi tạo một hướng dẫn chi tiết.
+
+## Hướng dẫn sử dụng API tạo Project Updates
+
+### **1. API cho Labor Project**
+
+**Endpoint:** `POST /api/private/admin/project-labor/{projectLaborId}/updates`
+
+**Mô tả:** Tạo một project update mới cho Labor Project
+
+#### **Request Body (JSON):**
+```json
+{
+  "projectId": "string",           // ID của project (bắt buộc)
+  "updateDate": "2024-01-15",      // Ngày cập nhật (bắt buộc)
+  "summary": "Tóm tắt tiến độ",     // Tóm tắt ngắn gọn
+  "details": "Chi tiết về tiến độ dự án...", // Chi tiết (10-2000 ký tự)
+  "statusAtUpdate": "IN_PROGRESS", // Trạng thái dự án (bắt buộc)
+  "actualProcess": 45.5,           // Tiến độ thực tế (%)
+  "overallProcess": 50.0,          // Tiến độ tổng thể (%)
+  "published": true,               // Có công khai hay không
+  "internalNotes": "Ghi chú nội bộ" // Ghi chú nội bộ
+}
 ```
 
-### **🔐 Authentication:**
-- **Required**: Bearer Token trong header
-- **Authorization**: `Bearer <your-jwt-token>`
+#### **Các trường bắt buộc:**
+- `projectId`: ID của project
+- `updateDate`: Ngày cập nhật (định dạng YYYY-MM-DD)
+- `statusAtUpdate`: Trạng thái dự án
+
+#### **Các trạng thái có thể sử dụng:**
+- `NEW`: Mới
+- `IN_PROGRESS`: Đang thực hiện
+- `ON_HOLD`: Tạm dừng
+- `COMPLETED`: Hoàn thành
+- `CANCELLED`: Đã hủy
+
+#### **Ví dụ Request:**
+```bash
+curl -X POST "http://localhost:8080/api/private/admin/project-labor/abc123/updates" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "projectId": "abc123",
+    "updateDate": "2024-01-15",
+    "summary": "Hoàn thành module authentication",
+    "details": "Đã hoàn thành việc phát triển module xác thực người dùng với JWT. Module bao gồm đăng nhập, đăng ký và quản lý token.",
+    "statusAtUpdate": "IN_PROGRESS",
+    "actualProcess": 45.5,
+    "overallProcess": 50.0,
+    "published": true,
+    "internalNotes": "Cần test thêm các trường hợp edge case"
+  }'
+```
 
 ---
 
-## ✅ **CÁC RESPONSE CODES:**
+### **2. API cho Fixed Price Project**
 
-### **Success (200 OK):**
+**Endpoint:** `POST /api/private/admin/project-fixed-price/{projectFixedPriceId}/updates`
+
+**Mô tả:** Tạo một project update mới cho Fixed Price Project
+
+#### **Request Body (JSON):**
 ```json
 {
-  "message": "Feedback marked as read successfully"
+  "projectId": "string",           // ID của project (bắt buộc)
+  "updateDate": "2024-01-15",      // Ngày cập nhật (bắt buộc)
+  "summary": "Tóm tắt tiến độ",     // Tóm tắt ngắn gọn
+  "details": "Chi tiết về tiến độ dự án...", // Chi tiết (10-2000 ký tự)
+  "statusAtUpdate": "IN_PROGRESS", // Trạng thái dự án (bắt buộc)
+  "actualProcess": 45.5,           // Tiến độ thực tế (%)
+  "overallProcess": 50.0,          // Tiến độ tổng thể (%)
+  "published": true,               // Có công khai hay không
+  "internalNotes": "Ghi chú nội bộ" // Ghi chú nội bộ
 }
 ```
 
-### **Unauthorized (401):**
-```json
-{
-  "status": "UNAUTHORIZED",
-  "message": "User not authenticated"
-}
+#### **Ví dụ Request:**
+```bash
+curl -X POST "http://localhost:8080/api/private/admin/project-fixed-price/def456/updates" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "projectId": "def456",
+    "updateDate": "2024-01-15",
+    "summary": "Hoàn thành milestone 1",
+    "details": "Đã hoàn thành milestone đầu tiên về thiết kế UI/UX. Client đã approve design và sẵn sàng cho giai đoạn development.",
+    "statusAtUpdate": "IN_PROGRESS",
+    "actualProcess": 25.0,
+    "overallProcess": 30.0,
+    "published": true,
+    "internalNotes": "Client rất hài lòng với design, có thể tăng budget cho giai đoạn tiếp theo"
+  }'
 ```
 
-### **Forbidden (403):**
-```json
-{
-  "status": "FORBIDDEN", 
-  "message": "Access Denied: You don't have permission to mark this feedback as read"
-}
-```
+---
 
-### **Not Found (404):**
+### **3. Response Format**
+
+Cả hai API đều trả về response với format tương tự:
+
 ```json
 {
-  "status": "NOT_FOUND",
-  "message": "Feedback not found with ID: 60a7b8c9d1234567890abcde"
+  "id": 123,
+  "projectId": "abc123",
+  "projectName": "Tên dự án",
+  "projectType": "LABOR", // hoặc "FIXED_PRICE"
+  "userId": 1,
+  "email": "user@example.com",
+  "updateDate": "2024-01-15",
+  "summary": "Tóm tắt tiến độ",
+  "details": "Chi tiết về tiến độ dự án...",
+  "statusAtUpdate": "IN_PROGRESS",
+  "actualProcess": 45.5,
+  "overallProcess": 50.0,
+  "historyKey": "key123",
+  "published": true,
+  "internalNotes": "Ghi chú nội bộ"
 }
 ```
 
 ---
 
-## 🔒 **PHÂN QUYỀN:**
-Các phân quyền này đã được cấu hình bên backen
-| **Role** | **Có thể đánh dấu feedback nào?** |
-|----------|-----------------------------------|
-| **ADMIN** | ✅ Tất cả feedback |
-| **MANAGER** | ✅ Feedback trong project họ quản lý |
-| **USER** | ✅ Feedback của họ<br>✅ Feedback trong project họ tham gia |
+### **4. Quyền truy cập**
+
+- **ADMIN**: Có thể tạo update cho tất cả projects
+- **MANAGER**: Có thể tạo update cho tất cả projects  
+- **USER**: Chỉ có thể tạo update cho projects mà họ được assign
 
 ---
+
+### **5. Validation Rules**
+
+- `projectId`: Bắt buộc
+- `updateDate`: Bắt buộc, định dạng YYYY-MM-DD
+- `statusAtUpdate`: Bắt buộc, phải là một trong các giá trị enum
+- `details`: Nếu có thì phải từ 10-2000 ký tự
+- `actualProcess` và `overallProcess`: Phải là số thập phân hợp lệ
+
+---
+
+### **6. Lưu ý bảo mật**
+
+1. **Authentication**: Phải có JWT token hợp lệ
+2. **Authorization**: Kiểm tra quyền truy cập project
+3. **Input Validation**: Tất cả input đều được validate
+4. **Audit Log**: Mọi thay đổi đều được ghi log để audit
+
+---
+
+### **7. Error Handling**
+
+Các lỗi thường gặp:
+
+- `400 Bad Request`: Dữ liệu không hợp lệ
+- `401 Unauthorized`: Chưa đăng nhập
+- `403 Forbidden`: Không có quyền truy cập
+- `404 Not Found`: Project không tồn tại
+- `500 Internal Server Error`: Lỗi server
+
+Bạn có cần tôi giải thích thêm về phần nào không?

@@ -219,3 +219,34 @@ export interface TimeLogResponseDto {
   computedTimelogStatus?: string;
   completionPercentage?: number;
 }
+
+// Add new interface for Project Update History
+export interface ProjectUpdateHistoryItem {
+  id: number;
+  projectLaborId: string;
+  projectName: string;
+  performerId: number;
+  performerFullName: string;
+  taskDate: string;
+  taskDescription: string;
+  hoursSpent: number;
+  createdAt: string;
+  computedTimelogStatus: string;
+  actualTimelogStatus: string;
+  completionPercentage: number;
+}
+
+// Add new interface for Fixed Price Project Update History (Milestone data)
+export interface ProjectUpdateHistoryMilestoneItem {
+  id: number;
+  projectFixedPriceId: string;
+  projectName: string;
+  name: string;
+  description: string;
+  startDate: string;
+  deadlineDate: string;
+  status: string;
+  completionDate: string | null;
+  notes: string | null;
+  completionPercentage: number;
+}

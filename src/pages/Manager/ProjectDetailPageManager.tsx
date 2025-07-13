@@ -31,6 +31,7 @@ import ProjectLaborDetail from "../../components/Admin/ProjectDetailsPage/Projec
 import ProjectLaborRecentTimeLogs from "../../components/Admin/ProjectDetailsPage/ProjectLaborRecentTimeLogs";
 import ProjectLaborUpdatesTimeline from "../../components/Admin/ProjectDetailsPage/ProjectLaborUpdatesTimeline";
 import ProjectFixedPriceUpdatesTimeline from "../../components/Admin/ProjectDetailsPage/ProjectFixedPriceUpdatesTimeline";
+
 import MilestoneDetailsModal from "../../components/Manager/MilestoneDetailsModal";
 import TimelogDetailsModal from "../../components/Manager/TimelogDetailsModal";
 
@@ -310,6 +311,8 @@ const ProjectDetailPage: React.FC = () => {
           </Col>
         </Row>
 
+
+
         {isEditProjectModalVisible && project && (
           <EditProjectModal
             visible={isEditProjectModalVisible}
@@ -456,6 +459,8 @@ const ProjectDetailPage: React.FC = () => {
           />
         </Col>
       </Row>
+
+
 
       {isEditProjectModalVisible && project && (
         <EditProjectModal

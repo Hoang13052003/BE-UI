@@ -28,7 +28,7 @@ export interface Feedback {
 export interface FeedbackResponse {
   id: string;
   updateId: number;
-  projectId: number; // Changed back to number to match actual API response
+  projectId: string; // Changed back to string to match actual backend DTO
   projectName: string;
   userId: number;
   fullName: string;
@@ -48,6 +48,11 @@ export interface FeedbackAttachment {
   fileSize: number;
   url: string;
   uploadedAt: string;
+}
+
+// Add new interface for download URL response
+export interface AttachmentDownloadUrlResponse {
+  url: string;
 }
 
 export interface PaginatedFeedbackResponse {
@@ -130,8 +135,8 @@ export interface FeedbackCriteria {
     in?: number[];
   };
   projectId?: {
-    equals?: number; // Changed back to number to match actual API response format
-    in?: number[];
+    equals?: string; // Changed back to string to match actual backend DTO format
+    in?: string[];
   };
   read?: {
     equals?: boolean;
@@ -186,6 +191,23 @@ export const filter = async (
 ): Promise<PaginatedFeedbackResponse> => {
   console.warn("filter() is deprecated. Please use getAllFeedbacks() instead for enhanced security.");
   return getAllFeedbacks(criteria, page, size, sortBy, direction);
+};
+
+/**
+ * Get download URL for a specific attachment in a feedback
+ * This creates a fresh presigned URL that expires in 10 minutes
+ * @param feedbackId - ID of the feedback
+ * @param attachmentIndex - Index of the attachment (starts from 0)
+ * @returns Promise<AttachmentDownloadUrlResponse>
+ */
+export const getAttachmentDownloadUrl = async (
+  feedbackId: string,
+  attachmentIndex: number
+): Promise<AttachmentDownloadUrlResponse> => {
+  const { data } = await axiosClient.get(
+    `/api/feedbacks/${feedbackId}/attachments/${attachmentIndex}/download-url`
+  );
+  return data;
 };
 
 function flattenCriteria(criteria: FeedbackCriteria): Record<string, any> {

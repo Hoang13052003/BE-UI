@@ -7,9 +7,9 @@ import {
   InputNumber,
   Button,
   Select,
-  message,
   Spin,
 } from "antd";
+import { showNotification, showError } from "../../utils/notificationUtils";
 import { createTimeLogApi, TimeLogRequest } from "../../api/timelogApi";
 import { useUserSearch } from "../../hooks/useUserSearch";
 import dayjs from "dayjs";
@@ -59,15 +59,15 @@ const AddTimeLogModal: React.FC<AddTimeLogModalProps> = ({
 
       await createTimeLogApi(projectId, payload);
 
-      message.success("Time log added successfully");
+      showNotification.success("TIMELOG_CREATED");
       form.resetFields();
       onSuccess();
       onClose();
     } catch (error) {
       if (error instanceof Error) {
-        message.error(`Failed to add time log: ${error.message}`);
+        showNotification.custom.error(`Failed to add time log: ${error.message}`);
       } else {
-        message.error("Failed to add time log");
+        showError(error, "TIMELOG_CREATE_FAILED");
       }
       console.error("Error adding time log:", error);
     } finally {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createProjectApi } from "../api/projectApi";
 import { ProjectRequest } from "../types/ProjectRequest";
-import { message } from "antd";
+import { showNotification, showError } from "../utils/notificationUtils";
 
 export const useAddProject = (onSuccess: () => void) => {
   const [submitting, setSubmitting] = useState(false);
@@ -25,12 +25,10 @@ export const useAddProject = (onSuccess: () => void) => {
       // Validation is now handled in createProjectApi
       await createProjectApi(payload);
       onSuccess();
-      message.success("Project created successfully!");
+      // Note: Success notification is handled by the parent component to avoid duplication
     } catch (err: any) {
       console.error("Add project error:", err);
-      message.error(
-        `Failed to create project: ${err.message || "Unknown error"}`
-      );
+      showError(err, "PROJECT_CREATE_FAILED");
     } finally {
       setSubmitting(false);
     }

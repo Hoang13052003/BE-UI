@@ -22,9 +22,8 @@ const formatDateOnly = (dateString: string | null): string => {
 };
 
 const ProjectUpdateHistory: React.FC = () => {
-  const { projectId: projectIdString } = useParams<{ projectId: string }>();
+  const { projectId, projectType } = useParams<{ projectId: string; projectType: string }>();
   const navigate = useNavigate();
-  const projectId = projectIdString ? parseInt(projectIdString, 10) : undefined;
 
   const [history, setHistory] = useState<ProjectUpdateSummaryDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -32,8 +31,14 @@ const ProjectUpdateHistory: React.FC = () => {
   const [projectName, _setProjectName] = useState<string>("");
 
   useEffect(() => {
-    if (!projectId || isNaN(projectId)) {
-      setError("Invalid Project ID provided.");
+    if (!projectId || !projectType) {
+      setError("Invalid Project ID or Project Type provided.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (projectType !== "labor" && projectType !== "fixed-price") {
+      setError("Invalid Project Type. Must be 'labor' or 'fixed-price'.");
       setIsLoading(false);
       return;
     }
@@ -42,8 +47,10 @@ const ProjectUpdateHistory: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const historyData = await attachmentApi.getProjectUpdateHistory(
-          projectId
+        const projectTypeUpper = projectType === "labor" ? "LABOR" : "FIXED_PRICE";
+        const historyData = await attachmentApi.getProjectUpdateHistoryByType(
+          projectId,
+          projectTypeUpper
         );
         setHistory(historyData);
       } catch (err: any) {
@@ -59,20 +66,20 @@ const ProjectUpdateHistory: React.FC = () => {
     };
 
     fetchHistory();
-  }, [projectId]);
+  }, [projectId, projectType]);
 
   const handleGoBackToExplorer = () => {
-    if (projectId) {
-      navigate(`/admin/attachment-display/${projectId}`);
+    if (projectId && projectType) {
+      navigate(`/admin/attachment-display/${projectType}/${projectId}`);
     }
   };
 
-  if (!projectId || isNaN(projectId)) {
+  if (!projectId || !projectType) {
     return (
       <Card>
         <Alert
           message="Error"
-          description="Invalid Project ID in URL."
+          description="Invalid Project ID or Project Type in URL."
           type="error"
           showIcon
         />
@@ -125,7 +132,7 @@ const ProjectUpdateHistory: React.FC = () => {
             <List.Item
               actions={[
                 <Link
-                  to={`/admin/projects/${projectId}/updates/${item.id}/snapshot`}
+                  to={`/admin/projects/${projectType}/${projectId}/updates/${item.id}/snapshot`}
                   key={`view-snapshot-${item.id}`}
                 >
                   View Files at this Point
@@ -135,7 +142,7 @@ const ProjectUpdateHistory: React.FC = () => {
               <List.Item.Meta
                 title={
                   <Link
-                    to={`/admin/projects/${projectId}/updates/${item.id}/snapshot`}
+                    to={`/admin/projects/${projectType}/${projectId}/updates/${item.id}/snapshot`}
                     style={{ fontSize: "1.1em" }}
                   >
                     Update on: {formatDateOnly(item.updateDate)}

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Modal, Button, Typography, Space, Alert, message } from "antd";
+import { Modal, Button, Typography, Space, Alert } from "antd";
+import { showNotification, showError } from "../../utils/notificationUtils";
 import { MailOutlined } from "@ant-design/icons";
 import { resendVerificationEmailApi } from "../../api/authApi";
 
@@ -33,7 +34,7 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
       setAlertMessage(
         response.message || "Verification email has been sent successfully!"
       );
-      message.success("Verification email sent successfully!");
+      showNotification.success("VERIFICATION_EMAIL_SENT");
     } catch (error: any) {
       console.error("Resend verification error:", error);
 
@@ -44,7 +45,7 @@ const ResendVerificationModal: React.FC<ResendVerificationModalProps> = ({
 
       setMessageType("error");
       setAlertMessage(errorMessage);
-      message.error("Failed to send verification email");
+      showError(error, "VERIFICATION_EMAIL_FAILED");
     } finally {
       setIsLoading(false);
     }

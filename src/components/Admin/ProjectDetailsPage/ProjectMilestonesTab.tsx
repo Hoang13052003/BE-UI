@@ -44,7 +44,7 @@ const { Search } = Input;
 const { RangePicker } = DatePicker;
 
 interface ProjectMilestonesTabProps {
-  projectId: number;
+  projectId: string;
 }
 
 const getMilestoneStatusColor = (status: MilestoneStatus | null): string => {
@@ -108,7 +108,7 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
 
   const fetchMilestones = useCallback(
     async (pageToFetch: number, currentSize: number) => {
-      if (!projectId || projectId <= 0) {
+      if (!projectId || projectId === "") {
         setLoading(false);
         setMilestonesPage({
           content: [],
@@ -161,7 +161,7 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
         }
 
         const data = await getProjectMilestonesOverviewApi(
-          projectId.toString(),
+          projectId,
           pageToFetch,
           currentSize,
           [{ property: "startDate", direction: "asc" }],
@@ -207,7 +207,7 @@ const ProjectMilestonesTab: React.FC<ProjectMilestonesTabProps> = ({
   );
 
   useEffect(() => {
-    if (projectId && projectId > 0) {
+    if (projectId && projectId !== "") {
       fetchMilestones(uiPagination.current - 1, uiPagination.pageSize);
     }
   }, [projectId, uiPagination.current, uiPagination.pageSize, fetchMilestones]);

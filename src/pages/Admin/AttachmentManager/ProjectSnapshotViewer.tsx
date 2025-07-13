@@ -33,8 +33,8 @@ const formatDateOnly = (dateString: string | null): string => {
 };
 
 const ProjectSnapshotViewer: React.FC = () => {
-  const { projectId: projectIdString, projectUpdateId: projectUpdateIdString } =
-    useParams<{ projectId: string; projectUpdateId: string }>();
+  const { projectId: projectIdString, projectUpdateId: projectUpdateIdString, projectType } =
+    useParams<{ projectId: string; projectUpdateId: string; projectType: string }>();
 
   const navigate = useNavigate();
   const projectId = projectIdString ? parseInt(projectIdString, 10) : undefined;
@@ -51,11 +51,18 @@ const ProjectSnapshotViewer: React.FC = () => {
     useState<ProjectUpdateSummaryDto | null>(null);
 
   useEffect(() => {
-    if (projectId && projectUpdateId && !isNaN(projectUpdateId)) {
+    if (projectId && projectUpdateId && !isNaN(projectUpdateId) && projectType) {
       const fetchProjectUpdateDetails = async () => {
         try {
-          const historyData = await attachmentApi.getProjectUpdateHistory(
-            projectId
+          if (projectType !== "labor" && projectType !== "fixed-price") {
+            console.error("Invalid project type:", projectType);
+            return;
+          }
+
+          const projectTypeUpper = projectType === "labor" ? "LABOR" : "FIXED_PRICE";
+          const historyData = await attachmentApi.getProjectUpdateHistoryByType(
+            projectId.toString(),
+            projectTypeUpper
           );
           const foundUpdate = historyData.find(
             (update) => update.id === projectUpdateId
@@ -81,7 +88,7 @@ const ProjectSnapshotViewer: React.FC = () => {
       };
       fetchProjectUpdateDetails();
     }
-  }, [projectId, projectUpdateId]);
+  }, [projectId, projectUpdateId, projectType]);
 
   useEffect(() => {
     if (!projectUpdateId || isNaN(projectUpdateId)) {
@@ -162,8 +169,8 @@ const ProjectSnapshotViewer: React.FC = () => {
   };
 
   const handleGoBackToHistory = () => {
-    if (projectId) {
-      navigate(`/admin/projects/${projectId}/history`);
+    if (projectId && projectType) {
+      navigate(`/admin/projects/${projectType}/${projectId}/history`);
     } else {
       navigate(-1);
     }
@@ -172,7 +179,7 @@ const ProjectSnapshotViewer: React.FC = () => {
   const breadcrumbItems = [
     {
       title: (
-        <Link to={`/admin/projects/${projectId}/history`}>Project History</Link>
+        <Link to={`/admin/projects/${projectType}/${projectId}/history`}>Project History</Link>
       ),
     },
   ];
@@ -209,6 +216,19 @@ const ProjectSnapshotViewer: React.FC = () => {
         <Alert
           message="Error"
           description="Invalid Project Update ID in URL."
+          type="error"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  if (!projectType || (projectType !== "labor" && projectType !== "fixed-price")) {
+    return (
+      <Card>
+        <Alert
+          message="Error"
+          description="Invalid Project Type in URL. Must be 'labor' or 'fixed-price'."
           type="error"
           showIcon
         />

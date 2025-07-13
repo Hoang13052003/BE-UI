@@ -91,13 +91,15 @@ export async function fetchSpringPageData<T>(
       sortParams = [`${sortConfig.property},${sortConfig.direction}`];
     }
 
+    const requestParams = {
+      page,
+      size,
+      ...(sortParams.length > 0 ? { sort: sortParams } : {}),
+      ...additionalParams,
+    };
+
     const response = await axiosClient.get(url, {
-      params: {
-        page,
-        size,
-        ...(sortParams.length > 0 ? { sort: sortParams } : {}),
-        ...additionalParams,
-      },
+      params: requestParams,
       paramsSerializer: (params) => {
         const searchParams = new URLSearchParams();
         Object.entries(params).forEach(([key, value]) => {

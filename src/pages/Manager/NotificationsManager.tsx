@@ -8,8 +8,8 @@ import {
   Tooltip,
   Empty,
   Spin,
-  message,
 } from "antd";
+import { showNotification, showError } from "../../utils/notificationUtils";
 import {
   CheckOutlined,
   DeleteOutlined,
@@ -185,7 +185,7 @@ const Notifications: React.FC = () => {
     setRefreshing(true);
     try {
       await fetchNotifications();
-      message.success("Notifications refreshed");
+      showNotification.success("NOTIFICATIONS_REFRESHED");
     } finally {
       setRefreshing(false);
     }
@@ -193,18 +193,16 @@ const Notifications: React.FC = () => {
 
   const handleMarkAllRead = async () => {
     await markAllAsRead();
-    message.success("All notifications marked as read");
+    showNotification.success("ALL_MARKED_AS_READ");
   };
 
   const handleDeleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await deleteNotification(id);
-      message.success("Notification deleted");
+      showNotification.success("NOTIFICATION_DELETED");
     } catch (error) {
-      message.error(
-        `Failed to delete notification: ${(error as Error).message}`
-      );
+      showError(error, "NOTIFICATION_DELETE_FAILED");
     }
   };
 

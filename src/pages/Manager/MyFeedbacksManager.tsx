@@ -37,7 +37,7 @@ interface FeedbackItem {
   fullName?: string;
   email?: string;
   projectName: string;
-  projectId: number; // Changed back to number to match actual API response
+  projectId: string; // Changed from number to string to match backend DTO
   content: string;
   createdAt: string;
   read: boolean;
@@ -49,8 +49,9 @@ interface TypedPaginatedFeedbackResponse
 }
 
 interface FeedbackDetailModel {
+  id: string; // Add feedback ID for download functionality
   projectName: string;
-  projectId: number; // Changed back to number to match actual API response
+  projectId: string; // Changed from number to string to match backend DTO
   content: string;
   createdAt: string;
   read: boolean;
@@ -149,6 +150,7 @@ const MyFeedbacks: React.FC = () => {
       // Set feedback status based on whether it was marked as read
       const updatedFeedback = { 
         ...feedback, 
+        id: feedback.id.toString(), // Convert to string for consistency
         read: !feedback.read && userDetails?.role !== "USER" ? true : feedback.read 
       };
       setSelectedFeedback(updatedFeedback);
@@ -157,7 +159,7 @@ const MyFeedbacks: React.FC = () => {
       console.error("Error marking feedback as read:", error);
       message.error("Failed to mark feedback as read");
       // Still show the modal even if marking as read fails
-      setSelectedFeedback({ ...feedback });
+      setSelectedFeedback({ ...feedback, id: feedback.id.toString() });
       setIsDetailModalVisible(true);
     }
   };
@@ -172,13 +174,13 @@ const MyFeedbacks: React.FC = () => {
     if (!feedbacks.content || feedbacks.content.length === 0) {
       return [];
     }
-    const uniqueProjects = new Map<number, { label: string; value: string }>();
+    const uniqueProjects = new Map<string, { label: string; value: string }>();
     feedbacks.content.forEach((feedback) => {
       if (feedback.projectId && feedback.projectName) {
         if (!uniqueProjects.has(feedback.projectId)) {
           uniqueProjects.set(feedback.projectId, {
             label: feedback.projectName,
-            value: feedback.projectId.toString(),
+            value: feedback.projectId,
           });
         }
       }
@@ -329,11 +331,11 @@ const MyFeedbacks: React.FC = () => {
                 projectId:
                   value === "" || value === undefined
                     ? undefined
-                    : { equals: parseInt(value, 10) }, // Convert string to number
+                    : { equals: value }, // Changed from parseInt(value, 10) to value
               }))
             }
             value={
-              criteria.projectId ? criteria.projectId.equals?.toString() : undefined
+              criteria.projectId ? criteria.projectId.equals : undefined
             }
           >
             <Select.Option value="">All Projects</Select.Option>

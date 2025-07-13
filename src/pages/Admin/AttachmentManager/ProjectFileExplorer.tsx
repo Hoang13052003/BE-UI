@@ -5,11 +5,13 @@ import { TreeNodeDto } from "../../../types/Attachment";
 import FileRow from "./FileRow";
 
 interface ProjectFileExplorerProps {
-  projectId: number;
+  projectId: string;
+  projectType: string;
 }
 
 const ProjectFileExplorer: React.FC<ProjectFileExplorerProps> = ({
   projectId,
+  projectType,
 }) => {
   const [currentPath, setCurrentPath] = useState<string>("");
   const [nodes, setNodes] = useState<TreeNodeDto[]>([]);
@@ -92,7 +94,7 @@ const ProjectFileExplorer: React.FC<ProjectFileExplorerProps> = ({
   };
 
   const handleViewHistory = () => {
-    navigate(`/admin/projects/${projectId}/history`);
+    navigate(`/admin/projects/${projectType}/${projectId}/history`);
   };
 
   if (isLoading && nodes.length === 0) return <p>Loading tree...</p>;

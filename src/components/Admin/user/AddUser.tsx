@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Select, message } from "antd";
+import { Form, Input, Button, Select } from "antd";
+import { showNotification, showError } from "../../../utils/notificationUtils";
 import { UserOutlined, MailOutlined, LockOutlined } from "@ant-design/icons";
 import { createUser } from "../../../api/userApi";
 // import { useNavigate } from 'react-router-dom';
@@ -25,7 +26,7 @@ const AddUser: React.FC<AddUserProps> = () => {
     setIsSubmitting(true);
     try {
       if (values.password !== values.confirmPassword) {
-        message.error("Passwords do not match");
+        showNotification.error("PASSWORD_MISMATCH");
         return;
       } else {
         values.confirmPassword = undefined; // Clear confirmPassword before sending
@@ -33,7 +34,7 @@ const AddUser: React.FC<AddUserProps> = () => {
 
       await createUser(values);
 
-      message.success("User added successfully");
+      showNotification.success("USER_CREATED");
       form.resetFields();
       window.location.pathname = "/admin/users"; // Redirect to user management page
     } catch (error: any) {
