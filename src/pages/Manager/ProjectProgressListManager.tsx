@@ -41,6 +41,7 @@ import EditProjectUpdateModal from "../../components/Admin/ProjectUpdate/EditPro
 import dayjs from "dayjs";
 import { Project, ApiPage } from "../../types/project";
 import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
+import { useAuth } from "../../contexts/AuthContext";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -83,9 +84,7 @@ const getTypeColor = (type: string): string => {
 
 const ProjectProgressList: React.FC = () => {
   const navigate = useNavigate();
-  const [updatesPage, setUpdatesPage] = useState<ApiPage<any> | null>(
-    null
-  );
+  const [updatesPage, setUpdatesPage] = useState<ApiPage<any> | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -96,9 +95,7 @@ const ProjectProgressList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState<boolean>(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
-  const [currentUpdate, setCurrentUpdate] = useState<any | null>(
-    null
-  );
+  const [currentUpdate, setCurrentUpdate] = useState<any | null>(null);
 
   const [tablePagination, setTablePagination] = useState({
     current: 1,
@@ -108,6 +105,8 @@ const ProjectProgressList: React.FC = () => {
 
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+
+  const { userRole } = useAuth();
 
   // Fetch project updates
   const fetchUpdates = useCallback(async () => {
@@ -220,7 +219,13 @@ const ProjectProgressList: React.FC = () => {
             color="default"
             variant="link"
             onClick={() =>
-              navigate(`/admin/attachment-display/${record.projectType?.toLowerCase() === "labor" ? "labor" : "fixed-price"}/${record.projectId}`)
+              navigate(
+                `/admin/attachment-display/${
+                  record.projectType?.toLowerCase() === "labor"
+                    ? "labor"
+                    : "fixed-price"
+                }/${record.projectId}`
+              )
             }
             style={{ padding: 0, height: "auto", fontWeight: "bold" }}
           >
@@ -334,7 +339,15 @@ const ProjectProgressList: React.FC = () => {
                 key: "view",
                 icon: <EyeOutlined />,
                 label: "View Details",
-                onClick: () => navigate(`/admin/project-updates/${record.id}`),
+                onClick: () => {
+                  if (userRole === "ADMIN") {
+                    navigate(`/admin/project-updates/${record.id}`);
+                  } else if (userRole === "MANAGER") {
+                    navigate(`/manager/project-updates/${record.id}`);
+                  } else {
+                    navigate(`/client/project-updates/${record.id}`);
+                  }
+                },
               },
               {
                 type: "divider",

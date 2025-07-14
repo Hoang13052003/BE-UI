@@ -10,7 +10,6 @@ import {
   UserOutlined,
   LogoutOutlined,
   WechatWorkOutlined,
-  BellOutlined,
   FileSearchOutlined,
   UnorderedListOutlined,
   MenuOutlined,
@@ -22,6 +21,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import Logout from "../../components/LogoutComponent";
 import NotificationBell from "../../components/Admin/Notification/NotificationBell";
 import { MenuProps } from "antd/lib";
+import logo from "../../assets/svgviewer-output.svg";
 
 const { Header } = Layout;
 
@@ -129,11 +129,6 @@ const LayoutShare: React.FC = () => {
           label: <Link to="/admin/overtime-requests">Overtime Requests</Link>,
         },
         {
-          key: "notifications",
-          icon: <BellOutlined />,
-          label: <Link to="/admin/notifications">Notifications</Link>,
-        },
-        {
           key: "auditLogs",
           icon: <FileSearchOutlined />,
           label: <Link to="/admin/audit-logs">Logs</Link>,
@@ -158,19 +153,6 @@ const LayoutShare: React.FC = () => {
       icon: <WechatWorkOutlined />,
       label: <Link to="/client/my-feedbacks">My Feedbacks</Link>,
     },
-    {
-      key: "other",
-      label: "Other",
-      style: { fontWeight: 600 },
-      icon: <UnorderedListOutlined />,
-      children: [
-        {
-          key: "notifications-v2",
-          icon: <BellOutlined />,
-          label: <Link to="/client/notifications">Notifications</Link>,
-        },
-      ],
-    },
   ];
 
   const itemsManager: MenuItem[] = [
@@ -193,19 +175,6 @@ const LayoutShare: React.FC = () => {
       key: "overtime-requests",
       icon: <ClockCircleOutlined />,
       label: <Link to="/manager/overtime-requests">Overtime Requests</Link>,
-    },
-    {
-      key: "other",
-      label: "Other",
-      style: { fontWeight: 600 },
-      icon: <UnorderedListOutlined />,
-      children: [
-        {
-          key: "notifications-v2",
-          icon: <BellOutlined />,
-          label: <Link to="/manager/notifications">Notifications</Link>,
-        },
-      ],
     },
   ];
 
@@ -243,17 +212,12 @@ const LayoutShare: React.FC = () => {
             }}
             onClick={() => navigate("/")}
           >
-            <Avatar
-              shape="square"
-              size="large"
-              style={{
-                background: "linear-gradient(45deg, #667EEA 30%, #764BA2 90%)",
-                color: "white",
-              }}
-            >
-              P
-            </Avatar>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>ProgressHub</span>
+            <img
+              className="logo"
+              src={logo}
+              alt="Logo"
+              style={{ height: 40, width: "auto" }}
+            />
           </div>
           <div
             className="mobile-menu-icon"
@@ -432,33 +396,33 @@ const LayoutShare: React.FC = () => {
             style={{ border: "none" }}
           />
         ) : isAuthenticated && userDetails?.role === "USER" ? (
-            <Menu
-              onClick={(e) => {
-                onClick(e);
-                setMobileMenuOpen(false);
-              }}
-              selectedKeys={[current]}
-              mode="inline"
-              defaultSelectedKeys={[
-                localStorage.getItem("selectedKey") || "dashboard",
-              ]}
-              items={itemsClient}
-              style={{ border: "none" }}
-            />
-        ) : isAuthenticated && userDetails?.role === "MANAGER" ? (
-        <Menu
-          onClick={(e) => {
-            onClick(e);
-            setMobileMenuOpen(false);
-          }}
+          <Menu
+            onClick={(e) => {
+              onClick(e);
+              setMobileMenuOpen(false);
+            }}
             selectedKeys={[current]}
-          mode="inline"
-          defaultSelectedKeys={[
+            mode="inline"
+            defaultSelectedKeys={[
+              localStorage.getItem("selectedKey") || "dashboard",
+            ]}
+            items={itemsClient}
+            style={{ border: "none" }}
+          />
+        ) : isAuthenticated && userDetails?.role === "MANAGER" ? (
+          <Menu
+            onClick={(e) => {
+              onClick(e);
+              setMobileMenuOpen(false);
+            }}
+            selectedKeys={[current]}
+            mode="inline"
+            defaultSelectedKeys={[
               localStorage.getItem("selectedKey") || "managerDashboard",
-          ]}
+            ]}
             items={itemsManager}
-          style={{ border: "none" }}
-        />
+            style={{ border: "none" }}
+          />
         ) : null}
       </Drawer>
       <Outlet />

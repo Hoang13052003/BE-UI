@@ -90,50 +90,56 @@ function App() {
 
               {/* Route cho Admin */}
               <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-              <Route path="/" element={<LayoutShare />}>
-                <Route path="admin/" element={<DashboardAdmin />}>
-                  <Route path="overview" element={<OverviewAdmin />} />
-                  <Route path="users" element={<UserManagement />} />
-                  <Route path="updates" element={<ProjectManager />} />
-                  <Route
-                    path="project-progress"
-                    element={<ProjectProgressListManager />}
-                  />
-                  <Route
-                    path="project-updates/:id"
-                    element={<ProjectUpdateDetailsPageManager />}
-                  />
-                  <Route path="notifications" element={<NotificationsManager />} />
-                  {/* <Route path="messages" element={<Messages />} /> */}
-                  <Route path="settings" element={<PageSettingsManager />}>
-                    <Route index element={<Settings />} />{" "}
-                    {/* Route mặc định ("/settings") */}
-                    <Route path="profile" element={<Profile />} />
+                <Route path="/" element={<LayoutShare />}>
+                  <Route path="admin/" element={<DashboardAdmin />}>
+                    <Route path="overview" element={<OverviewAdmin />} />
+                    <Route path="users" element={<UserManagement />} />
+                    <Route path="updates" element={<ProjectManager />} />
+                    <Route
+                      path="project-progress"
+                      element={<ProjectProgressListManager />}
+                    />
+                    <Route
+                      path="project-updates/:id"
+                      element={<ProjectUpdateDetailsPageManager />}
+                    />
+                    <Route
+                      path="notifications"
+                      element={<NotificationsManager />}
+                    />
+                    {/* <Route path="messages" element={<Messages />} /> */}
+                    <Route path="settings" element={<PageSettingsManager />}>
+                      <Route index element={<Settings />} />{" "}
+                      {/* Route mặc định ("/settings") */}
+                      <Route path="profile" element={<Profile />} />
+                    </Route>
+                    <Route
+                      path="projects/fixed-price/:projectId/details"
+                      element={<ProjectDetailPageManager />}
+                    />{" "}
+                    <Route
+                      path="projects/labor/:projectId/details"
+                      element={<ProjectDetailPageManager />}
+                    />
+                    <Route path="feedbacks" element={<Feedbacks />} />
+                    <Route path="audit-logs" element={<AuthLogMonitor />} />
+                    <Route
+                      path="overtime-requests"
+                      element={<OvertimeRequestPageAdmin />}
+                    />
+                    <Route
+                      path="projects/:projectType/:projectId/history"
+                      element={<ProjectUpdateHistory />}
+                    />
+                    <Route
+                      path="projects/:projectType/:projectId/updates/:projectUpdateId/snapshot"
+                      element={<ProjectSnapshotViewer />}
+                    />
+                    <Route
+                      path="attachment-display/:projectType/:projectId"
+                      element={<AttachmentDisplay />}
+                    />
                   </Route>
-                  <Route
-                    path="projects/fixed-price/:projectId/details"
-                    element={<ProjectDetailPageManager />}
-                  />{" "}
-                  <Route
-                    path="projects/labor/:projectId/details"
-                    element={<ProjectDetailPageManager />}
-                  />
-                  <Route path="feedbacks" element={<Feedbacks />} />
-                  <Route path="audit-logs" element={<AuthLogMonitor />} />
-                  <Route path="overtime-requests" element={<OvertimeRequestPageAdmin />} />
-                  <Route
-                    path="projects/:projectType/:projectId/history"
-                    element={<ProjectUpdateHistory />}
-                  />
-                  <Route
-                    path="projects/:projectType/:projectId/updates/:projectUpdateId/snapshot"
-                    element={<ProjectSnapshotViewer />}
-                  />
-                  <Route
-                    path="attachment-display/:projectType/:projectId"
-                    element={<AttachmentDisplay />}
-                  />
-                </Route>
                 </Route>
               </Route>
 
@@ -142,16 +148,34 @@ function App() {
                 <Route path="/" element={<LayoutShare />}>
                   <Route path="client/" element={<DashboardClient />}>
                     <Route path="overview" element={<OverviewClient />} />
-                    <Route path="project-updates" element={<ProjectUpdatesForClientPage />} />
-                    <Route path="project-updates/:id" element={<ProjectUpdateDetailsPageManager />} />
-                    <Route path="my-feedbacks" element={<MyFeedbacksManager />} />
-                    <Route path="notifications" element={<NotificationsManager />} />
+                    <Route
+                      path="project-updates"
+                      element={<ProjectUpdatesForClientPage />}
+                    />
+                    <Route
+                      path="project-updates/:id"
+                      element={<ProjectUpdateDetailsPageManager />}
+                    />
+                    <Route
+                      path="my-feedbacks"
+                      element={<MyFeedbacksManager />}
+                    />
+                    <Route
+                      path="notifications"
+                      element={<NotificationsManager />}
+                    />
                     <Route path="settings" element={<PageSettingsManager />}>
                       <Route index element={<Settings />} />
                       <Route path="profile" element={<Profile />} />
                     </Route>
-                    <Route path="projects/fixed-price/:projectId/details" element={<ProjectDetailPageManager />} />
-                    <Route path="projects/labor/:projectId/details" element={<ProjectDetailPageManager />} />
+                    <Route
+                      path="projects/fixed-price/:projectId/details"
+                      element={<ProjectDetailPageManager />}
+                    />
+                    <Route
+                      path="projects/labor/:projectId/details"
+                      element={<ProjectDetailPageManager />}
+                    />
                   </Route>
                 </Route>
               </Route>
@@ -165,13 +189,34 @@ function App() {
                       <Route index element={<Settings />} />
                       <Route path="profile" element={<Profile />} />
                     </Route>
-                    <Route path="notifications" element={<NotificationsManager />} />
-                    <Route path="project-updates/:id" element={<ProjectUpdateDetailsPageManager />} />
-                    <Route path="my-feedbacks" element={<MyFeedbacksManager />} />
-                    <Route path="project-progress" element={<ProjectProgressListManager />} />
-                    <Route path="overtime-requests" element={<OvertimeRequestPageManager />} />
-                    <Route path="projects/fixed-price/:projectId/details" element={<ProjectDetailPageManager />} />
-                    <Route path="projects/labor/:projectId/details" element={<ProjectDetailPageManager />} />
+                    <Route
+                      path="notifications"
+                      element={<NotificationsManager />}
+                    />
+                    <Route
+                      path="project-updates/:id"
+                      element={<ProjectUpdateDetailsPageManager />}
+                    />
+                    <Route
+                      path="my-feedbacks"
+                      element={<MyFeedbacksManager />}
+                    />
+                    <Route
+                      path="project-progress"
+                      element={<ProjectProgressListManager />}
+                    />
+                    <Route
+                      path="overtime-requests"
+                      element={<OvertimeRequestPageManager />}
+                    />
+                    <Route
+                      path="projects/fixed-price/:projectId/details"
+                      element={<ProjectDetailPageManager />}
+                    />
+                    <Route
+                      path="projects/labor/:projectId/details"
+                      element={<ProjectDetailPageManager />}
+                    />
                   </Route>
                 </Route>
               </Route>

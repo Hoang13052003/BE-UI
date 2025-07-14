@@ -16,11 +16,14 @@ import {
   BellOutlined,
   CheckOutlined,
   DeleteOutlined,
+  FundViewOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import styled from "styled-components";
 import { MessageType } from "../../../types/Notification";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const { Text, Title } = Typography;
 
@@ -171,11 +174,13 @@ const NotificationBell: React.FC = () => {
     loading,
     markAsRead,
     markAllAsRead,
-    clearAll,
+    // clearAll,
     fetchNotifications,
     deleteNotification,
   } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
+  const navigator = useNavigate();
+  const { userRole } = useAuth();
 
   // Filter notifications based on selected type
   const filteredNotifications = notifications.filter(
@@ -219,157 +224,168 @@ const NotificationBell: React.FC = () => {
   }, [fetchNotifications, open]);
 
   const content = (
-    <NotificationContainer>
-      <NotificationHeader>
-        <Title level={5} style={{ margin: 0 }}>
-          Notifications
-        </Title>
-        <Space>
-          <Badge count={unreadCount} />
-          <Tooltip title="Refresh">
-            <Button
-              type="text"
-              icon={<ReloadOutlined spin={refreshing} />}
-              onClick={handleRefresh}
-              size="small"
+    <div>
+      <NotificationContainer>
+        <NotificationHeader>
+          <Title level={5} style={{ margin: 0 }}>
+            Notifications
+          </Title>
+          <Space>
+            <Badge count={unreadCount} />
+            <Tooltip title="Refresh">
+              <Button
+                type="text"
+                icon={<ReloadOutlined spin={refreshing} />}
+                onClick={handleRefresh}
+                size="small"
+              />
+            </Tooltip>
+          </Space>
+        </NotificationHeader>
+
+        <FilterBar>
+          <FilterButton
+            size="small"
+            $active={currentFilter === "ALL"}
+            onClick={() => setCurrentFilter("ALL")}
+          >
+            All
+          </FilterButton>
+          <FilterButton
+            size="small"
+            $active={currentFilter === MessageType.PROJECT_UPDATED}
+            onClick={() => setCurrentFilter(MessageType.PROJECT_UPDATED)}
+          >
+            Projects
+          </FilterButton>
+          <FilterButton
+            size="small"
+            $active={currentFilter === MessageType.COMMENT_ADDED}
+            onClick={() => setCurrentFilter(MessageType.COMMENT_ADDED)}
+          >
+            Comments
+          </FilterButton>
+        </FilterBar>
+
+        {loading ? (
+          <LoadingContainer>
+            <Spin tip="Loading notifications...">
+              <div style={{ height: 40 }} />
+            </Spin>
+          </LoadingContainer>
+        ) : filteredNotifications.length > 0 ? (
+          <>
+            <List
+              dataSource={filteredNotifications}
+              renderItem={(notification) => (
+                <NotificationItem
+                  $isRead={notification.read}
+                  onClick={() => handleNotificationClick(notification.id)}
+                  actions={[
+                    <Tooltip title="Delete">
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        size="small"
+                        onClick={(e) =>
+                          handleDeleteNotification(notification.id, e)
+                        }
+                      />
+                    </Tooltip>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <div style={{ position: "relative", padding: "0 15px" }}>
+                        <Text style={{ fontSize: "20px" }}>
+                          {getNotificationIcon(notification.type)}
+                        </Text>
+                        {notification.priority !== "MEDIUM" && (
+                          <Badge
+                            dot
+                            style={{
+                              position: "absolute",
+                              right: -5,
+                              top: -3,
+                              backgroundColor: getPriorityColor(
+                                notification.priority
+                              ),
+                            }}
+                          />
+                        )}
+                      </div>
+                    }
+                    title={
+                      <Space>
+                        <Text strong={!notification.read}>
+                          {notification.title}
+                        </Text>
+                        {!notification.read && (
+                          <Badge status="processing" color="#1890ff" />
+                        )}
+                      </Space>
+                    }
+                    description={
+                      <>
+                        <Text type="secondary">
+                          {notification.content.length > 100
+                            ? `${notification.content.substring(0, 80)}...`
+                            : notification.content}
+                        </Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          {formatDate(notification.timestamp)}
+                        </Text>
+                      </>
+                    }
+                  />
+                </NotificationItem>
+              )}
             />
-          </Tooltip>
-        </Space>
-      </NotificationHeader>
-
-      <FilterBar>
-        <FilterButton
-          size="small"
-          $active={currentFilter === "ALL"}
-          onClick={() => setCurrentFilter("ALL")}
-        >
-          All
-        </FilterButton>
-        <FilterButton
-          size="small"
-          $active={currentFilter === MessageType.PROJECT_UPDATED}
-          onClick={() => setCurrentFilter(MessageType.PROJECT_UPDATED)}
-        >
-          Projects
-        </FilterButton>
-        <FilterButton
-          size="small"
-          $active={currentFilter === MessageType.COMMENT_ADDED}
-          onClick={() => setCurrentFilter(MessageType.COMMENT_ADDED)}
-        >
-          Comments
-        </FilterButton>
-      </FilterBar>
-
-      {loading ? (
-        <LoadingContainer>
-          <Spin tip="Loading notifications...">
-            <div style={{ height: 40 }} />
-          </Spin>
-        </LoadingContainer>
-      ) : filteredNotifications.length > 0 ? (
-        <>
-          <List
-            dataSource={filteredNotifications}
-            renderItem={(notification) => (
-              <NotificationItem
-                $isRead={notification.read}
-                onClick={() => handleNotificationClick(notification.id)}
-                actions={[
-                  <Tooltip title="Delete">
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      size="small"
-                      onClick={(e) =>
-                        handleDeleteNotification(notification.id, e)
-                      }
-                    />
-                  </Tooltip>,
-                ]}
+            <NotificationFooter>
+              <Button
+                type="text"
+                size="small"
+                icon={<CheckOutlined />}
+                onClick={handleMarkAllRead}
               >
-                <List.Item.Meta
-                  avatar={
-                    <div style={{ position: "relative", padding: "0 15px" }}>
-                      <Text style={{ fontSize: "20px" }}>
-                        {getNotificationIcon(notification.type)}
-                      </Text>
-                      {notification.priority !== "MEDIUM" && (
-                        <Badge
-                          dot
-                          style={{
-                            position: "absolute",
-                            right: -5,
-                            top: -3,
-                            backgroundColor: getPriorityColor(
-                              notification.priority
-                            ),
-                          }}
-                        />
-                      )}
-                    </div>
+                Mark all as read
+              </Button>
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<FundViewOutlined />}
+                onClick={() => {
+                  if (userRole === "ADMIN") {
+                    navigator("/admin/notifications");
+                  } else if (userRole === "USER") {
+                    navigator("/client/notifications");
+                  } else {
+                    navigator("/manager/notifications");
                   }
-                  title={
-                    <Space>
-                      <Text strong={!notification.read}>
-                        {notification.title}
-                      </Text>
-                      {!notification.read && (
-                        <Badge status="processing" color="#1890ff" />
-                      )}
-                    </Space>
-                  }
-                  description={
-                    <>
-                      <Text type="secondary">
-                        {notification.content.length > 100
-                          ? `${notification.content.substring(0, 80)}...`
-                          : notification.content}
-                      </Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: "12px" }}>
-                        {formatDate(notification.timestamp)}
-                      </Text>
-                    </>
-                  }
-                />
-              </NotificationItem>
-            )}
-          />
-          <NotificationFooter>
-            <Button
-              type="text"
-              size="small"
-              icon={<CheckOutlined />}
-              onClick={handleMarkAllRead}
-            >
-              Mark all as read
-            </Button>
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={clearAll}
-            >
-              Clear all
-            </Button>
-          </NotificationFooter>
-        </>
-      ) : (
-        <EmptyContainer>
-          <Empty
-            description="No notifications"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        </EmptyContainer>
-      )}
-    </NotificationContainer>
+                }}
+              >
+                View all
+              </Button>
+            </NotificationFooter>
+          </>
+        ) : (
+          <EmptyContainer>
+            <Empty
+              description="No notifications"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          </EmptyContainer>
+        )}
+      </NotificationContainer>
+    </div>
   );
+
   return (
     <Dropdown
-      popupRender={() => content}
+      overlay={content}
       trigger={["click"]}
       open={open}
       onOpenChange={setOpen}

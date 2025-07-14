@@ -4,14 +4,12 @@ import {
   getAllProjectUpdatesApi,
   ProjectUpdate,
 } from "../../api/projectUpdateApi";
-import { useAuth } from "../../contexts/AuthContext";
 import dayjs from "dayjs";
 import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
 
 const { Title, Text } = Typography;
 
 const ProjectUpdatesForClientPage: React.FC = () => {
-  const { userDetails } = useAuth();
   const [loading, setLoading] = useState(false);
   const [updates, setUpdates] = useState<ProjectUpdate[]>([]);
   const [pagination, setPagination] = useState({
@@ -25,16 +23,12 @@ const ProjectUpdatesForClientPage: React.FC = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
-  const fetchUpdates = async (
-    page = 1,
-    pageSize = 10,
-    searchText?: string
-  ) => {
+  const fetchUpdates = async (page = 1, pageSize = 10, searchText?: string) => {
     setLoading(true);
     try {
       const filters: any = {};
       if (searchText) filters["search.contains"] = searchText;
-      
+
       const res = await getAllProjectUpdatesApi(
         page - 1,
         pageSize,
@@ -282,8 +276,7 @@ const ProjectUpdatesForClientPage: React.FC = () => {
           })}
           pagination={{
             ...pagination,
-            onChange: (page, pageSize) =>
-              fetchUpdates(page, pageSize, search),
+            onChange: (page, pageSize) => fetchUpdates(page, pageSize, search),
           }}
         />
       )}

@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Card,
-  Row,
-  Col,
-  Typography,
-  Button,
-  Statistic,
-  Spin,
-} from "antd";
+import { Card, Row, Col, Typography, Statistic, Spin } from "antd";
 import {
   ProjectOutlined,
   CalendarOutlined,
@@ -24,20 +16,6 @@ import SendFeedbackModal from "./SendFeedbackModal";
 import { ProjectUpdate } from "../../api/projectUpdateApi";
 
 const { Title, Text } = Typography;
-
-// Card style consistent with other overview pages
-const CardStyle = {
-  minHeight: "370px",
-  padding: "20px 18px 16px 18px",
-  boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
-  border: "1px solid #e5e7eb",
-  borderRadius: 16,
-  background: "#fff",
-  height: "100%",
-  display: "flex",
-  flexDirection: "column" as const,
-  justifyContent: "space-between",
-};
 
 interface ClientSummaryStats {
   totalProjects: number;
@@ -60,7 +38,8 @@ const OverviewClient: React.FC = () => {
     totalInvestment: 0,
     upcomingDeadlines: 0,
   });
-  const [selectedProjectForFeedback, setSelectedProjectForFeedback] = useState<Project | null>(null);
+  const [selectedProjectForFeedback, setSelectedProjectForFeedback] =
+    useState<Project | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const { addAlert } = useAlert();
   const { userDetails } = useAuth();
@@ -69,27 +48,32 @@ const OverviewClient: React.FC = () => {
     fetchClientProjects();
   }, []);
 
-  const calculateSummaryStats = (projectList: Project[]): ClientSummaryStats => {
+  const calculateSummaryStats = (
+    projectList: Project[]
+  ): ClientSummaryStats => {
     const stats = projectList.reduce(
       (acc, project) => {
         acc.totalProjects += 1;
-        
+
         if (project.status?.toLowerCase() === "completed") {
           acc.completedProjects += 1;
         }
-        
+
         if (project.status?.toLowerCase() === "progress") {
           acc.inProgressProjects += 1;
         }
-        
+
         acc.averageProgress += project.overallProcess || 0;
-        
+
         if (project.totalBudget) {
           acc.totalInvestment += project.totalBudget;
         }
-        
+
         // Check upcoming deadlines (within 7 days)
-        if (project.plannedEndDate && project.status?.toLowerCase() !== "completed") {
+        if (
+          project.plannedEndDate &&
+          project.status?.toLowerCase() !== "completed"
+        ) {
           const endDate = new Date(project.plannedEndDate);
           const today = new Date();
           const diffTime = endDate.getTime() - today.getTime();
@@ -98,7 +82,7 @@ const OverviewClient: React.FC = () => {
             acc.upcomingDeadlines += 1;
           }
         }
-        
+
         return acc;
       },
       {
@@ -113,7 +97,9 @@ const OverviewClient: React.FC = () => {
 
     // Calculate average progress
     if (stats.totalProjects > 0) {
-      stats.averageProgress = Math.round(stats.averageProgress / stats.totalProjects);
+      stats.averageProgress = Math.round(
+        stats.averageProgress / stats.totalProjects
+      );
     }
 
     return stats;
@@ -128,34 +114,34 @@ const OverviewClient: React.FC = () => {
 
       const data = await getProjectByUserIdApi(userDetails.id);
       const projectList = Array.isArray(data.projects) ? data.projects : [];
-      
+
       // Sort projects by priority: in progress first, then by creation date descending
       const sortedProjects = projectList.sort((a: Project, b: Project) => {
         // First priority: status (in progress/doing first)
         const statusPriority = (status: string) => {
           switch (status?.toLowerCase()) {
-            case 'progress':
-            case 'doing':
+            case "progress":
+            case "doing":
               return 0; // Highest priority
-            case 'new':
-            case 'pending':
+            case "new":
+            case "pending":
               return 1;
-            case 'completed':
+            case "completed":
               return 2;
             default:
               return 3;
           }
         };
-        
+
         const statusDiff = statusPriority(a.status) - statusPriority(b.status);
         if (statusDiff !== 0) return statusDiff;
-        
+
         // Second priority: creation date (newest first)
         const dateA = new Date(a.createdAt || a.startDate || 0);
         const dateB = new Date(b.createdAt || b.startDate || 0);
         return dateB.getTime() - dateA.getTime();
       });
-      
+
       setProjects(sortedProjects);
       const stats = calculateSummaryStats(sortedProjects);
       setSummaryStats(stats);
@@ -169,12 +155,11 @@ const OverviewClient: React.FC = () => {
   };
 
   const handleViewDetails = (project: Project) => {
-    navigate(`/client/projects/${project.projectType?.toLowerCase()}/${project.id}/details`);
-  };
-
-  const handleSendFeedback = (project: Project) => {
-    setSelectedProjectForFeedback(project);
-    setShowFeedbackModal(true);
+    navigate(
+      `/client/projects/${
+        project.projectType?.toLowerCase() == "labor" ? "labor" : "fixed-price"
+      }/${project.id}/details`
+    );
   };
 
   const handleFeedbackModalClose = () => {
@@ -207,37 +192,42 @@ const OverviewClient: React.FC = () => {
     updatedAt: new Date().toISOString(),
   });
 
-
-
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "400px",
+        }}
+      >
         <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <div className="dashboard-container" style={{ padding: '24px' }}>
+    <div className="dashboard-container" style={{ padding: "24px" }}>
       {/* Welcome Section */}
-      <div style={{ marginBottom: '24px' }}>
-        <Title level={2} style={{ margin: 0, color: '#1a237e' }}>
-          Welcome back, {userDetails?.fullName || 'Client'}! 👋
+      <div style={{ marginBottom: "24px" }}>
+        <Title level={2} style={{ margin: 0, color: "#1a237e" }}>
+          Welcome back, {userDetails?.fullName || "Client"}! 👋
         </Title>
-        <Text type="secondary" style={{ fontSize: '16px' }}>
+        <Text type="secondary" style={{ fontSize: "16px" }}>
           Here's an overview of your projects and their progress
         </Text>
       </div>
 
       {/* Statistics Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="Total Projects"
               value={summaryStats.totalProjects}
               prefix={<ProjectOutlined />}
-              valueStyle={{ color: '#1976d2' }}
+              valueStyle={{ color: "#1976d2" }}
             />
           </Card>
         </Col>
@@ -247,7 +237,7 @@ const OverviewClient: React.FC = () => {
               title="Completed"
               value={summaryStats.completedProjects}
               prefix={<TrophyOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: "#52c41a" }}
             />
           </Card>
         </Col>
@@ -258,7 +248,7 @@ const OverviewClient: React.FC = () => {
               value={summaryStats.averageProgress}
               suffix="%"
               prefix={<ArrowUpOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              valueStyle={{ color: "#722ed1" }}
             />
           </Card>
         </Col>
@@ -268,8 +258,9 @@ const OverviewClient: React.FC = () => {
               title="Upcoming Deadlines"
               value={summaryStats.upcomingDeadlines}
               prefix={<CalendarOutlined />}
-              valueStyle={{ 
-                color: summaryStats.upcomingDeadlines > 0 ? '#fa8c16' : '#52c41a' 
+              valueStyle={{
+                color:
+                  summaryStats.upcomingDeadlines > 0 ? "#fa8c16" : "#52c41a",
               }}
             />
           </Card>
@@ -279,40 +270,51 @@ const OverviewClient: React.FC = () => {
       {/* Projects Section */}
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          <Card 
+          <Card
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <ProjectOutlined />
                 <span>My Projects</span>
               </div>
             }
           >
             {projects.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '48px 0' }}>
-                <ProjectOutlined style={{ fontSize: '48px', color: '#bfbfbf', marginBottom: '16px' }} />
-                <Title level={4} style={{ color: '#bfbfbf' }}>No Projects Yet</Title>
+              <div style={{ textAlign: "center", padding: "48px 0" }}>
+                <ProjectOutlined
+                  style={{
+                    fontSize: "48px",
+                    color: "#bfbfbf",
+                    marginBottom: "16px",
+                  }}
+                />
+                <Title level={4} style={{ color: "#bfbfbf" }}>
+                  No Projects Yet
+                </Title>
                 <Text type="secondary">
-                  You don't have any projects assigned yet. Contact your project manager for more information.
+                  You don't have any projects assigned yet. Contact your project
+                  manager for more information.
                 </Text>
               </div>
             ) : (
-              <div 
-                style={{ 
-                  display: 'flex', 
-                  gap: '16px', 
-                  overflowX: 'auto',
-                  paddingBottom: '8px',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#bfbfbf #f0f0f0'
+              <div
+                style={{
+                  display: "flex",
+                  gap: "16px",
+                  overflowX: "auto",
+                  paddingBottom: "8px",
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "#bfbfbf #f0f0f0",
                 }}
               >
                 {projects.map((project) => (
-                  <div 
+                  <div
                     key={project.id}
-                    style={{ 
-                      minWidth: '280px', 
-                      maxWidth: '280px',
-                      flexShrink: 0
+                    style={{
+                      minWidth: "280px",
+                      maxWidth: "280px",
+                      flexShrink: 0,
                     }}
                   >
                     <ProjectCard
@@ -341,4 +343,4 @@ const OverviewClient: React.FC = () => {
   );
 };
 
-export default OverviewClient; 
+export default OverviewClient;

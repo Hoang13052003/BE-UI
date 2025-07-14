@@ -6,7 +6,6 @@ import {
   Space,
   Tag,
   Button,
-  Divider,
   Progress,
   Row,
   Col,
@@ -83,13 +82,13 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(true);
   const [update, setUpdate] = useState<ProjectUpdate | null>(null);
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, _setProject] = useState<Project | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
   const [isSendReportModalVisible, setIsSendReportModalVisible] =
     useState<boolean>(false);
   const [isSendFeedbackModalVisible, setIsSendFeedbackModalVisible] =
     useState<boolean>(false);
-  const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
+  const [availableProjects, _setAvailableProjects] = useState<Project[]>([]);
 
   const { userRole } = useAuth();
 
@@ -199,14 +198,23 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
   return (
     <Card>
       <div style={{ marginBottom: 20 }}>
-        {userRole === "ADMIN" && (
+        {(userRole === "ADMIN" || userRole === "MANAGER") && (
           <Space>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/admin/project-progress")}
-            >
-              Back to List
-            </Button>
+            {userRole === "ADMIN" ? (
+              <Button
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate("/admin/project-progress")}
+              >
+                Back to List
+              </Button>
+            ) : (
+              <Button
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate("/manager/project-progress")}
+              >
+                Back to List
+              </Button>
+            )}
             <Button
               type="primary"
               icon={<EditOutlined />}
@@ -228,7 +236,7 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
         )}
 
         <Space style={{ float: "right" }}>
-          {userRole === "ADMIN" ? (
+          {userRole === "ADMIN" || userRole === "MANAGER" ? (
             <Button
               type="primary"
               icon={<SendOutlined />}
@@ -346,7 +354,8 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             <Paragraph>{update.details}</Paragraph>
           </Card>
 
-          {update.internalNotes && userRole === "ADMIN" ? (
+          {update.internalNotes &&
+          (userRole === "ADMIN" || userRole === "MANAGER") ? (
             <Card
               title="Internal Notes"
               variant="borderless"
@@ -368,52 +377,6 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             projectId={update?.projectId}
             projectName={project?.name || update?.projectName}
           />
-
-          {project && (
-            <Card title="Project Information" style={{ marginTop: 16 }}>
-              <Descriptions column={1}>
-                <Descriptions.Item label="Project Name">
-                  {project.name}
-                </Descriptions.Item>
-                <Descriptions.Item label="Project Status">
-                  <Tag color={getStatusColor(project.status)}>
-                    {project.status}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Start Date">
-                  {project.startDate
-                    ? dayjs(project.startDate).format("YYYY-MM-DD")
-                    : "N/A"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Planned End Date">
-                  {project.plannedEndDate
-                    ? dayjs(project.plannedEndDate).format("YYYY-MM-DD")
-                    : "N/A"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Project Type">
-                  {project.projectType}
-                </Descriptions.Item>
-              </Descriptions>
-              <Divider />
-              <Button
-                type="primary"
-                onClick={() => {
-                  if (userRole === "ADMIN") {
-                    navigate(
-                      `/admin/projects/fixed-price/${project.id}/details`
-                    );
-                  } else {
-                    navigate(
-                      `/client/projects/fixed-price/${project.id}/details`
-                    );
-                  }
-                }}
-                style={{ padding: 10 }}
-              >
-                View Project Details
-              </Button>
-            </Card>
-          )}
         </Col>
         {/* Project History Tab with Current Update Snapshot */}
         {update && update.historyKey && (
