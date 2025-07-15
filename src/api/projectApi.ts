@@ -556,7 +556,7 @@ export const getUsersByProjectLaborId = async (
   projectId: string
 ): Promise<User[]> => {
   const response = await axiosClient.get(
-    `/api/private/admin/projects/labor/${projectId}/users`
+    `/api/projects/labor/${projectId}/users`
   );
   return response.data;
 };
