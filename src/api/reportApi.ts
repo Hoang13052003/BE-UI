@@ -1,7 +1,8 @@
 import axiosClient from "./axiosClient";
 
 export interface ReportRequestDto {
-  to: string;
+  userIds: number[];
+  projectUpdateId: number;
   subject: string;
   url: string;
 }

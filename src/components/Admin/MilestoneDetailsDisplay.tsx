@@ -743,9 +743,9 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                     title: "Status",
                     dataIndex: "status",
                     key: "status",
-                    width: 130,
+                    width: 160,
                     render: (status: MilestoneStatus, record: Milestone) => (
-                      <Space direction="vertical" size={2}>
+                      <Space direction="horizontal" size={4} wrap>
                         <Tag
                           color={getMilestoneStatusColor(status)}
                           style={{

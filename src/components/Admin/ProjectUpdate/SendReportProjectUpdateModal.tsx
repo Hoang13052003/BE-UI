@@ -93,19 +93,12 @@ const SendReportProjectUpdateModal: React.FC<
           } as CreateNotificationRequestDto)
         )
       );
-
-      const selectedUsers = users.filter((user) =>
-        selectedUserIds.includes(user.id)
-      );
-      await Promise.all(
-        selectedUsers.map((user) =>
-          sendReport({
-            to: user.email,
-            subject: `Project Update: ${updateData.projectName || ""}`,
-            url: `${window.location.origin}/client/project-updates/${updateData.id}`,
-          })
-        )
-      );
+      await sendReport({
+        userIds: selectedUserIds,
+        projectUpdateId: updateData.id,
+        subject: `Project Update: ${updateData.projectName || ""}`,
+        url: `${window.location.origin}/client/project-updates/${updateData.id}`,
+      });
 
       await updateProjectUpdateStatusApi(updateData.id, UpdateStatusEnum.SENT);
 

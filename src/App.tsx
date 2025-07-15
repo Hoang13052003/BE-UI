@@ -217,6 +217,18 @@ function App() {
                       path="projects/labor/:projectId/details"
                       element={<ProjectDetailPageManager />}
                     />
+                    <Route
+                      path="projects/:projectType/:projectId/history"
+                      element={<ProjectUpdateHistory />}
+                    />
+                    <Route
+                      path="projects/:projectType/:projectId/updates/:projectUpdateId/snapshot"
+                      element={<ProjectSnapshotViewer />}
+                    />
+                    <Route
+                      path="attachment-display/:projectType/:projectId"
+                      element={<AttachmentDisplay />}
+                    />
                   </Route>
                 </Route>
               </Route>

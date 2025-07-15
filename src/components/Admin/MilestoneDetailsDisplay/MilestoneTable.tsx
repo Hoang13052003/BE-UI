@@ -117,9 +117,9 @@ const MilestoneTable: React.FC<MilestoneTableProps> = ({
           title: "Status",
           dataIndex: "status",
           key: "status",
-          width: 130,
+          width: 160,
           render: (status: MilestoneStatus, record: Milestone) => (
-            <Space direction="vertical" size={2}>
+            <Space direction="horizontal" size={4} wrap>
               <Tag color={getMilestoneStatusTagColor(status || null)} style={{ padding: "2px 8px", borderRadius: "12px", margin: 0 }}>
                 {status ? getMilestoneStatusDisplayName(status) : "To Do"}
               </Tag>

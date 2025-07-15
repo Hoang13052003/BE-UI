@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import attachmentApi from "../../../api/attachmentApi";
 import { TreeNodeDto } from "../../../types/Attachment";
 import FileRow from "./FileRow";
+import { useAuth } from "../../../contexts/AuthContext";
 
 interface ProjectFileExplorerProps {
   projectId: string;
@@ -18,6 +19,7 @@ const ProjectFileExplorer: React.FC<ProjectFileExplorerProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { userRole } = useAuth();
 
   useEffect(() => {
     const fetchNodes = async () => {
@@ -94,7 +96,8 @@ const ProjectFileExplorer: React.FC<ProjectFileExplorerProps> = ({
   };
 
   const handleViewHistory = () => {
-    navigate(`/admin/projects/${projectType}/${projectId}/history`);
+    const basePath = userRole === 'ADMIN' ? '/admin' : '/manager';
+    navigate(`${basePath}/projects/${projectType}/${projectId}/history`);
   };
 
   if (isLoading && nodes.length === 0) return <p>Loading tree...</p>;

@@ -6,6 +6,7 @@ import {
   TreeNodeDto,
   ProjectUpdateSummaryDto,
 } from "../../../types/Attachment";
+import { useAuth } from "../../../contexts/AuthContext";
 const { Title } = Typography;
 
 const formatDate = (dateString: string | null): string => {
@@ -41,6 +42,7 @@ const ProjectSnapshotViewer: React.FC = () => {
   const projectUpdateId = projectUpdateIdString
     ? parseInt(projectUpdateIdString, 10)
     : undefined;
+  const { userRole } = useAuth();
 
   const [currentPath, setCurrentPath] = useState<string>("");
   const [nodes, setNodes] = useState<TreeNodeDto[]>([]);
@@ -170,17 +172,19 @@ const ProjectSnapshotViewer: React.FC = () => {
 
   const handleGoBackToHistory = () => {
     if (projectId && projectType) {
-      navigate(`/admin/projects/${projectType}/${projectId}/history`);
+      const basePath = userRole === "ADMIN" ? "/admin" : "/manager";
+      navigate(`${basePath}/projects/${projectType}/${projectId}/history`);
     } else {
       navigate(-1);
     }
   };
 
+  const basePath = userRole === "ADMIN" ? "/admin" : "/manager";
+  const historyUrl = `${basePath}/projects/${projectType}/${projectId}/history`;
+
   const breadcrumbItems = [
     {
-      title: (
-        <Link to={`/admin/projects/${projectType}/${projectId}/history`}>Project History</Link>
-      ),
+      title: <Link to={historyUrl}>Project History</Link>,
     },
   ];
   if (currentProjectUpdate) {

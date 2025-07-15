@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, List, Typography, Spin, Alert, Button } from "antd";
 import attachmentApi from "../../../api/attachmentApi";
 import { ProjectUpdateSummaryDto } from "../../../types/Attachment";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const { Title, Text } = Typography;
 
@@ -22,8 +23,12 @@ const formatDateOnly = (dateString: string | null): string => {
 };
 
 const ProjectUpdateHistory: React.FC = () => {
-  const { projectId, projectType } = useParams<{ projectId: string; projectType: string }>();
+  const { projectId, projectType } = useParams<{
+    projectId: string;
+    projectType: string;
+  }>();
   const navigate = useNavigate();
+  const { userRole } = useAuth();
 
   const [history, setHistory] = useState<ProjectUpdateSummaryDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -70,7 +75,8 @@ const ProjectUpdateHistory: React.FC = () => {
 
   const handleGoBackToExplorer = () => {
     if (projectId && projectType) {
-      navigate(`/admin/attachment-display/${projectType}/${projectId}`);
+      const basePath = userRole === "ADMIN" ? "/admin" : "/manager";
+      navigate(`${basePath}/attachment-display/${projectType}/${projectId}`);
     }
   };
 
@@ -128,30 +134,34 @@ const ProjectUpdateHistory: React.FC = () => {
         <List
           itemLayout="horizontal"
           dataSource={history}
-          renderItem={(item: ProjectUpdateSummaryDto) => (
-            <List.Item
-              actions={[
-                <Link
-                  to={`/admin/projects/${projectType}/${projectId}/updates/${item.id}/snapshot`}
-                  key={`view-snapshot-${item.id}`}
-                >
-                  View Files at this Point
-                </Link>,
-              ]}
-            >
-              <List.Item.Meta
-                title={
+          renderItem={(item: ProjectUpdateSummaryDto) => {
+            const basePath = userRole === "ADMIN" ? "/admin" : "/manager";
+            const snapshotUrl = `${basePath}/projects/${projectType}/${projectId}/updates/${item.id}/snapshot`;
+            return (
+              <List.Item
+                actions={[
                   <Link
-                    to={`/admin/projects/${projectType}/${projectId}/updates/${item.id}/snapshot`}
-                    style={{ fontSize: "1.1em" }}
+                    to={snapshotUrl}
+                    key={`view-snapshot-${item.id}`}
                   >
-                    Update on: {formatDateOnly(item.updateDate)}
-                  </Link>
-                }
-                description={item.summary || "No summary provided."}
-              />
-            </List.Item>
-          )}
+                    View Files at this Point
+                  </Link>,
+                ]}
+              >
+                <List.Item.Meta
+                  title={
+                    <Link
+                      to={snapshotUrl}
+                      style={{ fontSize: "1.1em" }}
+                    >
+                      Update on: {formatDateOnly(item.updateDate)}
+                    </Link>
+                  }
+                  description={item.summary || "No summary provided."}
+                />
+              </List.Item>
+            );
+          }}
         />
       )}
     </Card>

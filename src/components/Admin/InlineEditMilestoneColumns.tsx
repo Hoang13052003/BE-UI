@@ -63,15 +63,17 @@ export const createInlineEditMilestoneColumns = ({
     }
   };
 
-  const columns = [
-    {
-      title: "Milestone",
-      key: "milestone",
-      width: 280,
-      render: (_: any, record: Milestone) => {
-        if (isInBatchMode && isAdmin) {
-          return (
-            <div>
+  // Define columns based on mode
+  const columns = [];
+
+  if (isInBatchMode && isAdmin) {
+    // Batch mode - separate columns
+    columns.push(
+      {
+        title: "Milestone Name",
+        key: "milestoneName",
+        width: 200,
+        render: (_: any, record: Milestone) => (
               <Input
                 value={record.name || ""}
                 onChange={(e) => {
@@ -84,8 +86,14 @@ export const createInlineEditMilestoneColumns = ({
                 size="small"
                 disabled={batchSaving || batchDeleting}
                 maxLength={200}
-                style={{ marginBottom: 4 }}
-              />
+          />
+        ),
+      },
+      {
+        title: "Description",
+        key: "description",
+        width: 150,
+        render: (_: any, record: Milestone) => (
               <TextArea
                 value={record.description || ""}
                 onChange={(e) => {
@@ -100,10 +108,123 @@ export const createInlineEditMilestoneColumns = ({
                 rows={1}
                 maxLength={65535}
               />
-            </div>
+        ),
+      },
+      {
+        title: "Progress",
+        key: "progress",
+        width: 100,
+        align: "center" as const,
+        render: (_: any, record: Milestone) => {
+          const percentage = record.completionPercentage || 0;
+          return (
+            <InputNumber
+              value={percentage}
+              onChange={(val) => {
+                const numVal = val || 0;
+                if (numVal >= 0 && numVal <= 100) {
+                  onInlineEdit(record.id, "completionPercentage", numVal);
+                }
+              }}
+              min={0}
+              max={100}
+              size="small"
+              disabled={batchSaving || batchDeleting}
+              formatter={(val) => `${val}%`}
+              parser={(val) => val?.replace("%", "") as any}
+              style={{ width: "100%" }}
+            />
           );
-        }
-        return (
+        },
+      },
+      {
+        title: "Start Date",
+        key: "startDate",
+        width: 120,
+        render: (_: any, record: Milestone) => (
+          <DatePicker
+            value={record.startDate ? dayjs(record.startDate) : null}
+            onChange={(dateValue) => {
+              const formattedDate = dateValue
+                ? dateValue.format("YYYY-MM-DD")
+                : null;
+              onInlineEdit(record.id, "startDate", formattedDate);
+            }}
+            size="small"
+            disabled={batchSaving || batchDeleting}
+            format="MMM D"
+            placeholder="Start date"
+            style={{ width: "100%" }}
+          />
+        ),
+      },
+      {
+        title: "Due Date",
+        key: "dueDate",
+        width: 120,
+        render: (_: any, record: Milestone) => (
+          <DatePicker
+            value={record.deadlineDate ? dayjs(record.deadlineDate) : null}
+            onChange={(dateValue) => {
+              const formattedDate = dateValue
+                ? dateValue.format("YYYY-MM-DD")
+                : null;
+              onInlineEdit(record.id, "deadlineDate", formattedDate);
+            }}
+            size="small"
+            disabled={batchSaving || batchDeleting}
+            format="MMM D"
+            placeholder="Due date"
+            style={{ width: "100%" }}
+          />
+        ),
+      },
+      {
+        title: "Status",
+        dataIndex: "status",
+        key: "status",
+        width: 140,
+        align: "center" as const,
+        render: (_: string | null, record: Milestone) => (
+          <Select
+            value={record.status || "TODO"}
+            onChange={(value) => onInlineEdit(record.id, "status", value)}
+            size="small"
+            disabled={batchSaving || batchDeleting}
+            style={{ width: "100%" }}
+          >
+            <Option value="TODO">To Do</Option>
+            <Option value="DOING">Doing</Option>
+            <Option value="PENDING">Pending</Option>
+            <Option value="COMPLETED">Completed</Option>
+          </Select>
+        ),
+      },
+      {
+        title: "Notes",
+        key: "notes",
+        width: 120,
+        render: (_: any, record: Milestone) => (
+          <TextArea
+            value={record.notes || ""}
+            onChange={(e) => onInlineEdit(record.id, "notes", e.target.value)}
+            placeholder="Add notes..."
+            size="small"
+            disabled={batchSaving || batchDeleting}
+            rows={2}
+            style={{ width: "100%" }}
+          />
+        ),
+      }
+    );
+  } else {
+    // Display mode - grouped columns
+    columns.push(
+      {
+        title: "Milestone",
+        key: "milestone",
+        width: 280,
+        render: (_: any, record: Milestone) => (
           <div>
             <Text
               strong
@@ -125,8 +246,7 @@ export const createInlineEditMilestoneColumns = ({
               </Text>
             )}
           </div>
-        );
-      },
+        ),
     },
     {
       title: "Progress",
@@ -135,28 +255,6 @@ export const createInlineEditMilestoneColumns = ({
       align: "center" as const,
       render: (_: any, record: Milestone) => {
         const percentage = record.completionPercentage || 0;
-
-        if (isInBatchMode && isAdmin) {
-          return (
-            <InputNumber
-              value={percentage}
-              onChange={(val) => {
-                const numVal = val || 0;
-                if (numVal >= 0 && numVal <= 100) {
-                  onInlineEdit(record.id, "completionPercentage", numVal);
-                }
-              }}
-              min={0}
-              max={100}
-              size="small"
-              disabled={batchSaving || batchDeleting}
-              formatter={(val) => `${val}%`}
-              parser={(val) => val?.replace("%", "") as any}
-              style={{ width: "100%" }}
-            />
-          );
-        }
-
         return (
           <Progress
             percent={percentage}
@@ -172,41 +270,6 @@ export const createInlineEditMilestoneColumns = ({
       key: "timeline",
       width: 180,
       render: (_: any, record: Milestone) => {
-        if (isInBatchMode && isAdmin) {
-          return (
-            <div>
-              <DatePicker
-                value={record.startDate ? dayjs(record.startDate) : null}
-                onChange={(dateValue) => {
-                  const formattedDate = dateValue
-                    ? dateValue.format("YYYY-MM-DD")
-                    : null;
-                  onInlineEdit(record.id, "startDate", formattedDate);
-                }}
-                size="small"
-                disabled={batchSaving || batchDeleting}
-                format="MMM D"
-                placeholder="Start"
-                style={{ width: "100%", marginBottom: 4 }}
-              />
-              <DatePicker
-                value={record.deadlineDate ? dayjs(record.deadlineDate) : null}
-                onChange={(dateValue) => {
-                  const formattedDate = dateValue
-                    ? dateValue.format("YYYY-MM-DD")
-                    : null;
-                  onInlineEdit(record.id, "deadlineDate", formattedDate);
-                }}
-                size="small"
-                disabled={batchSaving || batchDeleting}
-                format="MMM D"
-                placeholder="Due"
-                style={{ width: "100%" }}
-              />
-            </div>
-          );
-        }
-
         const isOverdue =
           record.deadlineDate &&
           !isMilestoneCompleted(record) &&
@@ -270,27 +333,9 @@ export const createInlineEditMilestoneColumns = ({
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: 120,
+        width: 140,
       align: "center" as const,
       render: (_: string | null, record: Milestone) => {
-        if (isInBatchMode && isAdmin) {
-          return (
-            <Select
-              value={record.status || "TODO"}
-              onChange={(value) => onInlineEdit(record.id, "status", value)}
-              size="small"
-              disabled={batchSaving || batchDeleting}
-              style={{ width: "100%" }}
-            >
-              <Option value="TODO">To Do</Option>
-              <Option value="DOING">Doing</Option>
-              <Option value="PENDING">Pending</Option>
-              <Option value="COMPLETED">Completed</Option>
-            </Select>
-          );
-        }
-
-        // Display mode - show actual status value from database
         let statusColor = getStatusColor(record.status);
         let statusText = record.status
           ? String(record.status).replace("_", " ")
@@ -314,7 +359,6 @@ export const createInlineEditMilestoneColumns = ({
             statusText = "To Do";
         }
 
-        // Keep the original status color mapping
         return (
           <Tag color={statusColor} style={{ margin: 0 }}>
             {statusText}
@@ -325,23 +369,8 @@ export const createInlineEditMilestoneColumns = ({
     {
       title: "Notes",
       key: "notes",
-      width: 150,
+        width: 120,
       render: (_: any, record: Milestone) => {
-        if (isInBatchMode && isAdmin) {
-          return (
-            <TextArea
-              value={record.notes || ""}
-              onChange={(e) => onInlineEdit(record.id, "notes", e.target.value)}
-              placeholder="Add notes..."
-              size="small"
-              disabled={batchSaving || batchDeleting}
-              rows={2}
-              style={{ width: "100%" }}
-            />
-          );
-        }
-
-        // Display mode - handle notes properly
         const notesText = record.notes;
         return notesText ? (
           <Text ellipsis={{ tooltip: notesText }} style={{ fontSize: "11px" }}>
@@ -358,8 +387,9 @@ export const createInlineEditMilestoneColumns = ({
           </Text>
         );
       },
-    },
-  ];
+      }
+    );
+  }
 
   return columns;
 };

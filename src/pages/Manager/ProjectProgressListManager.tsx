@@ -218,15 +218,16 @@ const ProjectProgressList: React.FC = () => {
           <Button
             color="default"
             variant="link"
-            onClick={() =>
+            onClick={() => {
+              const basePath = userRole === "ADMIN" ? "/admin" : "/manager";
               navigate(
-                `/admin/attachment-display/${
+                `${basePath}/attachment-display/${
                   record.projectType?.toLowerCase() === "labor"
                     ? "labor"
                     : "fixed-price"
                 }/${record.projectId}`
-              )
-            }
+              );
+            }}
             style={{ padding: 0, height: "auto", fontWeight: "bold" }}
           >
             {text.length > 20 ? `${text.substring(0, 20)}...` : text}
