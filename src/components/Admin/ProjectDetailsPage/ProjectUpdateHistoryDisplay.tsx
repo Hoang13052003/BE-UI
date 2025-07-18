@@ -153,6 +153,18 @@ const milestoneColumns: ColumnsType<ProjectUpdateHistoryMilestoneItem> = [
     ),
   },
   {
+    title: "End Date",
+    dataIndex: "deadlineDate",
+    key: "deadlineDate",
+    width: 120,
+    render: (date: string) => (
+      <Space>
+        <CalendarOutlined style={{ color: "#faad14" }} />
+        <Text>{date ? dayjs(date).format("MMM DD, YYYY") : "-"}</Text>
+      </Space>
+    ),
+  },
+  {
     title: "Milestone Name",
     dataIndex: "name",
     key: "name",

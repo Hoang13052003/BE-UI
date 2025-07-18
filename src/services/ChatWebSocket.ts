@@ -33,8 +33,10 @@ export class ChatWebSocket {
   // Establish WebSocket connection with JWT token
   connect() {
     if (!this.token) {
+      console.error("[ChatWebSocket] No JWT token provided for WebSocket connection");
       throw new Error('JWT token is required for WebSocket connection');
     }
+    console.log("[ChatWebSocket] Connecting to WebSocket:", `${this.url}?token=${this.token}`);
     this.isManuallyClosed = false;
     this.socket = new WebSocket(`${this.url}?token=${this.token}`);
 

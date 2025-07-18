@@ -38,6 +38,7 @@ const CurrentWeekSection: React.FC<CurrentWeekSectionProps> = ({ data, type }) =
   }
   // Render milestones
   if (type === 'milestone') {
+    console.log('CurrentWeekSection - Milestones data:', data.milestones);
     return (
       <Card title={<Title level={4}>Current Week Milestones</Title>} style={{ marginBottom: 24 }}>
         <Text type="secondary">{data.description}</Text>
@@ -45,17 +46,18 @@ const CurrentWeekSection: React.FC<CurrentWeekSectionProps> = ({ data, type }) =
           <Tag color="green">Total: {data.totalCount}</Tag>
         </div>
         {data.milestones && data.milestones.length > 0 ? (
-          <List
+          <Table
             dataSource={data.milestones}
-            renderItem={(item: any) => (
-              <List.Item>
-                <List.Item.Meta
-                  title={<span>{item.name} <Tag>{item.status}</Tag></span>}
-                  description={item.description}
-                />
-                <div>Progress: {item.completionPercentage}%</div>
-              </List.Item>
-            )}
+            rowKey="id"
+            pagination={false}
+            columns={[
+              { title: 'Start Date', dataIndex: 'startDate', key: 'startDate' },
+              { title: 'End Date', dataIndex: 'deadlineDate', key: 'deadlineDate', render: (date: string) => date ? new Date(date).toLocaleDateString() : '-' },
+              { title: 'Milestone Name', dataIndex: 'name', key: 'name' },
+              { title: 'Description', dataIndex: 'description', key: 'description' },
+              { title: 'Status', dataIndex: 'status', key: 'status', render: (status: string) => <Tag>{status}</Tag> },
+              { title: 'Progress', dataIndex: 'completionPercentage', key: 'completionPercentage', render: (percent: number) => <span>{percent}%</span> },
+            ]}
           />
         ) : (
           <Empty description="No milestones" />

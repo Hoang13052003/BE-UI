@@ -115,22 +115,22 @@ Hệ thống xử lý các loại message:
 
 ### MESSAGE OPERATIONS
 ```
-POST /api/public/chat/messages
+POST /api/chat/messages
 POST /api/public/chat/messages/file
 GET  /api/public/chat/private/{userId}/history
 GET  /api/public/chat/groups/{topic}/history
-GET  /api/public/chat/projects/{projectId}/history
+GET  /api/chat/messages/project/{projectId}
 PUT  /api/public/chat/messages/{messageId}/read
 ```
 
 ### CHAT ROOM OPERATIONS
 ```
-GET  /api/public/chat/rooms
-POST /api/public/chat/rooms/group
-POST /api/public/chat/rooms/project
-GET  /api/public/chat/rooms/{roomId}
-PUT  /api/public/chat/rooms/{roomId}
-DELETE /api/public/chat/rooms/{roomId}
+GET  /api/chat/rooms
+POST /api/chat/rooms/group
+POST /api/chat/rooms/project
+GET  /api/chat/rooms/{roomId}
+PUT  /api/chat/rooms/{roomId}
+DELETE /api/chat/rooms/{roomId}
 ```
 
 ### USER OPERATIONS
@@ -146,7 +146,7 @@ GET /api/public/chat/unread/messages
 ### 1. WEBSOCKET CONNECTION
 ```javascript
 // Frontend connection with JWT
-const token = localStorage.getItem('jwt_token');
+const token = localStorage.getItem('token');
 const socket = new WebSocket(`ws://localhost:8080/ws/chat?token=${token}`);
 
 // Server validates JWT in WebSocketAuthInterceptor
