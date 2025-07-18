@@ -43,3 +43,28 @@ export const getProjectUpdateHistoryById = async (
     } as ApiPage<any>;
   }
 };
+
+// New enhanced API for project update history
+export const getProjectUpdateHistoryEnhanced = async (
+  historyId: string
+): Promise<any> => {
+  try {
+    const result = await axiosClient.get<any>(
+      "/api/projects/project-update-history-enhanced",
+      {
+        params: {
+          id: historyId,
+        },
+      }
+    );
+    return result.data;
+  } catch (error) {
+    // Return empty structure if error
+    return {
+      allData: { timeLogs: [], milestones: [], totalCount: 0, description: "" },
+      currentWeekData: { timeLogs: [], milestones: [], totalCount: 0, description: "" },
+      completedPreviousWeekData: { timeLogs: [], milestones: [], totalCount: 0, description: "" },
+      projectType: undefined,
+    };
+  }
+};

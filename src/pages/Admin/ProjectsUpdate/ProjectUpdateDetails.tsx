@@ -430,10 +430,12 @@ const ProjectUpdateDetails: React.FC<ProjectUpdateDetailsProps> = ({ id }) => {
             {project?.projectType === "FIXED_PRICE" ? (
               <ProjectUpdateHistoryMilestonesTab
                 historyId={update?.historyKey!}
+                projectType={project?.projectType || ''}
               />
             ) : (
               <ProjectUpdateHistoryTimeLogsTab
                 historyId={update?.historyKey!}
+                projectType={project?.projectType || ''}
               />
             )}
           </Card>
