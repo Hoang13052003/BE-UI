@@ -1,0 +1,362 @@
+# HƯỚNG DẪN HỆ THỐNG CHAT ONLINE CHO AI DEVELOPER
+
+## TỔNG QUAN HỆ THỐNG
+Dự án sử dụng kiến trúc hybrid real-time chat system với:
+- **Backend**: Spring Boot + WebSocket + MongoDB
+- **Real-time Communication**: WebSocket với authentication JWT
+- **Persistence**: MongoDB cho messages, chat rooms, subscriptions
+- **Security**: JWT token validation qua WebSocketAuthInterceptor
+
+## KIẾN TRÚC CHÍNH
+
+### 1. WEBSOCKET ENDPOINTS
+```
+/ws/chat - Main chat endpoint
+/ws/notifications - System notifications
+Allowed Origins: localhost:3000, 3001, 3002
+```
+
+### 2. CORE ENTITIES
+
+#### Message Entity (MongoDB)
+```java
+{
+  id: String,
+  senderId: Long,
+  receiverId: Long,          // null cho group chat
+  content: String,
+  topic: String,             // null cho private chat
+  projectId: String,         // null cho non-project chat
+  timestamp: LocalDateTime,
+  isRead: Boolean,
+  isDelivered: Boolean,
+  messageType: Enum,         // TEXT, FILE, IMAGE, VIDEO, AUDIO, SYSTEM_NOTIFICATION
+  fileUrl: String,
+  fileName: String,
+  createdAt: LocalDateTime,
+  updatedAt: LocalDateTime
+}
+```
+
+#### ChatRoom Entity (MongoDB)
+```java
+{
+  id: String,
+  roomName: String,
+  roomType: Enum,            // PRIVATE, GROUP, PROJECT_CHAT
+  projectId: String,
+  participantIds: List<Long>,
+  createdBy: Long,
+  isActive: Boolean,
+  lastMessageAt: LocalDateTime,
+  createdAt: LocalDateTime,
+  updatedAt: LocalDateTime
+}
+```
+
+### 3. WEBSOCKET MESSAGE TYPES
+Hệ thống xử lý các loại message:
+
+#### A. PRIVATE MESSAGE
+```json
+{
+  "type": "private_message",
+  "receiverId": 123,
+  "content": "Hello",
+  "chatMessageType": "TEXT",
+  "fileUrl": null,
+  "fileName": null
+}
+```
+
+#### B. GROUP MESSAGE
+```json
+{
+  "type": "group_message",
+  "topic": "general_discussion",
+  "content": "Group announcement",
+  "chatMessageType": "TEXT"
+}
+```
+
+#### C. PROJECT MESSAGE
+```json
+{
+  "type": "project_message",
+  "projectId": "project_123",
+  "content": "Project update",
+  "chatMessageType": "TEXT"
+}
+```
+
+#### D. CONTROL MESSAGES
+```json
+// Subscribe to topic
+{
+  "type": "subscribe",
+  "topic": "project_chat_room_id"
+}
+
+// Typing indicator
+{
+  "type": "typing",
+  "targetId": 123,
+  "isTyping": true
+}
+
+// Mark as read
+{
+  "type": "mark_read",
+  "messageIds": ["msg1", "msg2"]
+}
+```
+
+## REST API ENDPOINTS
+
+### MESSAGE OPERATIONS
+```
+POST /api/public/chat/messages
+POST /api/public/chat/messages/file
+GET  /api/public/chat/private/{userId}/history
+GET  /api/public/chat/groups/{topic}/history
+GET  /api/public/chat/projects/{projectId}/history
+PUT  /api/public/chat/messages/{messageId}/read
+```
+
+### CHAT ROOM OPERATIONS
+```
+GET  /api/public/chat/rooms
+POST /api/public/chat/rooms/group
+POST /api/public/chat/rooms/project
+GET  /api/public/chat/rooms/{roomId}
+PUT  /api/public/chat/rooms/{roomId}
+DELETE /api/public/chat/rooms/{roomId}
+```
+
+### USER OPERATIONS
+```
+GET /api/public/chat/users/online
+GET /api/public/chat/users/{userId}/status
+GET /api/public/chat/unread/count
+GET /api/public/chat/unread/messages
+```
+
+## AUTHENTICATION FLOW
+
+### 1. WEBSOCKET CONNECTION
+```javascript
+// Frontend connection with JWT
+const token = localStorage.getItem('jwt_token');
+const socket = new WebSocket(`ws://localhost:8080/ws/chat?token=${token}`);
+
+// Server validates JWT in WebSocketAuthInterceptor
+// Sets userId and userRole in session attributes
+```
+
+### 2. CONNECTION LIFECYCLE
+```
+1. afterConnectionEstablished() - Validate JWT, store user session
+2. handleMessage() - Process incoming messages
+3. afterConnectionClosed() - Cleanup user sessions, update status
+```
+
+## FRONTEND INTEGRATION GUIDELINES
+
+### 1. CONNECTION SETUP
+```javascript
+class ChatWebSocket {
+  constructor(token) {
+    this.token = token;
+    this.socket = null;
+    this.connect();
+  }
+  
+  connect() {
+    this.socket = new WebSocket(`ws://localhost:8080/ws/chat?token=${this.token}`);
+    
+    this.socket.onopen = () => {
+      console.log('Chat connected');
+      this.subscribeToUserTopics();
+    };
+    
+    this.socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      this.handleIncomingMessage(message);
+    };
+  }
+}
+```
+
+### 2. MESSAGE HANDLING
+```javascript
+handleIncomingMessage(message) {
+  switch(message.type) {
+    case 'private_message_received':
+      this.updatePrivateChat(message);
+      break;
+    case 'group_message_received':
+      this.updateGroupChat(message);
+      break;
+    case 'project_message_received':
+      this.updateProjectChat(message);
+      break;
+    case 'user_typing':
+      this.showTypingIndicator(message);
+      break;
+    case 'notification':
+      this.showNotification(message);
+      break;
+  }
+}
+```
+
+### 3. SENDING MESSAGES
+```javascript
+// Private message
+sendPrivateMessage(receiverId, content, type = 'TEXT') {
+  const message = {
+    type: 'private_message',
+    receiverId: receiverId,
+    content: content,
+    chatMessageType: type
+  };
+  this.socket.send(JSON.stringify(message));
+}
+
+// Group message
+sendGroupMessage(topic, content) {
+  const message = {
+    type: 'group_message',
+    topic: topic,
+    content: content,
+    chatMessageType: 'TEXT'
+  };
+  this.socket.send(JSON.stringify(message));
+}
+```
+
+### 4. FILE UPLOAD FLOW
+```javascript
+async uploadAndSendFile(file, targetId, chatType) {
+  // 1. Upload file via REST API (attachment service)
+  const fileUrl = await uploadFile(file);
+  
+  // 2. Send file message
+  const message = {
+    type: chatType + '_message',
+    [chatType === 'private' ? 'receiverId' : 'topic']: targetId,
+    content: `Shared file: ${file.name}`,
+    chatMessageType: 'FILE',
+    fileUrl: fileUrl,
+    fileName: file.name
+  };
+  
+  this.socket.send(JSON.stringify(message));
+}
+```
+
+## STATE MANAGEMENT (Recommended)
+
+### 1. CHAT STORE STRUCTURE
+```javascript
+chatStore = {
+  // Connection state
+  isConnected: false,
+  currentUserId: null,
+  
+  // Chat data
+  privateChats: Map(), // userId -> {messages: [], unreadCount: 0}
+  groupChats: Map(),   // topic -> {messages: [], participants: []}
+  projectChats: Map(), // projectId -> {messages: [], members: []}
+  
+  // Online users
+  onlineUsers: Set(),
+  
+  // UI state
+  activeChat: null,
+  typingUsers: Map()
+}
+```
+
+### 2. REAL-TIME UPDATES
+```javascript
+// Update message status
+updateMessageStatus(messageId, status) {
+  this.socket.send(JSON.stringify({
+    type: 'mark_read',
+    messageIds: [messageId]
+  }));
+}
+
+// Handle typing
+startTyping(targetId, chatType) {
+  this.socket.send(JSON.stringify({
+    type: 'user_typing_start',
+    targetId: targetId,
+    chatType: chatType
+  }));
+}
+```
+
+## SECURITY CONSIDERATIONS
+
+1. **JWT Validation**: Mọi WebSocket connection đều validate JWT
+2. **User Authorization**: Check user có quyền truy cập chat room không
+3. **Message Encryption**: Khuyến nghị encrypt sensitive messages
+4. **Rate Limiting**: Implement để tránh spam
+5. **File Upload Security**: Validate file type và size
+
+## ERROR HANDLING
+
+### Common Error Scenarios:
+```javascript
+// Connection errors
+socket.onerror = (error) => {
+  console.error('WebSocket error:', error);
+  this.scheduleReconnect();
+};
+
+// Message errors
+if (message.type === 'error') {
+  this.showError(message.content);
+}
+
+// Authentication failures
+if (message.type === 'auth_failed') {
+  this.redirectToLogin();
+}
+```
+
+## PERFORMANCE OPTIMIZATION
+
+1. **Message Pagination**: Load messages theo batch
+2. **Connection Pooling**: Reuse connections
+3. **Message Caching**: Cache recent messages locally
+4. **Lazy Loading**: Load chat rooms khi cần
+5. **Debounce Typing**: Debounce typing indicators
+
+## TESTING GUIDELINES
+
+### Unit Tests:
+- WebSocketChatHandler message routing
+- ChatService business logic
+- DTO validation
+
+### Integration Tests:
+- WebSocket connection lifecycle
+- Message persistence
+- Authentication flow
+
+### Frontend Tests:
+- WebSocket connection handling
+- Message rendering
+- State management
+
+## MONITORING & DEBUGGING
+
+1. **Logging**: Enable DEBUG level cho WebSocketChatHandler
+2. **Metrics**: Track connection count, message throughput
+3. **Health Checks**: Monitor WebSocket endpoint availability
+4. **Error Tracking**: Log failed message deliveries
+
+Hệ thống chat này được thiết kế để handle cả personal, group và project communication với real-time updates và file sharing capabilities. Authentication được handle centrally qua JWT và tích hợp với user management system của ứng dụng.

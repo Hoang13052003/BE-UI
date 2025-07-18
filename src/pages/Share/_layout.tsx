@@ -14,7 +14,6 @@ import {
   UnorderedListOutlined,
   MenuOutlined,
   ClockCircleOutlined,
-  // MessageOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -127,6 +126,11 @@ const LayoutShare: React.FC = () => {
           key: "overtime-requests-admin",
           icon: <ClockCircleOutlined />,
           label: <Link to="/admin/overtime-requests">Overtime Requests</Link>,
+        },
+        {
+          key: "chat",
+          icon: <WechatWorkOutlined />,
+          label: <Link to="/admin/chat">Chat</Link>,
         },
         {
           key: "auditLogs",

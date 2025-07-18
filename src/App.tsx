@@ -44,6 +44,7 @@ import OvertimeRequestPageAdmin from "./pages/Admin/OvertimeRequestPageAdmin";
 import OvertimeRequestPageManager from "./pages/Manager/OvertimeRequestPageManager";
 import DashboardClient from "./pages/Client/DashboardClient";
 import OverviewClient from "./pages/Client/OverviewClient";
+import ChatPage from "./pages/Admin/Chat";
 
 const AuthEventHandler: React.FC = () => {
   const navigate = useNavigate();
@@ -68,12 +69,12 @@ function App() {
   return (
     <AlertProvider>
       <AuthProvider>
-        {/* <ChatProvider> */}
         <NotificationProvider>
-          <Router>
-            <AlertContainer />
-            <AuthEventHandler />
-            <Routes>
+          
+            <Router>
+              <AlertContainer />
+              <AuthEventHandler />
+              <Routes>
               {/* Public Routes */}
               <Route element={<PublicRoute />}>
                 <Route path="/" element={<LayoutShare />}>
@@ -139,6 +140,7 @@ function App() {
                       path="attachment-display/:projectType/:projectId"
                       element={<AttachmentDisplay />}
                     />
+                    <Route path="chat" element={<ChatPage />} />
                   </Route>
                 </Route>
               </Route>
@@ -234,8 +236,8 @@ function App() {
               </Route>
             </Routes>
           </Router>
+          
         </NotificationProvider>
-        {/* </ChatProvider> */}
       </AuthProvider>
     </AlertProvider>
   );

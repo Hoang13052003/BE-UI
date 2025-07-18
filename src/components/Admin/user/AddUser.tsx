@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Form, Input, Button, Select } from "antd";
-import { showNotification, showError } from "../../../utils/notificationUtils";
+import { showNotification } from "../../../utils/notificationUtils";
 import { UserOutlined, MailOutlined, LockOutlined } from "@ant-design/icons";
 import { createUser } from "../../../api/userApi";
 // import { useNavigate } from 'react-router-dom';
@@ -102,7 +102,7 @@ const AddUser: React.FC<AddUserProps> = () => {
           name="password"
           rules={[
             { required: true, message: "Please enter password" },
-            { min: 8, message: "Password must be at least 8 characters" },
+            { min: 6, message: "Password must be at least 6 characters" },
           ]}
           hasFeedback
         >
