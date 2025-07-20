@@ -1,100 +1,225 @@
-// ChatWebSocket.ts
-// Service for managing WebSocket chat connection with JWT authentication
-// Focus on security, reconnection, and message handling
+import SockJS from 'sockjs-client';
+import { Client, IMessage, IFrame } from '@stomp/stompjs';
+import { ChatMessage } from '../api/chatApi';
 
-export type ChatMessageType = 'private_message' | 'group_message' | 'project_message' | 'subscribe' | 'typing' | 'mark_read';
-
-export interface ChatMessage {
-  type: ChatMessageType | string;
-  [key: string]: any;
+export interface MessageStatusUpdate {
+  roomId: string;
+  messageId: string;
+  userId: number;
+  status: 'SENT' | 'DELIVERED' | 'SEEN';
 }
 
-export type OnMessageCallback = (message: ChatMessage) => void;
-export type OnErrorCallback = (error: Event | Error) => void;
+export interface TypingStatus {
+  roomId: string;
+  userId: number;
+  typing: boolean;
+}
 
-export class ChatWebSocket {
-  private socket: WebSocket | null = null;
-  private token: string;
-  private url: string;
-  private reconnectInterval: number = 3000; // ms
-  private reconnectTimeout: any = null;
-  private onMessage: OnMessageCallback;
-  private onError: OnErrorCallback;
-  private isManuallyClosed: boolean = false;
+export interface UserStatus {
+  userId: number;
+  online: boolean;
+  lastSeen: string;
+}
 
-  constructor(token: string, onMessage: OnMessageCallback, onError: OnErrorCallback, url: string = 'ws://localhost:8080/ws/chat') {
-    this.token = token;
-    this.url = url;
-    this.onMessage = onMessage;
-    this.onError = onError;
-    this.connect();
-  }
+export interface ChatWebSocketCallbacks {
+  onMessage?: (message: ChatMessage) => void;
+  onMessageStatus?: (status: MessageStatusUpdate) => void;
+  onTyping?: (status: TypingStatus) => void;
+  onUserStatus?: (status: UserStatus) => void;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onError?: (error: any) => void;
+}
 
-  // Establish WebSocket connection with JWT token
-  connect() {
-    if (!this.token) {
-      console.error("[ChatWebSocket] No JWT token provided for WebSocket connection");
-      throw new Error('JWT token is required for WebSocket connection');
-    }
-    console.log("[ChatWebSocket] Connecting to WebSocket:", `${this.url}?token=${this.token}`);
-    this.isManuallyClosed = false;
-    this.socket = new WebSocket(`${this.url}?token=${this.token}`);
+class ChatWebSocketService {
+  private client: Client | null = null;
+  private callbacks: ChatWebSocketCallbacks = {};
+  private subscriptions: { [key: string]: { id: string; unsubscribe: () => void } } = {};
+  private token: string = '';
 
-    this.socket.onopen = () => {
-      // Connection established
-      // You can subscribe to topics here if needed
-      // console.log('WebSocket connected');
-    };
+  constructor() {}
 
-    this.socket.onmessage = (event) => {
-      try {
-        const message: ChatMessage = JSON.parse(event.data);
-        this.onMessage(message);
-      } catch (e) {
-        // Handle invalid JSON
-        this.onError(new Error('Invalid message format'));
+  connect(token: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.client) {
+        this.disconnect();
       }
+      
+      // Lưu token để sử dụng trong các tin nhắn
+      this.token = token;
+
+      this.client = new Client({
+        webSocketFactory: () => new SockJS(`/ws?token=${token}`),
+        connectHeaders: {
+          'Authorization': `Bearer ${token}`,
+          'X-Auth-Token': token
+        },
+        debug: function(str) {
+          console.log('STOMP: ' + str);
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        onConnect: () => {
+          this.subscribe();
+          if (this.callbacks.onConnect) {
+            this.callbacks.onConnect();
+          }
+          resolve();
+        },
+        onStompError: (frame: IFrame) => {
+          console.error('STOMP protocol error', frame);
+          if (this.callbacks.onError) {
+            this.callbacks.onError(frame);
+          }
+          reject(frame);
+        },
+        onWebSocketClose: () => {
+          if (this.callbacks.onDisconnect) {
+            this.callbacks.onDisconnect();
+          }
+        }
+      });
+
+      this.client.activate();
+    });
+  }
+
+  disconnect(): void {
+    if (this.client) {
+      this.unsubscribeAll();
+      this.client.deactivate();
+      this.client = null;
+    }
+  }
+
+  private subscribe(): void {
+    if (!this.client || !this.client.connected) {
+      return;
+    }
+
+    // Subscribe to new messages
+    this.subscriptions['messages'] = {
+      id: 'messages',
+      unsubscribe: this.client.subscribe('/user/queue/messages', (message: IMessage) => {
+        if (this.callbacks.onMessage && message.body) {
+          const chatMessage = JSON.parse(message.body) as ChatMessage;
+          this.callbacks.onMessage(chatMessage);
+        }
+      }).unsubscribe
     };
 
-    this.socket.onerror = (error) => {
-      this.onError(error);
-      this.scheduleReconnect();
+    // Subscribe to message status updates
+    this.subscriptions['message-status'] = {
+      id: 'message-status',
+      unsubscribe: this.client.subscribe('/user/queue/message-status', (message: IMessage) => {
+        if (this.callbacks.onMessageStatus && message.body) {
+          const statusUpdate = JSON.parse(message.body) as MessageStatusUpdate;
+          this.callbacks.onMessageStatus(statusUpdate);
+        }
+      }).unsubscribe
     };
 
-    this.socket.onclose = (event) => {
-      if (!this.isManuallyClosed) {
-        this.scheduleReconnect();
+    // Subscribe to typing status
+    this.subscriptions['typing'] = {
+      id: 'typing',
+      unsubscribe: this.client.subscribe('/user/queue/typing', (message: IMessage) => {
+        if (this.callbacks.onTyping && message.body) {
+          const typingStatus = JSON.parse(message.body) as TypingStatus;
+          this.callbacks.onTyping(typingStatus);
+        }
+      }).unsubscribe
+    };
+
+    // Subscribe to user status updates
+    this.subscriptions['user-status'] = {
+      id: 'user-status',
+      unsubscribe: this.client.subscribe('/topic/user-status', (message: IMessage) => {
+        if (this.callbacks.onUserStatus && message.body) {
+          const userStatus = JSON.parse(message.body) as UserStatus;
+          this.callbacks.onUserStatus(userStatus);
+        }
+      }).unsubscribe
+    };
+  }
+
+  private unsubscribeAll(): void {
+    Object.values(this.subscriptions).forEach((subscription) => {
+      subscription.unsubscribe();
+    });
+    this.subscriptions = {};
+  }
+
+  setCallbacks(callbacks: ChatWebSocketCallbacks): void {
+    this.callbacks = { ...this.callbacks, ...callbacks };
+  }
+
+  sendMessage(message: any): void {
+    if (!this.client || !this.client.connected) {
+      console.error('Cannot send message: WebSocket not connected');
+      return;
+    }
+    this.client.publish({
+      destination: '/app/chat.sendMessage',
+      body: JSON.stringify(message),
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        'X-Auth-Token': this.token
       }
-    };
+    });
   }
 
-  // Send a message through WebSocket
-  send(message: ChatMessage) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify(message));
-    } else {
-      this.onError(new Error('WebSocket is not connected'));
+  markRead(data: { roomId: string; messageIds: string[] }): void {
+    if (!this.client || !this.client.connected) {
+      console.error('Cannot mark read: WebSocket not connected');
+      return;
     }
+    this.client.publish({
+      destination: '/app/chat.markRead',
+      body: JSON.stringify(data),
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        'X-Auth-Token': this.token
+      }
+    });
   }
 
-  // Close the WebSocket connection manually
-  close() {
-    this.isManuallyClosed = true;
-    if (this.socket) {
-      this.socket.close();
+  updateTyping(roomId: string, typing: boolean): void {
+    if (!this.client || !this.client.connected) {
+      console.error('Cannot update typing: WebSocket not connected');
+      return;
     }
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-    }
+    this.client.publish({
+      destination: '/app/chat.typing',
+      body: JSON.stringify({ roomId, typing }),
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        'X-Auth-Token': this.token
+      }
+    });
   }
 
-  // Reconnect logic with exponential backoff (basic)
-  private scheduleReconnect() {
-    if (this.isManuallyClosed) return;
-    if (this.reconnectTimeout) return;
-    this.reconnectTimeout = setTimeout(() => {
-      this.connect();
-      this.reconnectTimeout = null;
-    }, this.reconnectInterval);
+  updateUserStatus(online: boolean): void {
+    if (!this.client || !this.client.connected) {
+      console.error('Cannot update status: WebSocket not connected');
+      return;
+    }
+    const lastSeen = new Date().toISOString();
+    this.client.publish({
+      destination: '/app/chat.status',
+      body: JSON.stringify({ online, lastSeen }),
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        'X-Auth-Token': this.token
+      }
+    });
   }
-} 
+
+  isConnected(): boolean {
+    return !!this.client && this.client.connected;
+  }
+}
+
+// Export a singleton instance
+const chatWebSocketService = new ChatWebSocketService();
+export default chatWebSocketService; 

@@ -9,11 +9,12 @@ import {
   TeamOutlined,
   UserOutlined,
   LogoutOutlined,
-  WechatWorkOutlined,
+  WechatOutlined,
   FileSearchOutlined,
   UnorderedListOutlined,
   MenuOutlined,
   ClockCircleOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -119,7 +120,7 @@ const LayoutShare: React.FC = () => {
       children: [
         {
           key: "feedbacks",
-          icon: <WechatWorkOutlined />,
+          icon: <WechatOutlined />,
           label: <Link to="/admin/feedbacks">Feedbacks</Link>,
         },
         {
@@ -129,7 +130,7 @@ const LayoutShare: React.FC = () => {
         },
         {
           key: "chat",
-          icon: <WechatWorkOutlined />,
+          icon: <MessageOutlined />,
           label: <Link to="/admin/chat">Chat</Link>,
         },
         {
@@ -154,8 +155,13 @@ const LayoutShare: React.FC = () => {
     },
     {
       key: "my-feedbacks",
-      icon: <WechatWorkOutlined />,
+      icon: <WechatOutlined />,
       label: <Link to="/client/my-feedbacks">My Feedbacks</Link>,
+    },
+    {
+      key: "chat",
+      icon: <MessageOutlined />,
+      label: <Link to="/client/chat">Chat</Link>,
     },
   ];
 
@@ -172,13 +178,18 @@ const LayoutShare: React.FC = () => {
     },
     {
       key: "my-feedbacks",
-      icon: <WechatWorkOutlined />,
+      icon: <WechatOutlined />,
       label: <Link to="/manager/my-feedbacks">My Feedbacks</Link>,
     },
     {
       key: "overtime-requests",
       icon: <ClockCircleOutlined />,
       label: <Link to="/manager/overtime-requests">Overtime Requests</Link>,
+    },
+    {
+      key: "chat",
+      icon: <MessageOutlined />,
+      label: <Link to="/manager/chat">Chat</Link>,
     },
   ];
 

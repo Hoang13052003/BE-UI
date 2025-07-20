@@ -1,72 +1,118 @@
-import axiosClient from "./axiosClient";
+import axiosClient from './axiosClient';
 
-// ChatRoom type (should match backend)
 export interface ChatRoom {
   id: string;
-  roomName: string;
-  roomType: string;
+  name: string;
+  type: 'PROJECT' | 'SUPPORT' | 'PRIVATE';
   projectId?: string;
   participantIds: number[];
-  createdBy: number;
-  isActive: boolean;
-  lastMessageAt?: string;
   createdAt: string;
   updatedAt: string;
+  createdBy: number;
+  lastMessage?: ChatMessage;
+  unreadCount?: number;
 }
 
-// Get all project chat rooms for current user
-export const getProjectChatRooms = async (): Promise<ChatRoom[]> => {
-  const { data } = await axiosClient.get<ChatRoom[]>("/api/chat/rooms");
-  // Filter only project chat rooms
-  return data.filter(room => room.roomType === "PROJECT_CHAT");
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  senderId: number;
+  content: string;
+  sentAt: string;
+  messageStatus: Record<number, 'SENT' | 'DELIVERED' | 'SEEN'>;
+  attachmentIds: string[];
+  replyToMessageId?: string;
+  mentionUserIds: string[];
+  deleted: boolean;
+  edited: boolean;
+  editedAt?: string;
+}
+
+export interface ChatAttachment {
+  id: string;
+  messageId: string;
+  fileName: string;
+  fileType: string;
+  attachmentType: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' | 'OTHER';
+  fileUrl: string;
+  thumbnailUrl?: string;
+  size: number;
+  width?: number;
+  height?: number;
+  duration?: number;
+}
+
+export interface CreateChatRoomRequest {
+  name: string;
+  type: 'PROJECT' | 'SUPPORT' | 'PRIVATE';
+  projectId?: string;
+  participantIds: number[];
+}
+
+export interface SendMessageRequest {
+  roomId: string;
+  content: string;
+  attachmentIds?: string[];
+  replyToMessageId?: string;
+  mentionUserIds?: string[];
+}
+
+export interface MarkReadRequest {
+  roomId: string;
+  messageIds: string[];
+}
+
+export interface PaginationParams {
+  page: number;
+  size: number;
+}
+
+const chatApi = {
+  // Chat Room endpoints
+  // Đổi getRooms thành gọi endpoint phân trang, nhận params page, size, sort
+  getRooms: (params = { page: 0, size: 20, sort: 'createdAt,desc' }) =>
+    axiosClient.get('/api/chat/rooms/paged', { params }),
+  
+  getRoomsPaged: (params: PaginationParams) => 
+    axiosClient.get<{ content: ChatRoom[], totalElements: number }>('/api/chat/rooms/paged', { params }),
+  
+  getRoomById: (id: string) => 
+    axiosClient.get<ChatRoom>(`/api/chat/rooms/${id}`),
+  
+  createRoom: (data: CreateChatRoomRequest) => 
+    axiosClient.post<ChatRoom>('/api/chat/rooms', data),
+  
+  addUserToRoom: (roomId: string, userId: number) => 
+    axiosClient.post(`/api/chat/rooms/${roomId}/users/${userId}`),
+  
+  removeUserFromRoom: (roomId: string, userId: number) => 
+    axiosClient.delete(`/api/chat/rooms/${roomId}/users/${userId}`),
+  
+  // Chat Message endpoints
+  getMessages: (roomId: string) => 
+    axiosClient.get<ChatMessage[]>(`/api/chat/messages/${roomId}`),
+  
+  getMessagesPaged: (roomId: string, params: PaginationParams) => 
+    axiosClient.get<{ content: ChatMessage[], totalElements: number }>(`/api/chat/messages/${roomId}/paged`, { params }),
+  
+  sendMessage: (data: SendMessageRequest) => 
+    axiosClient.post<ChatMessage>('/api/chat/messages', data),
+  
+  markRead: (data: MarkReadRequest) => 
+    axiosClient.post('/api/chat/messages/mark-read', data),
+
+  // Chat Attachment
+  uploadAttachment: (roomId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('roomId', roomId);
+    
+    return axiosClient.post<ChatAttachment>('/api/chat/attachments', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  }
 };
 
-// Chat message response type (chuẩn backend)
-export interface ChatMessageResponseDto {
-  id: string;
-  senderId: number;
-  senderName: string;
-  senderImageProfile?: string;
-  receiverId?: number;
-  receiverName?: string;
-  receiverImageProfile?: string;
-  content: string;
-  topic?: string;
-  projectId: string;
-  projectName?: string;
-  timestamp: string;
-  isRead: boolean;
-  isDelivered: boolean;
-  messageType: string;
-  fileUrl?: string;
-  fileName?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ChatHistoryResponseDto {
-  messages: ChatMessageResponseDto[];
-  currentPage: number;
-  totalPages: number;
-  totalElements: number;
-  pageSize: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
-}
-
-// Get project chat history (with pagination)
-export const getProjectChatHistory = async (
-  projectId: string,
-  page: number = 0,
-  size: number = 20
-): Promise<ChatHistoryResponseDto> => {
-  const { data } = await axiosClient.get(`/api/chat/messages/project/${projectId}`, {
-    params: {
-      page,
-      size,
-      sortBy: 'timestamp',
-      sortDir: 'desc',
-    },
-  });
-  return data;
-}; 
+export default chatApi; 
