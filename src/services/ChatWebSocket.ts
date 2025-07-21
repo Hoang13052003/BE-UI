@@ -3,7 +3,7 @@ import { Client, IMessage, IFrame } from '@stomp/stompjs';
 import { ChatMessage } from '../api/chatApi';
 
 export interface MessageStatusUpdate {
-  roomId: string;
+  roomId?: string;  // Đánh dấu là optional vì server có thể không gửi
   messageId: string;
   userId: number;
   status: 'SENT' | 'DELIVERED' | 'SEEN';
@@ -13,6 +13,7 @@ export interface TypingStatus {
   roomId: string;
   userId: number;
   typing: boolean;
+  userName?: string;
 }
 
 export interface UserStatus {
@@ -36,6 +37,8 @@ class ChatWebSocketService {
   private callbacks: ChatWebSocketCallbacks = {};
   private subscriptions: { [key: string]: { id: string; unsubscribe: () => void } } = {};
   private token: string = '';
+  // Thêm cache để lưu trữ messageId -> roomId
+  private messageRoomCache: Map<string, string> = new Map();
 
   constructor() {}
 
@@ -104,6 +107,8 @@ class ChatWebSocketService {
       unsubscribe: this.client.subscribe('/user/queue/messages', (message: IMessage) => {
         if (this.callbacks.onMessage && message.body) {
           const chatMessage = JSON.parse(message.body) as ChatMessage;
+          // Lưu messageId và roomId vào cache
+          this.messageRoomCache.set(chatMessage.id, chatMessage.roomId);
           this.callbacks.onMessage(chatMessage);
         }
       }).unsubscribe
@@ -115,7 +120,21 @@ class ChatWebSocketService {
       unsubscribe: this.client.subscribe('/user/queue/message-status', (message: IMessage) => {
         if (this.callbacks.onMessageStatus && message.body) {
           const statusUpdate = JSON.parse(message.body) as MessageStatusUpdate;
-          this.callbacks.onMessageStatus(statusUpdate);
+          
+          // Nếu không có roomId trong thông báo, tìm trong cache
+          if (!statusUpdate.roomId && statusUpdate.messageId) {
+            const cachedRoomId = this.messageRoomCache.get(statusUpdate.messageId);
+            if (cachedRoomId) {
+              statusUpdate.roomId = cachedRoomId;
+            }
+          }
+          
+          // Chỉ gọi callback nếu có roomId
+          if (statusUpdate.roomId) {
+            this.callbacks.onMessageStatus(statusUpdate);
+          } else {
+            console.warn('Received message status update without roomId:', statusUpdate);
+          }
         }
       }).unsubscribe
     };
@@ -174,6 +193,12 @@ class ChatWebSocketService {
       console.error('Cannot mark read: WebSocket not connected');
       return;
     }
+    
+    // Lưu messageId và roomId vào cache
+    data.messageIds.forEach(messageId => {
+      this.messageRoomCache.set(messageId, data.roomId);
+    });
+    
     this.client.publish({
       destination: '/app/chat.markRead',
       body: JSON.stringify(data),

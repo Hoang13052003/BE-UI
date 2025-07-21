@@ -96,10 +96,34 @@
   flex-direction: column;
 }
 
+/* Cập nhật style cho container nhóm tin nhắn */
+.message-group-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2px;
+  width: 100%;
+}
+
+/* Style cho dấu phân cách thời gian */
+.message-time-separator {
+  text-align: center;
+  margin: 16px 0 8px;
+  position: relative;
+}
+
+.message-time-separator span {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #666;
+}
+
 .chat-message {
   display: flex;
-  margin-bottom: 16px;
+  margin-bottom: 2px;
   max-width: 70%;
+  position: relative;
 }
 
 .chat-message.self {
@@ -107,8 +131,22 @@
   align-self: flex-end;
 }
 
+/* Điều chỉnh khoảng cách cho tin nhắn đầu tiên trong nhóm */
+.chat-message.first-in-group {
+  margin-top: 8px;
+}
+
 .chat-message-avatar {
+  width: 32px;
+  height: 32px;
   margin-right: 8px;
+  align-self: flex-end;
+}
+
+.chat-message-avatar-placeholder {
+  width: 32px;
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .chat-message.self .chat-message-avatar {
@@ -125,11 +163,32 @@
   align-items: flex-end;
 }
 
+/* CSS cho tên người gửi */
+.chat-message-sender {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+  padding-left: 4px;
+  font-weight: 500;
+}
+
 .chat-message-bubble {
-  padding: 10px 16px;
-  border-radius: 16px;
+  padding: 8px 12px;
+  border-radius: 18px;
   background-color: #f0f0f0;
   word-break: break-word;
+  position: relative;
+  line-height: 1.4;
+}
+
+/* Điều chỉnh style cho tin nhắn đầu tiên trong nhóm */
+.chat-message.first-in-group:not(.self) .chat-message-bubble {
+  border-top-left-radius: 4px;
+}
+
+.chat-message:not(.first-in-group):not(.self) .chat-message-bubble {
+  border-top-left-radius: 4px;
+  margin-left: 0;
 }
 
 .chat-message.self .chat-message-bubble {
@@ -137,11 +196,38 @@
   color: white;
 }
 
+.chat-message.first-in-group.self .chat-message-bubble {
+  border-top-right-radius: 4px;
+}
+
+.chat-message:not(.first-in-group).self .chat-message-bubble {
+  border-top-right-radius: 4px;
+}
+
 .chat-message-time {
-  font-size: 12px;
+  font-size: 11px;
   color: #bfbfbf;
-  margin-top: 4px;
+  margin-right: 4px;
+}
+
+.message-status {
+  display: flex;
+  align-items: center;
+  color: #bfbfbf;
   margin-left: 4px;
+}
+
+.status-icon {
+  font-size: 12px;
+  margin-right: 3px;
+}
+
+.status-icon.seen {
+  color: #1890ff;
+}
+
+.status-text {
+  font-size: 11px;
 }
 
 .chat-input-container {
@@ -179,33 +265,51 @@
   padding: 20px;
 }
 
-/* Typing indicator */
-.typing-indicator {
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
+/* Typing indicator mới */
+.typing-message {
+  opacity: 0.8;
+  margin-bottom: 8px;
+  max-width: 50%;
 }
 
-.typing-indicator .dot {
+.typing-indicator-bubble {
+  background-color: #f0f0f0;
+  border-radius: 18px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+}
+
+.typing-text {
+  font-size: 12px;
+  color: #555;
+  margin-right: 5px;
+}
+
+.typing-dots {
+  display: flex;
+  align-items: center;
+}
+
+.typing-dots .dot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background-color: #bfbfbf;
-  margin: 0 2px;
+  background-color: #888;
+  margin: 0 1px;
   animation: bounce 1.4s infinite ease-in-out;
 }
 
-.typing-indicator .dot:nth-child(1) {
+.typing-dots .dot:nth-child(1) {
   animation-delay: 0s;
 }
 
-.typing-indicator .dot:nth-child(2) {
+.typing-dots .dot:nth-child(2) {
   animation-delay: 0.2s;
 }
 
-.typing-indicator .dot:nth-child(3) {
+.typing-dots .dot:nth-child(3) {
   animation-delay: 0.4s;
 }
 

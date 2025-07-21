@@ -5,6 +5,12 @@ import chatApi, { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment } fr
 import chatWebSocketService, { MessageStatusUpdate, TypingStatus, UserStatus } from '../services/ChatWebSocket';
 import { useAuth } from './AuthContext';
 
+// Type cho người dùng đang gõ (mở rộng từ userId thành object chứa userId và userName)
+interface TypingUserInfo {
+  userId: number;
+  userName?: string;
+}
+
 // Types
 interface ChatState {
   rooms: ChatRoom[];
@@ -12,7 +18,7 @@ interface ChatState {
   messages: Record<string, ChatMessage[]>;
   loading: boolean;
   error: string | null;
-  typingUsers: Record<string, Set<number>>;
+  typingUsers: Record<string, Set<TypingUserInfo>>;
   onlineUsers: Set<number>;
   lastSeenAt: Record<number, string>;
   attachments: Record<string, ChatAttachment[]>;
@@ -99,20 +105,27 @@ function chatReducer(state: ChatState, action: Action): ChatState {
       return { ...state, selectedRoomId: action.payload };
     
     case ActionType.SET_MESSAGES:
+      // Kiểm tra roomId có tồn tại không
+      if (!action.payload.roomId) return state;
+      
       return { 
         ...state, 
         messages: { 
           ...state.messages, 
-          [action.payload.roomId]: action.payload.messages 
+          [action.payload.roomId as string]: action.payload.messages 
         } 
       };
     
     case ActionType.ADD_MESSAGE: {
       const roomId = action.payload.roomId;
+      
+      // Kiểm tra roomId có tồn tại không
+      if (!roomId) return state;
+      
       const existingMessages = state.messages[roomId] || [];
       
       // Update the room's last message
-      const updatedRooms = state.rooms.map(room => {
+      const updatedRooms = state.rooms.map((room: ChatRoom) => {
         if (room.id === roomId) {
           return { ...room, lastMessage: action.payload };
         }
@@ -124,18 +137,22 @@ function chatReducer(state: ChatState, action: Action): ChatState {
         rooms: updatedRooms,
         messages: {
           ...state.messages,
-          [roomId]: [...existingMessages, action.payload]
+          [roomId as string]: [...existingMessages, action.payload]
         }
       };
     }
     
     case ActionType.UPDATE_MESSAGE_STATUS: {
       const { roomId, messageId, userId, status } = action.payload;
+      
+      // Kiểm tra roomId có tồn tại không
+      if (!roomId) return state;
+      
       const roomMessages = state.messages[roomId];
       
       if (!roomMessages) return state;
       
-      const updatedMessages = roomMessages.map(msg => {
+      const updatedMessages = roomMessages.map((msg: ChatMessage) => {
         if (msg.id === messageId) {
           return {
             ...msg,
@@ -147,23 +164,38 @@ function chatReducer(state: ChatState, action: Action): ChatState {
       
       return {
         ...state,
-        messages: { ...state.messages, [roomId]: updatedMessages }
+        messages: { ...state.messages, [roomId as string]: updatedMessages }
       };
     }
     
     case ActionType.SET_TYPING_STATUS: {
-      const { roomId, userId, typing } = action.payload;
-      const roomTypingUsers = new Set(state.typingUsers[roomId] || []);
+      const { roomId, userId, typing, userName } = action.payload;
+      
+      // Kiểm tra roomId có tồn tại không
+      if (!roomId) return state;
+      
+      // Khởi tạo Set mới nếu chưa có
+      let updatedTypingUsers = new Set(state.typingUsers[roomId] || []);
       
       if (typing) {
-        roomTypingUsers.add(userId);
+        // Khi status là typing=true, thêm hoặc cập nhật user
+        const newUserInfo: TypingUserInfo = { userId, userName };
+        
+        // Xóa user cũ (nếu có) và thêm user mới để tránh trùng lặp
+        updatedTypingUsers = new Set(
+          Array.from(updatedTypingUsers).filter((user: TypingUserInfo) => user.userId !== userId)
+        );
+        updatedTypingUsers.add(newUserInfo);
       } else {
-        roomTypingUsers.delete(userId);
+        // Khi status là typing=false, xóa user
+        updatedTypingUsers = new Set(
+          Array.from(updatedTypingUsers).filter((user: TypingUserInfo) => user.userId !== userId)
+        );
       }
       
       return {
         ...state,
-        typingUsers: { ...state.typingUsers, [roomId]: roomTypingUsers }
+        typingUsers: { ...state.typingUsers, [roomId as string]: updatedTypingUsers }
       };
     }
     
@@ -321,20 +353,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: ActionType.SET_LOADING, payload: true });
       
       try {
+        // Sử dụng endpoint không phân trang
         const response = await chatApi.getMessages(roomId);
+        
         dispatch({
           type: ActionType.SET_MESSAGES,
           payload: { roomId, messages: response.data }
         });
         
-        // Mark all messages as read
+                // Mark all messages as read
         if (userDetails?.id) {
           const userId = userDetails.id;
           const unreadMessages = response.data
-            .filter(msg => msg.senderId !== userId && 
-                           (!msg.messageStatus[userId] || 
-                            msg.messageStatus[userId] !== 'SEEN'))
-            .map(msg => msg.id);
+            .filter((msg: ChatMessage) => msg.senderId !== userId && 
+                         (!msg.messageStatus[userId] || 
+                          msg.messageStatus[userId] !== 'SEEN'))
+            .map((msg: ChatMessage) => msg.id);
           
           if (unreadMessages.length > 0) {
             markMessagesAsRead(roomId, unreadMessages);
@@ -368,14 +402,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     try {
-      // Send via REST API first
-      const response = await chatApi.sendMessage(messageData);
-      
-      // Also send via WebSocket for real-time
-      chatWebSocketService.sendMessage(messageData);
+      // Ưu tiên sử dụng WebSocket nếu đã kết nối
+      if (chatWebSocketService.isConnected()) {
+        // Chỉ gửi qua WebSocket nếu đã kết nối
+        chatWebSocketService.sendMessage(messageData);
+      } else {
+        // Nếu WebSocket không kết nối, sử dụng REST API
+        const response = await chatApi.sendMessage(messageData);
+        message.info('Sử dụng API để gửi tin nhắn do WebSocket không kết nối');
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
-      message.error('Failed to send message');
+      message.error('Gửi tin nhắn thất bại');
     }
   }, [state.selectedRoomId]);
 
@@ -383,13 +421,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const markMessagesAsRead = useCallback((roomId: string, messageIds: string[]) => {
     const markReadData = { roomId, messageIds };
     
-    // Update via WebSocket
-    chatWebSocketService.markRead(markReadData);
-    
-    // Also update via REST API
-    chatApi.markRead(markReadData).catch(error => {
-      console.error('Failed to mark messages as read:', error);
-    });
+    // Ưu tiên sử dụng WebSocket nếu đã kết nối
+    if (chatWebSocketService.isConnected()) {
+      // Chỉ gửi qua WebSocket nếu đã kết nối
+      chatWebSocketService.markRead(markReadData);
+    } else {
+      // Nếu WebSocket không kết nối, sử dụng REST API
+      chatApi.markRead(markReadData).catch(error => {
+        console.error('Đánh dấu tin nhắn đã đọc thất bại:', error);
+      });
+    }
   }, []);
 
   // Create a new chat room
@@ -439,7 +480,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check if user is typing in a room
   const isUserTyping = useCallback((roomId: string, userId: number): boolean => {
-    return state.typingUsers[roomId]?.has(userId) || false;
+    if (!state.typingUsers[roomId]) return false;
+    
+    // Kiểm tra xem userId có trong danh sách người đang gõ không
+    let found = false;
+    state.typingUsers[roomId].forEach(user => {
+      if (user.userId === userId) {
+        found = true;
+      }
+    });
+    return found;
   }, [state.typingUsers]);
 
   // Check if user is online

@@ -17,15 +17,22 @@ export interface ChatMessage {
   id: string;
   roomId: string;
   senderId: number;
+  senderName?: string;
+  senderAvatar?: string | null;
   content: string;
   sentAt: string;
   messageStatus: Record<number, 'SENT' | 'DELIVERED' | 'SEEN'>;
-  attachmentIds: string[];
+  attachmentIds?: string[];
+  attachments?: ChatAttachment[];
   replyToMessageId?: string;
+  replyMessage?: ChatMessage | null;
   mentionUserIds: string[];
   deleted: boolean;
   edited: boolean;
   editedAt?: string;
+  seenCount?: number;
+  deliveredCount?: number;
+  sentCount?: number;
 }
 
 export interface ChatAttachment {
