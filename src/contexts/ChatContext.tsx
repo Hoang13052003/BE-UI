@@ -353,22 +353,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: ActionType.SET_LOADING, payload: true });
       
       try {
-        // Sử dụng endpoint không phân trang
-        const response = await chatApi.getMessages(roomId);
+        // Sử dụng endpoint phân trang
+        const params = { page: 0, size: 30 }; // Lấy 40 tin nhắn gần nhất
+        const response = await chatApi.getMessagesPaged(roomId, params);
+        
+        // Lấy danh sách tin nhắn từ trường content trong response
+        const messages = response.data.content;
         
         dispatch({
           type: ActionType.SET_MESSAGES,
-          payload: { roomId, messages: response.data }
+          payload: { roomId, messages }
         });
         
-                // Mark all messages as read
+        // Mark all messages as read
         if (userDetails?.id) {
           const userId = userDetails.id;
-          const unreadMessages = response.data
-            .filter((msg: ChatMessage) => msg.senderId !== userId && 
-                         (!msg.messageStatus[userId] || 
-                          msg.messageStatus[userId] !== 'SEEN'))
-            .map((msg: ChatMessage) => msg.id);
+          const unreadMessages = messages
+            .filter(msg => msg.senderId !== userId && 
+                           (!msg.messageStatus[userId] || 
+                            msg.messageStatus[userId] !== 'SEEN'))
+            .map(msg => msg.id);
           
           if (unreadMessages.length > 0) {
             markMessagesAsRead(roomId, unreadMessages);
