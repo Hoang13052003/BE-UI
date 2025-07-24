@@ -33,6 +33,7 @@ export const getUserNotifications = async (
       userId,
       page,
       size,
+      sort: "createdAt,desc" // Thêm tham số sắp xếp theo thời gian tạo giảm dần
     },
   });
   return response.data;

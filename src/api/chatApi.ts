@@ -109,10 +109,10 @@ const chatApi = {
   
   // Chat Message endpoints
   getMessages: (roomId: string) => 
-    axiosClient.get<ChatMessage[]>(`/api/chat/messages/${roomId}`),
+    axiosClient.get<ChatMessage[]>(`/api/chat/rooms/${roomId}/messages`),
   
   getMessagesPaged: (roomId: string, params: PaginationParams) => 
-    axiosClient.get<PaginationResponse<ChatMessage>>(`/api/chat/messages/${roomId}/paged`, { params }),
+    axiosClient.get<PaginationResponse<ChatMessage>>(`/api/chat/rooms/${roomId}/messages/paged`, { params }),
   
   sendMessage: (data: SendMessageRequest) => 
     axiosClient.post<ChatMessage>('/api/chat/messages', data),

@@ -49,11 +49,14 @@ const mapApiNotificationToInternal = (
   id: notification.id,
   title: notification.title,
   content: notification.content,
+  message: notification.content, // Thêm message để tương thích với component NotificationBell
   type: notification.type,
   priority: notification.priority,
   metadata: notification.metadata,
   read: notification.read,
   timestamp: new Date(notification.createdAt),
+  createdAt: notification.createdAt, // Thêm createdAt để tương thích với component NotificationBell
+  link: notification.metadata?.link as string // Thêm link từ metadata
 });
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -79,8 +82,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           mapApiNotificationToInternal
         );
 
-        setNotifications(mappedNotifications);
-        updateUnreadCount(mappedNotifications);
+        // Sắp xếp thêm một lần nữa để đảm bảo thông báo mới nhất ở trên cùng
+        const sortedNotifications = [...mappedNotifications].sort((a, b) => 
+          b.timestamp.getTime() - a.timestamp.getTime()
+        );
+
+        setNotifications(sortedNotifications);
+        updateUnreadCount(sortedNotifications);
       } catch (error) {
         console.error("Error fetching notifications:", error);
       } finally {
@@ -128,19 +136,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       fetchNotifications();
       fetchUnreadCount();
 
-      notificationService.connect(token);
+      // Kết nối đến service thông báo
+      notificationService.start(token);
 
-      notificationService.addListener(
-        MessageType.USER_UPDATE,
-        handleNotificationFromSocket
-      );
+      // Lắng nghe các loại thông báo từ STOMP
+      notificationService.addListener("all", handleNotificationFromSocket);
 
       return () => {
-        notificationService.removeListener(
-          MessageType.USER_UPDATE,
-          handleNotificationFromSocket
-        );
-        notificationService.disconnect();
+        notificationService.removeListener("all", handleNotificationFromSocket);
+        // Không ngắt kết nối khi component bị hủy, chỉ xóa listener
+        // Kết nối sẽ được tái sử dụng cho các lần tiếp theo
+        // notificationService.stop();
       };
     }
   }, [
@@ -152,21 +158,33 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   ]);
 
   const handleNotificationFromSocket = useCallback((socketMessage: any) => {
-    const data = socketMessage.payload as NotificationResponse;
+    // Xử lý cập nhật unreadCount
+    if (socketMessage.type === "NOTIFICATION_COUNT_UPDATE") {
+      setUnreadCount(socketMessage.count);
+      return;
+    }
+    
+    // Xử lý thông báo mới
+    const data = socketMessage.payload || socketMessage;
 
     if (data && data.id && data.title && data.content) {
       const newNotification: Notification = {
         id: data.id.toString(),
         title: data.title,
         content: data.content,
+        message: data.content,
         type: data.type || null,
         priority: data.priority ?? NotificationPriority.MEDIUM,
         metadata: data.metadata ?? {},
         read: data.read ?? false,
         timestamp: data.createdAt ? new Date(data.createdAt) : new Date(),
+        createdAt: data.createdAt || new Date().toISOString(),
+        link: data.metadata?.link
       };
 
+      // Thêm thông báo mới vào đầu danh sách
       setNotifications((prev) => {
+        // Đảm bảo thông báo mới nhất ở trên cùng
         const updated = [newNotification, ...prev];
         return updated;
       });
@@ -207,7 +225,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       await apiNotification.markAllAsRead(userDetails.id);
 
       setNotifications((prev) =>
-        prev.map((notification) => ({ ...notification, isRead: true }))
+        prev.map((notification) => ({ ...notification, read: true }))
       );
       setUnreadCount(0);
     } catch (error) {

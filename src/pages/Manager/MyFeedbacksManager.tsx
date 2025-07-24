@@ -12,8 +12,8 @@ import {
   Tooltip,
   Select,
   DatePicker,
-  message,
 } from "antd";
+import { showNotification, showError } from "../../utils/notificationUtils";
 import {
   EyeOutlined,
   StarOutlined,
@@ -144,7 +144,7 @@ const MyFeedbacks: React.FC = () => {
         }));
         
         // Show success message
-        message.success("Feedback marked as read successfully");
+        showNotification.success("FEEDBACK_MARKED_READ");
       }
       
       // Set feedback status based on whether it was marked as read
@@ -157,7 +157,7 @@ const MyFeedbacks: React.FC = () => {
       setIsDetailModalVisible(true);
     } catch (error) {
       console.error("Error marking feedback as read:", error);
-      message.error("Failed to mark feedback as read");
+      showError(error, "FEEDBACK_MARK_READ_FAILED");
       // Still show the modal even if marking as read fails
       setSelectedFeedback({ ...feedback, id: feedback.id.toString() });
       setIsDetailModalVisible(true);

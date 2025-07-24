@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { Card, Spin, Alert, Typography, Button, Row, Col, message } from "antd";
+import { Card, Spin, Alert, Typography, Button, Row, Col } from "antd";
+import { showNotification } from "../../utils/notificationUtils";
 import {
   ArrowLeftOutlined,
   EditOutlined,
@@ -129,7 +130,7 @@ const ProjectDetailPage: React.FC = () => {
 
   const handleEditProjectSuccess = () => {
     setIsEditProjectModalVisible(false);
-    message.success("Project updated successfully!");
+    showNotification.success("PROJECT_UPDATED");
     fetchProjectData();
   };
 

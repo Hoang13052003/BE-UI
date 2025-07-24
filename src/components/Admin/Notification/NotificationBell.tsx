@@ -236,184 +236,182 @@ const NotificationBell: React.FC = () => {
     fetchNotifications();
   }, [fetchNotifications, open]);
 
-  const content = (
-    <div>
-      <NotificationContainer>
-        <NotificationHeader>
-          <Title level={5} style={{ margin: 0 }}>
-            Notifications
-          </Title>
-          <Space>
-            <Badge count={unreadCount} />
-            <Tooltip title="Refresh">
-              <Button
-                type="text"
-                icon={<ReloadOutlined spin={refreshing} />}
-                onClick={handleRefresh}
-                size="small"
-              />
-            </Tooltip>
-          </Space>
-        </NotificationHeader>
-
-        <FilterBar>
-          <FilterButton
-            size="small"
-            $active={currentFilter === "ALL"}
-            onClick={() => setCurrentFilter("ALL")}
-          >
-            All
-          </FilterButton>
-          <FilterButton
-            size="small"
-            $active={currentFilter === MessageType.PROJECT_UPDATED}
-            onClick={() => setCurrentFilter(MessageType.PROJECT_UPDATED)}
-          >
-            Projects
-          </FilterButton>
-          <FilterButton
-            size="small"
-            $active={currentFilter === MessageType.COMMENT_ADDED}
-            onClick={() => setCurrentFilter(MessageType.COMMENT_ADDED)}
-          >
-            Comments
-          </FilterButton>
-          <FilterButton
-            size="small"
-            $active={currentFilter === MessageType.USER_UPDATE}
-            onClick={() => setCurrentFilter(MessageType.USER_UPDATE)}
-          >
-            Users
-          </FilterButton>
-        </FilterBar>
-
-        {loading ? (
-          <LoadingContainer>
-            <Spin />
-          </LoadingContainer>
-        ) : filteredNotifications.length === 0 ? (
-          <EmptyContainer>
-            <Empty
-              description="No notifications"
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
+  const notificationContent = (
+    <NotificationContainer>
+      <NotificationHeader>
+        <Title level={5} style={{ margin: 0 }}>
+          Notifications
+        </Title>
+        <Space>
+          <Badge count={unreadCount} />
+          <Tooltip title="Refresh">
+            <Button
+              type="text"
+              icon={<ReloadOutlined spin={refreshing} />}
+              onClick={handleRefresh}
+              size="small"
             />
-          </EmptyContainer>
-        ) : (
-          <List
-            dataSource={filteredNotifications}
-            renderItem={(notification) => (
-              <NotificationItem
-                $isRead={notification.read}
-                onClick={() => handleNotificationClick(notification.id)}
-              >
-                <List.Item.Meta
-                  avatar={
-                    <div
-                      style={{
-                        fontSize: "20px",
-                        width: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                  }
-                  title={
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Text strong={!notification.read}>
-                        {notification.title}
-                      </Text>
-                      <Tooltip title="Delete">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={(e) =>
-                            handleDeleteNotification(notification.id, e)
-                          }
-                        />
-                      </Tooltip>
-                    </div>
-                  }
-                  description={
-                    <>
-                      <Text
-                        type="secondary"
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        {formatDate(new Date(notification.createdAt))}
-                      </Text>
-                      <div>
-                        {notification.message}
-                        {notification.link && (
-                          <Button
-                            type="link"
-                            size="small"
-                            icon={<FundViewOutlined />}
-                            style={{ padding: "0", height: "auto" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator(notification.link || "");
-                            }}
-                          >
-                            View details
-                          </Button>
-                        )}
-                      </div>
-                    </>
-                  }
-                />
-              </NotificationItem>
-            )}
+          </Tooltip>
+        </Space>
+      </NotificationHeader>
+
+      <FilterBar>
+        <FilterButton
+          size="small"
+          $active={currentFilter === "ALL"}
+          onClick={() => setCurrentFilter("ALL")}
+        >
+          All
+        </FilterButton>
+        <FilterButton
+          size="small"
+          $active={currentFilter === MessageType.PROJECT_UPDATED}
+          onClick={() => setCurrentFilter(MessageType.PROJECT_UPDATED)}
+        >
+          Projects
+        </FilterButton>
+        <FilterButton
+          size="small"
+          $active={currentFilter === MessageType.COMMENT_ADDED}
+          onClick={() => setCurrentFilter(MessageType.COMMENT_ADDED)}
+        >
+          Comments
+        </FilterButton>
+        <FilterButton
+          size="small"
+          $active={currentFilter === MessageType.USER_UPDATE}
+          onClick={() => setCurrentFilter(MessageType.USER_UPDATE)}
+        >
+          Users
+        </FilterButton>
+      </FilterBar>
+
+      {loading ? (
+        <LoadingContainer>
+          <Spin />
+        </LoadingContainer>
+      ) : filteredNotifications.length === 0 ? (
+        <EmptyContainer>
+          <Empty
+            description="No notifications"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
-        )}
+        </EmptyContainer>
+      ) : (
+        <List
+          dataSource={filteredNotifications}
+          renderItem={(notification) => (
+            <NotificationItem
+              $isRead={notification.read}
+              onClick={() => handleNotificationClick(notification.id)}
+            >
+              <List.Item.Meta
+                avatar={
+                  <div
+                    style={{
+                      fontSize: "20px",
+                      width: "24px",
+                      textAlign: "center",
+                    }}
+                  >
+                    {getNotificationIcon(notification.type)}
+                  </div>
+                }
+                title={
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Text strong={!notification.read}>
+                      {notification.title}
+                    </Text>
+                    <Tooltip title="Delete">
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={(e) =>
+                          handleDeleteNotification(notification.id, e)
+                        }
+                      />
+                    </Tooltip>
+                  </div>
+                }
+                description={
+                  <>
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {formatDate(notification.timestamp)}
+                    </Text>
+                    <div>
+                      {notification.message || notification.content}
+                      {notification.link && (
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<FundViewOutlined />}
+                          style={{ padding: "0", height: "auto" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator(notification.link || "");
+                          }}
+                        >
+                          View details
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                }
+              />
+            </NotificationItem>
+          )}
+        />
+      )}
 
-        <NotificationFooter>
-          <Button
-            type="link"
-            size="small"
-            icon={<CheckOutlined />}
-            onClick={handleMarkAllRead}
-            disabled={unreadCount === 0}
-          >
-            Mark all as read
-          </Button>
-        </NotificationFooter>
+      <NotificationFooter>
+        <Button
+          type="link"
+          size="small"
+          icon={<CheckOutlined />}
+          onClick={handleMarkAllRead}
+          disabled={unreadCount === 0}
+        >
+          Mark all as read
+        </Button>
+      </NotificationFooter>
 
-        <QuickLinks>
-          <Divider style={{ margin: '8px 0' }} orientation="left">Quick Access</Divider>
-          <QuickLinkButton 
-            type="text" 
-            icon={<MessageOutlined />}
-            onClick={() => {
-              setOpen(false);
-              const basePath = userRole === 'ADMIN' 
-                ? '/admin/chat' 
-                : userRole === 'MANAGER' 
-                  ? '/manager/chat' 
-                  : '/client/chat';
-              navigator(basePath);
-            }}
-          >
-            Chat Messages
-          </QuickLinkButton>
-        </QuickLinks>
-      </NotificationContainer>
-    </div>
+      <QuickLinks>
+        <Divider style={{ margin: '8px 0' }} orientation="left">Quick Access</Divider>
+        <QuickLinkButton 
+          type="text" 
+          icon={<MessageOutlined />}
+          onClick={() => {
+            setOpen(false);
+            const basePath = userRole === 'ADMIN' 
+              ? '/admin/chat' 
+              : userRole === 'MANAGER' 
+                ? '/manager/chat' 
+                : '/client/chat';
+            navigator(basePath);
+          }}
+        >
+          Chat Messages
+        </QuickLinkButton>
+      </QuickLinks>
+    </NotificationContainer>
   );
 
   return (
     <Dropdown
-      menu={{ items: [{ key: '1', label: content }] }}
+      dropdownRender={() => notificationContent}
       trigger={["click"]}
       open={open}
       onOpenChange={setOpen}

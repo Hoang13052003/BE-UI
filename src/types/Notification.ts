@@ -22,11 +22,14 @@ export interface Notification {
   id: string;
   title: string;
   content: string;
+  message?: string; // Thêm trường message cho tương thích với NotificationBell
   type: MessageType;
   priority: NotificationPriority;
   metadata?: Record<string, unknown>;
   read: boolean;
   timestamp: Date;
+  createdAt?: string; // Thêm trường createdAt cho tương thích với NotificationBell
+  link?: string; // Thêm trường link cho tương thích với NotificationBell
 }
 
 export interface NotificationResponse {

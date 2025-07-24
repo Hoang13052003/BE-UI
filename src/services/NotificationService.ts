@@ -1,9 +1,11 @@
-import { message } from "antd";
 import { MessageType } from "../types/Notification";
 import { toWebSocketUrl } from "../utils/urlUtils";
+import * as Stomp from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { showNotification, showError } from "../utils/notificationUtils";
 
 class NotificationService {
-  private socket: WebSocket | null = null;
+  private stompClient: Stomp.Client | null = null;
   private isConnected: boolean = false;
   private listeners: Map<string, Array<(data: any) => void>> = new Map();
   private reconnectAttempts: number = 0;
@@ -11,69 +13,116 @@ class NotificationService {
   private reconnectInterval: number = 3000;
   private reconnectTimeoutId: NodeJS.Timeout | null = null;
   private token: string | null = null;
+  private isConnecting: boolean = false; // Thêm biến theo dõi trạng thái đang kết nối
+  private healthCheckInterval: NodeJS.Timeout | null = null;
 
   connect(token: string): void {
-    if (
-      this.socket &&
-      (this.socket.readyState === WebSocket.OPEN ||
-        this.socket.readyState === WebSocket.CONNECTING)
-    ) {
+    // Kiểm tra nếu đã kết nối hoặc đang trong quá trình kết nối
+    if (this.stompClient && (this.isConnected || this.isConnecting)) {
+      console.log("WebSocket connection already exists or is connecting. Skipping new connection.");
       return;
     }
+
     this.token = token;
+    this.isConnecting = true; // Đánh dấu đang bắt đầu kết nối
+
     try {
       const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
-      const cleanBaseUrl = toWebSocketUrl(baseUrl);
-      const wsUrl = `${cleanBaseUrl}/ws/notifications?token=${token}`;
-      this.socket = new WebSocket(wsUrl);
-      this.socket.onopen = () => {
+      const cleanBaseUrl = baseUrl.startsWith('ws') ? baseUrl : baseUrl.replace(/^http/, 'ws');
+      
+      // Ngắt kết nối cũ nếu tồn tại
+      if (this.stompClient) {
+        this.disconnect();
+      }
+      
+      // Khởi tạo STOMP client
+      this.stompClient = new Stomp.Client({
+        webSocketFactory: () => new SockJS(`${baseUrl}/ws/notifications`),
+        connectHeaders: {
+          Authorization: `Bearer ${token}`
+        },
+        debug: function (str) {
+          // console.log(str); // Tắt log không cần thiết
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+      });
+
+      // Xử lý khi kết nối thành công
+      this.stompClient.onConnect = (frame) => {
         this.isConnected = true;
+        this.isConnecting = false; // Đánh dấu kết nối đã hoàn thành
         this.reconnectAttempts = 0;
-        message.success("Connected to notifications service");
-        this.subscribeUser(token);
+        // Sử dụng showNotification thay vì message trực tiếp
+        import("../utils/notificationUtils").then(({ showNotification }) => {
+          showNotification.custom.success("Connected to notifications service");
+        });
+        
+        // Đăng ký nhận thông báo riêng
+        this.stompClient?.subscribe('/user/queue/notifications', (message) => {
+          this.handleMessage(message);
+        });
+        
+        // Đăng ký nhận cập nhật số lượng thông báo
+        this.stompClient?.subscribe('/user/queue/notification-count', (message) => {
+          this.handleMessage(message);
+        });
+        
+        // Đăng ký nhận thông báo broadcast
+        this.stompClient?.subscribe('/topic/notifications', (message) => {
+          this.handleMessage(message);
+        });
       };
 
-      this.socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-
-          const messageType = data.messageType;
-
-          if (messageType && this.listeners.has(messageType)) {
-            this.listeners
-              .get(messageType)
-              ?.forEach((callback) => callback(data));
-          }
-
-          if (this.listeners.has("all")) {
-            this.listeners.get("all")?.forEach((callback) => callback(data));
-          }
-        } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
-          message.error("Received invalid message from server");
-        }
-      };
-
-      this.socket.onclose = (event) => {
+      // Xử lý khi mất kết nối
+      this.stompClient.onStompError = (frame) => {
         this.isConnected = false;
-
-        if (!event.wasClean && this.token) {
+        this.isConnecting = false; // Đánh dấu kết nối đã kết thúc (thất bại)
+        showNotification.custom.error(`Connection error: ${frame.headers['message']}`);
+        
+        if (this.token) {
           this.attemptReconnect(this.token);
         }
       };
-      this.socket.onerror = () => {
-        message.error("Connection error. Trying to reconnect...", 3);
 
-        if (!this.isConnected && this.token) {
-          this.attemptReconnect(this.token);
-        }
-      };
+      // Kết nối đến server
+      this.stompClient.activate();
+
     } catch (error) {
-      message.error("Failed to connect to notification service");
+      this.isConnecting = false; // Đánh dấu kết nối đã kết thúc (thất bại)
+      console.error('Failed to connect to notification service:', error);
+      showNotification.custom.error("Failed to connect to notification service");
+    }
+  }
+
+  private handleMessage(stompMessage: Stomp.IMessage): void {
+    try {
+      const data = JSON.parse(stompMessage.body);
+      
+      const messageType = data.messageType || data.type;
+
+      if (messageType && this.listeners.has(messageType)) {
+        this.listeners
+          .get(messageType)
+          ?.forEach((callback) => callback(data));
+      }
+
+      if (this.listeners.has("all")) {
+        this.listeners.get("all")?.forEach((callback) => callback(data));
+      }
+    } catch (error) {
+      console.error("Error parsing STOMP message:", error);
+      showNotification.custom.error("Received invalid message from server");
     }
   }
 
   private attemptReconnect(token: string): void {
+    // Nếu đang kết nối, không thử kết nối lại
+    if (this.isConnecting) {
+      return;
+    }
+    
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
 
@@ -82,10 +131,11 @@ class NotificationService {
       }
 
       this.reconnectTimeoutId = setTimeout(() => {
+        console.log(`Attempt to reconnect #${this.reconnectAttempts}`);
         this.connect(token);
       }, this.reconnectInterval);
     } else {
-      message.error(
+      showNotification.custom.error(
         "Could not connect to notification service. Please refresh the page."
       );
     }
@@ -97,64 +147,26 @@ class NotificationService {
       this.reconnectTimeoutId = null;
     }
 
-    if (this.socket) {
-      if (this.socket.readyState === WebSocket.CONNECTING) {
-        return;
+    if (this.stompClient) {
+      if (this.stompClient.connected) {
+        this.stompClient.deactivate();
       }
-
-      if (this.socket.readyState === WebSocket.OPEN) {
-        this.unsubscribeUser();
-      }
-
-      this.socket.close();
-      this.socket = null;
+      
+      this.stompClient = null;
       this.isConnected = false;
+      this.isConnecting = false;  // Đảm bảo cả trạng thái đang kết nối cũng bị reset
       this.token = null;
     }
   }
 
   subscribeUser(token: string): void {
-    if (!this.isConnected || !this.socket) {
-      return;
-    }
-
-    const subscribeMessage = {
-      messageType: MessageType.SUBSCRIBE_USER,
-      params: {
-        sessionId: token,
-      },
-    };
-
-    if (this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify(subscribeMessage));
-    } else if (this.socket.readyState === WebSocket.CONNECTING) {
-      this.socket.addEventListener(
-        "open",
-        () => {
-          this.socket?.send(JSON.stringify(subscribeMessage));
-        },
-        { once: true }
-      );
-    }
+    // Đã được xử lý trong hàm connect qua các đăng ký STOMP
+    // Giữ lại phương thức để tương thích với code cũ
   }
 
   unsubscribeUser(): void {
-    if (
-      !this.socket ||
-      !this.token ||
-      this.socket.readyState !== WebSocket.OPEN
-    ) {
-      return;
-    }
-
-    const unsubscribeMessage = {
-      messageType: MessageType.UNSUBSCRIBE_USER,
-      params: {
-        sessionId: this.token,
-      },
-    };
-
-    this.socket.send(JSON.stringify(unsubscribeMessage));
+    // Giữ lại phương thức để tương thích với code cũ
+    this.disconnect();
   }
 
   addListener(messageType: string, callback: (data: any) => void): void {
@@ -176,6 +188,59 @@ class NotificationService {
 
   isSocketConnected(): boolean {
     return this.isConnected;
+  }
+
+  /**
+   * Kiểm tra kết nối và thực hiện kết nối lại nếu cần thiết
+   */
+  ensureConnected(token: string): void {
+    // Nếu không có kết nối hoặc kết nối đã đóng
+    if (!this.stompClient || !this.isConnected) {
+      this.connect(token);
+      return;
+    }
+    
+    // Kết nối vẫn ổn, không cần làm gì
+  }
+  
+  /**
+   * Bắt đầu kiểm tra sức khỏe kết nối định kỳ
+   */
+  startHealthCheck(token: string): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+    }
+    
+    // Kiểm tra mỗi 30 giây
+    this.healthCheckInterval = setInterval(() => {
+      this.ensureConnected(token);
+    }, 30000);
+  }
+  
+  /**
+   * Dừng việc kiểm tra sức khỏe kết nối
+   */
+  stopHealthCheck(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+  }
+  
+  /**
+   * Khởi động dịch vụ thông báo với token
+   */
+  start(token: string): void {
+    this.connect(token);
+    this.startHealthCheck(token);
+  }
+  
+  /**
+   * Dừng dịch vụ thông báo
+   */
+  stop(): void {
+    this.stopHealthCheck();
+    this.disconnect();
   }
 }
 
