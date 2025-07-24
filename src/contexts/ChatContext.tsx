@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useReducer } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext, useEffect, useCallback, useReducer } from 'react';
 import { message } from 'antd';
 import chatApi, { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment } from '../api/chatApi';
 import chatWebSocketService, { MessageStatusUpdate, TypingStatus, UserStatus } from '../services/ChatWebSocket';
@@ -22,6 +21,7 @@ interface ChatState {
   onlineUsers: Set<number>;
   lastSeenAt: Record<number, string>;
   attachments: Record<string, ChatAttachment[]>;
+  messagesPagination: Record<string, { page: number, hasMore: boolean }>;
 }
 
 interface ChatContextType {
@@ -38,6 +38,7 @@ interface ChatContextType {
   isUserTyping: (roomId: string, userId: number) => boolean;
   isUserOnline: (userId: number) => boolean;
   getUserLastSeen: (userId: number) => string | null;
+  loadMoreMessages: (roomId: string, page: number, size: number) => Promise<boolean>;
 }
 
 // Initial state
@@ -50,7 +51,8 @@ const initialState: ChatState = {
   typingUsers: {},
   onlineUsers: new Set<number>(),
   lastSeenAt: {},
-  attachments: {}
+  attachments: {},
+  messagesPagination: {}
 };
 
 // Actions
@@ -66,6 +68,7 @@ enum ActionType {
   SET_TYPING_STATUS = 'SET_TYPING_STATUS',
   SET_USER_STATUS = 'SET_USER_STATUS',
   ADD_ATTACHMENT = 'ADD_ATTACHMENT',
+  UPDATE_PAGINATION = 'UPDATE_PAGINATION',
   RESET = 'RESET'
 }
 
@@ -81,6 +84,7 @@ type Action =
   | { type: ActionType.SET_TYPING_STATUS; payload: TypingStatus }
   | { type: ActionType.SET_USER_STATUS; payload: UserStatus }
   | { type: ActionType.ADD_ATTACHMENT; payload: ChatAttachment }
+  | { type: ActionType.UPDATE_PAGINATION; payload: { roomId: string; page: number; hasMore: boolean } }
   | { type: ActionType.RESET };
 
 // Reducer
@@ -137,7 +141,7 @@ function chatReducer(state: ChatState, action: Action): ChatState {
         rooms: updatedRooms,
         messages: {
           ...state.messages,
-          [roomId as string]: [...existingMessages, action.payload]
+          [roomId as string]: [action.payload, ...existingMessages]
         }
       };
     }
@@ -230,6 +234,18 @@ function chatReducer(state: ChatState, action: Action): ChatState {
       };
     }
     
+    case ActionType.UPDATE_PAGINATION:
+      return {
+        ...state,
+        messagesPagination: {
+          ...state.messagesPagination,
+          [action.payload.roomId]: {
+            page: action.payload.page,
+            hasMore: action.payload.hasMore
+          }
+        }
+      };
+    
     case ActionType.RESET:
       return initialState;
     
@@ -245,7 +261,6 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(chatReducer, initialState);
   const { isAuthenticated, token, userDetails } = useAuth();
-  const navigate = useNavigate();
 
   // WebSocket connection management
   const connectWebSocket = useCallback(async () => {
@@ -268,6 +283,77 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       chatWebSocketService.disconnect();
     }
   }, []);
+
+  // Mark messages as read - Di chuyển khai báo lên trước để khắc phục dependency cycle
+  const markMessagesAsRead = useCallback((roomId: string, messageIds: string[]) => {
+    const markReadData = { roomId, messageIds };
+    
+    // Ưu tiên sử dụng WebSocket nếu đã kết nối
+    if (chatWebSocketService.isConnected()) {
+      // Chỉ gửi qua WebSocket nếu đã kết nối
+      chatWebSocketService.markRead(markReadData);
+    } else {
+      // Nếu WebSocket không kết nối, sử dụng REST API
+      chatApi.markRead(markReadData).catch(error => {
+        console.error('Đánh dấu tin nhắn đã đọc thất bại:', error);
+      });
+    }
+  }, []);
+  
+  // Select a room and load its messages
+  const selectRoom = useCallback(async (roomId: string) => {
+    dispatch({ type: ActionType.SELECT_ROOM, payload: roomId });
+    
+    // Chỉ tải tin nhắn khi chưa có tin nhắn trong cache
+    if (!state.messages[roomId]) {
+      dispatch({ type: ActionType.SET_LOADING, payload: true });
+      
+      try {
+        // Luôn bắt đầu với page=0 khi mới vào phòng chat
+        const params = { page: 0, size: 30 };
+        const response = await chatApi.getMessagesPaged(roomId, params);
+        
+        // Lấy danh sách tin nhắn từ trường content trong response
+        const messages = response.data.content;
+        const totalPages = response.data.totalPages || 0;
+        
+        dispatch({
+          type: ActionType.SET_MESSAGES,
+          payload: { roomId, messages }
+        });
+        
+        // Cập nhật trạng thái phân trang
+        dispatch({
+          type: ActionType.UPDATE_PAGINATION,
+          payload: { 
+            roomId, 
+            page: 0, 
+            hasMore: messages.length === params.size && totalPages > 1
+          }
+        });
+        
+        // Mark all messages as read
+        if (userDetails?.id) {
+          const userId = userDetails.id;
+          const unreadMessages = messages
+            .filter(msg => msg.senderId !== userId && 
+                           (!msg.messageStatus[userId] || 
+                            msg.messageStatus[userId] !== 'SEEN'))
+            .map(msg => msg.id);
+          
+          if (unreadMessages.length > 0) {
+            markMessagesAsRead(roomId, unreadMessages);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+        dispatch({ type: ActionType.SET_ERROR, payload: 'Failed to load messages' });
+        message.error('Failed to load messages');
+      } finally {
+        dispatch({ type: ActionType.SET_LOADING, payload: false });
+      }
+    }
+  }, [state.messages, userDetails?.id, markMessagesAsRead]);
 
   // Set up WebSocket callbacks
   useEffect(() => {
@@ -345,49 +431,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isAuthenticated]);
 
-  // Select a room and load its messages
-  const selectRoom = useCallback(async (roomId: string) => {
-    dispatch({ type: ActionType.SELECT_ROOM, payload: roomId });
-    
-    if (!state.messages[roomId]) {
-      dispatch({ type: ActionType.SET_LOADING, payload: true });
-      
-      try {
-        // Sử dụng endpoint phân trang
-        const params = { page: 0, size: 30 }; // Lấy 40 tin nhắn gần nhất
-        const response = await chatApi.getMessagesPaged(roomId, params);
-        
-        // Lấy danh sách tin nhắn từ trường content trong response
-        const messages = response.data.content;
-        
-        dispatch({
-          type: ActionType.SET_MESSAGES,
-          payload: { roomId, messages }
-        });
-        
-        // Mark all messages as read
-        if (userDetails?.id) {
-          const userId = userDetails.id;
-          const unreadMessages = messages
-            .filter(msg => msg.senderId !== userId && 
-                           (!msg.messageStatus[userId] || 
-                            msg.messageStatus[userId] !== 'SEEN'))
-            .map(msg => msg.id);
-          
-          if (unreadMessages.length > 0) {
-            markMessagesAsRead(roomId, unreadMessages);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load messages:', error);
-        dispatch({ type: ActionType.SET_ERROR, payload: 'Failed to load messages' });
-        message.error('Failed to load messages');
-      } finally {
-        dispatch({ type: ActionType.SET_LOADING, payload: false });
-      }
-    }
-  }, [state.messages, userDetails?.id]);
-
   // Send a message
   const sendMessage = useCallback(async (
     content: string, 
@@ -412,7 +455,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         chatWebSocketService.sendMessage(messageData);
       } else {
         // Nếu WebSocket không kết nối, sử dụng REST API
-        const response = await chatApi.sendMessage(messageData);
         message.info('Sử dụng API để gửi tin nhắn do WebSocket không kết nối');
       }
     } catch (error) {
@@ -420,22 +462,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       message.error('Gửi tin nhắn thất bại');
     }
   }, [state.selectedRoomId]);
-
-  // Mark messages as read
-  const markMessagesAsRead = useCallback((roomId: string, messageIds: string[]) => {
-    const markReadData = { roomId, messageIds };
-    
-    // Ưu tiên sử dụng WebSocket nếu đã kết nối
-    if (chatWebSocketService.isConnected()) {
-      // Chỉ gửi qua WebSocket nếu đã kết nối
-      chatWebSocketService.markRead(markReadData);
-    } else {
-      // Nếu WebSocket không kết nối, sử dụng REST API
-      chatApi.markRead(markReadData).catch(error => {
-        console.error('Đánh dấu tin nhắn đã đọc thất bại:', error);
-      });
-    }
-  }, []);
 
   // Create a new chat room
   const createChatRoom = useCallback(async (
@@ -506,6 +532,55 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return state.lastSeenAt[userId] || null;
   }, [state.lastSeenAt]);
 
+  // Add loadMoreMessages function
+  const loadMoreMessages = useCallback(async (roomId: string, page: number, size: number): Promise<boolean> => {
+    if (!roomId) return false;
+    
+    dispatch({ type: ActionType.SET_LOADING, payload: true });
+    
+    try {
+      const params = { page, size };
+      const response = await chatApi.getMessagesPaged(roomId, params);
+      const olderMessages = response.data.content;
+      
+      if (olderMessages.length === 0) {
+        dispatch({ 
+          type: ActionType.UPDATE_PAGINATION, 
+          payload: { roomId, page, hasMore: false } 
+        });
+        return false; // Không còn tin nhắn để tải
+      }
+      
+      // Kết hợp tin nhắn cũ với tin nhắn hiện có
+      const currentMessages = state.messages[roomId] || [];
+      const allMessages = [...currentMessages, ...olderMessages];
+      
+      // Giới hạn số lượng tin nhắn để tránh vấn đề hiệu suất
+      const MAX_MESSAGES = 200;
+      const finalMessages = allMessages.length > MAX_MESSAGES 
+        ? allMessages.slice(0, MAX_MESSAGES) 
+        : allMessages;
+      
+      dispatch({
+        type: ActionType.SET_MESSAGES,
+        payload: { roomId, messages: finalMessages }
+      });
+      
+      dispatch({ 
+        type: ActionType.UPDATE_PAGINATION, 
+        payload: { roomId, page, hasMore: olderMessages.length === size } 
+      });
+      
+      return olderMessages.length === size; // Còn tin nhắn nếu nhận đủ số lượng yêu cầu
+    } catch (error) {
+      console.error('Failed to load more messages:', error);
+      dispatch({ type: ActionType.SET_ERROR, payload: 'Failed to load more messages' });
+      return false;
+    } finally {
+      dispatch({ type: ActionType.SET_LOADING, payload: false });
+    }
+  }, [state.messages, dispatch]);
+
   // Value object
   const value: ChatContextType = {
     state,
@@ -520,7 +595,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     reconnectWebSocket: connectWebSocket,
     isUserTyping,
     isUserOnline,
-    getUserLastSeen
+    getUserLastSeen,
+    loadMoreMessages
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

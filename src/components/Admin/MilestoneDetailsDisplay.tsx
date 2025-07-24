@@ -756,7 +756,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
                         >
                           {status ? getMilestoneStatusDisplayName(status) : "To Do"}
                         </Tag>
-                        {isMilestoneCompleted(record) &&
+                        {record.status === "PENDING" &&
                           !isOverdueMilestone(record) && (
                             <Tag
                               color="success"

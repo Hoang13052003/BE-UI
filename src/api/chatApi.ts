@@ -74,6 +74,18 @@ export interface PaginationParams {
   size: number;
 }
 
+// Thêm interface mới cho kết quả phân trang
+export interface PaginationResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number; // current page number
+  first: boolean; // is first page
+  last: boolean; // is last page
+  empty: boolean; // is empty page
+}
+
 const chatApi = {
   // Chat Room endpoints
   // Đổi getRooms thành gọi endpoint phân trang, nhận params page, size, sort
@@ -81,7 +93,7 @@ const chatApi = {
     axiosClient.get('/api/chat/rooms/paged', { params }),
   
   getRoomsPaged: (params: PaginationParams) => 
-    axiosClient.get<{ content: ChatRoom[], totalElements: number }>('/api/chat/rooms/paged', { params }),
+    axiosClient.get<PaginationResponse<ChatRoom>>('/api/chat/rooms/paged', { params }),
   
   getRoomById: (id: string) => 
     axiosClient.get<ChatRoom>(`/api/chat/rooms/${id}`),
@@ -100,7 +112,7 @@ const chatApi = {
     axiosClient.get<ChatMessage[]>(`/api/chat/messages/${roomId}`),
   
   getMessagesPaged: (roomId: string, params: PaginationParams) => 
-    axiosClient.get<{ content: ChatMessage[], totalElements: number }>(`/api/chat/messages/${roomId}/paged`, { params }),
+    axiosClient.get<PaginationResponse<ChatMessage>>(`/api/chat/messages/${roomId}/paged`, { params }),
   
   sendMessage: (data: SendMessageRequest) => 
     axiosClient.post<ChatMessage>('/api/chat/messages', data),

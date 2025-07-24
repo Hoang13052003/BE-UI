@@ -123,7 +123,7 @@ const MilestoneTable: React.FC<MilestoneTableProps> = ({
               <Tag color={getMilestoneStatusTagColor(status || null)} style={{ padding: "2px 8px", borderRadius: "12px", margin: 0 }}>
                 {status ? getMilestoneStatusDisplayName(status) : "To Do"}
               </Tag>
-              {isMilestoneCompleted(record) && !isOverdueMilestone(record) && (
+              {record.status === "PENDING" && !isOverdueMilestone(record) && (
                 <Tag color="success" style={{ padding: "1px 4px", borderRadius: "8px", margin: 0 }}>
                   Waiting Approval
                 </Tag>

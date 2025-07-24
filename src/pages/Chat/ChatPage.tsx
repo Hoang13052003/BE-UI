@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Layout, Card, Typography, Button, List, Input, Avatar, Badge, Spin, Empty, Modal } from 'antd';
-import { PlusOutlined, SendOutlined, PaperClipOutlined, UserOutlined, CheckOutlined, CheckCircleOutlined, CheckCircleFilled } from '@ant-design/icons';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Layout, Card, Typography, Button, List, Input, Avatar, Badge, Spin, Empty, message } from 'antd';
+import { SendOutlined, PaperClipOutlined, UserOutlined, CheckOutlined, CheckCircleOutlined, CheckCircleFilled, UpOutlined } from '@ant-design/icons';
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import CreateChatRoomModal from './CreateChatRoomModal';
@@ -11,11 +11,6 @@ const { Content } = Layout;
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-// Khai báo interface cho thông tin người dùng đang gõ
-interface TypingUserInfo {
-  userId: number;
-  userName?: string;
-}
 
 // Thêm helper function để xác định trạng thái tin nhắn
 // Cập nhật hàm getMessageStatus để sử dụng seenCount, deliveredCount, và sentCount
@@ -100,75 +95,63 @@ const MessageStatusIndicator: React.FC<{ status: 'SENT' | 'DELIVERED' | 'SEEN' |
 };
 
 const ChatPage: React.FC = () => {
-  const { state, loadChatRooms, selectRoom, sendMessage, markMessagesAsRead, setTyping } = useChat();
+  const { state, loadChatRooms, selectRoom, sendMessage, markMessagesAsRead, setTyping, loadMoreMessages } = useChat();
   const { userDetails } = useAuth();
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [isNearBottom, setIsNearBottom] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const chatMessagesRef = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  const getHasMore = useCallback((roomId: string) => {
+    if (!roomId) return false;
+    const pagination = state.messagesPagination[roomId];
+    return pagination ? pagination.hasMore : true;
+  }, [state.messagesPagination]);
+  
+  const handleLoadMoreMessages = useCallback(async () => {
+    if (!state.selectedRoomId || isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    
+    try {
+      const currentPagination = state.messagesPagination[state.selectedRoomId] || { page: 0, hasMore: true };
+      const nextPage = currentPagination.page + 1;
+      
+      const hasMore = await loadMoreMessages(state.selectedRoomId, nextPage, 30);
+      
+      if (!hasMore) {
+        message.info('No more messages');
+      }
+    } catch (error) {
+      console.error('Failed to load more messages:', error);
+      message.error('Failed to load more messages:');
+      setIsLoadingMore(false);
+    }
+  }, [state.selectedRoomId, state.messagesPagination, isLoadingMore, loadMoreMessages]);
 
   useEffect(() => {
-    // Gọi loadChatRooms với tham số phân trang mặc định
     loadChatRooms(0, 20, 'createdAt,desc');
   }, [loadChatRooms]);
   
   useEffect(() => {
-    // Theo dõi vị trí cuộn để xác định người dùng có đang ở gần cuối không
-    const checkIfNearBottom = () => {
-      const chatContainer = chatMessagesRef.current;
-      if (!chatContainer) return;
-      
-      const { scrollTop, scrollHeight, clientHeight } = chatContainer;
-      // Coi người dùng đang ở gần cuối nếu khoảng cách đến cuối < 150px
-      const scrollThreshold = 150;
-      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-      
-      setIsNearBottom(distanceFromBottom < scrollThreshold);
-    };
-    
-    const chatContainer = chatMessagesRef.current;
-    if (chatContainer) {
-      chatContainer.addEventListener('scroll', checkIfNearBottom);
-      // Kiểm tra ban đầu
-      checkIfNearBottom();
-      
-      return () => {
-        chatContainer.removeEventListener('scroll', checkIfNearBottom);
-      };
+    if (state.selectedRoomId) {
+      setIsLoadingMore(false);
     }
-  }, [state.selectedRoomId]);
-
-  useEffect(() => {
-    // Scroll to bottom when messages change or new messages arrive
-    if (messagesEndRef.current && isNearBottom) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [state.messages, state.selectedRoomId, isNearBottom]);
+  }, [state.selectedRoomId, state.selectedRoomId ? state.messages[state.selectedRoomId] : undefined]);
   
-  // Thêm useEffect mới để theo dõi typingUsers và tự động cuộn xuống
   useEffect(() => {
-    // Nếu có người đang gõ trong phòng hiện tại và người dùng đang ở gần cuối, cuộn xuống để hiển thị
     if (state.selectedRoomId && 
         state.typingUsers[state.selectedRoomId] && 
-        state.typingUsers[state.selectedRoomId].size > 0 &&
-        messagesEndRef.current && 
-        isNearBottom) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        state.typingUsers[state.selectedRoomId].size > 0) {
     }
-  }, [state.typingUsers, state.selectedRoomId, isNearBottom]);
+  }, [state.typingUsers, state.selectedRoomId]);
 
-  // Thêm useEffect để tự động đánh dấu tin nhắn đã đọc khi nhận tin nhắn mới
   useEffect(() => {
     if (!state.selectedRoomId || !userDetails) return;
 
-    // Lấy danh sách tin nhắn trong phòng chat hiện tại
     const currentRoomMessages = state.messages[state.selectedRoomId] || [];
     
-    // Lọc ra các tin nhắn chưa đọc (không phải do mình gửi và chưa được đánh dấu là SEEN)
     const unreadMessages = currentRoomMessages
       .filter(msg => 
         msg.senderId !== userDetails.id && 
@@ -176,19 +159,14 @@ const ChatPage: React.FC = () => {
       )
       .map(msg => msg.id);
 
-    // Nếu có tin nhắn chưa đọc và tab đang được hiển thị
     if (unreadMessages.length > 0 && document.visibilityState === 'visible') {
-      // Tự động đánh dấu tin nhắn đã đọc
       markMessagesAsRead(state.selectedRoomId, unreadMessages);
     }
   }, [state.messages, state.selectedRoomId, userDetails, markMessagesAsRead]);
 
-  // Thêm useEffect để theo dõi trạng thái hiển thị của tab/cửa sổ
   useEffect(() => {
-    // Hàm xử lý khi tab/cửa sổ được hiển thị
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && state.selectedRoomId && userDetails) {
-        // Khi người dùng quay lại tab, đánh dấu tất cả tin nhắn chưa đọc
         const currentRoomMessages = state.messages[state.selectedRoomId] || [];
         const unreadMessages = currentRoomMessages
           .filter(msg => 
@@ -203,15 +181,13 @@ const ChatPage: React.FC = () => {
       }
     };
 
-    // Đăng ký lắng nghe sự kiện visibilitychange
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Clean up
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [state.selectedRoomId, state.messages, userDetails, markMessagesAsRead]);
-
+  
   const handleRoomSelect = (roomId: string) => {
     selectRoom(roomId);
   };
@@ -255,12 +231,9 @@ const ChatPage: React.FC = () => {
   };
 
   const handleAttachmentClick = () => {
-    fileInputRef.current?.click();
+    // fileInputRef.current?.click(); // Xóa file input logic
   };
 
-  const handleCreateRoom = () => {
-    setIsCreateModalVisible(true);
-  };
 
   const handleRoomCreated = () => {
     setIsCreateModalVisible(false);
@@ -367,6 +340,7 @@ const ChatPage: React.FC = () => {
     </div>
   );
 
+  // Hoàn toàn tạo lại phương thức renderChatMessages
   const renderChatMessages = () => {
     if (!state.selectedRoomId) {
       return (
@@ -381,6 +355,7 @@ const ChatPage: React.FC = () => {
 
     const selectedRoom = state.rooms.find(room => room.id === state.selectedRoomId);
     const messages = state.messages[state.selectedRoomId] || [];
+    const hasMore = getHasMore(state.selectedRoomId);
     
     return (
       <div className="chat-main">
@@ -388,89 +363,8 @@ const ChatPage: React.FC = () => {
           <Title level={5}>{selectedRoom?.name}</Title>
         </div>
         
-        <div className="chat-messages" ref={chatMessagesRef}>
-          {messages.length === 0 ? (
-            <Empty 
-              description="No messages yet" 
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          ) : (
-            messages.map((message, index) => {
-              const isSelf = message.senderId === userDetails?.id;
-              const prevMessage = index > 0 ? messages[index - 1] : null;
-              
-              // Xác định xem có hiển thị thời gian không
-              const showTime = !prevMessage || 
-                (new Date(message.sentAt).getTime() - new Date(prevMessage.sentAt).getTime() > 10 * 60 * 1000);
-              
-              // Xác định nếu tin nhắn này là từ cùng người gửi với tin nhắn trước đó
-              const isFromSameSender = prevMessage && prevMessage.senderId === message.senderId;
-              
-              // Xác định nếu tin nhắn này là tin nhắn đầu tiên trong một nhóm
-              const isFirstInGroup = !isFromSameSender || showTime;
-              
-              // Lấy tên người gửi (chỉ khi không phải là tin nhắn của chính mình)
-              const senderName = !isSelf ? getUserName(message.senderId, message.senderName) : '';
-              
-              // Xác định xem đây có phải là tin nhắn cuối cùng của người dùng không
-              const isLastMessageFromUser = isSelf && (
-                index === messages.length - 1 || 
-                messages.slice(index + 1).every(msg => msg.senderId !== userDetails?.id)
-              );
-              
-              // Lấy trạng thái tin nhắn (chỉ cho tin nhắn cuối cùng của chính mình)
-              const messageStatus = isLastMessageFromUser 
-                ? getMessageStatus(message, userDetails) 
-                : { status: null, text: '' };
-              
-              return (
-                <div key={message.id} className="message-group-container">
-                  {showTime && (
-                    <div className="message-time-separator">
-                      <span>{new Date(message.sentAt).toLocaleString([], { 
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        month: '2-digit',
-                        day: '2-digit',
-                        year: '2-digit'
-                      })}</span>
-                    </div>
-                  )}
-                  
-                  <div 
-                    className={`chat-message ${isSelf ? 'self' : ''} ${isFirstInGroup ? 'first-in-group' : ''}`}
-                  >
-                    {!isSelf && isFirstInGroup && (
-                      <Avatar icon={<UserOutlined />} className="chat-message-avatar" />
-                    )}
-                    {!isSelf && !isFirstInGroup && <div className="chat-message-avatar-placeholder"></div>}
-                    
-                    <div className="chat-message-content">
-                      {!isSelf && isFirstInGroup && (
-                        <div className="chat-message-sender">{senderName}</div>
-                      )}
-                      <div className="chat-message-bubble">
-                        {message.content}
-                      </div>
-                      <div className="chat-message-info">
-                        {showTime && (
-                          <div className="chat-message-time">
-                            {new Date(message.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        )}
-                        {isLastMessageFromUser && (
-                          <MessageStatusIndicator status={messageStatus.status} text={messageStatus.text} />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-          
-          {/* Typing indicator */}
+        <div className="chat-messages">
+          {/* Hiển thị chỉ báo đang gõ */}
           {Object.entries(state.typingUsers).map(([roomId, userIds]) => {
             if (roomId === state.selectedRoomId && userIds.size > 0) {
               // Lấy danh sách người đang gõ
@@ -503,6 +397,80 @@ const ChatPage: React.FC = () => {
             }
             return null;
           })}
+
+          {/* Danh sách tin nhắn */}
+          {messages.map((message, index) => {
+              const isSelf = message.senderId === userDetails?.id;
+            const prevMessage = index < messages.length - 1 ? messages[index + 1] : null;
+            const showTime = !prevMessage || (new Date(message.sentAt).getTime() - new Date(prevMessage.sentAt).getTime() > 10 * 60 * 1000);
+              const isFromSameSender = prevMessage && prevMessage.senderId === message.senderId;
+              const isFirstInGroup = !isFromSameSender || showTime;
+              const isLastMessageFromUser = isSelf && (
+              index === 0 ||
+              messages.slice(0, index).every(msg => msg.senderId !== userDetails?.id)
+              );
+            const senderName = !isSelf ? getUserName(message.senderId, message.senderName) : '';
+              const messageStatus = isLastMessageFromUser 
+                ? getMessageStatus(message, userDetails) 
+                : { status: null, text: '' };
+              
+              return (
+                <div key={message.id} className="message-group-container">
+                  {showTime && (
+                    <div className="message-time-separator">
+                      <span>{new Date(message.sentAt).toLocaleString([], { 
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        month: '2-digit',
+                        day: '2-digit',
+                        year: '2-digit'
+                      })}</span>
+                    </div>
+                  )}
+                  
+                <div className={`chat-message ${isSelf ? 'self' : ''} ${isFirstInGroup ? 'first-in-group' : ''}`}>
+                    {!isSelf && isFirstInGroup && (
+                      <Avatar icon={<UserOutlined />} className="chat-message-avatar" />
+                    )}
+                    {!isSelf && !isFirstInGroup && <div className="chat-message-avatar-placeholder"></div>}
+                    
+                    <div className="chat-message-content">
+                      {!isSelf && isFirstInGroup && (
+                        <div className="chat-message-sender">{senderName}</div>
+                      )}
+                      <div className="chat-message-bubble">
+                        {message.content}
+                      </div>
+                      <div className="chat-message-info">
+                        {showTime && (
+                          <div className="chat-message-time">
+                            {new Date(message.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        )}
+                        {isLastMessageFromUser && (
+                          <MessageStatusIndicator status={messageStatus.status} text={messageStatus.text} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+          })}
+          
+          {/* Nút tải thêm tin nhắn cũ (nếu có) */}
+          {hasMore && (
+            <div className="load-more-container">
+              <Button
+                className="load-more-button"
+                size="small"
+                icon={<UpOutlined />}
+                onClick={handleLoadMoreMessages}
+                loading={isLoadingMore}
+              >
+                Load more messages
+              </Button>
+            </div>
+          )}
         </div>
         
         <div className="chat-input-container">
@@ -528,7 +496,7 @@ const ChatPage: React.FC = () => {
               disabled={!messageInput.trim()}
               className="send-button"
             />
-            <input 
+            {/* <input 
               type="file" 
               ref={fileInputRef} 
               style={{ display: 'none' }} 
@@ -536,7 +504,7 @@ const ChatPage: React.FC = () => {
                 // Handle file upload here
                 console.log('File selected:', e.target.files);
               }} 
-            />
+            /> */}
           </div>
         </div>
       </div>
