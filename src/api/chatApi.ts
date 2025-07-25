@@ -86,6 +86,18 @@ export interface PaginationResponse<T> {
   empty: boolean; // is empty page
 }
 
+export interface ChatAttachmentResponse {
+  id: string;
+  fileName: string;
+  fileType: string;
+  attachmentType: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' | 'OTHER';
+  fileUrl: string;
+  thumbnailUrl?: string | null;
+  size: number;
+  uploadedAt: string;
+  uploadedBy: number;
+}
+
 const chatApi = {
   // Chat Room endpoints
   // Đổi getRooms thành gọi endpoint phân trang, nhận params page, size, sort
@@ -127,6 +139,18 @@ const chatApi = {
     formData.append('roomId', roomId);
     
     return axiosClient.post<ChatAttachment>('/api/chat/attachments', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+  
+  // Upload attachment for chat message (new API)
+  uploadChatAttachment: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return axiosClient.post<ChatAttachmentResponse>('/api/chat/attachments/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }

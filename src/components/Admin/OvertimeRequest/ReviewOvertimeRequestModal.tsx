@@ -291,15 +291,23 @@ const ReviewOvertimeRequestModal: React.FC<ReviewOvertimeRequestModalProps> = ({
                       style={{
                         width: "100%",
                         height: 60,
+                        minWidth: 200,
+                        paddingLeft: 24,
+                        paddingRight: 24,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        borderColor: decision === true ? "#52c41a" : undefined,
-                        color: decision === true ? "#52c41a" : undefined,
+                        borderColor: decision === true ? "#389e0d" : undefined,
+                        color: decision === true ? "#389e0d" : undefined,
+                        borderRadius: 30,
+                        fontWeight: 600,
+                        fontSize: 18,
+                        boxShadow: decision === true ? "0 4px 16px rgba(56,158,13,0.10)" : undefined,
+                        transition: "all 0.2s",
                       }}
                     >
                       <Space>
-                        <CheckCircleOutlined />
+                        <CheckCircleOutlined style={{ fontSize: 20 }} />
                         <Text strong>Approve Request</Text>
                       </Space>
                     </Radio.Button>
@@ -310,15 +318,23 @@ const ReviewOvertimeRequestModal: React.FC<ReviewOvertimeRequestModalProps> = ({
                       style={{
                         width: "100%",
                         height: 60,
+                        minWidth: 200,
+                        paddingLeft: 24,
+                        paddingRight: 24,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         borderColor: decision === false ? "#ff4d4f" : undefined,
                         color: decision === false ? "#ff4d4f" : undefined,
+                        borderRadius: 30,
+                        fontWeight: 600,
+                        fontSize: 18,
+                        boxShadow: decision === false ? "0 4px 16px rgba(255,77,79,0.10)" : undefined,
+                        transition: "all 0.2s",
                       }}
                     >
                       <Space>
-                        <CloseCircleOutlined />
+                        <CloseCircleOutlined style={{ fontSize: 20 }} />
                         <Text strong>Reject Request</Text>
                       </Space>
                     </Radio.Button>
@@ -364,11 +380,35 @@ const ReviewOvertimeRequestModal: React.FC<ReviewOvertimeRequestModalProps> = ({
                 size="large"
                 disabled={decision === null}
                 style={{
-                  background: decision === true ? "#52c41a" : decision === false ? "#ff4d4f" : undefined,
-                  borderColor: decision === true ? "#52c41a" : decision === false ? "#ff4d4f" : undefined,
+                  background: decision === true ? "#389e0d" : decision === false ? "#ff4d4f" : undefined,
+                  borderColor: decision === true ? "#389e0d" : decision === false ? "#ff4d4f" : undefined,
+                  borderRadius: 30,
+                  boxShadow: decision === true ? "0 4px 16px rgba(56,158,13,0.15)" : undefined,
+                  fontWeight: 600,
+                  minWidth: 240,
+                  paddingLeft: 32,
+                  paddingRight: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  transition: "all 0.2s",
                 }}
+                className={decision === true ? "approve-btn" : undefined}
               >
-                {decision === true ? "Approve Request" : decision === false ? "Reject Request" : "Submit Review"}
+                {decision === true ? (
+                  <>
+                    <CheckCircleOutlined style={{ fontSize: 20, marginRight: 8 }} />
+                    Approve Request
+                  </>
+                ) : decision === false ? (
+                  <>
+                    <CloseCircleOutlined style={{ fontSize: 20, marginRight: 8 }} />
+                    Reject Request
+                  </>
+                ) : (
+                  "Submit Review"
+                )}
               </Button>
             </Space>
           </Form.Item>

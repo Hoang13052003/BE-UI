@@ -192,11 +192,8 @@ const Overview: React.FC = () => {
     <Row gutter={[20, 20]}>
       {projects.map((project) => {
         let laborHours = null;
-        if (project.projectType === "LABOR" && project.startDate) {
-          const today = new Date();
-          const end = today < new Date(project.plannedEndDate) ? today : new Date(project.plannedEndDate);
-          const workingDays = getWorkingDays(project.startDate, end.toISOString().slice(0, 10));
-          laborHours = workingDays * 8;
+        if (project.projectType === "LABOR") {
+          laborHours = project.totalEstimatedHours;
         }
         return (
           <Col xs={24} sm={24} md={12} lg={8} xl={8} key={project.id}>
@@ -296,11 +293,8 @@ const Overview: React.FC = () => {
       dataSource={projects}
       renderItem={(project) => {
         let laborHours = null;
-        if (project.projectType === "LABOR" && project.startDate) {
-          const today = new Date();
-          const end = today < new Date(project.plannedEndDate) ? today : new Date(project.plannedEndDate);
-          const workingDays = getWorkingDays(project.startDate, end.toISOString().slice(0, 10));
-          laborHours = workingDays * 8;
+        if (project.projectType === "LABOR") {
+          laborHours = project.totalEstimatedHours;
         }
         return (
           <List.Item

@@ -1,32 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout, Card, Typography, Button, List, Input, Avatar, Badge, Spin, Empty, message } from 'antd';
-import { SendOutlined, PaperClipOutlined, UserOutlined, CheckOutlined, CheckCircleOutlined, CheckCircleFilled, UpOutlined } from '@ant-design/icons';
+import { SendOutlined, PaperClipOutlined, UserOutlined, CheckOutlined, CheckCircleOutlined, CheckCircleFilled, UpOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import CreateChatRoomModal from './CreateChatRoomModal';
 import { ChatMessage } from '../../api/chatApi';
+import chatApi from '../../api/chatApi';
 import './ChatPage.css';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-
-
-// Thêm helper function để xác định trạng thái tin nhắn
-// Cập nhật hàm getMessageStatus để sử dụng seenCount, deliveredCount, và sentCount
 const getMessageStatus = (message: ChatMessage, userDetails: any): { status: 'SENT' | 'DELIVERED' | 'SEEN' | null, text: string } => {
   if (!userDetails || message.senderId !== userDetails.id) {
     return { status: null, text: '' };
   }
 
-  // Ưu tiên sử dụng các trường đếm nếu có
   if (message.seenCount !== undefined && message.deliveredCount !== undefined && message.sentCount !== undefined) {
-    // Nếu seenCount > 1, tức là có người khác ngoài người gửi đã xem tin nhắn
     if (message.seenCount > 1) {
       return { status: 'SEEN', text: `Seen by ${message.seenCount - 1} user` };
     }
     
-    // Kiểm tra nếu có messageStatus khác là SEEN ngoài messageStatus của người gửi
     const otherUserSeen = Object.entries(message.messageStatus).some(([userId, status]) => {
       return userId !== userDetails.id.toString() && status === 'SEEN';
     });
@@ -35,22 +29,17 @@ const getMessageStatus = (message: ChatMessage, userDetails: any): { status: 'SE
       return { status: 'SEEN', text: 'Seen' };
     }
     
-    // Nếu không ai xem nhưng có người đã nhận được tin nhắn
     if (message.deliveredCount > 0) {
       return { status: 'DELIVERED', text: 'Delivered' };
     }
     
-    // Nếu tin nhắn đã được gửi nhưng không ai nhận
     if (message.sentCount > 0) {
       return { status: 'SENT', text: 'Sent' };
     }
 
-    // Trường hợp mặc định
     return { status: 'SENT', text: 'Sent' };
   }
 
-  // Fallback vào cách cũ nếu không có các trường đếm
-  // Lọc ra các messageStatus của người khác (không phải người gửi)
   const otherUserStatuses = Object.entries(message.messageStatus)
     .filter(([userId, _]) => userId !== userDetails.id.toString())
     .map(([_, status]) => status);
@@ -66,7 +55,6 @@ const getMessageStatus = (message: ChatMessage, userDetails: any): { status: 'SE
   return { status: 'SENT', text: 'Sent' };
 };
 
-// Thêm component hiển thị trạng thái tin nhắn
 const MessageStatusIndicator: React.FC<{ status: 'SENT' | 'DELIVERED' | 'SEEN' | null, text: string }> = ({ status, text }) => {
   if (!status) return null;
 
@@ -102,6 +90,10 @@ const ChatPage: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // State for attachment file and upload status
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentUploading, setAttachmentUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const getHasMore = useCallback((roomId: string) => {
     if (!roomId) return false;
@@ -192,33 +184,76 @@ const ChatPage: React.FC = () => {
     selectRoom(roomId);
   };
 
-  const handleSendMessage = () => {
-    if (messageInput.trim() && state.selectedRoomId) {
-      sendMessage(messageInput.trim());
-      setMessageInput('');
-      
-      // Clear typing indicator
-      if (state.selectedRoomId) {
-        setTyping(state.selectedRoomId, false);
-        setIsTyping(false);
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setAttachmentFile(e.target.files[0]);
+    }
+  };
+
+  // Remove selected file
+  const handleRemoveAttachment = () => {
+    setAttachmentFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Open file dialog
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Upload file and return attachmentId (using chatApi)
+  const uploadAttachment = async (file: File): Promise<string | null> => {
+    try {
+      setAttachmentUploading(true);
+      // Use chatApi to upload attachment
+      const response = await chatApi.uploadChatAttachment(file);
+      console.log('Upload response:', response.data); // Log for debugging
+      setAttachmentUploading(false);
+      return response.data.id; // Get id from response
+    } catch (error) {
+      console.error('File upload error:', error);
+      setAttachmentUploading(false);
+      message.error('File upload failed');
+      return null;
+    }
+  };
+
+  // Send message logic (with optional attachment)
+  const handleSendMessage = async () => {
+    if ((!messageInput.trim() && !attachmentFile) || !state.selectedRoomId) return;
+    let attachmentId: string | null = null;
+    if (attachmentFile) {
+      attachmentId = await uploadAttachment(attachmentFile);
+      // If upload failed, do not send message
+      if (!attachmentId) {
+        message.error('Không thể gửi file đính kèm');
+        return;
       }
+    }
+    // Only pass attachmentIds if valid id exists
+    const attachmentIds = attachmentId ? [attachmentId] : undefined;
+    sendMessage(messageInput.trim(), attachmentIds);
+    setMessageInput('');
+    setAttachmentFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (state.selectedRoomId) {
+      setTyping(state.selectedRoomId, false);
+      setIsTyping(false);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessageInput(e.target.value);
     
-    // Handle typing indicator
     if (state.selectedRoomId) {
       if (!isTyping) {
         setTyping(state.selectedRoomId, true);
         setIsTyping(true);
       }
       
-      // Reset typing timeout
       if (typingTimeout) clearTimeout(typingTimeout);
       
-      // Set typing timeout to clear typing indicator after 3 seconds
       const timeout = setTimeout(() => {
         if (state.selectedRoomId) {
           setTyping(state.selectedRoomId, false);
@@ -230,16 +265,6 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const handleAttachmentClick = () => {
-    // fileInputRef.current?.click(); // Xóa file input logic
-  };
-
-
-  const handleRoomCreated = () => {
-    setIsCreateModalVisible(false);
-    loadChatRooms();
-  };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -247,15 +272,11 @@ const ChatPage: React.FC = () => {
     }
   };
   
-  // Hàm lấy tên người dùng từ ID
-  // Cập nhật hàm getUserName để sử dụng senderName từ tin nhắn
   const getUserName = (userId: number, senderName?: string): string => {
-    // Ưu tiên sử dụng senderName nếu được cung cấp
     if (senderName) {
       return senderName;
     }
     
-    // Ưu tiên sử dụng userName từ typing status nếu có
     let typingUserName: string | undefined;
     
     if (state.selectedRoomId && state.typingUsers[state.selectedRoomId]) {
@@ -270,7 +291,6 @@ const ChatPage: React.FC = () => {
       return typingUserName;
     }
     
-    // Fallback vào user ID
     return `User ${userId}`;
   };
 
@@ -304,9 +324,16 @@ const ChatPage: React.FC = () => {
             dataSource={state.rooms}
             renderItem={(room) => {
               const isActive = room.id === state.selectedRoomId;
-              // Calculate unread count
               const unreadCount = room.unreadCount || 0;
-              
+              const lastMessage = room.lastMessage;
+              let lastMessageContent = 'No messages';
+              if (lastMessage) {
+                if (lastMessage.senderId !== userDetails?.id) {
+                  lastMessageContent = `${lastMessage.senderName || 'Unknown'}: ${lastMessage.content}`;
+                } else {
+                  lastMessageContent = lastMessage.content;
+                }
+              }
               return (
                 <div 
                   className={`chat-room-item ${isActive ? 'active' : ''}`}
@@ -321,14 +348,14 @@ const ChatPage: React.FC = () => {
                   <div className="chat-room-info">
                     <div className="chat-room-name">
                       <Text strong>{room.name}</Text>
-                      {room.lastMessage && (
+                      {lastMessage && (
                         <Text type="secondary" className="chat-last-time">
-                          {new Date(room.lastMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(lastMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </Text>
                       )}
                     </div>
                     <Text type="secondary" ellipsis className="chat-last-message">
-                      {room.lastMessage?.content || 'No messages'}
+                      {lastMessageContent}
                     </Text>
                   </div>
                 </div>
@@ -340,7 +367,6 @@ const ChatPage: React.FC = () => {
     </div>
   );
 
-  // Hoàn toàn tạo lại phương thức renderChatMessages
   const renderChatMessages = () => {
     if (!state.selectedRoomId) {
       return (
@@ -364,10 +390,8 @@ const ChatPage: React.FC = () => {
         </div>
         
         <div className="chat-messages">
-          {/* Hiển thị chỉ báo đang gõ */}
           {Object.entries(state.typingUsers).map(([roomId, userIds]) => {
             if (roomId === state.selectedRoomId && userIds.size > 0) {
-              // Lấy danh sách người đang gõ
               const typingUsers = Array.from(userIds);
               let typingText = '';
               
@@ -398,7 +422,6 @@ const ChatPage: React.FC = () => {
             return null;
           })}
 
-          {/* Danh sách tin nhắn */}
           {messages.map((message, index) => {
               const isSelf = message.senderId === userDetails?.id;
             const prevMessage = index < messages.length - 1 ? messages[index + 1] : null;
@@ -440,6 +463,20 @@ const ChatPage: React.FC = () => {
                       )}
                       <div className="chat-message-bubble">
                         {message.content}
+                        {/* Show attachment if exists */}
+                        {message.attachments && message.attachments.length > 0 && (
+                          <div className="chat-attachments">
+                            {message.attachments.map((att: any) => (
+                              <div key={att.id} className="chat-attachment-item">
+                                <a href={att.fileUrl} target="_blank" rel="noopener noreferrer">
+                                  {/* Show icon by file type, fallback to paperclip */}
+                                  <PaperClipOutlined style={{ marginRight: 4 }} />
+                                  <span className="attachment-name">{att.fileName}</span>
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="chat-message-info">
                         {showTime && (
@@ -457,7 +494,6 @@ const ChatPage: React.FC = () => {
               );
           })}
           
-          {/* Nút tải thêm tin nhắn cũ (nếu có) */}
           {hasMore && (
             <div className="load-more-container">
               <Button
@@ -482,33 +518,58 @@ const ChatPage: React.FC = () => {
               placeholder="Type a message..."
               autoSize={{ minRows: 1, maxRows: 4 }}
               className="chat-input"
+              disabled={attachmentUploading}
             />
             <Button 
               type="link" 
               icon={<PaperClipOutlined />} 
               onClick={handleAttachmentClick}
               className="attachment-button"
+              disabled={attachmentUploading}
+            />
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+              onChange={handleFileChange}
+              disabled={attachmentUploading}
+              accept="*"
             />
             <Button 
               type="primary" 
               icon={<SendOutlined />} 
               onClick={handleSendMessage}
-              disabled={!messageInput.trim()}
+              disabled={(!messageInput.trim() && !attachmentFile) || attachmentUploading}
               className="send-button"
+              loading={attachmentUploading}
             />
-            {/* <input 
-              type="file" 
-              ref={fileInputRef} 
-              style={{ display: 'none' }} 
-              onChange={(e) => {
-                // Handle file upload here
-                console.log('File selected:', e.target.files);
-              }} 
-            /> */}
           </div>
+          {renderAttachmentPreview()}
         </div>
       </div>
     );
+  };
+
+  // UI for file attachment preview
+  const renderAttachmentPreview = () => (
+    attachmentFile ? (
+      <div className="attachment-preview">
+        <span className="attachment-file-name">{attachmentFile.name}</span>
+        <Button 
+          size="small" 
+          onClick={handleRemoveAttachment} 
+          danger 
+          style={{ marginLeft: 8 }}
+          icon={<DeleteOutlined />}
+        />
+      </div>
+    ) : null
+  );
+
+  // Ensure handleRoomCreated is defined for CreateChatRoomModal
+  const handleRoomCreated = () => {
+    setIsCreateModalVisible(false);
+    loadChatRooms();
   };
 
   return (

@@ -420,8 +420,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const response = await chatApi.getRooms({ page, size, sort });
-      // Lấy danh sách phòng chat từ response.data.content
-      dispatch({ type: ActionType.SET_ROOMS, payload: response.data.content });
+      // Map latestMessage từ API sang lastMessage cho từng phòng chat
+      const rooms = response.data.content.map((room: any) => ({
+        ...room,
+        lastMessage: room.latestMessage || room.lastMessage // Ưu tiên latestMessage nếu có
+      }));
+      dispatch({ type: ActionType.SET_ROOMS, payload: rooms });
     } catch (error) {
       console.error('Failed to load chat rooms:', error);
       dispatch({ type: ActionType.SET_ERROR, payload: 'Failed to load chat rooms' });
