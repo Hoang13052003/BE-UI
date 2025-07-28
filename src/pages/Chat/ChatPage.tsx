@@ -4,7 +4,7 @@ import { SendOutlined, PaperClipOutlined, UserOutlined, CheckOutlined, CheckCirc
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import CreateChatRoomModal from './CreateChatRoomModal';
-import { ChatMessage, MessageReactionResponse } from '../../api/chatApi';
+import { ChatMessage, MessageReaction, MessageReactionResponse } from '../../api/chatApi';
 import chatApi from '../../api/chatApi';
 import EmojiReaction from '../../components/EmojiReaction';
 import './ChatPage.css';
@@ -95,9 +95,61 @@ const ChatPage: React.FC = () => {
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentUploading, setAttachmentUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // State for managing message reactions
-  const [messageReactions, setMessageReactions] = useState<Record<string, MessageReactionResponse>>({});
-  
+
+  // Helper function to convert MessageReaction[] to MessageReactionResponse
+  const convertReactions = useCallback((messageId: string, reactions: MessageReaction[] = [], currentUserId: number) => {
+    const reactionCounts: Record<string, number> = {};
+    const currentUserReactions: string[] = [];
+    const reactionUsers: Record<string, Array<{
+      userId: number;
+      userFullName: string;
+      userAvatar?: string | null;
+    }>> = {};
+    
+    // Check if reactions is an array before processing
+    if (!Array.isArray(reactions)) {
+      return {
+        messageId,
+        reactionCounts,
+        currentUserReactions,
+        reactionUsers
+      };
+    }
+    
+    // Group reactions by emoji
+    reactions.forEach(reaction => {
+      // Count reactions
+      if (!reactionCounts[reaction.emoji]) {
+        reactionCounts[reaction.emoji] = 0;
+      }
+      reactionCounts[reaction.emoji]++;
+      
+      // Track current user's reactions
+      if (reaction.userId === currentUserId) {
+        if (!currentUserReactions.includes(reaction.emoji)) {
+          currentUserReactions.push(reaction.emoji);
+        }
+      }
+      
+      // Group users by emoji
+      if (!reactionUsers[reaction.emoji]) {
+        reactionUsers[reaction.emoji] = [];
+      }
+      reactionUsers[reaction.emoji].push({
+        userId: reaction.userId,
+        userFullName: reaction.userFullName,
+        userAvatar: reaction.userAvatar
+      });
+    });
+    
+    return {
+      messageId,
+      reactionCounts,
+      currentUserReactions,
+      reactionUsers
+    };
+  }, []);
+
   const getHasMore = useCallback((roomId: string) => {
     if (!roomId) return false;
     const pagination = state.messagesPagination[roomId];
@@ -297,13 +349,6 @@ const ChatPage: React.FC = () => {
     return `User ${userId}`;
   };
 
-  // Handle reaction changes
-  const handleReactionChange = useCallback((messageId: string, reactions: MessageReactionResponse) => {
-    setMessageReactions(prev => ({
-      ...prev,
-      [messageId]: reactions
-    }));
-  }, []);
 
   const renderChatSidebar = () => (
     <div className="chat-sidebar">
@@ -502,8 +547,7 @@ const ChatPage: React.FC = () => {
                       {/* Emoji Reactions */}
                       <EmojiReaction
                         messageId={message.id}
-                        reactions={messageReactions[message.id]}
-                        onReactionChange={handleReactionChange}
+                        reactions={convertReactions(message.id, message.reactions, userDetails?.id || 0)}
                       />
                     </div>
                   </div>

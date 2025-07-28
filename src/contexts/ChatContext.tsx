@@ -252,6 +252,8 @@ function chatReducer(state: ChatState, action: Action): ChatState {
     case ActionType.UPDATE_MESSAGE_REACTIONS: {
       const { messageId, userId, userName, userAvatar, emoji, addReaction } = action.payload;
       
+      console.log('UPDATE_MESSAGE_REACTIONS called with payload:', action.payload);
+      
       // Tìm message trong tất cả các room
       const updatedMessages = { ...state.messages };
       let messageFound = false;
@@ -261,9 +263,12 @@ function chatReducer(state: ChatState, action: Action): ChatState {
         const messageIndex = roomMessages.findIndex(msg => msg.id === messageId);
         
         if (messageIndex !== -1) {
+          console.log('Message found in room:', roomId, 'at index:', messageIndex);
           messageFound = true;
           const message = roomMessages[messageIndex];
-          let updatedReactions = [...(message.reactions || [])];
+          let updatedReactions = Array.isArray(message.reactions) ? [...message.reactions] : [];
+          
+          console.log('Current reactions:', updatedReactions);
           
           if (addReaction) {
             // Thêm reaction mới (nếu chưa có)
@@ -271,8 +276,10 @@ function chatReducer(state: ChatState, action: Action): ChatState {
               reaction => reaction.userId === userId && reaction.emoji === emoji
             );
             
+            console.log('Adding reaction, existingReactionIndex:', existingReactionIndex);
+            
             if (existingReactionIndex === -1) {
-              updatedReactions.push({
+              const newReaction = {
                 id: `${messageId}-${userId}-${emoji}-${Date.now()}`,
                 messageId,
                 userId,
@@ -280,13 +287,17 @@ function chatReducer(state: ChatState, action: Action): ChatState {
                 userAvatar,
                 emoji,
                 createdAt: new Date().toISOString()
-              });
+              };
+              updatedReactions.push(newReaction);
+              console.log('Added new reaction:', newReaction);
             }
           } else {
             // Xóa reaction
+            const initialLength = updatedReactions.length;
             updatedReactions = updatedReactions.filter(
               reaction => !(reaction.userId === userId && reaction.emoji === emoji)
             );
+            console.log('Removed reactions, count:', initialLength - updatedReactions.length);
           }
           
           // Cập nhật message với reactions mới
@@ -294,6 +305,8 @@ function chatReducer(state: ChatState, action: Action): ChatState {
             ...message,
             reactions: updatedReactions
           };
+          
+          console.log('Updated message reactions:', updatedMessage.reactions);
           
           updatedMessages[roomId] = [
             ...roomMessages.slice(0, messageIndex),
@@ -307,17 +320,17 @@ function chatReducer(state: ChatState, action: Action): ChatState {
       
       if (!messageFound) {
         console.warn('Message not found for reaction update:', messageId);
+        console.log('Available message IDs:', Object.values(state.messages).flat().map(msg => msg.id));
         return state;
       }
+      
+      console.log('Returning updated state with messages:', updatedMessages);
       
       return {
         ...state,
         messages: updatedMessages
       };
     }
-    
-    case ActionType.RESET:
-      return initialState;
     
     default:
       return state;

@@ -72,9 +72,29 @@
   "addReaction": true // true: thêm, false: xóa
 }
 ```
+- **Ví dụ gửi request thêm reaction:**
+```javascript
+// Gửi qua WebSocket
+stompClient.send("/app/chat.reaction", {}, JSON.stringify({
+  "messageId": "msg123",
+  "emoji": "👍",
+  "addReaction": true
+}));
+```
+- **Ví dụ gửi request xóa reaction:**
+```javascript
+// Gửi qua WebSocket
+stompClient.send("/app/chat.reaction", {}, JSON.stringify({
+  "messageId": "msg123",
+  "emoji": "👍",
+  "addReaction": false
+}));
+```
 - **Validation & Error Handling:**
   - Payload phải tuân thủ định dạng `MessageReactionRequestDto`
   - Các validation tương tự như REST API
+  - Kiểm tra quyền truy cập phòng chat
+  - Kiểm tra sự tồn tại của tin nhắn
 
 ### Lắng nghe sự kiện reaction
 - **Subscribe:** `/user/queue/reaction`
@@ -89,10 +109,73 @@
   "addReaction": true // true: thêm, false: xóa
 }
 ```
+- **Ví dụ xử lý response khi nhận reaction:**
+```javascript
+// Lắng nghe sự kiện reaction
+stompClient.subscribe('/user/queue/reaction', function(response) {
+  const reactionData = JSON.parse(response.body);
+  
+  if (reactionData.addReaction) {
+    // Thêm reaction vào UI
+    addReactionToMessage(reactionData.messageId, reactionData.emoji, 
+                         reactionData.userId, reactionData.userName, 
+                         reactionData.userAvatar);
+  } else {
+    // Xóa reaction khỏi UI
+    removeReactionFromMessage(reactionData.messageId, reactionData.emoji, 
+                              reactionData.userId);
+  }
+});
+```
 - **Các loại sự kiện reaction:**
   - Thêm reaction mới
   - Xóa reaction hiện có
   - Thay thế reaction (khi người dùng chọn emoji khác)
+
+### Xử lý lỗi khi gửi reaction qua WebSocket
+- **Lắng nghe lỗi:** `/user/queue/errors`
+- **Các loại lỗi có thể xảy ra:**
+  - `MESSAGE_NOT_FOUND`: Tin nhắn không tồn tại
+  - `ACCESS_DENIED`: Người dùng không có quyền truy cập phòng chat
+  - `VALIDATION_ERROR`: Dữ liệu gửi lên không hợp lệ
+- **Payload nhận được khi có lỗi:**
+```json
+{
+  "type": "MESSAGE_NOT_FOUND",
+  "message": "Message not found",
+  "messageId": "<ID tin nhắn>"
+}
+```
+- **Ví dụ xử lý lỗi:**
+```javascript
+// Lắng nghe lỗi
+stompClient.subscribe('/user/queue/errors', function(response) {
+  const errorData = JSON.parse(response.body);
+  
+  switch(errorData.type) {
+    case 'MESSAGE_NOT_FOUND':
+      showError(`Tin nhắn ${errorData.messageId} không tồn tại`);
+      break;
+    case 'ACCESS_DENIED':
+      showError('Bạn không có quyền truy cập phòng chat này');
+      break;
+    default:
+      showError('Có lỗi xảy ra khi xử lý reaction');
+  }
+});
+```
+
+### Cập nhật trạng thái tin nhắn
+- **Subscribe:** `/user/queue/message-status`
+- **Mục đích:** Cập nhật trạng thái đã đọc của tin nhắn khi có reaction
+- **Payload nhận được:**
+```json
+{
+  "messageId": "<ID tin nhắn>",
+  "userId": 123,
+  "status": "SEEN"
+}
+```
 
 ### Lắng nghe trạng thái tin nhắn
 - **Subscribe:** `/user/queue/message-status`
