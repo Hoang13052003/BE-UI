@@ -1,6 +1,6 @@
 import SockJS from 'sockjs-client';
 import { Client, IMessage, IFrame } from '@stomp/stompjs';
-import { ChatMessage } from '../api/chatApi';
+import { ChatMessage, WebSocketReactionEvent, MessageReactionRequest } from '../api/chatApi';
 
 export interface MessageStatusUpdate {
   roomId?: string;  // Đánh dấu là optional vì server có thể không gửi
@@ -27,6 +27,7 @@ export interface ChatWebSocketCallbacks {
   onMessageStatus?: (status: MessageStatusUpdate) => void;
   onTyping?: (status: TypingStatus) => void;
   onUserStatus?: (status: UserStatus) => void;
+  onReaction?: (reactionEvent: WebSocketReactionEvent) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
   onError?: (error: any) => void;
@@ -160,6 +161,17 @@ class ChatWebSocketService {
         }
       }).unsubscribe
     };
+
+    // Subscribe to reaction events
+    this.subscriptions['reactions'] = {
+      id: 'reactions',
+      unsubscribe: this.client.subscribe('/user/queue/reaction', (message: IMessage) => {
+        if (this.callbacks.onReaction && message.body) {
+          const reactionEvent = JSON.parse(message.body) as WebSocketReactionEvent;
+          this.callbacks.onReaction(reactionEvent);
+        }
+      }).unsubscribe
+    };
   }
 
   private unsubscribeAll(): void {
@@ -209,14 +221,29 @@ class ChatWebSocketService {
     });
   }
 
-  updateTyping(roomId: string, typing: boolean): void {
+  setTyping(roomId: string, typing: boolean): void {
     if (!this.client || !this.client.connected) {
-      console.error('Cannot update typing: WebSocket not connected');
+      console.error('Cannot send typing status: WebSocket not connected');
       return;
     }
     this.client.publish({
       destination: '/app/chat.typing',
       body: JSON.stringify({ roomId, typing }),
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        'X-Auth-Token': this.token
+      }
+    });
+  }
+
+  sendReaction(reactionData: MessageReactionRequest): void {
+    if (!this.client || !this.client.connected) {
+      console.error('Cannot send reaction: WebSocket not connected');
+      return;
+    }
+    this.client.publish({
+      destination: '/app/chat.reaction',
+      body: JSON.stringify(reactionData),
       headers: {
         'Authorization': `Bearer ${this.token}`,
         'X-Auth-Token': this.token

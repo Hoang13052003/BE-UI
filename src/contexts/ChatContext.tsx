@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useCallback, useReducer } from 'react';
 import { message } from 'antd';
-import chatApi, { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment } from '../api/chatApi';
+import chatApi, { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment, MessageReactionRequest } from '../api/chatApi';
 import chatWebSocketService, { MessageStatusUpdate, TypingStatus, UserStatus } from '../services/ChatWebSocket';
 import { useAuth } from './AuthContext';
 
@@ -39,6 +39,7 @@ interface ChatContextType {
   isUserOnline: (userId: number) => boolean;
   getUserLastSeen: (userId: number) => string | null;
   loadMoreMessages: (roomId: string, page: number, size: number) => Promise<boolean>;
+  sendReaction: (reactionData: MessageReactionRequest) => Promise<void>;
 }
 
 // Initial state
@@ -497,7 +498,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update typing status
   const setTyping = useCallback((roomId: string, typing: boolean) => {
-    chatWebSocketService.updateTyping(roomId, typing);
+    chatWebSocketService.setTyping(roomId, typing);
   }, []);
 
   // Upload attachment
@@ -585,6 +586,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [state.messages, dispatch]);
 
+  // Send reaction with WebSocket fallback to REST API
+  const sendReaction = useCallback(async (reactionData: MessageReactionRequest) => {
+    // Ưu tiên sử dụng WebSocket nếu đã kết nối
+    if (chatWebSocketService.isConnected()) {
+      // Gửi qua WebSocket nếu đã kết nối
+      chatWebSocketService.sendReaction(reactionData);
+    } else {
+      // Nếu WebSocket không kết nối, sử dụng REST API
+      try {
+        await chatApi.addOrRemoveReaction(reactionData);
+      } catch (error) {
+        console.error('Gửi reaction thất bại:', error);
+        throw error;
+      }
+    }
+  }, []);
+
   // Value object
   const value: ChatContextType = {
     state,
@@ -600,7 +618,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isUserTyping,
     isUserOnline,
     getUserLastSeen,
-    loadMoreMessages
+    loadMoreMessages,
+    sendReaction
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

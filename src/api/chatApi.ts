@@ -33,6 +33,43 @@ export interface ChatMessage {
   seenCount?: number;
   deliveredCount?: number;
   sentCount?: number;
+  reactions?: MessageReaction[];
+}
+
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: number;
+  userFullName: string;
+  userAvatar?: string | null;
+  emoji: string;
+  createdAt: string;
+}
+
+export interface MessageReactionRequest {
+  messageId: string;
+  emoji: string;
+  addReaction: boolean;
+}
+
+export interface MessageReactionResponse {
+  messageId: string;
+  reactionCounts: Record<string, number>;
+  currentUserReactions: string[];
+  reactionUsers: Record<string, Array<{
+    userId: number;
+    userFullName: string;
+    userAvatar?: string | null;
+  }>>;
+}
+
+export interface WebSocketReactionEvent {
+  messageId: string;
+  userId: number;
+  userName: string;
+  userAvatar?: string | null;
+  emoji: string;
+  addReaction: boolean;
 }
 
 export interface ChatAttachment {
@@ -155,7 +192,20 @@ const chatApi = {
         'Content-Type': 'multipart/form-data'
       }
     });
-  }
+  },
+
+  // Message Reactions endpoints
+  addOrRemoveReaction: (data: MessageReactionRequest) => {
+    return axiosClient.post<MessageReaction>('/api/chat/messages/reactions', data);
+  },
+
+  getMessageReactions: (messageId: string) => {
+    return axiosClient.get<MessageReactionResponse>(`/api/chat/messages/${messageId}/reactions`);
+  },
+
+  getCurrentUserReactions: (messageId: string) => {
+    return axiosClient.get<MessageReactionResponse>(`/api/chat/messages/${messageId}/reactions/user`);
+  },
 };
 
-export default chatApi; 
+export default chatApi;

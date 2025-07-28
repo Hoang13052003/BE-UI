@@ -4,8 +4,9 @@ import { SendOutlined, PaperClipOutlined, UserOutlined, CheckOutlined, CheckCirc
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import CreateChatRoomModal from './CreateChatRoomModal';
-import { ChatMessage } from '../../api/chatApi';
+import { ChatMessage, MessageReactionResponse } from '../../api/chatApi';
 import chatApi from '../../api/chatApi';
+import EmojiReaction from '../../components/EmojiReaction';
 import './ChatPage.css';
 
 const { Content } = Layout;
@@ -94,6 +95,8 @@ const ChatPage: React.FC = () => {
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentUploading, setAttachmentUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // State for managing message reactions
+  const [messageReactions, setMessageReactions] = useState<Record<string, MessageReactionResponse>>({});
   
   const getHasMore = useCallback((roomId: string) => {
     if (!roomId) return false;
@@ -294,6 +297,14 @@ const ChatPage: React.FC = () => {
     return `User ${userId}`;
   };
 
+  // Handle reaction changes
+  const handleReactionChange = useCallback((messageId: string, reactions: MessageReactionResponse) => {
+    setMessageReactions(prev => ({
+      ...prev,
+      [messageId]: reactions
+    }));
+  }, []);
+
   const renderChatSidebar = () => (
     <div className="chat-sidebar">
       <div className="chat-sidebar-header">
@@ -488,6 +499,12 @@ const ChatPage: React.FC = () => {
                           <MessageStatusIndicator status={messageStatus.status} text={messageStatus.text} />
                         )}
                       </div>
+                      {/* Emoji Reactions */}
+                      <EmojiReaction
+                        messageId={message.id}
+                        reactions={messageReactions[message.id]}
+                        onReactionChange={handleReactionChange}
+                      />
                     </div>
                   </div>
                 </div>
