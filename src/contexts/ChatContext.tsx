@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useCallback, useReducer } from 'react';
 import { message } from 'antd';
-import chatApi, { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment, MessageReactionRequest } from '../api/chatApi';
+import chatApi, { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment, MessageReactionRequest, WebSocketReactionEvent } from '../api/chatApi';
 import chatWebSocketService, { MessageStatusUpdate, TypingStatus, UserStatus } from '../services/ChatWebSocket';
 import { useAuth } from './AuthContext';
 
@@ -70,6 +70,7 @@ enum ActionType {
   SET_USER_STATUS = 'SET_USER_STATUS',
   ADD_ATTACHMENT = 'ADD_ATTACHMENT',
   UPDATE_PAGINATION = 'UPDATE_PAGINATION',
+  UPDATE_MESSAGE_REACTIONS = 'UPDATE_MESSAGE_REACTIONS',
   RESET = 'RESET'
 }
 
@@ -86,6 +87,7 @@ type Action =
   | { type: ActionType.SET_USER_STATUS; payload: UserStatus }
   | { type: ActionType.ADD_ATTACHMENT; payload: ChatAttachment }
   | { type: ActionType.UPDATE_PAGINATION; payload: { roomId: string; page: number; hasMore: boolean } }
+  | { type: ActionType.UPDATE_MESSAGE_REACTIONS; payload: WebSocketReactionEvent }
   | { type: ActionType.RESET };
 
 // Reducer
@@ -247,6 +249,73 @@ function chatReducer(state: ChatState, action: Action): ChatState {
         }
       };
     
+    case ActionType.UPDATE_MESSAGE_REACTIONS: {
+      const { messageId, userId, userName, userAvatar, emoji, addReaction } = action.payload;
+      
+      // Tìm message trong tất cả các room
+      const updatedMessages = { ...state.messages };
+      let messageFound = false;
+      
+      for (const roomId in updatedMessages) {
+        const roomMessages = updatedMessages[roomId];
+        const messageIndex = roomMessages.findIndex(msg => msg.id === messageId);
+        
+        if (messageIndex !== -1) {
+          messageFound = true;
+          const message = roomMessages[messageIndex];
+          let updatedReactions = [...(message.reactions || [])];
+          
+          if (addReaction) {
+            // Thêm reaction mới (nếu chưa có)
+            const existingReactionIndex = updatedReactions.findIndex(
+              reaction => reaction.userId === userId && reaction.emoji === emoji
+            );
+            
+            if (existingReactionIndex === -1) {
+              updatedReactions.push({
+                id: `${messageId}-${userId}-${emoji}-${Date.now()}`,
+                messageId,
+                userId,
+                userFullName: userName,
+                userAvatar,
+                emoji,
+                createdAt: new Date().toISOString()
+              });
+            }
+          } else {
+            // Xóa reaction
+            updatedReactions = updatedReactions.filter(
+              reaction => !(reaction.userId === userId && reaction.emoji === emoji)
+            );
+          }
+          
+          // Cập nhật message với reactions mới
+          const updatedMessage = {
+            ...message,
+            reactions: updatedReactions
+          };
+          
+          updatedMessages[roomId] = [
+            ...roomMessages.slice(0, messageIndex),
+            updatedMessage,
+            ...roomMessages.slice(messageIndex + 1)
+          ];
+          
+          break;
+        }
+      }
+      
+      if (!messageFound) {
+        console.warn('Message not found for reaction update:', messageId);
+        return state;
+      }
+      
+      return {
+        ...state,
+        messages: updatedMessages
+      };
+    }
+    
     case ActionType.RESET:
       return initialState;
     
@@ -370,6 +439,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       onUserStatus: (status) => {
         dispatch({ type: ActionType.SET_USER_STATUS, payload: status });
+      },
+      onReaction: (reactionEvent) => {
+        dispatch({ type: ActionType.UPDATE_MESSAGE_REACTIONS, payload: reactionEvent });
       },
       onConnect: () => {
         console.log('WebSocket connected');
