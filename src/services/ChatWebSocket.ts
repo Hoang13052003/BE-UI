@@ -49,28 +49,34 @@ class ChatWebSocketService {
         this.disconnect();
       }
       
-      // Lưu token để sử dụng trong các tin nhắn
+      // Lưu token
       this.token = token;
 
       this.client = new Client({
-        webSocketFactory: () => new SockJS(`/ws?token=${token}`),
+        // Cách 1: Chỉ dùng SockJS mà không có query param
+        webSocketFactory: () => new SockJS('/ws'),
+        
+        // Cách 2: Gửi token qua connectHeaders (đúng cách)
         connectHeaders: {
-          'Authorization': `Bearer ${token}`,
-          'X-Auth-Token': token
+          'Authorization': `Bearer ${token}`
         },
+        
         debug: function(str) {
           console.log('STOMP: ' + str);
         },
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
+        
         onConnect: () => {
+          console.log('WebSocket connected successfully');
           this.subscribe();
           if (this.callbacks.onConnect) {
             this.callbacks.onConnect();
           }
           resolve();
         },
+        
         onStompError: (frame: IFrame) => {
           console.error('STOMP protocol error', frame);
           if (this.callbacks.onError) {
@@ -78,7 +84,9 @@ class ChatWebSocketService {
           }
           reject(frame);
         },
+        
         onWebSocketClose: () => {
+          console.log('WebSocket connection closed');
           if (this.callbacks.onDisconnect) {
             this.callbacks.onDisconnect();
           }
@@ -194,8 +202,7 @@ class ChatWebSocketService {
       destination: '/app/chat.sendMessage',
       body: JSON.stringify(message),
       headers: {
-        'Authorization': `Bearer ${this.token}`,
-        'X-Auth-Token': this.token
+        'Authorization': `Bearer ${this.token}`
       }
     });
   }
@@ -215,8 +222,7 @@ class ChatWebSocketService {
       destination: '/app/chat.markRead',
       body: JSON.stringify(data),
       headers: {
-        'Authorization': `Bearer ${this.token}`,
-        'X-Auth-Token': this.token
+        'Authorization': `Bearer ${this.token}`
       }
     });
   }
@@ -230,8 +236,7 @@ class ChatWebSocketService {
       destination: '/app/chat.typing',
       body: JSON.stringify({ roomId, typing }),
       headers: {
-        'Authorization': `Bearer ${this.token}`,
-        'X-Auth-Token': this.token
+        'Authorization': `Bearer ${this.token}`
       }
     });
   }
@@ -245,8 +250,7 @@ class ChatWebSocketService {
       destination: '/app/chat.reaction',
       body: JSON.stringify(reactionData),
       headers: {
-        'Authorization': `Bearer ${this.token}`,
-        'X-Auth-Token': this.token
+        'Authorization': `Bearer ${this.token}`
       }
     });
   }
@@ -261,8 +265,7 @@ class ChatWebSocketService {
       destination: '/app/chat.status',
       body: JSON.stringify({ online, lastSeen }),
       headers: {
-        'Authorization': `Bearer ${this.token}`,
-        'X-Auth-Token': this.token
+        'Authorization': `Bearer ${this.token}`
       }
     });
   }

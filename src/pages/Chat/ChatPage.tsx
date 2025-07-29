@@ -96,59 +96,7 @@ const ChatPage: React.FC = () => {
   const [attachmentUploading, setAttachmentUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper function to convert MessageReaction[] to MessageReactionResponse
-  const convertReactions = useCallback((messageId: string, reactions: MessageReaction[] = [], currentUserId: number) => {
-    const reactionCounts: Record<string, number> = {};
-    const currentUserReactions: string[] = [];
-    const reactionUsers: Record<string, Array<{
-      userId: number;
-      userFullName: string;
-      userAvatar?: string | null;
-    }>> = {};
-    
-    // Check if reactions is an array before processing
-    if (!Array.isArray(reactions)) {
-      return {
-        messageId,
-        reactionCounts,
-        currentUserReactions,
-        reactionUsers
-      };
-    }
-    
-    // Group reactions by emoji
-    reactions.forEach(reaction => {
-      // Count reactions
-      if (!reactionCounts[reaction.emoji]) {
-        reactionCounts[reaction.emoji] = 0;
-      }
-      reactionCounts[reaction.emoji]++;
-      
-      // Track current user's reactions
-      if (reaction.userId === currentUserId) {
-        if (!currentUserReactions.includes(reaction.emoji)) {
-          currentUserReactions.push(reaction.emoji);
-        }
-      }
-      
-      // Group users by emoji
-      if (!reactionUsers[reaction.emoji]) {
-        reactionUsers[reaction.emoji] = [];
-      }
-      reactionUsers[reaction.emoji].push({
-        userId: reaction.userId,
-        userFullName: reaction.userFullName,
-        userAvatar: reaction.userAvatar
-      });
-    });
-    
-    return {
-      messageId,
-      reactionCounts,
-      currentUserReactions,
-      reactionUsers
-    };
-  }, []);
+
 
   const getHasMore = useCallback((roomId: string) => {
     if (!roomId) return false;
@@ -547,7 +495,12 @@ const ChatPage: React.FC = () => {
                       {/* Emoji Reactions */}
                       <EmojiReaction
                         messageId={message.id}
-                        reactions={convertReactions(message.id, message.reactions, userDetails?.id || 0)}
+                        reactions={message.reactions || {
+                          messageId: message.id,
+                          reactionCounts: {},
+                          currentUserReactions: [],
+                          reactionUsers: {}
+                        }}
                       />
                     </div>
                   </div>

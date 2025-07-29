@@ -33,7 +33,7 @@ export interface ChatMessage {
   seenCount?: number;
   deliveredCount?: number;
   sentCount?: number;
-  reactions?: MessageReaction[];
+  reactions?: MessageReactionResponse;
 }
 
 export interface MessageReaction {

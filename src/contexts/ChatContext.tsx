@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useCallback, useReducer } from 'react';
 import { message } from 'antd';
-import chatApi, { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment, MessageReactionRequest, WebSocketReactionEvent } from '../api/chatApi';
+import chatApi, { ChatRoom, ChatMessage, SendMessageRequest, ChatAttachment, MessageReactionRequest, WebSocketReactionEvent, MessageReactionResponse } from '../api/chatApi';
 import chatWebSocketService, { MessageStatusUpdate, TypingStatus, UserStatus } from '../services/ChatWebSocket';
 import { useAuth } from './AuthContext';
 
@@ -266,38 +266,68 @@ function chatReducer(state: ChatState, action: Action): ChatState {
           console.log('Message found in room:', roomId, 'at index:', messageIndex);
           messageFound = true;
           const message = roomMessages[messageIndex];
-          let updatedReactions = Array.isArray(message.reactions) ? [...message.reactions] : [];
           
-          console.log('Current reactions:', updatedReactions);
+          // Đảm bảo reactions có định dạng MessageReactionResponse
+          const currentReactions: MessageReactionResponse = (message.reactions as MessageReactionResponse) || {
+            messageId,
+            reactionCounts: {},
+            currentUserReactions: [],
+            reactionUsers: {}
+          };
+          
+          console.log('Current reactions:', currentReactions);
+          
+          // Tạo bản sao để cập nhật
+          const updatedReactions: MessageReactionResponse = {
+            messageId,
+            reactionCounts: { ...currentReactions.reactionCounts },
+            currentUserReactions: [...(currentReactions.currentUserReactions || [])],
+            reactionUsers: { ...currentReactions.reactionUsers }
+          };
           
           if (addReaction) {
-            // Thêm reaction mới (nếu chưa có)
-            const existingReactionIndex = updatedReactions.findIndex(
-              reaction => reaction.userId === userId && reaction.emoji === emoji
-            );
+            // Thêm reaction mới
+            console.log('Adding reaction:', emoji, 'by user:', userId);
             
-            console.log('Adding reaction, existingReactionIndex:', existingReactionIndex);
+            // Cập nhật reactionCounts
+            updatedReactions.reactionCounts[emoji] = (updatedReactions.reactionCounts[emoji] || 0) + 1;
             
-            if (existingReactionIndex === -1) {
-              const newReaction = {
-                id: `${messageId}-${userId}-${emoji}-${Date.now()}`,
-                messageId,
+            // currentUserReactions sẽ được cập nhật ở component level
+            
+            // Cập nhật reactionUsers
+            if (!updatedReactions.reactionUsers[emoji]) {
+              updatedReactions.reactionUsers[emoji] = [];
+            }
+            const userExists = updatedReactions.reactionUsers[emoji].some((u: { userId: number; userFullName: string; userAvatar?: string | null }) => u.userId === userId);
+            if (!userExists) {
+              updatedReactions.reactionUsers[emoji].push({
                 userId,
                 userFullName: userName,
-                userAvatar,
-                emoji,
-                createdAt: new Date().toISOString()
-              };
-              updatedReactions.push(newReaction);
-              console.log('Added new reaction:', newReaction);
+                userAvatar
+              });
             }
           } else {
             // Xóa reaction
-            const initialLength = updatedReactions.length;
-            updatedReactions = updatedReactions.filter(
-              reaction => !(reaction.userId === userId && reaction.emoji === emoji)
-            );
-            console.log('Removed reactions, count:', initialLength - updatedReactions.length);
+            console.log('Removing reaction:', emoji, 'by user:', userId);
+            
+            // Cập nhật reactionCounts
+            if (updatedReactions.reactionCounts[emoji] > 1) {
+              updatedReactions.reactionCounts[emoji]--;
+            } else {
+              delete updatedReactions.reactionCounts[emoji];
+            }
+            
+            // currentUserReactions sẽ được cập nhật ở component level
+            
+            // Cập nhật reactionUsers
+            if (updatedReactions.reactionUsers[emoji]) {
+              updatedReactions.reactionUsers[emoji] = updatedReactions.reactionUsers[emoji].filter(
+                (u: { userId: number; userFullName: string; userAvatar?: string | null }) => u.userId !== userId
+              );
+              if (updatedReactions.reactionUsers[emoji].length === 0) {
+                delete updatedReactions.reactionUsers[emoji];
+              }
+            }
           }
           
           // Cập nhật message với reactions mới

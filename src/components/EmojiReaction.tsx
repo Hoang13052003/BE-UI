@@ -85,8 +85,10 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({
   };
 
   const renderReactionButton = (emoji: string, count: number) => {
-    const isUserReacted = currentReactions?.currentUserReactions.includes(emoji);
     const users = currentReactions?.reactionUsers[emoji] || [];
+    // Tính toán isUserReacted dựa trên reactionUsers thay vì currentUserReactions
+    const isUserReacted = users.some(user => user.userId === userDetails?.id);
+    
     
     const tooltipContent = (
       <div>
@@ -135,13 +137,13 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({
     </div>
   );
 
-  const hasReactions = currentReactions && Object.keys(currentReactions.reactionCounts).length > 0;
+  const hasReactions = currentReactions && currentReactions.reactionCounts && Object.keys(currentReactions.reactionCounts).length > 0;
 
   return (
     <div className="emoji-reaction-container">
       {hasReactions && (
         <div className="reactions-display">
-          {Object.entries(currentReactions.reactionCounts).map(([emoji, count]) => 
+          {Object.entries(currentReactions?.reactionCounts || {}).map(([emoji, count]) => 
             renderReactionButton(emoji, count)
           )}
         </div>
