@@ -492,17 +492,18 @@ const ChatPage: React.FC = () => {
                           <MessageStatusIndicator status={messageStatus.status} text={messageStatus.text} />
                         )}
                       </div>
-                      {/* Emoji Reactions */}
-                      <EmojiReaction
-                        messageId={message.id}
-                        reactions={message.reactions || {
-                          messageId: message.id,
-                          reactionCounts: {},
-                          currentUserReactions: [],
-                          reactionUsers: {}
-                        }}
-                      />
                     </div>
+                    
+                    {/* Emoji Reactions */}
+                    <EmojiReaction
+                      messageId={message.id}
+                      reactions={message.reactions || {
+                        messageId: message.id,
+                        reactionCounts: {},
+                        currentUserReactions: [],
+                        reactionUsers: {}
+                      }}
+                    />
                   </div>
                 </div>
               );

@@ -197,25 +197,49 @@
   font-weight: 500;
 }
 
-.message-status {
+.message-reactions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
   align-items: center;
-  color: #bfbfbf;
-  margin-bottom: 4px;
-  font-size: 11px;
 }
 
-.status-icon {
+.message-reactions .emoji-reaction-btn {
+  padding: 2px 6px;
   font-size: 12px;
-  margin-right: 3px;
+  height: 24px;
+  min-width: 36px;
 }
 
-.status-icon.seen {
-  color: #1890ff;
+.message-reactions .emoji-reaction-btn .emoji {
+  font-size: 14px;
 }
 
-.status-text {
-  font-size: 11px;
+.message-reactions .emoji-reaction-btn .count {
+  font-size: 12px;
+  margin-left: 2px;
+}
+
+.message-reactions .add-reaction-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+}
+
+.message-content + .message-reactions {
+  margin-top: 6px;
+}
+
+.message-bubble .message-reactions {
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.message-bubble.sent .message-reactions {
+  justify-content: flex-end;
+  margin-left: auto;
+  max-width: 80%;
 }
 
 .chat-message-bubble {

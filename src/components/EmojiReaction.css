@@ -1,29 +1,33 @@
 .emoji-reaction-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   margin-top: 4px;
   flex-wrap: wrap;
+  min-height: 24px;
 }
 
 .reactions-display {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .emoji-reaction-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 6px;
   border-radius: 12px;
   font-size: 12px;
-  height: auto;
-  min-height: 24px;
-  border: 1px solid #d9d9d9;
-  background: #fafafa;
+  height: 24px;
+  min-width: 36px;
+  border: 1px solid #e1e5e9;
+  background: #f2f3f5;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .emoji-reaction-btn:hover {
@@ -49,29 +53,90 @@
 }
 
 .emoji-reaction-btn .count {
-  font-size: 11px;
-  font-weight: 500;
-  min-width: 12px;
-  text-align: center;
+  font-size: 12px;
+  line-height: 1;
 }
 
 .add-reaction-btn {
-  padding: 2px 6px;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 24px;
   height: 24px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px dashed #d9d9d9;
+  color: #8c8c8c;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-reaction-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+  background: #e6f7ff;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .emoji-reaction-btn {
+    padding: 1px 4px;
+    min-width: 32px;
+    height: 22px;
+    font-size: 11px;
+  }
+  
+  .emoji-reaction-btn .emoji {
+    font-size: 12px;
+  }
+  
+  .emoji-reaction-btn .count {
+    font-size: 11px;
+  }
+  
+  .add-reaction-btn {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.emoji-reaction-btn .count {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 8px;
+  text-align: center;
+  color: #4f545c;
+}
+
+.add-reaction-btn {
+  padding: 1px 4px;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #8c8c8c;
   border: 1px solid transparent;
   transition: all 0.2s ease;
+  font-size: 10px;
+  /* Ẩn nút phản ứng mặc định, chỉ hiển thị khi hover tin nhắn */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .add-reaction-btn:hover {
   color: #1890ff;
   background: #f0f0f0;
   border-color: #d9d9d9;
+} /* keep hover style */
+
+/* Hiển thị nút khi hover tin nhắn */
+.chat-message:hover .add-reaction-btn {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .emoji-picker {

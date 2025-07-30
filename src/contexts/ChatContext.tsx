@@ -286,15 +286,39 @@ function chatReducer(state: ChatState, action: Action): ChatState {
           };
           
           if (addReaction) {
-            // Thêm reaction mới
-            console.log('Adding reaction:', emoji, 'by user:', userId);
+            // Kiểm tra và xóa reaction cũ của user này (enforce 1 reaction per user)
+            for (const existingEmoji in updatedReactions.reactionUsers) {
+              if (existingEmoji !== emoji) {
+                const userIndex = updatedReactions.reactionUsers[existingEmoji].findIndex(
+                  (u: { userId: number; userFullName: string; userAvatar?: string | null }) => u.userId === userId
+                );
+                if (userIndex !== -1) {
+                  // Xóa user khỏi emoji cũ
+                  updatedReactions.reactionUsers[existingEmoji].splice(userIndex, 1);
+                  
+                  // Cập nhật count
+                  if (updatedReactions.reactionCounts[existingEmoji] > 1) {
+                    updatedReactions.reactionCounts[existingEmoji]--;
+                  } else {
+                    delete updatedReactions.reactionCounts[existingEmoji];
+                  }
+                  
+                  // Xóa emoji nếu không còn user nào
+                  if (updatedReactions.reactionUsers[existingEmoji].length === 0) {
+                    delete updatedReactions.reactionUsers[existingEmoji];
+                  }
+                  
+                  console.log('Removed previous reaction:', existingEmoji, 'by user:', userId);
+                }
+              }
+            }
             
-            // Cập nhật reactionCounts
+            // Cập nhật reactionCounts cho emoji mới
             updatedReactions.reactionCounts[emoji] = (updatedReactions.reactionCounts[emoji] || 0) + 1;
             
             // currentUserReactions sẽ được cập nhật ở component level
             
-            // Cập nhật reactionUsers
+            // Cập nhật reactionUsers cho emoji mới
             if (!updatedReactions.reactionUsers[emoji]) {
               updatedReactions.reactionUsers[emoji] = [];
             }

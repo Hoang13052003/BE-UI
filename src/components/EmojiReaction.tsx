@@ -50,22 +50,45 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({
   };
 
   const handleReactionClick = async (emoji: string) => {
-    if (!userDetails) return;
+    if (!userDetails || loading) return;
 
     try {
       setLoading(true);
       
       // Check if user already reacted with this emoji
-      const isAlreadyReacted = currentReactions?.currentUserReactions.includes(emoji);
+      const users = currentReactions?.reactionUsers[emoji] || [];
+      const isAlreadyReacted = users.some(user => user.userId === userDetails.id);
       
-      const request: MessageReactionRequest = {
-        messageId,
-        emoji,
-        addReaction: !isAlreadyReacted
-      };
-
-      // Sử dụng sendReaction từ context (ưu tiên WebSocket, fallback REST)
-      await sendReaction(request);
+      // Find current user's existing reaction (if any)
+      const currentUserReaction = currentReactions?.currentUserReactions?.[0]; // User can only have 1 reaction
+      
+      // If clicking the same emoji that user already reacted with, remove it
+      if (isAlreadyReacted) {
+        const request: MessageReactionRequest = {
+          messageId,
+          emoji,
+          addReaction: false
+        };
+        await sendReaction(request);
+      } else {
+        // If user has an existing reaction, remove it first
+        if (currentUserReaction && currentUserReaction !== emoji) {
+          const removeRequest: MessageReactionRequest = {
+            messageId,
+            emoji: currentUserReaction,
+            addReaction: false
+          };
+          await sendReaction(removeRequest);
+        }
+        
+        // Add the new reaction
+        const addRequest: MessageReactionRequest = {
+          messageId,
+          emoji,
+          addReaction: true
+        };
+        await sendReaction(addRequest);
+      }
       
       // Reload reactions to get updated data
       const response = await chatApi.getMessageReactions(messageId);
@@ -86,31 +109,22 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({
 
   const renderReactionButton = (emoji: string, count: number) => {
     const users = currentReactions?.reactionUsers[emoji] || [];
-    // Tính toán isUserReacted dựa trên reactionUsers thay vì currentUserReactions
     const isUserReacted = users.some(user => user.userId === userDetails?.id);
     
-    
-    const tooltipContent = (
-      <div>
-        {users.map((user) => (
-          <div key={user.userId}>
-            {user.userFullName}
-          </div>
-        ))}
-      </div>
-    );
-
     return (
-      <Tooltip key={emoji} title={tooltipContent} placement="top">
-        <Button
-          size="small"
-          type={isUserReacted ? "primary" : "default"}
+      <Tooltip 
+        key={emoji} 
+        title={users.map(u => u.userFullName).join(', ')}
+        placement="top"
+      >
+        <Button 
           className={`emoji-reaction-btn ${isUserReacted ? 'user-reacted' : ''}`}
           onClick={() => handleReactionClick(emoji)}
-          disabled={loading}
+          size="small"
+          type="text"
         >
           <span className="emoji">{emoji}</span>
-          <span className="count">{count}</span>
+          {count > 1 && <span className="count">{count}</span>}
         </Button>
       </Tooltip>
     );
