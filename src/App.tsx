@@ -6,7 +6,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import React, { useEffect } from "react";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import { AlertProvider } from "./contexts/AlertContext";
 import LoginComponent from "./components/LoginComponent";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -72,12 +72,7 @@ function App() {
     <AlertProvider>
       <AuthProvider>
         <NotificationProvider>
-          <Router
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true
-            }}
-          >
+          <Router>
             <AlertContainer />
             <AuthEventHandler />
             <Routes>

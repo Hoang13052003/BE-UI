@@ -8,8 +8,6 @@ import {
   ProjectContextTimeLog,
   ApiPage,
   ProjectFixedPriceDetailsResponse,
-  ProjectUpdateHistoryItem,
-  ProjectUpdateHistoryMilestoneItem,
 } from "../types/project";
 import { ProjectRequest } from "../types/ProjectRequest";
 import { SortConfig, fetchSpringPageData, PaginatedResult } from "./apiUtils";
@@ -560,40 +558,13 @@ export const getUsersByProjectLaborId = async (
   );
   return response.data;
 };
-
-// Add new API function for Project Update History
-// Đã migrate sang endpoint mới, không dùng hàm này nữa
-// export const getProjectUpdateHistoryApi = async (
-//   historyId: string,
-//   page: number = 0,
-//   size: number = 20,
-//   sortConfig?: SortConfig | SortConfig[]
-// ): Promise<ApiPage<ProjectUpdateHistoryItem | ProjectUpdateHistoryMilestoneItem>> => {
-//   try {
-//     const result = await fetchSpringPageData<ProjectUpdateHistoryItem | ProjectUpdateHistoryMilestoneItem>(
-//       "/api/projects/project-update-history",
-//       page,
-//       size,
-//       sortConfig,
-//       { id: historyId }
-//     );
-//     return result;
-//   } catch (error) {
-//     console.error("Failed to fetch project update history:", error);
-//     throw error;
-//   }
-// };
-
-// Helper function to normalize project data from backend response
 const normalizeProjectData = (project: any): Project => {
   return {
     ...project,
-    // Add backward compatibility field
     type: project.projectType,
   };
 };
 
-// Helper function to normalize project array
 const normalizeProjectsData = (projects: any[]): Project[] => {
   return projects.map(normalizeProjectData);
 };

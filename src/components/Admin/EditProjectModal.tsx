@@ -21,7 +21,6 @@ import {
   UserSearchParams,
 } from "../../api/userApi";
 import { UserIdAndEmailResponse } from "../../types/User";
-import { Project } from "../../types/project";
 import debounce from "lodash/debounce";
 import dayjs from "dayjs";
 import { confirmAlert } from "react-confirm-alert";

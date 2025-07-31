@@ -4,7 +4,6 @@ import {
   NotificationPageResponse,
   NotificationResponse,
 } from "../types/Notification";
-import { Project } from "../types/project";
 import axiosClient from "./axiosClient";
 
 export const createNotification = async (

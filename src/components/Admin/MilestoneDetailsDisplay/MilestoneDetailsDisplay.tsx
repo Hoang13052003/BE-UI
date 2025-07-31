@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Card, Alert, Tag, Space, Row, Col, Button, Typography } from "antd";
 import { TrophyOutlined, SettingOutlined, PlusOutlined } from "@ant-design/icons";
 import MilestoneStats from "./MilestoneStats";
@@ -7,7 +7,6 @@ import MilestoneEmptyState from "./MilestoneEmptyState";
 import MilestoneBatchActions from "./MilestoneBatchActions";
 import { useMilestoneList } from "./useMilestoneList";
 import { useInlineEditMilestone } from "../../../hooks/useInlineEditMilestone";
-import { Milestone, MilestoneStatus } from "../../../types/milestone";
 import { isMilestoneCompleted, isOverdueMilestone, calculateMilestoneStats } from "../../../utils/milestoneUtils";
 
 const { Text, Title } = Typography;
@@ -44,7 +43,6 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
     setPageSize,
     fetchMilestones,
     setMilestones,
-    setError,
   } = useMilestoneList(projectId);
 
   // Custom hook inline edit (giữ nguyên logic cũ)
@@ -52,7 +50,6 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
     editedData,
     batchSaving,
     hasUnsavedChanges,
-    handleInlineEdit,
     handleBatchSave,
     handleMarkSelectedAsCompleted,
     resetEditedData,
@@ -68,7 +65,7 @@ const MilestoneDetailsDisplay: React.FC<MilestoneDetailsDisplayProps> = ({
   const [selectedRowKeys, setSelectedRowKeys] = React.useState<React.Key[]>([]);
   const [batchDeleting, setBatchDeleting] = React.useState<boolean>(false);
   const [isInBatchMode, setIsInBatchMode] = React.useState<boolean>(false);
-  const [viewMode, setViewMode] = React.useState<"card" | "table">("card");
+  const [_viewMode, setViewMode] = React.useState<"card" | "table">("card");
 
   // Hàm tính toán thống kê
   // Thay thế các hàm cục bộ bằng hàm import từ utils

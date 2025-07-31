@@ -52,20 +52,6 @@ interface SummaryCardProps {
   fixedPriceMilestoneCount: number; // tổng milestoneCount của Fixed Price
 }
 
-// Thêm hàm tính số ngày làm việc (không tính T7, CN)
-function getWorkingDays(start: string, end: string) {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  let count = 0;
-  let cur = new Date(startDate);
-  while (cur <= endDate) {
-    const day = cur.getDay();
-    if (day !== 0 && day !== 6) count++;
-    cur.setDate(cur.getDate() + 1);
-  }
-  return count;
-}
-
 const Overview: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState<boolean>(false);
