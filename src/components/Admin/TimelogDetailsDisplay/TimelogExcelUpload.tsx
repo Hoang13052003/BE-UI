@@ -27,14 +27,14 @@ const TimelogExcelUpload: React.FC<TimelogExcelUploadProps> = ({
       setResult(res);
       setModalOpen(true);
       if (!res.failedImports || res.failedImports === 0) {
-        notification.success({ message: "Tải lên thành công", description: res.message });
+        notification.success({ message: "Upload Successful", description: res.message });
         onSuccess();
       } else {
-        notification.warning({ message: "Có lỗi khi nhập file", description: res.message });
+        notification.warning({ message: "Import Errors", description: res.message });
       }
       onUploadSuccess && onUploadSuccess("ok");
     } catch (err: any) {
-      notification.error({ message: "Lỗi tải lên", description: err?.response?.data?.message || err.message });
+      notification.error({ message: "Upload Error", description: err?.response?.data?.message || err.message });
       setResult(null);
       onError && onError(err);
     } finally {
@@ -58,19 +58,19 @@ const TimelogExcelUpload: React.FC<TimelogExcelUploadProps> = ({
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         footer={null}
-        title="Kết quả nhập file Timelog"
+        title="Timelog Import Results"
       >
         {result && (
           <div>
             <p><b>{result.message}</b></p>
             <ul>
-              <li>Tổng số dòng trong file: {result.totalRowsInFile}</li>
-              <li>Nhập thành công: {result.successfulImports}</li>
-              <li>Nhập thất bại: {result.failedImports}</li>
+              <li>Total rows in file: {result.totalRowsInFile}</li>
+              <li>Successful imports: {result.successfulImports}</li>
+              <li>Failed imports: {result.failedImports}</li>
             </ul>
             {result.errorsDetails && result.errorsDetails.length > 0 && (
               <div style={{ color: "#ff4d4f" }}>
-                <b>Chi tiết lỗi:</b>
+                <b>Error details:</b>
                 <ul>
                   {result.errorsDetails.map((err, idx) => (
                     <li key={idx}>{err}</li>

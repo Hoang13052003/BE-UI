@@ -197,7 +197,7 @@ const Overview: React.FC = () => {
         }
         return (
           <Col xs={24} sm={24} md={12} lg={8} xl={8} key={project.id}>
-            <Card style={{ ...CardStyle, border: '1px solid #e5e7eb', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 0 }} bodyStyle={{ padding: 0 }}>
+            <Card style={{ ...CardStyle, border: '1px solid #e5e7eb', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', padding: 0 }} styles={{ body: { padding: 0 } }}>
               <div style={{ padding: 20 }}>
                 {/* Header Tags */}
                 <Row justify="space-between" align="middle" style={{ marginBottom: 8 }}>

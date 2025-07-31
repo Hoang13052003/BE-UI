@@ -322,11 +322,22 @@ const NotificationBell: React.FC = () => {
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    <Text strong={!notification.read}>
-                      {notification.title}
-                    </Text>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          borderRadius: "50%",
+                          backgroundColor: getPriorityColor(notification.priority),
+                        }}
+                      />
+                      <Text strong={!notification.read}>
+                        {notification.title}
+                      </Text>
+                    </div>
                     <Tooltip title="Delete">
                       <Button
                         type="text"
@@ -411,7 +422,7 @@ const NotificationBell: React.FC = () => {
 
   return (
     <Dropdown
-      dropdownRender={() => notificationContent}
+      popupRender={() => notificationContent}
       trigger={["click"]}
       open={open}
       onOpenChange={setOpen}

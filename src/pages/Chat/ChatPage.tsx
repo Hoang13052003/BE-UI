@@ -4,7 +4,7 @@ import { SendOutlined, PaperClipOutlined, UserOutlined, CheckOutlined, CheckCirc
 import { useChat } from '../../contexts/ChatContext';
 import { useAuth } from '../../contexts/AuthContext';
 import CreateChatRoomModal from './CreateChatRoomModal';
-import { ChatMessage, MessageReaction, MessageReactionResponse } from '../../api/chatApi';
+import { ChatMessage } from '../../api/chatApi';
 import chatApi from '../../api/chatApi';
 import EmojiReaction from '../../components/EmojiReaction';
 import './ChatPage.css';
@@ -590,9 +590,9 @@ const ChatPage: React.FC = () => {
   return (
     <Content className="chat-page-container">
       <Card 
-        bordered={false} 
+        variant="borderless" 
         className="chat-card"
-        bodyStyle={{ padding: 0, height: '100%' }}
+        styles={{ body: { padding: 0, height: '100%' } }}
       >
         <div className="chat-layout">
           {renderChatSidebar()}
