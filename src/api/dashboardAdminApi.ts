@@ -1,17 +1,10 @@
 import { Project } from "../types/project";
 import axiosClient from "./axiosClient";
 
-// export interface Attachment {
-//   id: number;
-//   projectUpdateId: number;
-//   fileName: string;
-//   storagePath: string;
-//   fileType: string;
-//   fileSize: number;
-//   uploadedAt: string;
-//   createdAt: string;
-//   updatedAt: string;
-// }
+export interface DashboardStatus {
+  labels: string[];
+  data: number[];
+}
 
 export interface DashboardSummary {
   totalProjects: number;
@@ -25,13 +18,18 @@ export interface DashboardSummary {
   };
 }
 
-// API calls for admin dashboard
-export const getAdminDashboardSummary = async (): Promise<DashboardSummary> => {
-  const { data } = await axiosClient.get("/api/private/admin/dashboards");
-  return data;
-};
+export interface DashboardSummaryFull extends DashboardSummary {
+  projectStatusWeek?: DashboardStatus;
+  projectStatusMonth?: DashboardStatus;
+  projectStatusQuarter?: DashboardStatus;
+}
 
-// Projects
+export const getAdminDashboardSummary =
+  async (): Promise<DashboardSummaryFull> => {
+    const { data } = await axiosClient.get("/api/private/admin/dashboards");
+    return data;
+  };
+
 export const getAllProjects = async (
   page: number = 1,
   limit: number = 10,
@@ -50,7 +48,6 @@ export const getProjectById = async (id: number): Promise<Project> => {
   return data;
 };
 
-// Statistics and Reports
 export const getProjectStatistics = async (): Promise<{
   labels: string[];
   data: number[];

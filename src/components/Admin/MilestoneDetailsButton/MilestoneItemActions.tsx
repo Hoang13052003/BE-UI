@@ -1,13 +1,14 @@
 import React from 'react';
-import { Button, Space } from 'antd';
+import { Button, Space, Tooltip } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import './MilestoneItemActions.css';
 
 interface MilestoneItemActionsProps {
   milestoneId: number;
-  projectId: number; // Cần projectId để truyền lại cho onEditMilestone
-  onEdit: (milestoneId: number, projectId: number) => void; // Sửa lại để nhận projectId
+  projectId: number;
+  onEdit: (milestoneId: number, projectId: number) => void;
   onDelete: (milestoneId: number) => void;
-  disabled?: boolean; // Để disable các nút khi có hành động khác đang diễn ra (ví dụ: updating completion)
+  disabled?: boolean;
 }
 
 const MilestoneItemActions: React.FC<MilestoneItemActionsProps> = ({
@@ -18,26 +19,49 @@ const MilestoneItemActions: React.FC<MilestoneItemActionsProps> = ({
   disabled,
 }) => {
   return (
-    <Space>
-      <Button
-        type="text"
-        icon={<EditOutlined />}
-        onClick={() => onEdit(milestoneId, projectId)}
-        size="small"
-        disabled={disabled}
-      >
-        Edit
-      </Button>
-      <Button
-        type="text"
-        danger
-        icon={<DeleteOutlined />}
-        onClick={() => onDelete(milestoneId)}
-        size="small"
-        disabled={disabled}
-      >
-        Delete
-      </Button>
+    <Space size="small">
+      <Tooltip title="Edit milestone">
+        <Button
+          type="text"
+          icon={<EditOutlined />}
+          onClick={() => onEdit(milestoneId, projectId)}
+          size="small"
+          disabled={disabled}
+          className="action-button edit-button"
+          style={{
+            color: '#1890ff',
+            borderRadius: '6px',
+            padding: '4px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          Edit
+        </Button>
+      </Tooltip>
+      
+      <Tooltip title="Delete milestone">
+        <Button
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => onDelete(milestoneId)}
+          size="small"
+          disabled={disabled}
+          className="action-button delete-button"
+          style={{
+            color: '#ff4d4f',
+            borderRadius: '6px',
+            padding: '4px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          Delete
+        </Button>
+      </Tooltip>
     </Space>
   );
 };

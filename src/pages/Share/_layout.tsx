@@ -1,248 +1,445 @@
-import React, { useEffect, useState } from "react";
-import { Button, Layout, Dropdown, Avatar, Tooltip, Select, Menu } from "antd";
+import React, { useState } from "react";
+import { Button, Layout, Dropdown, Avatar, Tooltip, Menu, Drawer } from "antd";
 import {
-  CloseCircleOutlined,
   QuestionCircleOutlined,
   SettingOutlined,
-  ProfileOutlined,
-  SunOutlined,
-  MoonOutlined,
-  LoginOutlined,
-  BellFilled,
-  GlobalOutlined,
+  AppstoreOutlined,
+  FolderOpenOutlined,
+  LineChartOutlined,
+  TeamOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  WechatOutlined,
+  FileSearchOutlined,
+  UnorderedListOutlined,
   MenuOutlined,
+  ClockCircleOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
-import { Outlet, useNavigate } from "react-router-dom";
-import ukicon from "../../assets/uk-icon.svg";
-import vietnameicon from "../../assets/vietnam-flag-icon.svg";
-import useLanguage, { Language } from "../../hooks/useLanguage";
-// import { useTranslation } from 'react-i18next';
-import { useTheme } from "../../contexts/ThemeContext";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import Logout from "../../components/LogoutComponent";
-import { useTranslation } from "react-i18next";
+import NotificationBell from "../../components/Admin/Notification/NotificationBell";
+import { MenuProps } from "antd/lib";
+import logo from "../../assets/svgviewer-output.svg";
 
 const { Header } = Layout;
 
-
-
-const languages = [
-  { 
-    code: 'en', 
-    name: 'English', 
-    flagUrl: ukicon
-  },
-  {
-    code: 'vi',
-    name: 'Vietnamese',
-    flagUrl: vietnameicon,
-  }
-];
-
 const LayoutShare: React.FC = () => {
-  const { t } = useTranslation(); // Sử dụng hook useTranslation
-  const { language, changeLanguage } = useLanguage();
-  const { theme, toggleTheme } = useTheme();
-  const { userDetails, isAuthenticated } = useAuth();
-  const [currentLang, setCurrentLang] = useState<Language>();
+  const { isAuthenticated, userDetails } = useAuth();
   const navigate = useNavigate();
   const handleLogout = Logout();
 
-  const userMenuItems = [
+  type MenuItem = Required<MenuProps>["items"][number];
+
+  const [current, setCurrent] = useState(
+    isAuthenticated && userDetails?.role === "ADMIN"
+      ? localStorage.getItem("selectedKey") || "adminDashboard"
+      : localStorage.getItem("selectedKey") || "dashboard"
+  );
+
+  const onClick: MenuProps["onClick"] = (e) => {
+    setCurrent(e.key);
+    localStorage.setItem("selectedKey", e.key);
+  };
+
+  const handleSettingsClick = () => {
+    if (userDetails?.role === "ADMIN") {
+      navigate("/admin/settings");
+    } else if (userDetails?.role === "USER") {
+      navigate("/client/settings");
+    }
+  };
+
+  const menuItems = isAuthenticated
+    ? [
+        {
+          key: "settings",
+          icon: <SettingOutlined />,
+          label: "Settings",
+          onClick: handleSettingsClick,
+        },
+        {
+          key: "help",
+          icon: <QuestionCircleOutlined />,
+          label: "Help",
+        },
+        {
+          key: "logout",
+          icon: <LogoutOutlined />,
+          label: "Logout",
+          onClick: handleLogout,
+        },
+      ]
+    : [
+        {
+          key: "settings",
+          icon: <SettingOutlined />,
+          label: "Settings",
+          onClick: handleSettingsClick,
+        },
+        {
+          key: "help",
+          icon: <QuestionCircleOutlined />,
+          label: "Help",
+        },
+        {
+          key: "login",
+          icon: <UserOutlined />,
+          label: "Login",
+          onClick: () => navigate("/login"),
+        },
+      ];
+
+  const items: MenuItem[] = [
     {
-      key: "profile",
-      icon: <ProfileOutlined />,
-      label: t('profile.title'),
+      key: "adminDashboard",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/admin/overview">Dashboard</Link>,
     },
     {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: t('settings.title'),
+      key: "manageProjects",
+      icon: <FolderOpenOutlined />,
+      label: <Link to="/admin/updates">Projects</Link>,
     },
     {
-      key: "support",
-      icon: <QuestionCircleOutlined />,
-      label: t('navigation.support'),
+      key: "manageProjectUpdates",
+      icon: <LineChartOutlined />,
+      label: <Link to="/admin/project-progress">Reports</Link>,
     },
     {
-      key: "logout",
-      icon: <CloseCircleOutlined />,
-      label: t('auth.logout'),
-      onClick: handleLogout,
+      key: "manageUsers",
+      icon: <TeamOutlined />,
+      label: <Link to="/admin/users">Users</Link>,
+    },
+    {
+      key: "other",
+      label: "Other",
+      style: { fontWeight: 600 },
+      icon: <UnorderedListOutlined />,
+      children: [
+        {
+          key: "feedbacks",
+          icon: <WechatOutlined />,
+          label: <Link to="/admin/feedbacks">Feedbacks</Link>,
+        },
+        {
+          key: "overtime-requests-admin",
+          icon: <ClockCircleOutlined />,
+          label: <Link to="/admin/overtime-requests">Overtime Requests</Link>,
+        },
+        {
+          key: "chat",
+          icon: <MessageOutlined />,
+          label: <Link to="/admin/chat">Chat</Link>,
+        },
+        {
+          key: "auditLogs",
+          icon: <FileSearchOutlined />,
+          label: <Link to="/admin/audit-logs">Logs</Link>,
+        },
+      ],
     },
   ];
 
+  const itemsClient: MenuItem[] = [
+    {
+      key: "dashboard",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/client/overview">Dashboard</Link>,
+    },
+    {
+      key: "project-updates",
+      icon: <LineChartOutlined />,
+      label: <Link to="/client/project-updates">Project Updates</Link>,
+    },
+    {
+      key: "my-feedbacks",
+      icon: <WechatOutlined />,
+      label: <Link to="/client/my-feedbacks">My Feedbacks</Link>,
+    },
+    {
+      key: "chat",
+      icon: <MessageOutlined />,
+      label: <Link to="/client/chat">Chat</Link>,
+    },
+  ];
 
+  const itemsManager: MenuItem[] = [
+    {
+      key: "dashboard",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/manager/overview">Dashboard</Link>,
+    },
+    {
+      key: "project-progress",
+      icon: <LineChartOutlined />,
+      label: <Link to="/manager/project-progress">Reports</Link>,
+    },
+    {
+      key: "my-feedbacks",
+      icon: <WechatOutlined />,
+      label: <Link to="/manager/my-feedbacks">My Feedbacks</Link>,
+    },
+    {
+      key: "overtime-requests",
+      icon: <ClockCircleOutlined />,
+      label: <Link to="/manager/overtime-requests">Overtime Requests</Link>,
+    },
+    {
+      key: "chat",
+      icon: <MessageOutlined />,
+      label: <Link to="/manager/chat">Chat</Link>,
+    },
+  ];
 
-  const handleLanguageChange = (value: string) => {
-    setCurrentLang(value as Language);
-    changeLanguage(value as Language);
-
-    console.log(`Language changed to: ${value}`);
-  };
-
-  useEffect(() => {
-    setCurrentLang(language);
-    
-  
-  }, [language]);
-
-  const MobileMenu: React.FC = () => {
-    return (
-      <Menu>
-        <Menu.Item key="1">
-          <Select
-            style={{ width: '100%' }}
-            value={currentLang}
-            onChange={handleLanguageChange}
-            dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
-            suffixIcon={<GlobalOutlined />}
-          >
-            {languages.map((lang) => (
-              <Select.Option key={lang.code} value={lang.code}>
-                <img
-                  src={lang.flagUrl}
-                  alt={`${lang.name} flag`}
-                  style={{
-                    width: "20px",
-                    marginRight: "10px",
-                    verticalAlign: "middle",
-                  }}
-                />
-                {lang.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Menu.Item>
-  
-        <Menu.Item key="2">
-          <Button
-            type="text"
-            icon={theme === 'light' ? <SunOutlined /> : <MoonOutlined />}
-            onClick={toggleTheme}
-          />
-        </Menu.Item>
-  
-        {isAuthenticated ? (
-          <>
-            <Menu.Item key="3">
-              <Button
-                type="text"
-                icon={<BellFilled />}
-              />
-            </Menu.Item>
-  
-            <Menu.Item key="4">
-              <Avatar className="user-avatar">JT</Avatar>
-              <div className="user-info">
-                <div className="user-name">{userDetails?.fullName}</div>
-              </div>
-            </Menu.Item>
-          </>
-        ) : (
-          <Menu.Item key="5">
-            <Tooltip title="Login">
-              <Button
-                type="text"
-                icon={<LoginOutlined />}
-                onClick={() => { navigate('/login') }}
-              >
-                {t('common.getStarted')}
-              </Button>
-            </Tooltip>
-          </Menu.Item>
-        )}
-      </Menu>
-    );
-  };
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <Layout className="app-layout">
-      <Header className="app-header">
-        <div className="header-left">
-          <div className="logo">
-            <span className="logo-icon">Progress</span>
-            <span className="logo-text">Hub</span>
+      <Header
+        style={{
+          background: "#fff",
+          padding: "0 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          position: "sticky",
+          top: 0,
+          zIndex: 1000,
+          boxShadow: "0 0 12px 4px rgba(255, 255, 255, 0.7)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 24,
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+            }}
+            onClick={() => navigate("/")}
+          >
+            <img
+              className="logo"
+              src={logo}
+              alt="Logo"
+              style={{ height: 40, width: "auto" }}
+            />
+          </div>
+          <div
+            className="mobile-menu-icon"
+            style={{ marginLeft: "auto", display: "none" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <Button
+                type="text"
+                icon={<MenuOutlined style={{ fontSize: 24 }} />}
+                onClick={() => setMobileMenuOpen(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  outline: "none",
+                }}
+              />
+            </div>
+          </div>
+          <div
+            className="desktop-nav"
+            style={{ flex: 1, alignItems: "center", gap: 24 }}
+          >
+            {isAuthenticated && userDetails?.role === "ADMIN" ? (
+              <Menu
+                onClick={onClick}
+                selectedKeys={[current]}
+                mode="horizontal"
+                defaultSelectedKeys={[
+                  localStorage.getItem("selectedKey") || "adminDashboard",
+                ]}
+                items={items}
+              />
+            ) : isAuthenticated && userDetails?.role === "USER" ? (
+              userDetails?.role === "USER" && (
+                <Menu
+                  onClick={onClick}
+                  selectedKeys={[current]}
+                  mode="horizontal"
+                  defaultSelectedKeys={[
+                    localStorage.getItem("selectedKey") || "dashboard",
+                  ]}
+                  items={itemsClient}
+                />
+              )
+            ) : isAuthenticated && userDetails?.role === "MANAGER" ? (
+              <Menu
+                onClick={onClick}
+                selectedKeys={[current]}
+                mode="horizontal"
+                defaultSelectedKeys={[
+                  localStorage.getItem("selectedKey") || "managerDashboard",
+                ]}
+                items={itemsManager}
+              />
+            ) : null}
           </div>
         </div>
-        <div className="header-right">
-          <div className="header-content">
-            <Select
-              style={{ width: 150 }}
-              value={currentLang}
-              onChange={handleLanguageChange}
-              dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
-              suffixIcon={<GlobalOutlined />}
+        {isAuthenticated ? (
+          <div
+            className="desktop-nav"
+            style={{ alignItems: "center", gap: 16, display: "flex" }}
+          >
+            <NotificationBell />
+            <Dropdown
+              menu={{ items: menuItems }}
+              trigger={["click"]}
+              placement="bottomRight"
             >
-              {languages.map((lang) => (
-                <Select.Option key={lang.code} value={lang.code}>
-                  <img
-                    src={lang.flagUrl}
-                    alt={`${lang.name} flag`}
-                    style={{
-                      width: "20px",
-                      marginRight: "10px",
-                      verticalAlign: "middle",
-                    }}
-                  />
-                  {lang.name}
-                </Select.Option>
-              ))}
-            </Select>
-            <Button
-              type="text"
-              icon={theme === 'light' ? <SunOutlined /> : <MoonOutlined />}
-              className="theme-toggle"
-              onClick={toggleTheme}
-            />
-            {isAuthenticated ? (
-              <React.Fragment>
+              <Tooltip title="Settings">
                 <Button
-                  type="text"
-                  icon={<BellFilled />}
-                  className="notification-btn"
-                />
-                <Dropdown
-                  menu={{ items: userMenuItems }}
-                  placement="bottomRight"
-                  trigger={["click"]}
-                  className="user-dropdown"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    border: "none",
+                    outline: "none",
+                  }}
                 >
-                  {/* Wrap Avatar and Name in a div for layout */}
-                  <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <Avatar className="user-avatar" style={{ marginRight: 8 }}>
-                      {userDetails?.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                    </Avatar>
-                    <span className="user-name">{userDetails?.fullName}</span> {/* Display full name */}
-                  </div>
-                </Dropdown>
-              </React.Fragment>
-            ) : (
-              <React.Fragment>
-                <Tooltip title="Login">
-                  <Button
-                    type="text"
-                    icon={<LoginOutlined />}
-                    onClick={() => { navigate('/login') }}
-                    className="login-btn"
-                  >
-                    {t('common.getStarted')}
-                  </Button>
-                </Tooltip>
-              </React.Fragment>
+                  <SettingOutlined style={{ fontSize: 18 }} />
+                </Button>
+              </Tooltip>
+            </Dropdown>
+            {isAuthenticated && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Avatar icon={<UserOutlined />} />
+              </div>
             )}
           </div>
-
-          {/* Dropdown for mobile view */}
-          <Dropdown
-            overlay={<MobileMenu />}
-            trigger={['click']}
-            className="mobile-dropdown"
+        ) : (
+          <div
+            className="desktop-nav"
+            style={{ alignItems: "center", gap: 16 }}
           >
-            <Button type="text" icon={<MenuOutlined />} />
-          </Dropdown>
-        </div>
+            <Button
+              type="default"
+              style={{
+                borderRadius: 999,
+                border: "1px solid #2f54eb",
+                color: "#2f54eb",
+                backgroundColor: "#fff",
+                fontWeight: 500,
+                padding: "4px 16px",
+                fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                boxShadow: "none",
+                transition: "all 0.3s ease",
+                outline: "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#f0f5ff";
+                e.currentTarget.style.color = "#1d39c4";
+                e.currentTarget.style.border = "1px solid #1d39c4";
+                e.currentTarget.style.outline = "none";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#fff";
+                e.currentTarget.style.color = "#2f54eb";
+                e.currentTarget.style.border = "1px solid #2f54eb";
+                e.currentTarget.style.outline = "none";
+              }}
+              onClick={() => navigate("/login")}
+            >
+              Get Started
+              <span style={{ fontSize: 16, lineHeight: 1 }}>✨</span>
+            </Button>
+          </div>
+        )}
       </Header>
+      <Drawer
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              width: "100%",
+            }}
+          >
+            <Avatar
+              shape="square"
+              size="large"
+              style={{
+                background: "linear-gradient(45deg, #667EEA 30%, #764BA2 90%)",
+                color: "white",
+              }}
+            >
+              P
+            </Avatar>
+            <span style={{ fontSize: 16, fontWeight: 600 }}>ProgressHub</span>
+          </div>
+        }
+        placement="left"
+        closable={true}
+        onClose={() => setMobileMenuOpen(false)}
+        open={mobileMenuOpen}
+        styles={{ body: { padding: 0 } }}
+      >
+        {isAuthenticated && userDetails?.role === "ADMIN" ? (
+          <Menu
+            onClick={(e) => {
+              onClick(e);
+              setMobileMenuOpen(false);
+            }}
+            selectedKeys={[current]}
+            mode="inline"
+            defaultSelectedKeys={[
+              localStorage.getItem("selectedKey") || "adminDashboard",
+            ]}
+            items={items}
+            style={{ border: "none" }}
+          />
+        ) : isAuthenticated && userDetails?.role === "USER" ? (
+          <Menu
+            onClick={(e) => {
+              onClick(e);
+              setMobileMenuOpen(false);
+            }}
+            selectedKeys={[current]}
+            mode="inline"
+            defaultSelectedKeys={[
+              localStorage.getItem("selectedKey") || "dashboard",
+            ]}
+            items={itemsClient}
+            style={{ border: "none" }}
+          />
+        ) : isAuthenticated && userDetails?.role === "MANAGER" ? (
+          <Menu
+            onClick={(e) => {
+              onClick(e);
+              setMobileMenuOpen(false);
+            }}
+            selectedKeys={[current]}
+            mode="inline"
+            defaultSelectedKeys={[
+              localStorage.getItem("selectedKey") || "managerDashboard",
+            ]}
+            items={itemsManager}
+            style={{ border: "none" }}
+          />
+        ) : null}
+      </Drawer>
       <Outlet />
     </Layout>
   );

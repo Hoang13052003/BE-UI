@@ -1,29 +1,43 @@
 import React, { useState, useEffect } from "react";
-import { Table, Tag, Typography, message } from "antd";
-import { Link } from "react-router-dom";
+import { Table, Tag, Typography, message, List, Card, Grid, Button } from "antd";
+import { useNavigate } from "react-router-dom";
 import type { ColumnsType } from "antd/es/table";
-import { filterProjects } from "../../../api/projectApi";
+import {
+  filterProjects,
+  getProjectLaborDetailsApi,
+  getProjectFixedPriceDetailsApi,
+} from "../../../api/projectApi";
+import { getMilestoneSummaryForFixedPriceProjectApi } from "../../../api/milestoneApi";
+import { getTimeLogsByProjectIdApi } from "../../../api/timelogApi";
 import { Project } from "../../../types/project";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingProjectId, setLoadingProjectId] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
+  const screens = useBreakpoint();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const fetchProjects = async (page: number = 0, size: number = 10) => {
     try {
       setLoading(true);
       const response = await filterProjects(
         {
-          // Add any default criteria if needed
           name: undefined,
           status: undefined,
-          startDate: undefined,
-          endDate: undefined,
+          projectType: undefined,
+          startDateFrom: undefined,
+          startDateTo: undefined,
+          endDateFrom: undefined,
+          endDateTo: undefined,
         },
         page,
         size
@@ -35,7 +49,7 @@ const ProjectList: React.FC = () => {
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error);
-      message.error("Failed to load projects");
+      message.error(t("messages.fetchProjectsError"));
     } finally {
       setLoading(false);
     }
@@ -45,29 +59,45 @@ const ProjectList: React.FC = () => {
     fetchProjects(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  // Status color mapping
+  /**
+   * Handle click on "View Details" – call 2 APIs based on project type then navigate
+   */
+  const handleViewDetails = async (project: Project) => {
+    try {
+      setLoadingProjectId(project.id);
+
+      // 1. Always fetch project detail first (different endpoint for each type)
+      if (project.projectType === "FIXED_PRICE") {
+        await Promise.all([
+          getProjectFixedPriceDetailsApi(project.id),
+          getMilestoneSummaryForFixedPriceProjectApi(project.id),
+        ]);
+      } else {
+        // LABOR
+        await Promise.all([
+          getProjectLaborDetailsApi(project.id),
+          getTimeLogsByProjectIdApi(project.id, 0, 1000),
+        ]);
+      }
+
+      // Determine route path
+      const typePath = project.projectType === "FIXED_PRICE" ? "fixed-price" : "labor";
+      navigate(`/admin/projects/${typePath}/${project.id}/details`);
+    } catch (error) {
+      console.error("Failed to fetch project details:", error);
+      message.error(t("messages.fetchProjectsError"));
+    } finally {
+      setLoadingProjectId(null);
+    }
+  };
+
   const statusColors: Record<string, string> = {
     NEW: "blue",
     PENDING: "orange",
     PROGRESS: "green",
+    COMPLETED: "success",
     CLOSED: "gray",
   };
-
-  // // Calculate progress based on status
-  // const calculateProgress = (status: string): number => {
-  //   switch (status) {
-  //     case "NEW":
-  //       return 0;
-  //     case "PENDING":
-  //       return 25;
-  //     case "PROGRESS":
-  //       return 75;
-  //     case "CLOSED":
-  //       return 100;
-  //     default:
-  //       return 0;
-  //   }
-  // };
 
   const columns: ColumnsType<Project> = [
     {
@@ -85,20 +115,20 @@ const ProjectList: React.FC = () => {
     {
       title: "Type",
       key: "type",
-      render: (_, record) => <Tag color="blue">{record.type}</Tag>,
+      render: (_, record) => <Tag color="blue">{record.projectType}</Tag>,
     },
     {
-      title: "Progress",
+      title: "Overall Process",
       key: "progress",
       render: (_, record) => (
         <div className="flex items-center">
           <div className="progress-bar-container">
             <div
               className="progress-bar-fill"
-              style={{ width: `${record.progress || 0}%` }}
+              style={{ width: `${record.overallProcess || 0}%` }}
             />
           </div>
-          <span className="ml-2">{record.progress || 0}%</span>
+          <span className="ml-2">{record.overallProcess || 0}%</span>
         </div>
       ),
     },
@@ -141,16 +171,155 @@ const ProjectList: React.FC = () => {
       title: "Action",
       key: "action",
       render: (_, record) => (
-        <Link
-          to={`/projects/${record.id}`}
-          className="text-blue-600 hover:text-blue-700"
+        <Button
+          type="link"
+          loading={loadingProjectId === record.id}
+          onClick={() => handleViewDetails(record)}
         >
           View Details
-        </Link>
+        </Button>
       ),
     },
   ];
 
+  // Responsive: Table for md+ screens, List for sm and below
+  if (!screens.md) {
+    // Mobile/List/Card view
+    return (
+      <List
+        loading={loading}
+        dataSource={projects}
+        pagination={{
+          current: currentPage + 1,
+          pageSize: pageSize,
+          total: totalCount,
+          onChange: (page, size) => {
+            setCurrentPage(page - 1);
+            setPageSize(size || 10);
+          },
+          showSizeChanger: true,
+          showTotal: (total) => `Total ${total} projects`,
+        }}
+        renderItem={(item) => (
+          <Card
+            key={item.id}
+            style={{
+              marginBottom: 20,
+              borderRadius: 12,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+              border: "1px solid #f0f0f0",
+              padding: 16,
+            }}
+            styles={{ body: { padding: 0 } }}
+            title={
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexWrap: "wrap",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 16,
+                    wordBreak: "break-word",
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  {item.name}
+                </span>
+                <Tag
+                  color={statusColors[item.status] || "default"}
+                  style={{ fontWeight: 500, whiteSpace: "nowrap" }}
+                >
+                  {item.status}
+                </Tag>
+              </div>
+            }
+          >
+            <div style={{ marginBottom: 12, color: "#595959", fontSize: 14 }}>
+              <Text type="secondary">{item.description}</Text>
+            </div>
+            <div
+              style={{
+                marginBottom: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <b>Type:</b>{" "}
+              <Tag color="blue" style={{ fontWeight: 500 }}>
+                {item.projectType}
+              </Tag>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <b>Progress:</b>{" "}
+              <span style={{ fontWeight: 500 }}>
+                {item.overallProcess || 0}%
+              </span>
+              <div
+                className="progress-bar-container"
+                style={{
+                  background: "#f0f0f0",
+                  borderRadius: 4,
+                  height: 8,
+                  marginTop: 6,
+                  marginBottom: 2,
+                  width: "100%",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  className="progress-bar-fill"
+                  style={{
+                    width: `${item.overallProcess || 0}%`,
+                    background: "#1890ff",
+                    height: 8,
+                    borderRadius: 4,
+                    transition: "width 0.3s",
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <b>Deadline:</b>{" "}
+              <span style={{ fontWeight: 500 }}>
+                {new Date(item.plannedEndDate).toLocaleDateString("en-GB")}
+              </span>
+              {item.actualEndDate && (
+                <Text type="secondary" className="ml-2">
+                  (Actual:{" "}
+                  {new Date(item.actualEndDate).toLocaleDateString("en-GB")})
+                </Text>
+              )}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: 8,
+              }}
+            >
+              <Button
+                type="link"
+                style={{ color: "#9254de", fontWeight: 500, fontSize: 14 }}
+                loading={loadingProjectId === item.id}
+                onClick={() => handleViewDetails(item)}
+              >
+                View Details
+              </Button>
+            </div>
+          </Card>
+        )}
+      />
+    );
+  }
+
+  // Desktop/Table view
   return (
     <Table
       columns={columns}

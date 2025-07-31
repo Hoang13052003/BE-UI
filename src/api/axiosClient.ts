@@ -1,40 +1,51 @@
 import axios, { AxiosInstance } from "axios";
+import { normalizeBaseUrl } from "../utils/urlUtils";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+if (!API_BASE_URL) {
+  throw new Error("VITE_API_URL is not defined in your .env file.");
+}
+
+const normalizedBaseURL = normalizeBaseUrl(API_BASE_URL);
 
 const axiosClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: normalizedBaseURL,
+  headers: { "Content-Type": "application/json" },
 });
 
-// Request interceptor
 axiosClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  const isPublicApi =
-    config.url?.includes("/api/auth/login") ||
-    config.url?.includes("/api/auth/register") ||
-    config.url?.includes("/api/auth/reset-password") ||
-    config.url?.includes("/api/auth/refresh-token") ||
-    config.url?.includes("/api/auth/forgot-password");
 
-  if (token && !isPublicApi) {
+  const publicPaths = [
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/auth/refresh-token",
+  ];
+  const isPublic = publicPaths.some((path) => config.url?.startsWith(path));
+
+  if (token && !isPublic) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Hàm gọi refresh token
-const refreshAccessToken = async () => {
-  const tokenRefresh = localStorage.getItem("tokenRefresh");
-  if (!tokenRefresh) throw new Error("No refresh token available");
+const refreshAccessToken = async (): Promise<{
+  jwt: string;
+  jwtRefreshToken: string;
+}> => {
+  const refreshToken = localStorage.getItem("tokenRefresh");
+  if (!refreshToken) throw new Error("No refresh token available");
 
-  const response = await axiosClient.get("/api/auth/refresh-token", {
-    headers: {
-      "X-Refresh-Token": `Bearer ${tokenRefresh}`,
-    },
-  });
-
-  return response.data; // { jwt, jwtRefreshToken }
+  const response = await axios.get(
+    `${normalizedBaseURL}/api/auth/refresh-token`,
+    {
+      headers: {
+        "X-Refresh-Token": `Bearer ${refreshToken}`,
+      },
+    }
+  );
+  return response.data;
 };
 
 let isRefreshing = false;
@@ -56,17 +67,12 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Response interceptor
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes("/api/auth/refresh-token")
-    ) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -93,14 +99,19 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem("token");
-        localStorage.removeItem("tokenRefresh");
-        alert("Session expired. Please log in again.");
-        window.location.href = "/login";
+        console.error("Refresh token failed:", refreshError);
+        alert("Your session has expired. Please log in again.");
+        localStorage.clear();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
+    }
+
+    // Handle 403 Forbidden errors
+    if (error.response?.status === 403) {
+      console.error("Access forbidden:", error.response.data?.message || "You don't have permission to access this resource");
+      // You can add additional handling here like showing a toast notification
     }
 
     return Promise.reject(error);

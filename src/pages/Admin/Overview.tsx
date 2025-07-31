@@ -1,29 +1,19 @@
 import React, { useEffect, useState } from "react";
-import {
-  Card,
-  Row,
-  Col,
-  Button,
-  Space,
-  Statistic,
-  // List, Typography,
-  Spin,
-  Alert,
-} from "antd";
+import { Card, Row, Col, Button, Space, Statistic, Spin, Alert } from "antd";
 import { ArrowUpOutlined } from "@ant-design/icons";
 
 import DashboardChart from "../../components/Admin/dashboard/DashboardChart";
-// import TimeLogChart from '../../components/Admin/dashboard/TimeLogChart';
 import ProjectList from "../../components/Admin/dashboard/ProjectList";
+import RecentFeedback from "../../components/Admin/dashboard/RecentFeedback";
 import {
-  DashboardSummary,
+  DashboardSummaryFull,
   getAdminDashboardSummary,
 } from "../../api/dashboardAdminApi";
 
 const Overview: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [dashboardData, setDashboardData] = useState<DashboardSummary>({
+  const [dashboardData, setDashboardData] = useState<DashboardSummaryFull>({
     totalProjects: 0,
     activeProjects: 0,
     onTrackCount: 0,
@@ -33,9 +23,13 @@ const Overview: React.FC = () => {
       labels: [],
       data: [],
     },
+    projectStatusWeek: { labels: [], data: [] },
+    projectStatusMonth: { labels: [], data: [] },
+    projectStatusQuarter: { labels: [], data: [] },
   });
-
-  // Define columns for milestones table
+  const [selectedRange, setSelectedRange] = useState<
+    "week" | "month" | "quarter"
+  >("month");
 
   // Fetch dashboard data
   useEffect(() => {
@@ -43,11 +37,11 @@ const Overview: React.FC = () => {
       try {
         setLoading(true);
         const data = await getAdminDashboardSummary();
-        console.log("Dashboard Data:", data.projectStatus);
-        setDashboardData(data);
+        setDashboardData(() => ({
+          ...data,
+        }));
         setError(null);
       } catch (err) {
-        console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data");
       } finally {
         setLoading(false);
@@ -59,11 +53,6 @@ const Overview: React.FC = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Calculate percentages
-  // const onTrackPercent = Math.round((dashboardData.onTrackCount / dashboardData.activeProjects) * 100) || 0;
-  // const delayedPercent = Math.round((dashboardData.delayedCount / dashboardData.activeProjects) * 100) || 0;
-  // const atRiskPercent = Math.round((dashboardData.atRiskCount / dashboardData.activeProjects) * 100) || 0;
-
   if (loading) {
     return <Spin size="large" className="center-spinner" />;
   }
@@ -72,7 +61,6 @@ const Overview: React.FC = () => {
     return <Alert message={error} type="error" />;
   }
 
-  // Calculate percentages safely
   const calculatePercent = (value: number) => {
     return dashboardData.activeProjects
       ? Math.round((value / dashboardData.activeProjects) * 100)
@@ -81,9 +69,8 @@ const Overview: React.FC = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Stats Cards */}
       <Row gutter={[16, 16]} className="mb-4">
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="Total Projects"
@@ -96,7 +83,7 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="On Track"
@@ -107,7 +94,7 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="Delayed"
@@ -117,7 +104,7 @@ const Overview: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card>
             <Statistic
               title="At Risk"
@@ -131,70 +118,73 @@ const Overview: React.FC = () => {
 
       {/* Project Progress & Recent Feedback */}
       <Row gutter={[16, 16]} className="mb-4">
-        <Col span={16}>
+        <Col xs={24} lg={16} className="mb-3 mb-lg-0">
           <Card
             loading={loading}
             title="Project Progress"
             extra={
-              <Space>
-                <Button type="text">Week</Button>
-                <Button type="primary">Month</Button>
-                <Button type="text">Quarter</Button>
+              <Space wrap>
+                <Button
+                  type={selectedRange === "week" ? "primary" : "text"}
+                  onClick={() => setSelectedRange("week")}
+                  style={
+                    selectedRange === "week"
+                      ? { fontWeight: "bold", boxShadow: "0 2px 8px #e6f4ff" }
+                      : {}
+                  }
+                >
+                  Week
+                </Button>
+                <Button
+                  type={selectedRange === "month" ? "primary" : "text"}
+                  onClick={() => setSelectedRange("month")}
+                  style={
+                    selectedRange === "month"
+                      ? { fontWeight: "bold", boxShadow: "0 2px 8px #e6f4ff" }
+                      : {}
+                  }
+                >
+                  Month
+                </Button>
+                <Button
+                  type={selectedRange === "quarter" ? "primary" : "text"}
+                  onClick={() => setSelectedRange("quarter")}
+                  style={
+                    selectedRange === "quarter"
+                      ? { fontWeight: "bold", boxShadow: "0 2px 8px #e6f4ff" }
+                      : {}
+                  }
+                >
+                  Quarter
+                </Button>
               </Space>
             }
           >
             <DashboardChart
-              data={dashboardData.projectStatus.data}
-              labels={dashboardData.projectStatus.labels}
+              data={
+                selectedRange === "week"
+                  ? dashboardData.projectStatusWeek?.data || []
+                  : selectedRange === "month"
+                  ? dashboardData.projectStatusMonth?.data ||
+                    dashboardData.projectStatus.data
+                  : dashboardData.projectStatusQuarter?.data || []
+              }
+              labels={
+                selectedRange === "week"
+                  ? dashboardData.projectStatusWeek?.labels || []
+                  : selectedRange === "month"
+                  ? dashboardData.projectStatusMonth?.labels ||
+                    dashboardData.projectStatus.labels
+                  : dashboardData.projectStatusQuarter?.labels || []
+              }
             />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card
-            loading={loading}
-            title="Recent Feedback"
-            style={{
-              height: "404px",
-              position: "relative",
-              borderRadius: "8px",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-            }}
-            bodyStyle={{ padding: "16px" }}
-            extra={
-              <Button type="link" style={{ fontWeight: "bold" }}>
-                View All
-              </Button>
-            }
-          >
-            {/* <List
-              dataSource={dashboardData.recentFeedback}
-              renderItem={(item: Feedback, index: number) => (
-                <List.Item key={index} style={{ padding: '12px 0', borderBottom: index === dashboardData.recentFeedback.length - 1 ? 'none' : '1px solid #f0f0f0' }}>
-                <List.Item.Meta
-                  title={
-                  <Title level={5} style={{ marginBottom: '4px', color: '#1d1d1d' }}>
-                    {item.project}
-                  </Title>
-                  }
-                  description={
-                  <>
-                    <p style={{ margin: 0, color: '#595959', fontSize: '14px' }}>
-                    {item.message}
-                    </p>
-                    <span style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                    {item.time}
-                    </span>
-                  </>
-                  }
-                />
-                </List.Item>
-              )}
-              /> */}
-          </Card>
+        <Col xs={24} lg={8}>
+          <RecentFeedback limit={5} useMockData={false} />
         </Col>
       </Row>
 
-      {/* Milestones Table */}
       <Card title="Projects" className="mb-4">
         <ProjectList />
       </Card>

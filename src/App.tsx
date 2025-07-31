@@ -1,74 +1,265 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import LoginComponent from './components/LoginComponent';
-import ProtectedRoute from './routes/ProtectedRoute';
-import { AuthProvider } from './contexts/AuthContext';
-import RegisterComponent from './components/RegisterComponent';
-import PublicRoute from './routes/PublicRouter';
-import LayoutShare from './pages/Share/_layout';
-import DashboardClient from './pages/Client/DashboardClient';
-import DashboardAdmin from './pages/Admin/DashboardAdmin';
-// import HeroSection from './components/home/HeroSection';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage';
-import UserManagement from './pages/Admin/UserManagement';
-import ProjectUpdates from './pages/Admin/ProjectUpdates';
-import Notifications from './pages/Admin/Notifications';
-import SystemSettings from './pages/Admin/SystemSettings';
-import ProjectDetails from './pages/Client/ProjectDetails';
-import DocumentsPage from './pages/Client/DocumentsPage';
-import MessagesAndNotes from './pages/Client/MessagesAndNotes';
-import ProfileSettings from './pages/Client/ProfileSettings';
-import HomeIntroSection from './pages/HomeIntroSection';
-import OverviewAdmin from './pages/Admin/Overview';
-import Overview from './pages/Client/overview';
-import { AlertProvider } from './contexts/AlertContext';
-import AlertContainer from './components/AlertContainer';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+  Outlet,
+} from "react-router-dom";
+import React, { useEffect } from "react";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AlertProvider } from "./contexts/AlertContext";
+import LoginComponent from "./components/LoginComponent";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import RegisterComponent from "./components/RegisterComponent";
+import PublicRoute from "./routes/PublicRouter";
+import LayoutShare from "./pages/Share/_layout";
+import DashboardAdmin from "./pages/Admin/DashboardAdmin";
+
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import UserManagement from "./pages/Admin/UserManagement";
+import ProjectManager from "./pages/Admin/ProjectManager";
+import OverviewAdmin from "./pages/Admin/Overview";
+
+import AttachmentDisplay from "./pages/Admin/AttachmentManager/AttachmentDisplay";
+import ProjectUpdateHistory from "./pages/Admin/AttachmentManager/ProjectUpdateHistory";
+import ProjectSnapshotViewer from "./pages/Admin/AttachmentManager/ProjectSnapshotViewer";
+
+import { NotificationProvider } from "./contexts/NotificationContext";
+import { ChatProvider } from "./contexts/ChatContext";
+import EmailVerification from "./pages/auth/EmailVerification";
+import Profile from "./pages/Client/Profile";
+import Settings from "./pages/Client/Settings";
+import Feedbacks from "./pages/Admin/Feedbacks";
+import AuthLogMonitor from "./pages/Admin/AuditLogDashboard/AuthLogMonitor";
+import ProjectUpdatesForClientPage from "./pages/Client/ProjectUpdatesForClientPage";
+import LandingPage from "./pages/LandingPage";
+import AlertContainer from "./components/AlertContainer";
+import DashboardManager from "./pages/Manager/DashboardManager";
+import OverviewManager from "./pages/Manager/OverviewManager";
+import PageSettingsManager from "./pages/Manager/PageSettingsManager";
+import MyFeedbacksManager from "./pages/Manager/MyFeedbacksManager";
+import ProjectProgressListManager from "./pages/Manager/ProjectProgressListManager";
+import NotificationsManager from "./pages/Manager/NotificationsManager";
+import ProjectUpdateDetailsPageManager from "./pages/Manager/ProjectUpdateDetailsPageManager";
+import ProjectDetailPageManager from "./pages/Manager/ProjectDetailPageManager";
+import OvertimeRequestPageAdmin from "./pages/Admin/OvertimeRequestPageAdmin";
+import OvertimeRequestPageManager from "./pages/Manager/OvertimeRequestPageManager";
+import DashboardClient from "./pages/Client/DashboardClient";
+import OverviewClient from "./pages/Client/OverviewClient";
+import ChatPage from "./pages/Chat/ChatPage";
+
+const AuthEventHandler: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleAuthLogout = () => {
+      console.warn("Auth logout event received, redirecting to login");
+      navigate("/login", { replace: true });
+    };
+
+    window.addEventListener("auth:logout", handleAuthLogout);
+
+    return () => {
+      window.removeEventListener("auth:logout", handleAuthLogout);
+    };
+  }, [navigate]);
+
+  return null;
+};
 
 function App() {
   return (
     <AlertProvider>
       <AuthProvider>
-        <Router>
-          <Routes>
+        <NotificationProvider>
+          <Router
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true
+            }}
+          >
+            <AlertContainer />
+            <AuthEventHandler />
+            <Routes>
+            {/* Public Routes */}
             <Route element={<PublicRoute />}>
-              <Route path="/" element={<LayoutShare />} >
-                <Route index element={<HomeIntroSection />} />
+              <Route path="/" element={<LayoutShare />}>
+                <Route index element={<LandingPage />} />
+                <Route
+                  path="reset-password"
+                  element={<ResetPasswordPage />}
+                />
+                <Route path="register" element={<RegisterComponent />} />
+                <Route path="login" element={<LoginComponent />} />
+                <Route path="verify-email" element={<EmailVerification />} />
               </Route>
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/register" element={<RegisterComponent />} />
-              <Route path="/login" element={<LoginComponent />} />
             </Route>
 
-            {/* Route cho Admin */}
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-              <Route path="/" element={<LayoutShare />} >
-                <Route path="admin/" element={<DashboardAdmin />} >
+            {/* Protected Routes - All wrapped with ChatProvider */}
+            <Route element={<ProtectedRoute allowedRoles={["ADMIN", "MANAGER", "USER"]} />}>
+              <Route element={<ChatProviderWrapper />}>
+                {/* Route for Admin */}
+            <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+              <Route path="/" element={<LayoutShare />}>
+                <Route path="admin/" element={<DashboardAdmin />}>
                   <Route path="overview" element={<OverviewAdmin />} />
                   <Route path="users" element={<UserManagement />} />
-                  <Route path="updates" element={<ProjectUpdates />} />
-                  <Route path="notifications" element={<Notifications />} />
-                  <Route path="settings" element={<SystemSettings />} />
+                  <Route path="updates" element={<ProjectManager />} />
+                  <Route
+                    path="project-progress"
+                    element={<ProjectProgressListManager />}
+                  />
+                  <Route
+                    path="project-updates/:id"
+                    element={<ProjectUpdateDetailsPageManager />}
+                  />
+                  <Route
+                    path="notifications"
+                    element={<NotificationsManager />}
+                  />
+                  <Route path="settings" element={<PageSettingsManager />}>
+                        <Route index element={<Settings />} />
+                    <Route path="profile" element={<Profile />} />
+                  </Route>
+                  <Route
+                    path="projects/fixed-price/:projectId/details"
+                    element={<ProjectDetailPageManager />}
+                      /> 
+                  <Route
+                    path="projects/labor/:projectId/details"
+                    element={<ProjectDetailPageManager />}
+                  />
+                  <Route path="feedbacks" element={<Feedbacks />} />
+                  <Route path="audit-logs" element={<AuthLogMonitor />} />
+                  <Route
+                    path="overtime-requests"
+                    element={<OvertimeRequestPageAdmin />}
+                  />
+                  <Route
+                    path="projects/:projectType/:projectId/history"
+                    element={<ProjectUpdateHistory />}
+                  />
+                  <Route
+                    path="projects/:projectType/:projectId/updates/:projectUpdateId/snapshot"
+                    element={<ProjectSnapshotViewer />}
+                  />
+                  <Route
+                    path="attachment-display/:projectType/:projectId"
+                    element={<AttachmentDisplay />}
+                  />
+                  <Route path="chat" element={<ChatPage />} />
                 </Route>
               </Route>
             </Route>
 
-            {/* Route cho Client */}
-            <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
-              <Route path="/" element={<LayoutShare />} >
-                <Route path="client/" element={<DashboardClient />} >
-                  <Route path="overview" element={<Overview />} />
-                  <Route path="profiles" element={<ProfileSettings />} />
-                  <Route path="projects/documents" element={<DocumentsPage />} />
-                  <Route path="projects/messages" element={<MessagesAndNotes />} />
-                  <Route path="projects/details/:id" element={<ProjectDetails />} />
+                {/* Route for Client */}
+            <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
+              <Route path="/" element={<LayoutShare />}>
+                <Route path="client/" element={<DashboardClient />}>
+                  <Route path="overview" element={<OverviewClient />} />
+                  <Route
+                    path="project-updates"
+                    element={<ProjectUpdatesForClientPage />}
+                  />
+                  <Route
+                    path="project-updates/:id"
+                    element={<ProjectUpdateDetailsPageManager />}
+                  />
+                  <Route
+                    path="my-feedbacks"
+                    element={<MyFeedbacksManager />}
+                  />
+                  <Route
+                    path="notifications"
+                    element={<NotificationsManager />}
+                  />
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route path="settings" element={<PageSettingsManager />}>
+                    <Route index element={<Settings />} />
+                    <Route path="profile" element={<Profile />} />
+                  </Route>
+                  <Route
+                    path="projects/fixed-price/:projectId/details"
+                    element={<ProjectDetailPageManager />}
+                  />
+                  <Route
+                    path="projects/labor/:projectId/details"
+                    element={<ProjectDetailPageManager />}
+                  />
                 </Route>
               </Route>
             </Route>
-          </Routes>
-        </Router>
-        <AlertContainer /> {/* Đặt ở ngoài cùng, sau Router */}
+
+                {/* Route for Manager */}
+            <Route element={<ProtectedRoute allowedRoles={["MANAGER"]} />}>
+              <Route path="/" element={<LayoutShare />}>
+                <Route path="manager/" element={<DashboardManager />}>
+                  <Route path="overview" element={<OverviewManager />} />
+                  <Route path="settings" element={<PageSettingsManager />}>
+                    <Route index element={<Settings />} />
+                    <Route path="profile" element={<Profile />} />
+                  </Route>
+                  <Route
+                    path="notifications"
+                    element={<NotificationsManager />}
+                  />
+                  <Route
+                    path="project-updates/:id"
+                    element={<ProjectUpdateDetailsPageManager />}
+                  />
+                  <Route
+                    path="my-feedbacks"
+                    element={<MyFeedbacksManager />}
+                  />
+                  <Route
+                    path="project-progress"
+                    element={<ProjectProgressListManager />}
+                  />
+                  <Route
+                    path="overtime-requests"
+                    element={<OvertimeRequestPageManager />}
+                  />
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route
+                    path="projects/fixed-price/:projectId/details"
+                    element={<ProjectDetailPageManager />}
+                  />
+                  <Route
+                    path="projects/labor/:projectId/details"
+                    element={<ProjectDetailPageManager />}
+                  />
+                  <Route
+                    path="projects/:projectType/:projectId/history"
+                    element={<ProjectUpdateHistory />}
+                  />
+                  <Route
+                    path="projects/:projectType/:projectId/updates/:projectUpdateId/snapshot"
+                    element={<ProjectSnapshotViewer />}
+                  />
+                  <Route
+                    path="attachment-display/:projectType/:projectId"
+                    element={<AttachmentDisplay />}
+                  />
+                    </Route>
+                  </Route>
+                </Route>
+              </Route>
+            </Route>
+            </Routes>
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </AlertProvider>
   );
 }
+
+// Wrapper component to provide ChatProvider only for authenticated routes
+const ChatProviderWrapper = () => {
+  return (
+    <ChatProvider>
+      <Outlet />
+    </ChatProvider>
+  );
+};
 
 export default App;

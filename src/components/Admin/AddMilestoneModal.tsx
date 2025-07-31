@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, DatePicker, Select, Button, message, InputNumber, Slider } from 'antd';
-import { addMilestoneToProjectApi, MilestoneRequest } from '../../api/projectApi'; // Ensure this API path is correct
-import TextArea from 'antd/lib/input/TextArea';
+import React, { useState, useEffect } from "react";
+import {
+  Modal,
+  Form,
+  Input,
+  DatePicker,
+  Select,
+  Button,
+  Slider,
+} from "antd";
+import { showNotification, showError } from "../../utils/notificationUtils";
+import {
+  createMilestoneForFixedPriceProjectApi,
+} from "../../api/milestoneApi";
+import { MilestoneStatus, MilestoneCreateRequest } from "../../types/milestone";
+import { getMilestoneStatusDisplayName } from "../../utils/milestoneUtils";
+import TextArea from "antd/lib/input/TextArea";
 
-interface AddMilestoneModalProps { // Renamed interface
+interface AddMilestoneModalProps {
   visible: boolean;
-  projectId: number;
+  projectId: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-// Renamed component
 const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
   visible,
   projectId,
@@ -19,51 +31,49 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [statusOptions, setStatusOptions] = useState<string[]>([]);
+  const [statusOptions, setStatusOptions] = useState<MilestoneStatus[]>([]);
 
-  // Load milestone statuses when modal opens
   useEffect(() => {
     if (visible) {
       loadMilestoneStatuses();
-      // Reset fields when modal becomes visible and projectId is valid
       if (projectId) {
         form.resetFields();
       }
     }
-  }, [visible, projectId, form]); // Added form to dependency array
+  }, [visible, projectId, form]);
 
   const loadMilestoneStatuses = async () => {
     try {
-      setStatusOptions(['NEW', 'SENT', 'REVIEWED']);
+      setStatusOptions(["TODO", "DOING", "PENDING", "COMPLETED"]);
     } catch (error) {
-      console.error('Failed to load milestone statuses:', error);
-      message.error('Failed to load milestone statuses');
+      console.error("Failed to load milestone statuses:", error);
+      showError(error, "MILESTONE_LOAD_FAILED");
     }
   };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const values = await form.validateFields();      const milestoneData: MilestoneRequest = {
+      const values = await form.validateFields();
+      const milestoneData: MilestoneCreateRequest = {
+        projectFixedPriceId: projectId,
         name: values.name,
         description: values.description,
-        startDate: values.startDate.format('YYYY-MM-DD'),
-        deadlineDate: values.deadlineDate.format('YYYY-MM-DD'),
+        startDate: values.startDate.format("YYYY-MM-DD"),
+        deadlineDate: values.deadlineDate.format("YYYY-MM-DD"),
         status: values.status,
-        notes: values.notes || '',
+        notes: values.notes || "",
         completionPercentage: values.completionPercentage,
       };
 
-      // Ensure addMilestoneToProjectApi exists and works as intended
-      await addMilestoneToProjectApi(projectId, milestoneData);
-      message.success('Milestone added successfully');
-      // form.resetFields(); // Moved reset to useEffect for better UX
-      onSuccess(); // Call onSuccess which should close the modal and refresh data
+      await createMilestoneForFixedPriceProjectApi(projectId, milestoneData);
+      showNotification.success("MILESTONE_CREATED");
+      onSuccess();
     } catch (error) {
-      console.error('Failed to add milestone:', error);
-      // Provide more specific error feedback if possible
-      const errorMessage = (error as any)?.response?.data?.message || 'Failed to add milestone';
-      message.error(errorMessage);
+      console.error("Failed to add milestone:", error);
+      const errorMessage =
+        (error as any)?.response?.data?.message || "Failed to add milestone";
+      showNotification.custom.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -71,7 +81,7 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
 
   return (
     <Modal
-      title="Add Milestone" // Updated title
+      title="Add Milestone"
       open={visible}
       onCancel={onClose}
       footer={[
@@ -88,105 +98,94 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
         </Button>,
       ]}
       width={600}
-      destroyOnClose // Add this to reset form state when modal is closed
     >
-      <Form
-        form={form}
-        layout="vertical"
-        name="add_milestone_form" // Added form name
-      >
+      <Form form={form} layout="vertical" name="add_milestone_form">
         <Form.Item
           name="name"
           label="Milestone Name"
-          rules={[{ required: true, message: 'Please enter milestone name' }]}
+          rules={[{ required: true, message: "Please enter milestone name" }]}
         >
           <Input placeholder="Enter milestone name" />
         </Form.Item>
-
         <Form.Item
           name="description"
           label="Description"
-          rules={[{ required: true, message: 'Please enter description' }]}
+          rules={[{ required: true, message: "Please enter description" }]}
         >
           <TextArea rows={3} placeholder="Enter description" />
         </Form.Item>
-
         <Form.Item
           name="startDate"
           label="Start Date"
-          rules={[{ required: true, message: 'Please select start date' }]}
+          rules={[{ required: true, message: "Please select start date" }]}
         >
-          <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+          <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
         </Form.Item>
-
         <Form.Item
           name="deadlineDate"
           label="Deadline Date"
           rules={[
-            { required: true, message: 'Please select deadline date' },
-            // Add validation rule for deadline date > start date if needed
+            { required: true, message: "Please select deadline date" },
             ({ getFieldValue }) => ({
               validator(_, value) {
-                if (!value || !getFieldValue('startDate')) {
+                if (!value || !getFieldValue("startDate")) {
                   return Promise.resolve();
                 }
-                if (value.isBefore(getFieldValue('startDate'))) {
-                  return Promise.reject(new Error('Deadline date must be after start date'));
+                if (value.isBefore(getFieldValue("startDate"))) {
+                  return Promise.reject(
+                    new Error("Deadline date must be after start date")
+                  );
                 }
                 return Promise.resolve();
               },
             }),
           ]}
         >
-          <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+          <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
         </Form.Item>
-
         <Form.Item
           name="status"
           label="Status"
-          rules={[{ required: true, message: 'Please select status' }]}
-          initialValue="NEW" // Set a default status
+          rules={[{ required: true, message: "Please select status" }]}
+          initialValue="TODO"
         >
           <Select placeholder="Select status">
-            {statusOptions.map(status => (
+            {statusOptions.map((status) => (
               <Select.Option key={status} value={status}>
-                {status.replace('_', ' ')}
+                {getMilestoneStatusDisplayName(status)}
               </Select.Option>
             ))}
           </Select>
-        </Form.Item>        <Form.Item
-          name="notes"
-          label="Notes"
-        >
+        </Form.Item>{" "}
+        <Form.Item name="notes" label="Notes">
           <TextArea rows={3} placeholder="Enter notes (optional)" />
         </Form.Item>
-
         <Form.Item
           name="completionPercentage"
           label="Completion Percentage"
           rules={[
             {
-              type: 'number',
+              type: "number",
               min: 0,
               max: 100,
-              message: 'Completion percentage must be between 0 and 100'
-            }
+              message: "Completion percentage must be between 0 and 100",
+            },
           ]}
         >
-          <Slider 
-            min={0} 
-            max={100} 
+          <Slider
+            min={0}
+            max={100}
             step={1}
             tooltip={{
               formatter: (value) => `${value}%`,
-              placement: 'bottom'
+              placement: "bottom",
             }}
             marks={{
-              0: '0%',
-              25: '25%',
-              50: '50%',  
-              75: '75%',
-              100: '100%'
+              0: "0%",
+              25: "25%",
+              50: "50%",
+              75: "75%",
+              100: "100%",
             }}
           />
         </Form.Item>
@@ -195,4 +194,4 @@ const AddMilestoneModal: React.FC<AddMilestoneModalProps> = ({
   );
 };
 
-export default AddMilestoneModal; // Export renamed component
+export default AddMilestoneModal;

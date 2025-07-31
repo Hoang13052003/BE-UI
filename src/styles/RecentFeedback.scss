@@ -72,13 +72,11 @@
     }
   }
   
-  // Remove the divider for the last item
   .ant-list-item:last-child .ant-divider {
     display: none;
   }
 }
 
-// Dark theme adjustments
 [data-theme="dark"] {
   .recent-feedback-card {
     background-color: var(--background-color);

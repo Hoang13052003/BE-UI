@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createProjectApi } from "../api/projectApi";
-import { ProjectRequest } from "../types/ProjectRequest"; // Sử dụng ProjectRequest đã được cập nhật
-import { message } from "antd";
+import { ProjectRequest } from "../types/ProjectRequest";
+import { showNotification, showError } from "../utils/notificationUtils";
 
 export const useAddProject = (onSuccess: () => void) => {
   const [submitting, setSubmitting] = useState(false);
@@ -10,31 +10,25 @@ export const useAddProject = (onSuccess: () => void) => {
     setSubmitting(true);
     try {
       const payload: ProjectRequest = {
-        name: values.name,
+        projectName: values.projectName || values.name, // Support both field names during transition
         description: values.description,
-        type: values.type,
+        type: values.projectType || values.type, // Map from projectType to type for API
         status: values.status,
-        startDate: values.startDate?.format("YYYY-MM-DD"),
-        plannedEndDate: values.plannedEndDate?.format("YYYY-MM-DD"),
+        startDate: values.startDate,
+        plannedEndDate: values.plannedEndDate,
         totalBudget: values.totalBudget,
         totalEstimatedHours: values.totalEstimatedHours ?? null,
-        userIds: values.userIds || [], // Lấy từ values do AddProjectModal cung cấp
+        userIds: values.userIds || [],
+        isActive: values.isActive !== undefined ? values.isActive : true, // Default to true
       };
 
-      if (!payload.startDate || !payload.plannedEndDate) {
-        throw new Error("Ngày bắt đầu hoặc ngày kết thúc không hợp lệ.");
-      }
-      // Optional: Validate userIds if it's mandatory
-      // if (!payload.userIds || payload.userIds.length === 0) {
-      //   throw new Error("Please assign at least one user to the project.");
-      // }
-
+      // Validation is now handled in createProjectApi
       await createProjectApi(payload);
       onSuccess();
-      message.success("Tạo dự án thành công!");
+      // Note: Success notification is handled by the parent component to avoid duplication
     } catch (err: any) {
       console.error("Add project error:", err);
-      message.error(`Tạo dự án thất bại: ${err.message || "Lỗi không xác định"}`);
+      showError(err, "PROJECT_CREATE_FAILED");
     } finally {
       setSubmitting(false);
     }

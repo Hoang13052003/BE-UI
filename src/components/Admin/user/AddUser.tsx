@@ -1,42 +1,45 @@
-import React, { useState } from 'react';
-import { Form, Input, Button, Select, message } from 'antd';
-import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
-import { createUser } from '../../../api/userApi';
+import React, { useState } from "react";
+import { Form, Input, Button, Select } from "antd";
+import { showNotification } from "../../../utils/notificationUtils";
+import { UserOutlined, MailOutlined, LockOutlined } from "@ant-design/icons";
+import { createUser } from "../../../api/userApi";
 // import { useNavigate } from 'react-router-dom';
-import { User } from '../../../types/User';
+import { UserRegister } from "../../../types/User";
+import { useAlert } from "../../../contexts/AlertContext";
 
 // Define role options as constants
 const ROLE_OPTIONS = [
-  { value: 1, label: 'ADMIN' },
-  { value: 2, label: 'USER' }
+  { value: "ADMIN", label: "Admin" },
+  { value: "USER", label: "User" },
+  { value: "MANAGER", label: "Manager" },
 ];
+
 interface AddUserProps {
-    onSuccess: () => void; // Thêm prop onSuccess
-  }
+  onSuccess: () => void; // Thêm prop onSuccesss
+}
 const AddUser: React.FC<AddUserProps> = () => {
   const [form] = Form.useForm();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-//   const navigate = useNavigate();
+  const { addAlert } = useAlert();
 
-  const handleSubmit = async (values: User) => {
+  const handleSubmit = async (values: UserRegister) => {
     setIsSubmitting(true);
     try {
-      await createUser(values);
-      
-      message.success('User added successfully');
-      form.resetFields();
-      window.location.pathname = '/admin/users'; // Redirect to user management page
-    } catch (error: unknown) {
-      // Handle specific error cases
-      if (
-        error instanceof Error &&
-        (error as { response?: { status?: number; data?: { message?: string } } }).response?.status === 409
-      ) {
-        message.error('Email already exists. Please use a different email.');
+      if (values.password !== values.confirmPassword) {
+        showNotification.error("PASSWORD_MISMATCH");
+        return;
       } else {
-        message.error('An unexpected error occurred.');
+        values.confirmPassword = undefined; // Clear confirmPassword before sending
       }
-      console.error('Error adding user:', error);
+
+      await createUser(values);
+
+      showNotification.success("USER_CREATED");
+      form.resetFields();
+      window.location.pathname = "/admin/users"; // Redirect to user management page
+    } catch (error: any) {
+      // Handle specific error cases
+      addAlert(error.response.data.message, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -55,15 +58,15 @@ const AddUser: React.FC<AddUserProps> = () => {
           label="Full Name"
           name="fullName"
           rules={[
-            { required: true, message: 'Please enter full name' },
-            { min: 3, message: 'Name must be at least 3 characters' },
-            { max: 150, message: 'Name cannot exceed 150 characters' }
+            { required: true, message: "Please enter full name" },
+            { min: 3, message: "Name must be at least 3 characters" },
+            { max: 150, message: "Name cannot exceed 150 characters" },
           ]}
         >
-          <Input 
-            prefix={<UserOutlined className="text-gray-400" />} 
+          <Input
+            prefix={<UserOutlined className="text-gray-400" />}
             placeholder="Enter full name"
-            className="rounded-md" 
+            className="rounded-md"
           />
         </Form.Item>
 
@@ -71,21 +74,21 @@ const AddUser: React.FC<AddUserProps> = () => {
           label="Email"
           name="email"
           rules={[
-            { required: true, message: 'Please enter email address' },
-            { type: 'email', message: 'Please enter a valid email address' }
+            { required: true, message: "Please enter email address" },
+            { type: "email", message: "Please enter a valid email address" },
           ]}
         >
-          <Input 
-            prefix={<MailOutlined className="text-gray-400" />} 
+          <Input
+            prefix={<MailOutlined className="text-gray-400" />}
             placeholder="Enter email address"
-            className="rounded-md" 
+            className="rounded-md"
           />
         </Form.Item>
 
         <Form.Item
           label="Role"
-          name="roleId"
-          rules={[{ required: true, message: 'Please select a role' }]}
+          name="role"
+          rules={[{ required: true, message: "Please select a role" }]}
         >
           <Select
             placeholder="Select role"
@@ -98,57 +101,56 @@ const AddUser: React.FC<AddUserProps> = () => {
           label="Password"
           name="password"
           rules={[
-            { required: true, message: 'Please enter password' },
-            { min: 8, message: 'Password must be at least 8 characters' }
+            { required: true, message: "Please enter password" },
+            { min: 6, message: "Password must be at least 6 characters" },
           ]}
           hasFeedback
         >
-          <Input.Password 
+          <Input.Password
             prefix={<LockOutlined className="text-gray-400" />}
             placeholder="Enter password"
-            className="rounded-md" 
+            className="rounded-md"
           />
         </Form.Item>
 
         <Form.Item
           label="Confirm Password"
           name="confirmPassword"
-          dependencies={['password']}
+          dependencies={["password"]}
           hasFeedback
           rules={[
-            { required: true, message: 'Please confirm password' },
+            { required: true, message: "Please confirm password" },
             ({ getFieldValue }) => ({
               validator(_, value) {
-                if (!value || getFieldValue('password') === value) {
+                if (!value || getFieldValue("password") === value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error('The two passwords do not match'));
+                return Promise.reject(
+                  new Error("The two passwords do not match")
+                );
               },
             }),
           ]}
         >
-          <Input.Password 
+          <Input.Password
             prefix={<LockOutlined className="text-gray-400" />}
             placeholder="Confirm password"
-            className="rounded-md" 
+            className="rounded-md"
           />
         </Form.Item>
 
-        <Form.Item
-          label="Note"
-          name="note"
-        >
-          <Input.TextArea 
+        <Form.Item label="Note" name="note">
+          <Input.TextArea
             placeholder="Additional notes (optional)"
             rows={4}
-            className="rounded-md" 
+            className="rounded-md"
           />
         </Form.Item>
 
         <Form.Item className="mt-6">
           <div className="flex gap-4">
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               htmlType="submit"
               loading={isSubmitting}
               className="bg-blue-600 hover:bg-blue-700"

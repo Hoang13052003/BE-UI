@@ -38,7 +38,8 @@ const { Title, Text } = Typography;
 const ROLE_OPTIONS = [
   { value: "ALL", label: "All Roles" },
   { value: "ADMIN", label: "Administrator" },
-  { value: "USER", label: "Regular User" },
+  { value: "USER", label: "User" },
+  { value: "MANAGER", label: "Manager" },
 ];
 
 const UserManagement: React.FC = () => {
@@ -173,7 +174,9 @@ const UserManagement: React.FC = () => {
       render: (_, record) =>
         record.projects.map((project, index) => (
           <Tag key={index} color="geekblue" className="mr-1">
-            {project.name}
+            {project.name.length > 20
+              ? `${project.name.substring(0, 20)}...`
+              : project.name}
           </Tag>
         )),
     },
@@ -199,11 +202,13 @@ const UserManagement: React.FC = () => {
             onClick={() => handleAssignProject(record.id, record.projects)}
             icon={<ProjectOutlined />}
           />
-          <Button
-            icon={<DeleteOutlined />}
-            danger
-            onClick={() => handleDeleteUser(record.id)}
-          />
+          {record.role !== "ADMIN" && (
+            <Button
+              icon={<DeleteOutlined />}
+              danger
+              onClick={() => handleDeleteUser(record.id)}
+            />
+          )}
         </Space>
       ),
     },
@@ -236,16 +241,15 @@ const UserManagement: React.FC = () => {
     setIsAssignProjectVisible(true);
   };
 
-  // Handler for modal close
   const handleAssignProjectClose = () => {
     setIsAssignProjectVisible(false);
     setSelectedUserId(null);
     setUserProjects([]);
-    fetchUsers(); // Refresh user list after assignment
+    fetchUsers();
   };
 
   return (
-    <Card className="shadow-sm backgroud-default">
+    <Card className="shadow-sm backgroud-default" style={{ height: "100%" }}>
       <div className="mb-6">
         <Title level={5}>Users</Title>
         <Text type="secondary">Manage user accounts and permissions</Text>
@@ -276,7 +280,7 @@ const UserManagement: React.FC = () => {
         </Col>
         <Col span={6}>
           <Statistic
-            title="User Lock"
+            title="User unpredictable"
             value={managers.lockedUsers}
             valueStyle={{ color: "#1677ff" }}
           />
@@ -335,7 +339,6 @@ const UserManagement: React.FC = () => {
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} users`,
             onChange: (page, pageSize) => {
-              // Convert antd's 1-based page number to 0-based for the API
               fetchUsers(page - 1, pageSize);
             },
           }}
@@ -369,13 +372,12 @@ const UserManagement: React.FC = () => {
         )}
       </Modal>
 
-      {/* Add AssignProject Modal */}
       <AddAssignProjects
         visible={isAssignProjectVisible}
         onClose={handleAssignProjectClose}
         onSuccess={handleAssignProjectClose}
         userId={selectedUserId || 0}
-        projects={userProjects} // Pass existing projects if needed
+        projects={userProjects}
       />
     </Card>
   );

@@ -1,24 +1,32 @@
 import axiosClient from "./axiosClient";
-import { SortConfig, fetchPaginatedData, PaginatedResult } from './apiUtils';
+import { SortConfig, fetchPaginatedData, PaginatedResult } from "./apiUtils";
+
+export type TimelogStatusType =
+  | "TODO"
+  | "DOING"
+  | "PENDING"
+  | "COMPLETED";
 
 export interface TimeLogRequest {
-  projectId: number;
   performerId: number;
-  taskDate: string;
+  taskDate: string; // YYYY-MM-DD
   taskDescription: string;
   hoursSpent: number;
 }
 
 export interface TimeLogResponse {
   id: number;
-  projectId: number;
+  projectLaborId: string;
   projectName: string;
   performerId: number;
   performerFullName: string;
-  taskDate: string;
+  taskDate: string; // YYYY-MM-DD
   taskDescription: string;
   hoursSpent: number;
   createdAt?: string;
+  computedTimelogStatus?: string;
+  actualTimelogStatus?: TimelogStatusType;
+  completionPercentage?: number;
 }
 
 export interface ExcelUploadResponseDTO {
@@ -27,30 +35,40 @@ export interface ExcelUploadResponseDTO {
   successfulImports: number;
   failedImports: number;
   error?: string;
-  errorsDetails?: string[]; // Đã định nghĩa là optional string array
+  errorsDetails?: string[];
 }
 
 export interface TimeLogFetchResult extends PaginatedResult<TimeLogResponse> {
-  timelogs: TimeLogResponse[]; // Tương thích với code cũ
+  timelogs: TimeLogResponse[];
+}
+
+export interface BatchUpdateItem {
+  id: number;
+  performerId?: number;
+  taskDate?: string;
+  taskDescription?: string;
+  hoursSpent?: number;
+  actualTimelogStatus?: TimelogStatusType;
+  completionPercentage?: number;
 }
 
 export const getTimeLogsByProjectIdApi = async (
-  projectId: number,
+  projectId: string,
   page: number = 0,
   size: number = 10,
   sortConfig?: SortConfig | SortConfig[]
 ): Promise<TimeLogFetchResult> => {
   try {
     const result = await fetchPaginatedData<TimeLogResponse>(
-      `/api/timelogs/project/${projectId}`, 
-      page, 
-      size, 
+      `/api/timelogs/project-labor/${projectId}`,
+      page,
+      size,
       sortConfig
     );
     
     return {
       ...result,
-      timelogs: result.items
+      timelogs: result.items,
     };
   } catch (error) {
     console.error("Error fetching timelogs:", error);
@@ -58,35 +76,78 @@ export const getTimeLogsByProjectIdApi = async (
   }
 };
 
-export const createTimeLogApi = async (payload: TimeLogRequest): Promise<TimeLogResponse> => {
-  const { data } = await axiosClient.post('/api/timelogs', payload);
-  return data;
-};
-
-export const getTimeLogByIdApi = async (timelogId: number): Promise<TimeLogResponse> => {
-  const { data } = await axiosClient.get(`/api/timelogs/${timelogId}`);
-  return data;
-};
-
-export const updateTimeLogApi = async (
-  timelogId: number,
-  payload: Partial<TimeLogRequest>
+export const createTimeLogApi = async (
+  projectLaborId: string,
+  payload: TimeLogRequest
 ): Promise<TimeLogResponse> => {
-  const { data } = await axiosClient.patch(`/api/timelogs/${timelogId}`, payload);
+  const { data } = await axiosClient.post<TimeLogResponse>(
+    `/api/timelogs/project-labor/${projectLaborId}/timelogs`,
+    payload
+  );
   return data;
+};
+
+export const getTimeLogByIdApi = async (
+  timelogId: number
+): Promise<TimeLogResponse> => {
+  const { data } = await axiosClient.get<TimeLogResponse>(
+    `/api/timelogs/${timelogId}`
+  );
+  return data;
+};
+
+export const patchUpdateTimeLogApi = async (
+  timelogId: number,
+  payload: Partial<BatchUpdateItem>
+): Promise<void> => {
+  await axiosClient.patch(`/api/timelogs/${timelogId}`, payload);
 };
 
 export const deleteTimeLogApi = async (timelogId: number): Promise<void> => {
   try {
     await axiosClient.delete(`/api/timelogs/${timelogId}`);
   } catch (error) {
-    console.error(`[timelogApi.ts] Failed to delete time log with ID: ${timelogId}`, error);
+    console.error(
+      `[timelogApi.ts] Failed to delete time log with ID: ${timelogId}`,
+      error
+    );
     throw error;
   }
 };
 
-export const getTimeLogsByUserIdApi = async (userId: number): Promise<TimeLogResponse[]> => {
-  const { data } = await axiosClient.get(`/api/timelogs/user/${userId}`);
+export const batchUpdateTimeLogsApi = async (
+  updates: BatchUpdateItem[]
+): Promise<void> => {
+  try {
+    await axiosClient.patch("/api/timelogs/batch-update", updates);
+  } catch (error: any) {
+    console.error("[timelogApi.ts] Failed to batch update time logs:", error);
+    throw error;
+  }
+};
+
+export const batchDeleteTimeLogsApi = async (ids: number[]): Promise<void> => {
+  try {
+    if (!ids || ids.length === 0) {
+      return;
+    }
+
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append("ids", id.toString()));
+
+    await axiosClient.delete(`/api/timelogs/batch-delete?${params.toString()}`);
+  } catch (error: any) {
+    console.error("[timelogApi.ts] Failed to batch delete time logs:", error);
+    throw error;
+  }
+};
+
+export const getTimeLogsByUserIdApi = async (
+  userId: number
+): Promise<TimeLogResponse[]> => {
+  const { data } = await axiosClient.get<TimeLogResponse[]>(
+    `/api/timelogs/user/${userId}`
+  );
   return data;
 };
 
@@ -94,9 +155,12 @@ export const getTimeLogsByDateRangeApi = async (
   startDate: string,
   endDate: string
 ): Promise<TimeLogResponse[]> => {
-  const { data } = await axiosClient.get(`/api/timelogs/range`, {
-    params: { startDate, endDate }
-  });
+  const { data } = await axiosClient.get<TimeLogResponse[]>(
+    `/api/timelogs/range`,
+    {
+      params: { startDate, endDate },
+    }
+  );
   return data;
 };
 
@@ -108,79 +172,75 @@ export const putUpdateTimeLogApi = async (
 };
 
 export const uploadTimelogsExcelApi = async (
-  projectId: number,
+  projectLaborId: string,
   file: File
 ): Promise<ExcelUploadResponseDTO> => {
   try {
     if (!file) {
-      const noFileResponse = {
-        error: 'No file selected',
+      return {
+        error: "No file selected",
         totalRowsInFile: 0,
         successfulImports: 0,
         failedImports: 0,
-        errorsDetails: ['No file selected for upload.']
+        errorsDetails: ["No file selected for upload."],
       };
-      console.log('[timelogApi.ts] No file selected, returning:', noFileResponse);
-      return noFileResponse;
     }
-    
+
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('projectId', projectId.toString());
+    formData.append("file", file);
+    formData.append("projectLaborId", projectLaborId.toString());
 
-    console.log('[timelogApi.ts] Sending FormData to API for projectId:', projectId);
-
-    const { data } = await axiosClient.post( // Giả sử axiosClient được cấu hình đúng
-      `/api/timelogs/upload-excel`, 
+    const { data } = await axiosClient.post(
+      `/api/timelogs/upload-excel`,
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       }
     );
 
-    console.log('[timelogApi.ts] Raw data from API:', data);
-
-    const successResponse: ExcelUploadResponseDTO = {
-      message: data.message || '',
+    return {
+      message: data.message || "",
       totalRowsInFile: data.totalRowsInFile || 0,
       successfulImports: data.successfulImports || 0,
       failedImports: data.failedImports || 0,
       error: data.error || undefined,
-      errorsDetails: data.errorsDetails || []
+      errorsDetails: data.errorsDetails || [],
     };
-    console.log('[timelogApi.ts] Parsed success response:', successResponse);
-    return successResponse;
-
   } catch (error: any) {
-    console.error('[timelogApi.ts] Failed to upload Excel file (raw error object):', error);
-    
+    console.error("[timelogApi.ts] Failed to upload Excel file:", error);
+
     const responseData = error.response?.data;
-    console.log('[timelogApi.ts] Error responseData from API:', responseData);
-    
-    if (responseData && typeof responseData === 'object') {
-      const errorDto: ExcelUploadResponseDTO = {
+
+    if (responseData && typeof responseData === "object") {
+      return {
         message: responseData.message,
         totalRowsInFile: responseData.totalRowsInFile || 0,
         successfulImports: responseData.successfulImports || 0,
-        failedImports: typeof responseData.failedImports === 'number' ? responseData.failedImports : (responseData.error ? 1 : 0),
-        error: responseData.error || error.message || 'Failed to upload Excel file.',
-        errorsDetails: responseData.errorsDetails || [] 
+        failedImports:
+          typeof responseData.failedImports === "number"
+            ? responseData.failedImports
+            : responseData.error
+            ? 1
+            : 0,
+        error:
+          responseData.error || error.message || "Failed to upload Excel file.",
+        errorsDetails: responseData.errorsDetails || [],
       };
-      console.log('[timelogApi.ts] Parsed error DTO:', errorDto);
-      return errorDto;
     }
-    
-    const fallbackErrorDto: ExcelUploadResponseDTO = {
+
+    return {
       message: undefined,
       totalRowsInFile: 0,
       successfulImports: 0,
       failedImports: 1,
-      error: error.message || 'An unexpected error occurred during file upload.',
-      errorsDetails: [error.message || 'An unexpected error occurred. Please check network or contact support.']
+      error:
+        error.message || "An unexpected error occurred during file upload.",
+      errorsDetails: [
+        error.message ||
+          "An unexpected error occurred. Please check network or contact support.",
+      ],
     };
-    console.log('[timelogApi.ts] Fallback error DTO:', fallbackErrorDto);
-    return fallbackErrorDto;
   }
 };

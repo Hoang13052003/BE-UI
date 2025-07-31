@@ -18,6 +18,15 @@ export interface AuthResponse {
   message: string;
 }
 
+export interface EmailVerificationResponse {
+  message: string;
+  verified: boolean;
+}
+
+export interface ResendVerificationResponse {
+  message: string;
+}
+
 export interface ChangePasswordData {
   token?: string;
   newPassword?: string;
@@ -42,7 +51,6 @@ export const forgotPasswordApi = async (email: string) => {
 };
 
 export const resetPasswordApi = async (token: string, newPassword: string) => {
-  alert("Có: " + token);
   const { data } = await axiosClient.post("/api/auth/reset-password", {
     token,
     newPassword,
@@ -50,8 +58,12 @@ export const resetPasswordApi = async (token: string, newPassword: string) => {
   return data;
 };
 
-export const logoutApi = async (): Promise<AuthResponse> => {
-  const { data } = await axiosClient.delete<AuthResponse>("/api/auth/logout");
+export const logoutApi = async (token: string): Promise<AuthResponse> => {
+  const { data } = await axiosClient.delete<AuthResponse>("/api/auth/logout", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return data;
 };
 
@@ -62,13 +74,11 @@ export const signupApi = async (
   recaptchaToken: string
 ) => {
   try {
-    console.log("Sending signup request with token:", recaptchaToken);
-
     const response = await axiosClient.post("/api/auth/signup", {
       email,
       password,
       fullName,
-      recaptchaToken, // Đảm bảo tên field này match với backend DTO
+      recaptchaToken,
     });
 
     return response.data;
@@ -78,7 +88,42 @@ export const signupApi = async (
   }
 };
 
-export const getUserInfoApi = async (): Promise<UserInfo> => {
-  const { data } = await axiosClient.get("/api/private/user/info");
+export const getUserInfoApi = async (token: string): Promise<UserInfo> => {
+  const { data } = await axiosClient.get("/api/auth/user", {
+    params: { token },
+  });
   return data;
+};
+export const verifyEmailApi = async (
+  token: string
+): Promise<EmailVerificationResponse> => {
+  try {
+    const { data } = await axiosClient.get<EmailVerificationResponse>(
+      `/api/auth/verify-email`,
+      {
+        params: { token },
+      }
+    );
+    return data;
+  } catch (error: unknown) {
+    console.error("Email verification API Error:", error);
+    throw error;
+  }
+};
+
+export const resendVerificationEmailApi = async (
+  email: string
+): Promise<ResendVerificationResponse> => {
+  try {
+    const { data } = await axiosClient.post<ResendVerificationResponse>(
+      "/api/auth/resend-verification",
+      {
+        email,
+      }
+    );
+    return data;
+  } catch (error: unknown) {
+    console.error("Resend verification API Error:", error);
+    throw error;
+  }
 };

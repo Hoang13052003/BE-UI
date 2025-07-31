@@ -6,8 +6,9 @@ import image from "../../assets/Image-login-page.svg";
 import { signupApi } from "../../api/authApi";
 import { useTranslation } from "react-i18next";
 import ReCAPTCHA from "react-google-recaptcha";
+import { useAlert } from "../../contexts/AlertContext";
 
-const RECAPTCHA_SITE_KEY = "6LfEdjwrAAAAANti8kFcBEmQC0fTl1Qss0ur6hmj"; // Sử dụng site key của bạn
+const RECAPTCHA_SITE_KEY = "6LfEdjwrAAAAANti8kFcBEmQC0fTl1Qss0ur6hmj";
 
 const validationSchema = yup.object({
   fullName: yup
@@ -41,6 +42,7 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
   const [loading, setLoading] = useState(false);
   const [captchaValue, setCaptchaValue] = useState<string | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const { addAlert } = useAlert();
 
   const handleCaptchaChange = (value: string | null) => {
     setCaptchaValue(value);
@@ -53,24 +55,32 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
         return;
       }
 
-      alert(captchaValue);
       setLoading(true);
       const { email, password, fullName } = values;
 
-      // Gửi cả captchaValue trong request
       const data = await signupApi(email, password, fullName, captchaValue);
 
-      // Reset captcha sau khi đăng ký thành công
       recaptchaRef.current?.reset();
       setCaptchaValue(null);
 
       props.handleRegister(data.message);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("register error:", err);
-      // Reset captcha khi có lỗi
       recaptchaRef.current?.reset();
       setCaptchaValue(null);
-      message.error(t("auth.register.error"));
+
+      let errorMessage = "Registration failed. Please try again!";
+
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as {
+          response?: { data?: { message?: string } };
+        };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+
+      addAlert(errorMessage, "warning");
     } finally {
       setLoading(false);
     }
@@ -200,7 +210,7 @@ const RegisterForm: React.FC<RegisterProps> = (props) => {
                 htmlType="submit"
                 loading={loading}
                 className="sign-up-button"
-                disabled={!captchaValue} // Disable nút khi chưa verify captcha
+                disabled={!captchaValue}
               >
                 {t("auth.register.title")}
               </Button>

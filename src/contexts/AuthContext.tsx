@@ -1,24 +1,38 @@
-import React, { createContext, ReactNode, useContext } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage'; // Đảm bảo đường dẫn này đúng
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import useLocalStorage from "../hooks/useLocalStorage";
+import { showNotification, showError } from "../utils/notificationUtils";
+import notificationService from "../services/NotificationService";
 
 interface UserDetails {
-  // Định nghĩa các trường thông tin người dùng mà API trả về
   id: number;
   email: string;
   fullName: string;
-  image: string;
-  note: string;
+  image: string | null;
+  note: string | null;
   role: string;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   userRole: string | null;
-  userDetails: UserDetails | null; // Thêm trường này
-  login: (role: string, details: UserDetails) => void; // Cập nhật hàm login
+  userDetails: UserDetails | null;
+  token: string | null;
+  refreshToken: string | null;
+  loading: boolean;
+  login: (
+    token: string,
+    refreshToken: string,
+    userDetails: UserDetails
+  ) => void;
   logout: () => void;
-  // Có thể thêm hàm cập nhật user details nếu cần
-  updateUserDetails?: (details: UserDetails) => void;
+  updateUserDetails: (details: UserDetails) => void;
+  updateToken: (newToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,28 +42,107 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [storedRole, setStoredRole] = useLocalStorage<string | null>('userRole', null);
-  const [userDetails, setUserDetails] = useLocalStorage<UserDetails | null>('userDetails',null); // State cho user details
-  const isAuthenticated = !!storedRole;
-  const userRole = storedRole;
+  const [token, setToken] = useLocalStorage<string | null>("token", null);
+  const [refreshToken, setRefreshToken] = useLocalStorage<string | null>(
+    "tokenRefresh",
+    null
+  );
+  const [userDetails, setUserDetails] = useLocalStorage<UserDetails | null>(
+    "userDetails",
+    null
+  );
+  const [userRole, setUserRole] = useLocalStorage<string | null>(
+    "userRole",
+    null
+  );
+  // Non-persistent state
+  const [loading, setLoading] = useState<boolean>(true);
+  const [initialized, setInitialized] = useState<boolean>(false);
 
-  const login = (role: string, details: UserDetails) => {
-    setStoredRole(role);
-    setUserDetails(details); // Lưu thông tin người dùng
-  };
+  // Derived state
+  const isAuthenticated = !!token && !!userDetails;
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setLoading(true);
+      try {
+        if (token && userDetails) {
+          notificationService.connect(token);
+        }
+      } catch (error) {
+        clearAuthState();
+        showError(error, "SESSION_EXPIRED");
+      } finally {
+        setLoading(false);
+        setInitialized(true);
+      }
+    };
 
-  const logout = () => {
-    setStoredRole(null);
+    if (!initialized) {
+      initializeAuth();
+    }
+  }, []);
+
+  const clearAuthState = () => {
+    setToken(null);
+    setRefreshToken(null);
     setUserDetails(null);
+    setUserRole(null);
+    // Clear local storage
+    localStorage.removeItem("selectedKey");
+
+    // Disconnect from WebSocket when logging out
+    notificationService.disconnect();
   };
 
-  // Hàm cập nhật user details (tùy chọn)
+  const login = (
+    newToken: string,
+    newRefreshToken: string,
+    userDetails: UserDetails
+  ) => {
+    setToken(newToken);
+    setRefreshToken(newRefreshToken);
+    setUserDetails(userDetails);
+    setUserRole(userDetails.role);
+    // Connect to WebSocket after successful login
+    notificationService.connect(newToken);
+  };
+
+  // Logout function
+  const logout = () => {
+    // Disconnect from WebSocket before clearing auth state
+    notificationService.disconnect();
+
+    // Clear auth state
+    clearAuthState();
+
+    showNotification.info("LOGOUT_SUCCESS");
+  };
+
+  // Optional: update user details
   const updateUserDetails = (details: UserDetails) => {
     setUserDetails(details);
   };
 
+  // Update token (e.g., after refresh)
+  const updateToken = (newToken: string) => {
+    setToken(newToken);
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userRole, userDetails, login, logout, updateUserDetails }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        userRole,
+        userDetails,
+        token,
+        refreshToken,
+        loading,
+        login,
+        logout,
+        updateUserDetails,
+        updateToken,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -58,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

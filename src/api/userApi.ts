@@ -1,4 +1,9 @@
-import { UpdateUserPayload, User, UserManager } from "../types/User";
+import {
+  UpdateUserPayload,
+  User,
+  UserManager,
+  UserRegister,
+} from "../types/User";
 import axiosClient from "./axiosClient";
 import { UserIdAndEmailResponse } from "../types/User";
 
@@ -61,13 +66,13 @@ export const getUser = async (id: number): Promise<User> => {
   return data;
 };
 
-export const createUser = (data: User): Promise<User> => {
+export const createUser = (data: UserRegister): Promise<UserRegister> => {
   return axiosClient.post("/api/private/admin/create-user", data);
 };
 
 export const assignProjectToUser = async (
   userId: number,
-  projectId: number
+  projectId: string
 ): Promise<void> => {
   await axiosClient.post("/api/private/admin/assign-project", null, {
     params: {
@@ -80,7 +85,7 @@ export const assignProjectToUser = async (
 // Add new API function to remove project from user
 export const removeProjectFromUser = async (
   userId: number,
-  projectId: number
+  projectId: string
 ): Promise<void> => {
   await axiosClient.delete("/api/private/admin/remove-project-form-user", {
     params: {
@@ -141,4 +146,13 @@ export const searchUsersByEmailOrUsernameApi = async (
     );
     throw error;
   }
+};
+
+// api public
+
+export const getProjectByUserIdApi = async (userId: number): Promise<any> => {
+  const { data } = await axiosClient.get<any>(
+    `/api/users/${userId}/projects/improved`
+  );
+  return data;
 };

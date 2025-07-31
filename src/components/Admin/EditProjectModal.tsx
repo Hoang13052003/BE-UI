@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Form,
@@ -8,26 +8,34 @@ import {
   Select,
   Button,
   notification,
-  Spin} from 'antd';
-import { updateProjectApi, ProjectUpdateRequest } from '../../api/projectApi';
-import { searchUsersByEmailOrUsernameApi, UserSearchParams } from '../../api/userApi';
-import { UserIdAndEmailResponse } from '../../types/User';
-import { Project } from '../../types/project';
-import { useTranslation } from 'react-i18next';
-import debounce from 'lodash/debounce';
-import dayjs from 'dayjs';
-import { confirmAlert } from 'react-confirm-alert';
-import 'react-confirm-alert/src/react-confirm-alert.css';
+  Spin,
+} from "antd";
+import { 
+  updateProjectLaborApi,
+  updateProjectFixedPriceApi,
+  ProjectLaborUpdateRequest,
+  ProjectFixedPriceUpdateRequest
+} from "../../api/projectApi";
+import {
+  searchUsersByEmailOrUsernameApi,
+  UserSearchParams,
+} from "../../api/userApi";
+import { UserIdAndEmailResponse } from "../../types/User";
+import { Project } from "../../types/project";
+import debounce from "lodash/debounce";
+import dayjs from "dayjs";
+import { confirmAlert } from "react-confirm-alert";
+import "react-confirm-alert/src/react-confirm-alert.css";
 
 const { TextArea } = Input;
 const { Option } = Select;
 
 interface EditProjectModalProps {
   visible: boolean;
-  projectId: number | null;
+  projectId: string | null;
   onClose: () => void;
   onSuccess: () => void;
-  projectData?: Project;
+  projectData?: any; // Support both Project and ProjectLaborDetailResponse
 }
 
 const EditProjectModal: React.FC<EditProjectModalProps> = ({
@@ -35,34 +43,28 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   projectId,
   projectData,
   onClose,
-  onSuccess
+  onSuccess,
 }) => {
-  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isTypeChanged, setIsTypeChanged] = useState(false);
-  
-  // States cho tìm kiếm người dùng
+  const [currentProjectType, setCurrentProjectType] = useState<string>("");
+
   const [users, setUsers] = useState<UserIdAndEmailResponse[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [, setSearchValue] = useState('');
+  const [, setSearchValue] = useState("");
 
-  // Load dữ liệu dự án khi modal được mở và projectId thay đổi
   useEffect(() => {
     const loadProjectData = async () => {
       if (visible && projectId && !projectData) {
         setLoading(true);
         try {
-          // Nếu không có projectData được truyền vào, bạn có thể gọi API để lấy dữ liệu
-          // const data = await getProjectById(projectId);
-          // fillFormWithData(data);
-          // Tạm thời bỏ qua phần này vì bạn đã truyền projectData
         } catch (error) {
-          console.error('Failed to load project data:', error);
+          console.error("Failed to load project data:", error);
           notification.error({
-            message: t('project.edit.loadError'),
-            description: t('project.edit.loadErrorDesc')
+            message: "Load Error",
+            description: "Failed to load project data. Please try again.",
           });
           onClose();
         } finally {
@@ -76,46 +78,53 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     } else {
       loadProjectData();
     }
-    
-    // Reset state khi modal đóng
+
     return () => {
       setIsTypeChanged(false);
     };
-  }, [visible, projectId, projectData, form, t, onClose]);
+  }, [visible, projectId, projectData, form, onClose]);
 
-  const fillFormWithData = (data: Project) => {
+  const fillFormWithData = (data: any) => {
+    setCurrentProjectType(data.projectType || data.type);
+    
+    // Handle different data structures for labor vs fixed price projects
+    const projectName = data.projectName || data.name;
+    const projectType = data.projectType || data.type;
+    
     form.setFieldsValue({
-      name: data.name,
+      projectName: projectName,
       description: data.description,
-      type: data.type,
+      type: projectType,
       status: data.status,
-      startDate: data.startDate ? dayjs(data.startDate, 'YYYY-MM-DD') : null,
-      plannedEndDate: data.plannedEndDate ? dayjs(data.plannedEndDate, 'YYYY-MM-DD') : null,
+      startDate: data.startDate ? dayjs(data.startDate, "YYYY-MM-DD") : null,
+      plannedEndDate: data.plannedEndDate
+        ? dayjs(data.plannedEndDate, "YYYY-MM-DD")
+        : null,
+      // actualEndDate removed - will be used in future
       totalBudget: data.totalBudget,
       totalEstimatedHours: data.totalEstimatedHours,
-      userIds: data.users?.map(user => user.id) || []
+      userIds: data.users?.map((user: any) => user.id) || [],
     });
 
-    // Nếu có user thì tìm thông tin user để hiển thị trong Select
     if (data.users && data.users.length > 0) {
-      const initialUsers = data.users.map(user => ({
+      const initialUsers = data.users.map((user: any) => ({
         id: user.id,
-        email: user.email
+        email: user.email,
       }));
       setUsers(initialUsers);
     }
   };
 
   const handleTypeChange = (value: string) => {
-    // Kiểm tra xem type có thay đổi so với giá trị ban đầu không
-    if (projectData && value !== projectData.type) {
+    setCurrentProjectType(value);
+    const originalProjectType = (projectData as any)?.projectType || (projectData as any)?.type;
+    if (projectData && value !== originalProjectType) {
       setIsTypeChanged(true);
     } else {
       setIsTypeChanged(false);
     }
   };
 
-  // Hàm search user với debounce để tránh gọi API quá nhiều
   const searchUsers = debounce(async (searchTerm: string) => {
     if (!searchTerm || searchTerm.length < 2) {
       return;
@@ -124,29 +133,28 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     setSearchLoading(true);
     try {
       const params: UserSearchParams = {
-        'searchTerm.contains': searchTerm,
+        "searchTerm.contains": searchTerm,
         page: 0,
-        size: 10
+        size: 10,
       };
 
       const result = await searchUsersByEmailOrUsernameApi(params);
-      setUsers(prevUsers => {
-        // Kết hợp users hiện tại và kết quả tìm kiếm mới, lọc các bản ghi trùng
+      setUsers((prevUsers) => {
         const combinedUsers = [...prevUsers];
-        
-        result.users.forEach(user => {
-          if (!combinedUsers.some(u => u.id === user.id)) {
+
+        result.users.forEach((user) => {
+          if (!combinedUsers.some((u) => u.id === user.id)) {
             combinedUsers.push(user);
           }
         });
-        
+
         return combinedUsers;
       });
     } catch (error) {
-      console.error('Failed to search users:', error);
+      console.error("Failed to search users:", error);
       notification.error({
-        message: t('project.edit.searchUserError'),
-        description: t('project.edit.searchUserErrorDesc')
+        message: "Search Error",
+        description: "Failed to search users. Please try again.",
       });
     } finally {
       setSearchLoading(false);
@@ -164,24 +172,24 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
       if (isTypeChanged) {
         confirmAlert({
-          title: t('project.edit.typeChangeWarningTitle'),
-          message: t('project.edit.typeChangeWarningContent'),
+          title: "Project Type Change Warning",
+          message: "Changing the project type will affect the project structure. Are you sure you want to continue?",
           buttons: [
             {
-              label: t('common.continue'),
-              onClick: () => submitForm(values)
+              label: "Continue",
+              onClick: () => submitForm(values),
             },
             {
-              label: t('common.cancel'),
-              onClick: () => {}
-            }
-          ]
+              label: "Cancel",
+              onClick: () => {},
+            },
+          ],
         });
       } else {
         submitForm(values);
       }
     } catch (error) {
-      console.log('Validation failed:', error);
+      console.log("Validation failed:", error);
     }
   };
 
@@ -190,24 +198,56 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
     setSubmitting(true);
     try {
-      const updateData: ProjectUpdateRequest = {
-        ...values,
-        startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : undefined,
-        plannedEndDate: values.plannedEndDate ? values.plannedEndDate.format('YYYY-MM-DD') : undefined
-      };
-
-      await updateProjectApi(projectId, updateData);
-      notification.success({
-        message: t('project.edit.success'),
-        description: t('project.edit.successDesc')
-      });
+      // Use ORIGINAL project type to determine which API to call
+      const originalProjectType = (projectData as any)?.projectType || (projectData as any)?.type;
+      const newProjectType = values.type || originalProjectType;
+      
+      if (originalProjectType === 'LABOR') {
+        // Use labor-specific endpoint even if changing to FIXED_PRICE
+        const updateData: ProjectLaborUpdateRequest = {
+          projectName: values.projectName || values.name,
+          description: values.description,
+          status: values.status,
+          startDate: values.startDate
+            ? values.startDate.format("YYYY-MM-DD")
+            : undefined,
+          plannedEndDate: values.plannedEndDate
+            ? values.plannedEndDate.format("YYYY-MM-DD")
+            : undefined,
+          // actualEndDate removed - will be used in future
+          totalBudget: values.totalBudget,
+          totalEstimatedHours: values.totalEstimatedHours,
+          userIds: values.userIds,
+          type: newProjectType, // Pass the new type to backend
+        };
+        await updateProjectLaborApi(projectId!, updateData);
+      } else {
+        // Use fixed-price-specific endpoint for originally FIXED_PRICE projects
+        const updateData: ProjectFixedPriceUpdateRequest = {
+          name: values.projectName || values.name,
+          description: values.description,
+          status: values.status,
+          startDate: values.startDate
+            ? values.startDate.format("YYYY-MM-DD")
+            : undefined,
+          plannedEndDate: values.plannedEndDate
+            ? values.plannedEndDate.format("YYYY-MM-DD")
+            : undefined,
+          totalBudget: values.totalBudget,
+          userIds: values.userIds,
+          type: newProjectType, // Pass the new type to backend
+        };
+        await updateProjectFixedPriceApi(projectId!, updateData);
+      }
+      
       form.resetFields();
       onSuccess();
     } catch (error) {
-      console.error('Failed to update project:', error);
+      console.error("Failed to update project:", error);
       notification.error({
-        message: t('project.edit.error'),
-        description: error instanceof Error ? error.message : t('project.edit.errorDesc')
+        message: "Update Failed",
+        description:
+          error instanceof Error ? error.message : "Failed to update project. Please try again.",
       });
     } finally {
       setSubmitting(false);
@@ -219,16 +259,15 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     onClose();
   };
 
-  // Render nội dung modal
   return (
     <Modal
-      title={t('project.edit.title')}
+      title="Edit Project"
       open={visible}
       onCancel={handleCancel}
       width={700}
       footer={[
         <Button key="cancel" onClick={handleCancel}>
-          {t('common.cancel')}
+          Cancel
         </Button>,
         <Button
           key="submit"
@@ -236,107 +275,181 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
           loading={submitting}
           onClick={handleOk}
         >
-          {t('common.save')}
-        </Button>
+          Save
+        </Button>,
       ]}
     >
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
+        <div style={{ textAlign: "center", padding: "20px" }}>
           <Spin size="large" />
         </div>
       ) : (
         <Form form={form} layout="vertical">
           <Form.Item
-            name="name"
-            label={t('project.form.name')}
-            rules={[{ required: true, message: t('project.form.nameRequired') }]}
+            name="projectName"
+            label="Project Name"
+            rules={[
+              { required: true, message: "Project name is required" },
+              { max: 200, message: "Project name must be less than or equal to 200 characters" }
+            ]}
           >
             <Input />
           </Form.Item>
 
-          <Form.Item name="description" label={t('project.form.description')}>
+          <Form.Item name="description" label="Description" rules={[
+            { max: 65535, message: "Description is too long (maximum 65535 characters)" }
+          ]}>
             <TextArea rows={4} />
           </Form.Item>
 
           <Form.Item
             name="type"
-            label={t('project.form.type')}
-            rules={[{ required: true, message: t('project.form.typeRequired') }]}
-            extra={isTypeChanged && t('project.edit.typeChangeNote')}
+            label="Project Type"
+            rules={[
+              { required: true, message: "Project type is required" },
+            ]}
+            extra={isTypeChanged && "Changing project type will affect project structure"}
           >
             <Select onChange={handleTypeChange}>
-              <Option value="FIXED_PRICE">{t('project.type.fixedPrice')}</Option>
-              <Option value="LABOR">{t('project.type.labor')}</Option>
+              <Option value="FIXED_PRICE">
+                Fixed Price
+              </Option>
+              <Option value="LABOR">Labor</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="status"
-            label={t('project.form.status')}
-            rules={[{ required: true, message: t('project.form.statusRequired') }]}
+            label="Status"
+            rules={[
+              { required: true, message: "Status is required" },
+            ]}
           >
             <Select>
-              <Option value="NEW">{t('project.status.notStarted')}</Option>
-              <Option value="PENDING">{t('project.status.pending')}</Option>
-              <Option value="PROGRESS">{t('project.status.inProgress')}</Option>
-              <Option value="CLOSED">{t('project.status.closed')}</Option>
+              <Option value="NEW">New</Option>
+              <Option value="PENDING">Pending</Option>
+              <Option value="PROGRESS">Progress</Option>
+              <Option value="COMPLETED">Completed</Option>
+              <Option value="CLOSED">Closed</Option>
             </Select>
           </Form.Item>
 
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ display: "flex", gap: "16px" }}>
             <Form.Item
               name="startDate"
-              label={t('project.form.startDate')}
+              label="Start Date"
               style={{ flex: 1 }}
             >
-              <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} />
+              <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
             </Form.Item>
-
             <Form.Item
               name="plannedEndDate"
-              label={t('project.form.plannedEndDate')}
+              label="Planned End Date"
               style={{ flex: 1 }}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value) {
+                      return Promise.resolve();
+                    }
+                    const startDate = getFieldValue("startDate");
+                    if (!startDate) {
+                      return Promise.resolve();
+                    }
+                    if (value.isAfter(startDate)) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(
+                      new Error(
+                        "Planned end date must be after start date"
+                      )
+                    );
+                  },
+                }),
+              ]}
             >
-              <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} />
+              <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
             </Form.Item>
+            {/* Actual End Date field is hidden for now - will be used in future */}
           </div>
 
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ display: "flex", gap: "16px" }}>
             <Form.Item
               name="totalBudget"
-              label={t('project.form.totalBudget')}
+              label="Total Budget"
               style={{ flex: 1 }}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    const projectType = getFieldValue('type');
+                    if (projectType === 'FIXED_PRICE') {
+                      if (!value || value <= 0) {
+                        return Promise.reject(new Error('Total budget must be positive for fixed price projects'));
+                      }
+                    }
+                    return Promise.resolve();
+                  },
+                }),
+              ]}
             >
               <InputNumber
-                min={0}
-                formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                min={0.01} // Must be positive
+                formatter={(value) =>
+                  `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                }
                 parser={(value: string | undefined): string | number => {
-                  return value ? Number(value.replace(/\$\s?|(,*)/g, '')) || 0 : 0;
+                  return value
+                    ? Number(value.replace(/\$\s?|(,*)/g, "")) || 0
+                    : 0;
                 }}
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               />
             </Form.Item>
 
             <Form.Item
-              name="totalEstimatedHours"
-              label={t('project.form.totalEstimatedHours')}
-              style={{ flex: 1 }}
+              noStyle
+              shouldUpdate={(prevValues, currentValues) => 
+                prevValues.type !== currentValues.type
+              }
             >
-              <InputNumber min={0} step={0.5} style={{ width: '100%' }} />
+              {({ getFieldValue }) => {
+                const formProjectType = getFieldValue('type');
+                const showEstimatedHours = formProjectType === 'LABOR' || currentProjectType === 'LABOR';
+                
+                return showEstimatedHours ? (
+                  <Form.Item
+                    name="totalEstimatedHours"
+                    label="Total Estimated Hours"
+                    style={{ flex: 1 }}
+                    rules={[
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          const projectType = getFieldValue('type');
+                          if (projectType === 'LABOR') {
+                            if (!value || value <= 0) {
+                              return Promise.reject(new Error('Estimated hours must be greater than 0 for labor projects'));
+                            }
+                          }
+                          return Promise.resolve();
+                        },
+                      }),
+                    ]}
+                  >
+                    <InputNumber min={0.1} step={0.5} style={{ width: "100%" }} />
+                  </Form.Item>
+                ) : null;
+              }}
             </Form.Item>
           </div>
 
-          <Form.Item
-            name="userIds"
-            label={t('project.form.teamMembers')}
-          >
+          <Form.Item name="userIds" label="Team Members">
             <Select
               mode="multiple"
-              placeholder={t('project.form.searchUsers')}
+              placeholder="Search users by email or username"
               filterOption={false}
               onSearch={handleSearchUser}
               notFoundContent={searchLoading ? <Spin size="small" /> : null}
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
               loading={searchLoading}
               showSearch
             >
@@ -347,8 +460,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
               ))}
             </Select>
           </Form.Item>
-          <div style={{ color: '#888', fontSize: '12px', marginTop: '-12px' }}>
-            {t('project.form.searchUsersHint')}
+          <div style={{ color: "#888", fontSize: "12px", marginTop: "-12px" }}>
+            Type at least 2 characters to search for users
           </div>
         </Form>
       )}

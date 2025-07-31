@@ -1,199 +1,512 @@
-import React from 'react';
-import { List, Tag, Typography, Space, Button, Row, Tooltip, Progress } from 'antd';
+import React from "react";
 import {
-  EditOutlined,
+  Tag,
+  Typography,
+  Space,
+  Row,
+  Col,
+  Progress,
+  Card,
+} from "antd";
+import {
   CalendarOutlined,
-  UserOutlined,
-  DownOutlined,
-  UpOutlined
-} from '@ant-design/icons';
-import MilestoneDetailsDisplay from './MilestoneDetailsDisplay';
-import TimelogDetailsDisplay from './TimelogDetailsDisplay';
-import { Project } from '../../types/project';
+  ClockCircleOutlined,
+  FlagOutlined,
+  
+} from "@ant-design/icons";
+import {
+  Project,
+  ProjectDetail,
+  UserSummary,
+} from "../../types/project";
+import MilestoneDetailsDisplayInternal from "./MilestoneDetailsDisplay";
+import TimelogDetailsDisplayInternal from "./TimelogDetailsDisplay";
+import { getTimeLogsByProjectIdApi, TimeLogResponse } from "../../api/timelogApi";
 
-const { Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 interface ProjectDetailsDisplayProps {
-  project: Project;
-  isExpanded: boolean;
-  expandedTimelogProjectId: number | null;
-  deletingId: number | null;
-  onEditProject: (id: number) => void;
-  onDeleteProject: (id: number) => void;
-  onToggleMilestoneDetail: (id: number) => void;
-  onToggleTimelogDetail: (id: number) => void;
-  onAddMilestone: (projectId: number, refreshCallback?: () => void) => void;
-  onEditMilestone: (milestoneId: number, projectId: number, refreshCallback?: () => void) => void;
-  deleteButton?: React.ReactNode;
-  theme?: string; // Thêm dòng này
-  milestoneCount?: number; // Thêm dòng này
-  onTimelogUploadError?: () => void;
+  project: Project | ProjectDetail;
+  theme?: string;
+
+  isExpanded?: boolean;
+  expandedTimelogProjectId?: string | null;
+  onToggleMilestoneDetail?: (id: string) => void;
+  onToggleTimelogDetail?: (id: string) => void;
+
+  onAddMilestone?: (projectId: string, refreshCallback?: () => void) => void;
+  onEditMilestone?: (
+    milestoneId: number,
+    projectId: string,
+    refreshCallback?: () => void
+  ) => void;
+
+  milestoneCount?: number;
+  newMilestoneCount?: number;
+  sentMilestoneCount?: number;
+  reviewedMilestoneCount?: number;
+
+  currentUserIsAdmin?: boolean;
+
+  onRefreshProgress?: () => void;
+  // Thêm prop timelogs (tùy chọn)
+  timelogs?: TimeLogResponse[];
 }
 
-const getStatusColor = (status: Project['status']) => {
+const getStatusColor = (
+  status: Project["status"] | ProjectDetail["status"]
+) => {
   switch (status) {
-    case 'NEW': return 'cyan';
-    case 'PENDING': return 'gold';
-    case 'PROGRESS': return 'blue';
-    case 'CLOSED': return 'green';
-    default: return 'default';
+    case "NEW":
+      return "cyan";
+    case "PENDING":
+      return "gold";
+    case "PROGRESS":
+      return "blue";
+    case "CLOSED":
+      return "green";
+    default:
+      return "default";
   }
+};
+
+const isProjectDetail = (
+  project: Project | ProjectDetail
+): project is ProjectDetail => {
+  return (
+    (project as ProjectDetail).users !== undefined &&
+    (project.users?.length === 0 ||
+      (project.users?.[0] as UserSummary).fullName !== undefined)
+  );
 };
 
 const ProjectDetailsDisplay: React.FC<ProjectDetailsDisplayProps> = ({
   project,
+  theme,
   isExpanded,
   expandedTimelogProjectId,
-  onEditProject,
   onToggleMilestoneDetail,
   onToggleTimelogDetail,
   onAddMilestone,
   onEditMilestone,
-  deleteButton,
-  theme,
-  milestoneCount // <-- nhận prop milestoneCount
+  milestoneCount,
+  newMilestoneCount,
+  sentMilestoneCount,
+  reviewedMilestoneCount,
+  currentUserIsAdmin = false,
+  onRefreshProgress,
+  timelogs: propTimelogs,
 }) => {
-  // Tạo mảng màu dựa trên số lượng milestone theo từng trạng thái
+  const projectData = project;
+
+  // State cho timelogs nếu không truyền prop
+  const [timelogs, setTimelogs] = React.useState<TimeLogResponse[] | undefined>(propTimelogs);
+  // Fetch timelogs nếu là LABOR và chưa có prop
+  React.useEffect(() => {
+    if (project.projectType === "LABOR" && !propTimelogs) {
+      getTimeLogsByProjectIdApi(project.id, 0, 1000)
+        .then((res) => setTimelogs(res.timelogs))
+        .catch(() => setTimelogs([]));
+    }
+  }, [project, propTimelogs]);
+
+  const handleRefreshWithProgress = (callback?: () => void) => {
+    if (callback) callback();
+    if (onRefreshProgress) onRefreshProgress();
+  };
+  const handleProjectCardClick = (e: React.MouseEvent) => {
+    const target = e.target as Element;
+    if (
+      target.closest(".project-card-clickable") ||
+      e.target === e.currentTarget
+    ) {
+      if (projectData.projectType === "FIXED_PRICE" && onToggleMilestoneDetail) {
+        onToggleMilestoneDetail(projectData.id);
+      } else if (projectData.projectType === "LABOR" && onToggleTimelogDetail) {
+        onToggleTimelogDetail(projectData.id);
+      }
+    }
+  };
+
   const createMilestoneStatusColors = () => {
     const colors = [];
-    
-    // Thêm màu cho NEW milestones
-    for (let i = 0; i < project.newMilestoneCount; i++) {
-      colors.push('#1890ff'); // Xanh nước biển cho NEW
+    if (
+      !isProjectDetail(projectData) &&
+      newMilestoneCount !== undefined &&
+      sentMilestoneCount !== undefined &&
+      reviewedMilestoneCount !== undefined
+    ) {
+      for (let i = 0; i < newMilestoneCount; i++) colors.push("#1890ff"); // TODO
+      for (let i = 0; i < sentMilestoneCount; i++) colors.push("#faad14"); // PENDING  
+      for (let i = 0; i < reviewedMilestoneCount; i++) colors.push("#52c41a"); // COMPLETED
     }
-    
-    // Thêm màu cho SENT milestones
-    for (let i = 0; i < project.sentMilestoneCount; i++) {
-      colors.push('#faad14'); // Màu vàng cho SENT
-    }
-    
-    // Thêm màu cho REVIEWED milestones
-    for (let i = 0; i < project.reviewedMilestoneCount; i++) {
-      colors.push('#52c41a'); // Xanh lá cây cho REVIEWED
-    }
-    
     return colors;
   };
-  
-  return (
-    <List.Item
-      key={project.id}
-      style={{
-        background: theme === 'dark' ? '#181818' : '#f9fafb', // Sử dụng theme
-        borderRadius: '8px',
-        marginBottom: '16px',
-        padding: '16px',
-        transition: 'all 0.3s ease',
-        border: theme === 'dark' ? '1px solid #333' : '1px solid #e8e8e8', // Sử dụng theme
-        color: theme === 'dark' ? '#fff' : undefined // Sử dụng theme
-      }}
-      actions={[
-        <Button
-          key="edit-project"
-          type="text"
-          icon={<EditOutlined />}
-          onClick={() => onEditProject(project.id)}
-        >
-          Edit Project
-        </Button>,
-        project.type === 'FIXED_PRICE' && (
-          <Button
-            key="milestone-details"
-            type="text"
-            icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
-            onClick={() => onToggleMilestoneDetail(project.id)}
-          >
-            {isExpanded ? 'Hide Milestones' : 'Show Milestones'}
-          </Button>
-        ),
-        project.type === 'LABOR' && (
-          <Button
-            key="show-timelog"
-            type="text"
-            icon={expandedTimelogProjectId === project.id ? <UpOutlined /> : <DownOutlined />}
-            onClick={() => onToggleTimelogDetail(project.id)}
-          >
-            {expandedTimelogProjectId === project.id ? 'Hide Timelog' : 'Show Timelog'}
-          </Button>
-        ),
-        deleteButton // Thay vì tự tạo nút xóa, dùng prop deleteButton
-      ].filter(Boolean)}
-    >
-      <Row justify="space-between" align="top">
-        <Space direction="vertical" size={2} style={{ flex: 1 }}>
-          <Space size={8} wrap>
-            <Tag color={getStatusColor(project.status)}>{project.status}</Tag>
-            <Tag>{project.type}</Tag>
-          </Space>
-          <Text strong style={{ fontSize: '16px' }}>{project.name}</Text>
-          {/* Progress bar tổng số milestone */}
-          {typeof project.milestoneCount === 'number' && project.milestoneCount > 0 && (
-            <div style={{ margin: '8px 0', maxWidth: 300 }}>
+
+  // Hàm tạo màu cho progress steps timelog
+  const createTimelogStatusColors = () => {
+    if (!timelogs || timelogs.length === 0) return [];
+    return timelogs.map((log) => {
+      const status = (log.computedTimelogStatus || log.actualTimelogStatus || "").toUpperCase();
+      switch (status) {
+        case "TO DO":
+        case "TODO":
+          return "#1890ff"; // blue
+        case "DOING":
+          return "#13c2c2"; // cyan (gần với processing)
+        case "PENDING":
+          return "#faad14"; // orange
+        case "COMPLETED":
+          return "#52c41a"; // green
+        default:
+          return "#d9d9d9"; // gray
+      }
+    });
+  };
+
+
+
+  const renderProgressSection = () => {
+    const commonProgressStyle = {
+      background: theme === "dark" ? "#1f1f1f" : "#fafafa",
+      border: "none",
+      borderRadius: "8px",
+      marginBottom: "16px",
+    };
+    const renderOverallActualProgress = () => {
+      if (
+        projectData.overallProcess === undefined ||
+        projectData.actualProcess === undefined
+      ) {
+        return null;
+      }
+
+      return (
+        <Card size="small" style={commonProgressStyle}>
+          <Space direction="vertical" size={8} style={{ width: "100%" }}>
+            <Text strong>Progress Overview</Text>
+
+            <div>
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: "12px",
+                  marginBottom: "4px",
+                  display: "block",
+                }}
+              >
+                Overall Progress:{" "}
+                {projectData.overallProcess?.toFixed(2) || "0.00"}%
+              </Text>
               <Progress
-                steps={project.milestoneCount}
-                percent={100}
-                strokeColor={createMilestoneStatusColors()}
-                format={() => `${project.milestoneCount} milestones`}
-                strokeWidth={15}
+                percent={Number(projectData.overallProcess)}
+                strokeColor="#1890ff"
+                trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
+                format={() =>
+                  `${Number(projectData.overallProcess)?.toFixed(2) || "0.00"}%`
+                }
+                size="small"
               />
             </div>
-          )}
-          <Text type="secondary">{project.description}</Text>
-          <Space size={16} style={{ marginTop: 8, flexWrap: 'wrap' }}>
-            <Space>
-              <UserOutlined />
-              <Text type="secondary">
-                {project.users && project.users.length > 0 ? (
-                  project.users.length > 2 ? (
-                    <Tooltip title={project.users.map(user => user.email).join(', ')}>
-                      {project.users.slice(0, 2).map(user => user.email).join(', ')}
-                      {`, and ${project.users.length - 2} more`}
-                    </Tooltip>
-                  ) : (
-                    project.users.map(user => user.email).join(', ')
-                  )
-                ) : (
-                  'N/A'
-                )}
+
+            <div>
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: "12px",
+                  marginBottom: "4px",
+                  display: "block",
+                }}
+              >
+                Actual Progress Today:{" "}
+                {projectData.actualProcess?.toFixed(2) || "0.00"}%
               </Text>
-            </Space>
-            <Space>
-              <CalendarOutlined />
-              <Text type="secondary">
-                Start: {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'}
-              </Text>
-            </Space>
-            <Space>
-              <CalendarOutlined />
-              <Text type="secondary">
-                Planned End: {project.plannedEndDate ? new Date(project.plannedEndDate).toLocaleDateString() : 'N/A'}
-              </Text>
-            </Space>
+              <Progress
+                percent={Number(projectData.actualProcess)}
+                strokeColor="#52c41a"
+                trailColor={theme === "dark" ? "#424242" : "#f0f0f0"}
+                format={() =>
+                  `${Number(projectData.actualProcess)?.toFixed(2) || "0.00"}%`
+                }
+                size="small"
+              />
+            </div>
           </Space>
-        </Space>
+        </Card>
+      );
+    };
+
+    // Nếu là LABOR, render progress steps theo timelog
+    if (projectData.projectType === "LABOR") {
+      if (!timelogs) return null;
+      return (
+        <Card size="small" style={commonProgressStyle}>
+          <Space direction="vertical" size={4}>
+            <Progress
+              steps={timelogs.length}
+              percent={100}
+              strokeColor={createTimelogStatusColors()}
+              format={() => `${timelogs.length} timelogs`}
+              strokeWidth={12}
+              size="small"
+            />
+          </Space>
+        </Card>
+      );
+    }
+
+    if (
+      !isProjectDetail(projectData) &&
+      projectData.projectType === "FIXED_PRICE" &&
+      typeof milestoneCount === "number" &&
+      milestoneCount > 0
+    ) {
+      return (
+        <>
+          {renderOverallActualProgress()}
+          <Card size="small" style={commonProgressStyle}>
+            <Space direction="vertical" size={4}>
+              <Text strong>Milestone Progress</Text>
+              <Progress
+                steps={milestoneCount}
+                percent={100}
+                strokeColor={createMilestoneStatusColors()}
+                format={() => `${milestoneCount} milestones`}
+                strokeWidth={12}
+                size="small"
+              />
+              <Space size={8}>
+                <Tag color="blue" style={{ fontSize: "12px" }}>
+                  New: {newMilestoneCount}
+                </Tag>
+                <Tag color="gold" style={{ fontSize: "12px" }}>
+                  Sent: {sentMilestoneCount}
+                </Tag>
+                <Tag color="green" style={{ fontSize: "12px" }}>
+                  Reviewed: {reviewedMilestoneCount}
+                </Tag>
+              </Space>
+            </Space>
+          </Card>
+        </>
+      );
+    }
+
+    if (
+      projectData.overallProcess !== undefined &&
+      projectData.actualProcess !== undefined
+    ) {
+      return renderOverallActualProgress();
+    }
+
+    return null;
+  };
+  return (
+    <Card
+      hoverable
+      onClick={handleProjectCardClick}
+      style={{
+        borderRadius: "12px",
+        boxShadow:
+          theme === "dark"
+            ? "0 2px 8px rgba(255,255,255,0.05)"
+            : "0 2px 8px rgba(0,0,0,0.06)",
+        border: theme === "dark" ? "1px solid #303030" : "1px solid #f0f0f0",
+        cursor: "pointer",
+      }}
+      styles={{ body: { padding: "20px" } }}
+    >
+      <Row
+        justify="space-between"
+        align="top"
+        style={{ marginBottom: "16px" }}
+        className="project-card-clickable"
+      >
+        <Col flex="auto">
+          <Space direction="vertical" size={12} style={{ width: "100%" }}>
+            {/* Status and Type Tags */}
+            <Row justify="space-between" align="middle">
+              <Space size={8}>
+                <Tag
+                  color={getStatusColor(projectData.status)}
+                  style={{
+                    borderRadius: "6px",
+                    fontWeight: "bold",
+                    border: "none",
+                  }}
+                >
+                  {projectData.status}
+                </Tag>{" "}
+                <Tag
+                  style={{
+                    borderRadius: "6px",
+                    background: theme === "dark" ? "#262626" : "#f6f6f6",
+                    border: "none",
+                  }}
+                >
+                  <FlagOutlined style={{ marginRight: "4px" }} />
+                  {projectData.projectType}
+                </Tag>
+                {/* Expand Status Indicator */}
+                {projectData.projectType === "FIXED_PRICE" && (
+                  <Text
+                    type="secondary"
+                    style={{
+                      fontSize: "12px",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    {isExpanded
+                      ? "👇 Milestones expanded"
+                      : "📋 Click to view milestones"}
+                  </Text>
+                )}
+                {projectData.projectType === "LABOR" && (
+                  <Text
+                    type="secondary"
+                    style={{
+                      fontSize: "12px",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    {expandedTimelogProjectId === projectData.id
+                      ? "👇 Timelogs expanded"
+                      : "⏰ Click to view timelogs"}
+                  </Text>
+                )}
+              </Space>
+            </Row>
+
+            {/* Project Name */}
+            <Title
+              level={4}
+              style={{
+                margin: 0,
+                fontSize: "18px",
+                color: theme === "dark" ? "#fff" : "#262626",
+              }}
+            >
+              {projectData.name}
+            </Title>
+
+            {/* Description */}
+            <Paragraph
+              type="secondary"
+              ellipsis={{ rows: 2, expandable: true, symbol: "more" }}
+              style={{ margin: 0, fontSize: "14px" }}
+            >
+              {projectData.description}
+            </Paragraph>
+          </Space>
+        </Col>
+      </Row>{" "}
+      {/* Progress Section */}
+      {renderProgressSection() && (
+        <div
+          style={{ marginBottom: "16px" }}
+          className="project-card-clickable"
+        >
+          {renderProgressSection()}
+        </div>
+      )}
+      {/* Info Section */}
+      <Row gutter={[16, 8]} className="project-card-clickable">
+        <Col xs={24} sm={12} md={8}>
+          <Space align="center">
+            <CalendarOutlined style={{ color: "#52c41a" }} />
+            <div>
+              <Text
+                type="secondary"
+                style={{ fontSize: "12px", display: "block" }}
+              >
+                Start Date
+              </Text>
+              <Text style={{ fontSize: "14px" }}>
+                {projectData.startDate
+                  ? new Date(projectData.startDate).toLocaleDateString()
+                  : "Not set"}
+              </Text>
+            </div>
+          </Space>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <Space align="center">
+            <ClockCircleOutlined style={{ color: "#faad14" }} />
+            <div>
+              <Text
+                type="secondary"
+                style={{ fontSize: "12px", display: "block" }}
+              >
+                Planned End
+              </Text>
+              <Text style={{ fontSize: "14px" }}>
+                {projectData.plannedEndDate
+                  ? new Date(projectData.plannedEndDate).toLocaleDateString()
+                  : "Not set"}
+              </Text>
+            </div>
+          </Space>
+        </Col>{" "}
       </Row>
-      {isExpanded && project.type === 'FIXED_PRICE' && (
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
-          <MilestoneDetailsDisplay
-            projectId={project.id}
-            onAddMilestone={(refreshCallback) => onAddMilestone(project.id, refreshCallback)}
-            onEditMilestone={onEditMilestone}
-          />
-        </div>
-      )}
-      {expandedTimelogProjectId === project.id && project.type === 'LABOR' && (
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e8e8e8' }}>
-          <TimelogDetailsDisplay
-            projectId={project.id}
-            users={(project.users || []).map(user => ({
-              id: user.id,
-              name: user.email // Sử dụng user.email làm giá trị cho 'name'
-            }))}
-              
-          />
-        </div>
-      )}
-    </List.Item>
+      {/* Expanded Sections */}
+      {isExpanded &&
+        onToggleMilestoneDetail &&
+        projectData.projectType === "FIXED_PRICE" &&
+        onAddMilestone &&
+        onEditMilestone && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              marginTop: "16px",
+              padding: "16px",
+              background: theme === "dark" ? "#1a1a1a" : "#fafafa",
+              borderRadius: "8px",
+              border: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}`,
+            }}
+          >
+            <MilestoneDetailsDisplayInternal
+              projectId={projectData.id}
+              onAddMilestone={(refreshCallback) =>
+                currentUserIsAdmin &&
+                onAddMilestone(projectData.id, () =>
+                  handleRefreshWithProgress(refreshCallback)
+                )
+              } // Chỉ cho admin
+              onEditMilestone={
+                currentUserIsAdmin
+                  ? (milestoneId, projectId, refreshCallback) =>
+                      onEditMilestone &&
+                      onEditMilestone(milestoneId, projectId, () =>
+                        handleRefreshWithProgress(refreshCallback)
+                      )
+                  : undefined
+              } // Chỉ cho admin
+              onRefreshProgress={onRefreshProgress} // Truyền callback xuống milestone
+            />
+          </div>
+        )}
+      {expandedTimelogProjectId === projectData.id &&
+        onToggleTimelogDetail &&
+        projectData.projectType === "LABOR" && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              marginTop: "16px",
+              padding: "16px",
+              background: theme === "dark" ? "#1a1a1a" : "#fafafa",
+              borderRadius: "8px",
+              border: `1px solid ${theme === "dark" ? "#303030" : "#f0f0f0"}`,
+            }}
+          >
+            <TimelogDetailsDisplayInternal
+              projectId={projectData.id}
+              theme={theme}
+              isAdmin={currentUserIsAdmin}
+              onRefreshProgress={onRefreshProgress}
+            />
+          </div>
+        )}
+    </Card>
   );
 };
 

@@ -375,6 +375,9 @@
     "notifications": "Thông báo",
     "systemSettings": "Cài đặt hệ thống",
     "analytics": "Phân tích",
+    "projectReport":"Quản lý báo cáo dự án",
+    "feedbacksManagement": "Quản lý phản hồi",
+    "logsManagement":"Trình quản lý nhật ký",
     "logs": "Nhật ký",
     "backups": "Sao lưu",
     "maintenance": "Bảo trì"
@@ -386,6 +389,8 @@
     "reports": "Báo cáo",
     "team": "Đội ngũ",
     "notifications": "Thông báo",
+    "my-feedbacks": "Phản hồi của tôi",
+    "project-updates": "Cập nhật dự án",
     "messages": "Tin nhắn",
     "profile": "Hồ sơ",
     "settings": "Cài đặt"

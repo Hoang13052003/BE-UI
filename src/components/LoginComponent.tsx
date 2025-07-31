@@ -1,56 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import LoginForm from '../pages/auth/LoginForm';
-import { Spin } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-// import { get } from 'http';
-import { getUserInfoApi } from '../api/authApi';
+import React, { useEffect, useState } from "react";
+import LoginForm from "../pages/auth/LoginForm";
+import { Spin } from "antd";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { getUserInfoApi, LoginResponse } from "../api/authApi";
 
 const LoginComponent: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, userRole, login } = useAuth();
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
-  const [userDetailsLoaded, setUserDetailsLoaded] = useState(false); // State để kiểm tra khi nào thông tin người dùng đã được tải
+  const [userDetailsLoaded, setUserDetailsLoaded] = useState(false);
 
-  // Điều hướng khi người dùng đã đăng nhập và có role
   useEffect(() => {
-    if (isAuthenticated && userDetailsLoaded) { // Kiểm tra khi nào thông tin người dùng đã được tải
+    if (isAuthenticated && userDetailsLoaded) {
       switch (userRole) {
-        case 'ADMIN':
-          navigate('/admin/overview', { replace: true });
+        case "ADMIN":
+          navigate("/admin/overview", { replace: true });
           break;
-        case 'USER':
-          navigate('/client/home', { replace: true });
+        case "USER":
+          navigate("/client/home", { replace: true });
           break;
         default:
-          navigate('/', { replace: true });
+          navigate("/", { replace: true });
           break;
       }
     }
-  }, [isAuthenticated, userRole, userDetailsLoaded, navigate]); // Thêm `userDetailsLoaded` vào dependencies
+  }, [isAuthenticated, userRole, userDetailsLoaded, navigate]);
 
-  // Xử lý login thành công: lấy thông tin user và cập nhật context
-  const handleLogin = async () => {
+  const handleLogin = async (data: LoginResponse) => {
     setLoadingUserDetails(true);
-    setUserDetailsLoaded(false); // Đảm bảo là chưa tải thông tin khi bắt đầu
-
+    setUserDetailsLoaded(false);
     try {
-      const data = await getUserInfoApi();
+      const user = await getUserInfoApi(data.jwt);
 
-      const role = data.role;
+      if (data && user) {
+        login(data.jwt, data.jwtRefreshToken, user);
 
-      if (role) {
-        login(role, data); // Cập nhật context
-        alert('Đăng nhập thành công!');
-        setUserDetailsLoaded(true); // Đánh dấu thông tin người dùng đã được tải
-      } else {
-        throw new Error('Không xác định được vai trò người dùng.');
+        setUserDetailsLoaded(true);
       }
-    } catch (error) {
-      console.error('Error fetching user details:', error);
-      alert('Không thể lấy thông tin người dùng. Vui lòng thử lại sau.');
-      localStorage.removeItem('token');
-      navigate('/login');
     } finally {
       setLoadingUserDetails(false);
     }
@@ -61,19 +48,19 @@ const LoginComponent: React.FC = () => {
       {loadingUserDetails ? (
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100vh',
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
           }}
         >
-          <Spin tip="Đang lấy thông tin người dùng..." />
+          <Spin tip="Loading user information..." />
         </div>
       ) : (
         <LoginForm
           handleLogin={handleLogin}
-          handleGoogleLogin={() => { }}
-          handleFacebookLogin={() => { }}
+          handleGoogleLogin={() => {}}
+          handleFacebookLogin={() => {}}
         />
       )}
     </div>

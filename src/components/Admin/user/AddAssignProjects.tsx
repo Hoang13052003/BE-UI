@@ -19,6 +19,10 @@ import {
 } from "../../../api/userApi";
 import { Project } from "../../../types/project";
 import { DeleteOutlined } from "@ant-design/icons";
+import { createNotification } from "../../../api/apiNotification";
+import { MessageType, NotificationPriority } from "../../../types/Notification";
+import { useAlert } from "../../../contexts/AlertContext";
+
 const { Option } = Select;
 const { Title, Text } = Typography;
 
@@ -42,6 +46,7 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchedProjects, setSearchedProjects] = useState<Project[]>([]);
   const [assignedProjects, setAssignedProjects] = useState<Project[]>([]);
+  const { addAlert } = useAlert();
 
   useEffect(() => {
     const fetchAssignedProjects = async () => {
@@ -60,11 +65,11 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
       fetchAssignedProjects();
     }
   }, [visible, userId]);
-
   useEffect(() => {
-    if (!visible) {
-      setSearchedProjects([]);
+    if (visible) {
+      // Reset form when modal opens
       form.resetFields();
+      setSearchedProjects([]);
     }
   }, [visible, form]);
 
@@ -74,19 +79,22 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
       setLoading(true);
 
       await assignProjectToUser(userId, values.projectId);
-      message.success("Project assigned successfully");
+      addAlert("Project assigned successfully", "success");
+
+      await createNotification({
+        userId,
+        title: "Update Project Assignment",
+        content: "You have been assigned a new project.",
+        type: MessageType.PROJECT_ASSIGN,
+        priority: NotificationPriority.MEDIUM,
+        metadata: { projectId: values.projectId },
+      });
 
       form.resetFields();
       onSuccess();
-
-      onClose();
     } catch (error) {
-      if (error instanceof Error) {
-        message.error(`Failed to assign project: ${error.message}`);
-      } else {
-        message.error("Failed to assign project");
-      }
-      console.error("Error assigning project:", error);
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
+      addAlert(`Failed to assign project: ${errMsg}`, "error");
     } finally {
       setLoading(false);
     }
@@ -108,8 +116,11 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
         {
           name: value,
           status: undefined,
-          startDate: undefined,
-          endDate: undefined,
+          projectType: undefined,
+          startDateFrom: undefined,
+          startDateTo: undefined,
+          endDateFrom: undefined,
+          endDateTo: undefined,
         },
         page,
         size
@@ -124,23 +135,26 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
     }
   };
 
-  const handleRemoveProject = async (projectId: number) => {
+  const handleRemoveProject = async (projectId: string) => {
     try {
       setLoading(true);
       await removeProjectFromUser(userId, projectId);
-      message.success("Project removed successfully");
+      addAlert("Project removed successfully", "success");
 
       onClose();
     } catch (error) {
-      console.error("Error removing project:", error);
-      message.error("Failed to remove project");
+      if (error instanceof Error) {
+        addAlert("Failed to remove project", "error", error.message);
+      } else {
+        addAlert("Failed to remove project", "error", String(error));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const renderProjectOptions = () => {
-    const renderedOptions = new Set<number>();
+    const renderedOptions = new Set<string>();
 
     assignedProjects.forEach((project) => renderedOptions.add(project.id));
 
@@ -179,75 +193,88 @@ const AddAssignProjects: React.FC<AddAssignProjectsProps> = ({
         </Button>,
       ]}
       width={800}
-      destroyOnClose
     >
-      {loading ? (
-        <Spin size="large" />
-      ) : (
-        <Form form={form} layout="vertical" preserve={false}>
-          <List
-            header={
-              <Space style={{ width: "100%", justifyContent: "space-between" }}>
-                <Title level={5} style={{ margin: 0 }}>
-                  Your Projects
-                </Title>
-              </Space>
-            }
-            bordered
-            dataSource={projects}
-            renderItem={(project) => (
-              <List.Item
-                actions={[
-                  <Popconfirm
-                    title="Are you sure you want to remove this project?"
-                    onConfirm={() => handleRemoveProject(project.id)}
-                    okText="Yes"
-                    cancelText="No"
-                  >
-                    <Button danger icon={<DeleteOutlined />} />
-                  </Popconfirm>,
-                ]}
-              >
-                <Space direction="vertical" style={{ width: "100%" }} size={16}>
-                  <Space
-                    style={{ justifyContent: "space-between", width: "100%" }}
-                  >
-                    <Title level={5} style={{ margin: 0 }}>
-                      {project.name}
-                    </Title>
-                    <Tag
-                      color={project.type === "FIXED_PRICE" ? "blue" : "green"}
-                    >
-                      {project.type}
-                    </Tag>
-                  </Space>
-
-                  <Text type="secondary">{project.description}</Text>
+      <Form form={form} layout="vertical" preserve={false}>
+        {loading ? (
+          <Spin size="large" />
+        ) : (
+          <>
+            <List
+              header={
+                <Space
+                  style={{ width: "100%", justifyContent: "space-between" }}
+                >
+                  <Title level={5} style={{ margin: 0 }}>
+                    Your Projects
+                  </Title>{" "}
                 </Space>
-              </List.Item>
-            )}
-          />
-
-          <Form.Item
-            name="projectId"
-            label="Select Project"
-            rules={[{ required: true, message: "Please select a project" }]}
-          >
-            <Select
-              showSearch
-              placeholder="Search for projects"
-              filterOption={false}
-              onSearch={handleProjectSearch}
-              loading={searchLoading}
-              notFoundContent={
-                searchLoading ? <Spin size="small" /> : "No projects found"
               }
+              bordered
+              dataSource={projects}
+              renderItem={(project) => (
+                <List.Item
+                  actions={[
+                    <Popconfirm
+                      title="Are you sure you want to remove this project?"
+                      onConfirm={() => handleRemoveProject(project.id)}
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <Button danger icon={<DeleteOutlined />} />
+                    </Popconfirm>,
+                  ]}
+                >
+                  <Space
+                    direction="vertical"
+                    style={{ width: "100%" }}
+                    size={16}
+                  >
+                    <Space
+                      style={{ justifyContent: "space-between", width: "100%" }}
+                    >
+                      <Title level={5} style={{ margin: 0 }}>
+                        {project.name}
+                      </Title>
+                      <Tag
+                        color={
+                          project.projectType == "FIXED_PRICE"
+                            ? "blue"
+                            : "green"
+                        }
+                      >
+                        {project.projectType == "FIXED_PRICE"
+                          ? "Fixed Price"
+                          : "Labor"}
+                      </Tag>
+                    </Space>
+
+                    <Text type="secondary">{project.description}</Text>
+                  </Space>
+                </List.Item>
+              )}
+            />
+
+            <Form.Item
+              name="projectId"
+              label="Select Project"
+              rules={[{ required: true, message: "Please select a project" }]}
             >
-              {renderProjectOptions()}
-            </Select>
-          </Form.Item>
-        </Form>
-      )}
+              <Select
+                showSearch
+                placeholder="Search for projects"
+                filterOption={false}
+                onSearch={handleProjectSearch}
+                loading={searchLoading}
+                notFoundContent={
+                  searchLoading ? <Spin size="small" /> : "No projects found"
+                }
+              >
+                {renderProjectOptions()}
+              </Select>
+            </Form.Item>
+          </>
+        )}
+      </Form>
     </Modal>
   );
 };
